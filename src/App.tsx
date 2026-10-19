@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   CURRICULUM_SECTORS,
   getNextStage,
@@ -9,12 +9,12 @@ import { HeaderNav } from './components/HeaderNav';
 import { HUD } from './components/HUD';
 import { TextPromptStream } from './components/TextPromptStream';
 import { IntegratedLanesKeyboard } from './components/IntegratedLanesKeyboard';
-import { ErgonomicHandsStation } from './components/ErgonomicHandsStation';
 import { StageSelectModal } from './components/StageSelectModal';
 import { HangarUpgradesModal } from './components/HangarUpgradesModal';
 import { AnalyticsModal } from './components/AnalyticsModal';
 import { CustomPracticeModal } from './components/CustomPracticeModal';
 import { LevelCompleteModal } from './components/LevelCompleteModal';
+import { GlobalCosmicBackground } from './components/GlobalCosmicBackground';
 import { useGameStore } from './store/useGameStore';
 import { Play, RotateCcw } from 'lucide-react';
 
@@ -35,28 +35,76 @@ export default function App() {
     updateFallingNotesOnTick,
     updateTelemetryOnInterval,
     launchNextStage,
+    toggleGlobalMute,
     toggleSound,
     toggleMusic,
+    setSoundVolume,
+    setMusicVolume,
+    setBeatTheme,
     cycleBeatTheme,
     toggleKeyboard,
+    toggleHands,
     upgradeShields,
     upgradeReactor,
     upgradeSensors,
     unlockOrEquipTheme,
     unlockOrEquipAudio,
     importProfile,
+    wipeCurriculumAchievements,
     resetProgress,
   } = useGameStore();
 
+  // Track the source screen before opening modal to guarantee clean return navigation
+  const [modalSourceState, setModalSourceState] = useState<'MENU' | 'PLAYING' | 'VICTORY' | 'STAGE_SELECT'>('MENU');
+
+  const openModal = (target: 'STAGE_SELECT' | 'HANGAR' | 'ANALYTICS' | 'CUSTOM_PRACTICE') => {
+    if (gameState === 'VICTORY') {
+      setModalSourceState('VICTORY');
+    } else if (gameState === 'PLAYING') {
+      setModalSourceState('PLAYING');
+    } else if (gameState === 'STAGE_SELECT') {
+      setModalSourceState('STAGE_SELECT');
+    } else {
+      setModalSourceState('MENU');
+    }
+    setGameState(target);
+  };
+
   // Synchronize audio engine with current profile settings
   useEffect(() => {
+    soundEngine.setGlobalMute(Boolean(profile.globalMuted));
     soundEngine.setSoundEnabled(profile.soundEnabled);
     soundEngine.setSoundVolume(profile.soundVolume);
     soundEngine.setMusicEnabled(profile.musicEnabled !== false);
     soundEngine.setMusicVolume(profile.musicVolume ?? 0.4);
     soundEngine.setBeatTheme(profile.beatTheme || 'NEON_SYNTHWAVE');
     soundEngine.setCore(profile.upgrades.equippedAudioCore);
-  }, [profile]);
+  }, [
+    profile.globalMuted,
+    profile.soundEnabled,
+    profile.soundVolume,
+    profile.musicEnabled,
+    profile.musicVolume,
+    profile.beatTheme,
+    profile.upgrades.equippedAudioCore,
+  ]);
+
+  // Defensive guard against zombie flight deck: if gameState is PLAYING but stage was already completed, safely route to VICTORY or MENU
+  useEffect(() => {
+    if (
+      gameState === 'PLAYING' &&
+      currentStage.sampleText.length > 0 &&
+      performance.currentCharIndex >= currentStage.sampleText.length
+    ) {
+      soundEngine.stopBeat();
+      soundEngine.setOverdrive(false);
+      if (victoryResult) {
+        setGameState('VICTORY');
+      } else {
+        setGameState('MENU');
+      }
+    }
+  }, [gameState, performance.currentCharIndex, currentStage.sampleText.length, victoryResult, setGameState]);
 
   // Falling Notes Highway Motion & Conveyor Loop (60 FPS)
   useEffect(() => {
@@ -103,21 +151,44 @@ export default function App() {
   }, [gameState, processKeystroke]);
 
   const activeChar = currentStage.sampleText[performance.currentCharIndex] || null;
+  const previousChar = performance.currentCharIndex > 0 ? currentStage.sampleText[performance.currentCharIndex - 1] : null;
+  const nextChar = performance.currentCharIndex + 1 < currentStage.sampleText.length ? currentStage.sampleText[performance.currentCharIndex + 1] : null;
   const targetCharInfo = activeChar ? getNoteLaneAndFinger(activeChar) : null;
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-cyan-500/30 selection:text-cyan-200">
+    <div className="relative min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-cyan-500/30 selection:text-cyan-200 overflow-x-hidden">
+      {/* Global Cosmic Starfield Background: tranquil on home & modals; hyperwarp ONLY during active flight */}
+      <GlobalCosmicBackground
+        hyperspaceActive={gameState === 'PLAYING' && performance.hyperspaceActive}
+        multiplier={gameState === 'PLAYING' ? performance.multiplier : 1}
+      />
+
       {/* Strict Top Bar Contract */}
       <HeaderNav
         totalStars={profile.totalStars}
         totalCredits={profile.totalCredits}
-        onOpenStages={() => setGameState('STAGE_SELECT')}
-        onOpenHangar={() => setGameState('HANGAR')}
-        onOpenAnalytics={() => setGameState('ANALYTICS')}
-        onOpenCustom={() => setGameState('CUSTOM_PRACTICE')}
+        isMuted={Boolean(profile.globalMuted)}
+        soundEnabled={profile.soundEnabled}
+        musicEnabled={profile.musicEnabled !== false}
+        soundVolume={profile.soundVolume}
+        musicVolume={profile.musicVolume ?? 0.4}
+        beatTheme={profile.beatTheme || 'NEON_SYNTHWAVE'}
+        audioCore={profile.upgrades.equippedAudioCore}
+        onToggleGlobalMute={toggleGlobalMute}
+        onToggleSound={toggleSound}
+        onToggleMusic={toggleMusic}
+        onSetSoundVolume={setSoundVolume}
+        onSetMusicVolume={setMusicVolume}
+        onSetBeatTheme={setBeatTheme}
+        onSetAudioCore={(core) => unlockOrEquipAudio(core, 0)}
+        onGoHome={() => setGameState('MENU')}
+        onOpenStages={() => openModal('STAGE_SELECT')}
+        onOpenHangar={() => openModal('HANGAR')}
+        onOpenAnalytics={() => openModal('ANALYTICS')}
+        onOpenCustom={() => openModal('CUSTOM_PRACTICE')}
         onQuickPlay={() => {
           if (gameState === 'PLAYING') {
-            setGameState('STAGE_SELECT');
+            openModal('STAGE_SELECT');
           } else {
             startStage(currentStage);
           }
@@ -156,7 +227,7 @@ export default function App() {
               </button>
 
               <button
-                onClick={() => setGameState('STAGE_SELECT')}
+                onClick={() => openModal('STAGE_SELECT')}
                 className="px-6 py-3.5 rounded-xl border border-slate-700 bg-slate-900/80 hover:bg-slate-800 text-slate-200 font-medium text-sm sm:text-base transition-colors cursor-pointer"
               >
                 View Galaxy Sectors (7 Sectors)
@@ -199,18 +270,12 @@ export default function App() {
             {/* Top HUD Telemetry */}
             <HUD
               performance={performance}
-              soundEnabled={profile.soundEnabled}
-              onToggleSound={toggleSound}
               onPause={() => {
                 soundEngine.stopBeat();
                 setGameState('PAUSED');
               }}
               onToggleKeyboard={toggleKeyboard}
               keyboardVisible={profile.keyboardVisible}
-              musicEnabled={profile.musicEnabled}
-              onToggleMusic={toggleMusic}
-              beatTheme={profile.beatTheme}
-              onCycleBeatTheme={cycleBeatTheme}
             />
 
             {/* Text Prompt Stream */}
@@ -220,6 +285,8 @@ export default function App() {
               errorIndices={errorIndices}
               targetWpm={currentStage.targetWpm}
               stageTitle={`${currentStage.title} · ${currentStage.subtitle}`}
+              techniqueTip={currentStage.techniqueTip}
+              focusFingers={currentStage.focusFingers}
             />
 
             {/* Interactive Rhythm Keyboard Flight Deck */}
@@ -234,16 +301,13 @@ export default function App() {
               timingFeedbackKey={performance.timingFeedbackKey}
               trailTheme={profile.upgrades.equippedTrailTheme}
               activeChar={activeChar}
+              previousChar={previousChar}
+              nextChar={nextChar}
               lastPressedKey={lastPressedKey}
+              keyboardVisible={profile.keyboardVisible}
+              handsVisible={profile.handsVisible}
+              onToggleHands={toggleHands}
             />
-
-            {/* Ergonomic Hand & Finger Technique Guide */}
-            {profile.keyboardVisible && (
-              <ErgonomicHandsStation
-                activeChar={activeChar}
-                lastPressedKey={lastPressedKey}
-              />
-            )}
           </div>
         )}
       </main>
@@ -259,7 +323,9 @@ export default function App() {
               <button
                 onClick={() => {
                   setGameState('PLAYING');
-                  if (profile.musicEnabled) soundEngine.startBeat();
+                  if (profile.musicEnabled && !profile.globalMuted && (profile.musicVolume ?? 0.4) > 0) {
+                    soundEngine.startBeat();
+                  }
                 }}
                 className="w-full py-2.5 rounded-lg bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-bold text-xs font-mono transition-colors cursor-pointer"
               >
@@ -277,11 +343,22 @@ export default function App() {
               <button
                 onClick={() => {
                   soundEngine.stopBeat();
+                  setModalSourceState('MENU');
                   setGameState('STAGE_SELECT');
+                }}
+                className="w-full py-2.5 rounded-lg border border-slate-800 bg-slate-950 text-slate-300 hover:text-white hover:bg-slate-800 text-xs font-mono transition-colors cursor-pointer"
+              >
+                Exit to Galaxy Map
+              </button>
+
+              <button
+                onClick={() => {
+                  soundEngine.stopBeat();
+                  setGameState('MENU');
                 }}
                 className="w-full py-2.5 rounded-lg border border-slate-800 bg-slate-950 text-slate-400 hover:text-slate-200 text-xs font-mono transition-colors cursor-pointer"
               >
-                Exit to Galaxy Map
+                Exit to Academy Home
               </button>
             </div>
           </div>
@@ -294,13 +371,43 @@ export default function App() {
           stagesProgress={profile.stagesProgress}
           totalStars={profile.totalStars}
           totalCredits={profile.totalCredits}
+          sourceState={modalSourceState}
           onSelectStage={(stage) => startStage(stage)}
-          onClose={() => {
-            setGameState('PLAYING');
-            if (profile.musicEnabled) soundEngine.startBeat();
+          onReturnToDebrief={() => {
+            soundEngine.stopBeat();
+            setGameState('VICTORY');
           }}
-          onOpenHangar={() => setGameState('HANGAR')}
-          onOpenAnalytics={() => setGameState('ANALYTICS')}
+          onReturnToMenu={() => {
+            soundEngine.stopBeat();
+            setGameState('MENU');
+          }}
+          onClose={() => {
+            if (modalSourceState === 'MENU') {
+              soundEngine.stopBeat();
+              setGameState('MENU');
+            } else if (
+              modalSourceState === 'VICTORY' ||
+              performance.currentCharIndex >= currentStage.sampleText.length ||
+              victoryResult !== null
+            ) {
+              soundEngine.stopBeat();
+              setGameState('VICTORY');
+            } else {
+              setGameState('PLAYING');
+              if (profile.musicEnabled && !profile.globalMuted && (profile.musicVolume ?? 0.4) > 0) {
+                soundEngine.startBeat();
+              }
+            }
+          }}
+          onOpenHangar={() => {
+            setModalSourceState('STAGE_SELECT');
+            setGameState('HANGAR');
+          }}
+          onOpenAnalytics={() => {
+            setModalSourceState('STAGE_SELECT');
+            setGameState('ANALYTICS');
+          }}
+          onWipeAchievements={wipeCurriculumAchievements}
         />
       )}
 
@@ -314,7 +421,17 @@ export default function App() {
           onUpgradeSensors={upgradeSensors}
           onUnlockOrEquipTheme={unlockOrEquipTheme}
           onUnlockOrEquipAudio={unlockOrEquipAudio}
-          onClose={() => setGameState('STAGE_SELECT')}
+          onClose={() => {
+            if (modalSourceState === 'MENU') setGameState('MENU');
+            else if (modalSourceState === 'VICTORY') setGameState('VICTORY');
+            else if (modalSourceState === 'STAGE_SELECT') setGameState('STAGE_SELECT');
+            else if (modalSourceState === 'PLAYING') {
+              setGameState('PLAYING');
+              if (profile.musicEnabled && !profile.globalMuted && (profile.musicVolume ?? 0.4) > 0) {
+                soundEngine.startBeat();
+              }
+            } else setGameState('MENU');
+          }}
         />
       )}
 
@@ -322,8 +439,19 @@ export default function App() {
       {gameState === 'ANALYTICS' && (
         <AnalyticsModal
           profile={profile}
-          onClose={() => setGameState('STAGE_SELECT')}
+          onClose={() => {
+            if (modalSourceState === 'MENU') setGameState('MENU');
+            else if (modalSourceState === 'VICTORY') setGameState('VICTORY');
+            else if (modalSourceState === 'STAGE_SELECT') setGameState('STAGE_SELECT');
+            else if (modalSourceState === 'PLAYING') {
+              setGameState('PLAYING');
+              if (profile.musicEnabled && !profile.globalMuted && (profile.musicVolume ?? 0.4) > 0) {
+                soundEngine.startBeat();
+              }
+            } else setGameState('MENU');
+          }}
           onImportProfile={importProfile}
+          onWipeAchievements={wipeCurriculumAchievements}
           onResetProgress={resetProgress}
         />
       )}
@@ -335,7 +463,18 @@ export default function App() {
           onStartCustom={(customStage, speed) => {
             startStage(customStage, speed);
           }}
-          onClose={() => setGameState('MENU')}
+          onClose={() => {
+            if (modalSourceState === 'PLAYING') {
+              setGameState('PLAYING');
+              if (profile.musicEnabled && !profile.globalMuted && (profile.musicVolume ?? 0.4) > 0) {
+                soundEngine.startBeat();
+              }
+            } else if (modalSourceState === 'STAGE_SELECT') {
+              setGameState('STAGE_SELECT');
+            } else {
+              setGameState('MENU');
+            }
+          }}
         />
       )}
 
@@ -344,11 +483,20 @@ export default function App() {
         <LevelCompleteModal
           stage={currentStage}
           result={victoryResult}
+          totalStars={profile.totalStars}
+          totalCredits={profile.totalCredits}
           hasUnlockedNextSector={victoryResult.newStarsAwarded > 0}
           hasNextStage={Boolean(getNextStage(currentStage.id))}
           onReplay={() => startStage(currentStage)}
           onNextStage={launchNextStage}
-          onReturnToMap={() => setGameState('STAGE_SELECT')}
+          onReturnToMap={() => {
+            setModalSourceState('VICTORY');
+            setGameState('STAGE_SELECT');
+          }}
+          onReturnToMenu={() => {
+            soundEngine.stopBeat();
+            setGameState('MENU');
+          }}
         />
       )}
     </div>

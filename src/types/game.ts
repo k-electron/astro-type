@@ -61,6 +61,9 @@ export interface Stage {
   targetWpm: number;
   starThresholds: StarRatingThresholds;
   timeLimitSeconds?: number;
+  focusFingers?: string; // e.g. "Left Index (F) & Right Index (J)"
+  techniqueTip?: string; // e.g. "Rest index fingers on F and J bumps. Keep palms level."
+  drillPatternType?: 'ANCHOR_CALIBRATION' | 'FINGER_EXPANSION' | 'ANCHOR_REACH_RETURN' | 'HAND_ALTERNATION' | 'VOWEL_REACH' | 'CADENCE_FLOW' | 'SHIFT_DISCIPLINE';
 }
 
 export interface Sector {
@@ -121,11 +124,11 @@ export interface PlayerProfile {
   ambientMusicVolume: number; // 0 to 1
   highwaySpeed: 'SLOW' | 'NORMAL' | 'FAST' | 'HYPER';
   keyboardVisible: boolean;
-  handsOverlayMode: 'TRANSLUCENT' | 'VIVID' | 'OFF';
-  compactHighway: boolean;
+  handsVisible: boolean;
   musicEnabled: boolean;
   musicVolume: number; // 0 to 1
   beatTheme: BeatTheme;
+  globalMuted?: boolean;
 }
 
 export interface LivePerformance {
@@ -146,4 +149,5 @@ export interface LivePerformance {
   timeElapsedSeconds: number;
   timingFeedback: 'PERFECT' | 'GREAT' | 'GOOD' | 'MISS' | null;
   timingFeedbackKey: number; // counter to re-trigger animations
+  cadenceConsistency?: number; // 0 to 100% rhythm regularity between keystrokes
 }

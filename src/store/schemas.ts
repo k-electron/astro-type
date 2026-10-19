@@ -11,19 +11,17 @@ export const TrailColorThemeSchema = z.enum([
 export const AudioSynthCoreSchema = z.enum([
   'CYBER_SYNTH',
   'RETRO_8BIT',
-  'QUANTUM_PAD',
-  'PLASMA_PULSE',
+  'DEEP_SPACE',
+  'NEO_ACOUSTIC',
 ]);
 
 export const HighwaySpeedSchema = z.enum(['SLOW', 'NORMAL', 'FAST', 'HYPER']);
 
 export const BeatThemeSchema = z.enum([
   'NEON_SYNTHWAVE',
-  'ELECTRO_CHILL',
-  'CYBER_DRIVE',
+  'CYBER_PULSE',
+  'COSMIC_LOFI',
 ]);
-
-export const HandsOverlayModeSchema = z.enum(['TRANSLUCENT', 'MINIMAL', 'OFF']);
 
 export const UpgradesSchema = z.object({
   deflectorShields: z.number().int().min(0).max(5).default(0),
@@ -33,7 +31,7 @@ export const UpgradesSchema = z.object({
   equippedAudioCore: AudioSynthCoreSchema.default('CYBER_SYNTH'),
   unlockedThemes: z.array(TrailColorThemeSchema).default(['CYAN']),
   unlockedAudioCores: z.array(AudioSynthCoreSchema).default(['CYBER_SYNTH']),
-});
+}).passthrough();
 
 export const StageProgressSchema = z.object({
   stageId: z.string(),
@@ -44,15 +42,16 @@ export const StageProgressSchema = z.object({
   bestAccuracy: z.number().min(0).max(100).default(0),
   bestStreak: z.number().int().min(0).default(0),
   timesPlayed: z.number().int().min(0).default(0),
-});
+  lastPlayedAt: z.number().optional(),
+}).passthrough();
 
 export const KeyAnalyticsSchema = z.object({
-  key: z.string(),
   hits: z.number().int().min(0).default(0),
   misses: z.number().int().min(0).default(0),
-  avgReactionMs: z.number().min(0).default(0),
-  accuracy: z.number().min(0).max(100).default(100),
-});
+  key: z.string().optional(),
+  avgReactionMs: z.number().optional(),
+  accuracy: z.number().optional(),
+}).passthrough();
 
 export const PlayerProfileSchema = z.object({
   totalCredits: z.number().int().min(0).default(0),
@@ -78,12 +77,12 @@ export const PlayerProfileSchema = z.object({
   ambientMusicVolume: z.number().min(0).max(1).default(0.25),
   highwaySpeed: HighwaySpeedSchema.default('NORMAL'),
   keyboardVisible: z.boolean().default(true),
-  handsOverlayMode: HandsOverlayModeSchema.default('TRANSLUCENT'),
-  compactHighway: z.boolean().default(false),
+  handsVisible: z.boolean().default(true),
   musicEnabled: z.boolean().default(true),
   musicVolume: z.number().min(0).max(1).default(0.4),
   beatTheme: BeatThemeSchema.default('NEON_SYNTHWAVE'),
-});
+  globalMuted: z.boolean().default(false),
+}).passthrough();
 
 export const LivePerformanceSchema = z.object({
   score: z.number().int().min(0).default(0),
@@ -103,7 +102,8 @@ export const LivePerformanceSchema = z.object({
   timeElapsedSeconds: z.number().min(0).default(0),
   timingFeedback: z.enum(['PERFECT', 'GREAT', 'GOOD', 'MISS']).nullable().default(null),
   timingFeedbackKey: z.number().int().default(0),
-});
+  cadenceConsistency: z.number().min(0).max(100).optional().default(100),
+}).passthrough();
 
 export type ValidatedPlayerProfile = z.infer<typeof PlayerProfileSchema>;
 export type ValidatedLivePerformance = z.infer<typeof LivePerformanceSchema>;

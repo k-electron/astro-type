@@ -2,14 +2,16 @@ import { AudioSynthCore, BeatTheme } from '../types/game';
 
 class SoundEngine {
   private ctx: AudioContext | null = null;
-  private masterGain: GainNode | null = null;
-  private musicGain: GainNode | null = null;
+  private masterGain: GainNode | null = null; // Master node -> destination
+  private sfxGain: GainNode | null = null; // SFX node -> masterGain
+  private musicGain: GainNode | null = null; // Music node -> masterGain
   private soundVolume: number = 0.7;
   private musicVolume: number = 0.4;
   private soundEnabled: boolean = true;
   private musicEnabled: boolean = true;
   private currentCore: AudioSynthCore = 'CYBER_SYNTH';
   private beatTheme: BeatTheme = 'NEON_SYNTHWAVE';
+  private globalMuted: boolean = false;
 
   // Rhythm Beat Engine State
   private beatIntervalId: number | null = null;
@@ -45,18 +47,22 @@ class SoundEngine {
         (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       this.ctx = new AudioCtxClass();
 
-      // Master FX Gain
+      // Master overall gain -> destination (0 when muted, 1 when unmuted)
       this.masterGain = this.ctx.createGain();
-      this.masterGain.gain.setValueAtTime(this.soundVolume, this.ctx.currentTime);
+      this.masterGain.gain.setValueAtTime(this.globalMuted ? 0 : 1, this.ctx.currentTime);
       this.masterGain.connect(this.ctx.destination);
 
-      // Music / Beat Gain
+      // Dedicated SFX Gain -> masterGain
+      this.sfxGain = this.ctx.createGain();
+      const fxGain = this.soundEnabled ? this.soundVolume : 0;
+      this.sfxGain.gain.setValueAtTime(fxGain, this.ctx.currentTime);
+      this.sfxGain.connect(this.masterGain);
+
+      // Dedicated Music Gain -> masterGain
       this.musicGain = this.ctx.createGain();
-      this.musicGain.gain.setValueAtTime(
-        this.musicEnabled ? this.musicVolume : 0,
-        this.ctx.currentTime
-      );
-      this.musicGain.connect(this.ctx.destination);
+      const musGain = this.musicEnabled ? this.musicVolume : 0;
+      this.musicGain.gain.setValueAtTime(musGain, this.ctx.currentTime);
+      this.musicGain.connect(this.masterGain);
     } catch {
       // AudioContext unavailable
     }
@@ -93,25 +99,46 @@ class SoundEngine {
     return this.tempoBpm;
   }
 
+  public setGlobalMute(muted: boolean) {
+    this.globalMuted = muted;
+    if (this.ctx && this.masterGain) {
+      this.masterGain.gain.setValueAtTime(muted ? 0 : 1, this.ctx.currentTime);
+    }
+    if (muted && this.beatIntervalId) {
+      this.stopBeat();
+    }
+  }
+
+  public isGlobalMuted(): boolean {
+    return this.globalMuted;
+  }
+
   public setSoundVolume(vol: number) {
     this.soundVolume = Math.max(0, Math.min(1, vol));
-    if (this.masterGain && this.ctx) {
-      this.masterGain.gain.setValueAtTime(this.soundVolume, this.ctx.currentTime);
+    if (this.sfxGain && this.ctx) {
+      const fx = !this.soundEnabled ? 0 : this.soundVolume;
+      this.sfxGain.gain.setValueAtTime(fx, this.ctx.currentTime);
     }
   }
 
   public setMusicVolume(vol: number) {
     this.musicVolume = Math.max(0, Math.min(1, vol));
     if (this.musicGain && this.ctx) {
-      this.musicGain.gain.setValueAtTime(
-        this.musicEnabled ? this.musicVolume : 0,
-        this.ctx.currentTime
-      );
+      const mus = !this.musicEnabled ? 0 : this.musicVolume;
+      this.musicGain.gain.setValueAtTime(mus, this.ctx.currentTime);
     }
   }
 
   public setSoundEnabled(enabled: boolean) {
     this.soundEnabled = enabled;
+    if (this.sfxGain && this.ctx) {
+      const fx = !enabled ? 0 : this.soundVolume;
+      this.sfxGain.gain.setValueAtTime(fx, this.ctx.currentTime);
+    }
+  }
+
+  public isSoundEnabled(): boolean {
+    return this.soundEnabled;
   }
 
   public isMusicEnabled(): boolean {
@@ -125,11 +152,10 @@ class SoundEngine {
   public setMusicEnabled(enabled: boolean) {
     this.musicEnabled = enabled;
     if (this.musicGain && this.ctx) {
-      this.musicGain.gain.setValueAtTime(enabled ? this.musicVolume : 0, this.ctx.currentTime);
+      const mus = !enabled ? 0 : this.musicVolume;
+      this.musicGain.gain.setValueAtTime(mus, this.ctx.currentTime);
     }
-    if (enabled && !this.beatIntervalId) {
-      this.startBeat();
-    } else if (!enabled && this.beatIntervalId) {
+    if (!enabled && this.beatIntervalId) {
       this.stopBeat();
     }
   }
@@ -143,6 +169,7 @@ class SoundEngine {
   // ==========================================
 
   public startBeat() {
+    if (this.globalMuted || !this.musicEnabled || this.musicVolume <= 0) return;
     this.init();
     if (!this.ctx || !this.musicGain) return;
     if (this.beatIntervalId) return;
@@ -176,7 +203,7 @@ class SoundEngine {
   }
 
   private scheduleBeatStep(step: number, measure: number, time: number) {
-    if (!this.ctx || !this.musicGain || !this.musicEnabled) return;
+    if (!this.ctx || !this.musicGain || !this.musicEnabled || this.globalMuted) return;
 
     if (this.beatTheme === 'NEON_SYNTHWAVE') {
       this.scheduleSynthwaveStep(step, measure, time);
@@ -561,9 +588,9 @@ class SoundEngine {
   // ==========================================
 
   public playLaneHit(laneIndex: number, rating: 'PERFECT' | 'GREAT' | 'GOOD') {
-    if (!this.soundEnabled) return;
+    if (this.globalMuted || !this.soundEnabled) return;
     this.init();
-    if (!this.ctx || !this.masterGain) return;
+    if (!this.ctx || !this.sfxGain) return;
 
     try {
       const now = this.ctx.currentTime;
@@ -592,7 +619,7 @@ class SoundEngine {
 
         osc.connect(filter);
         filter.connect(gain);
-        gain.connect(this.masterGain);
+        gain.connect(this.sfxGain);
         osc.start(now);
         osc.stop(now + 0.14);
       } else if (this.currentCore === 'DEEP_SPACE') {
@@ -607,7 +634,7 @@ class SoundEngine {
         gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.26);
 
         osc.connect(gain);
-        gain.connect(this.masterGain);
+        gain.connect(this.sfxGain);
         osc.start(now);
         osc.stop(now + 0.28);
       } else if (this.currentCore === 'NEO_ACOUSTIC') {
@@ -623,7 +650,7 @@ class SoundEngine {
         gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.18);
 
         osc.connect(gain);
-        gain.connect(this.masterGain);
+        gain.connect(this.sfxGain);
         osc.start(now);
         osc.stop(now + 0.2);
       } else {
@@ -640,7 +667,7 @@ class SoundEngine {
         gainMain.gain.exponentialRampToValueAtTime(0.0001, now + decayDuration);
 
         oscMain.connect(gainMain);
-        gainMain.connect(this.masterGain);
+        gainMain.connect(this.sfxGain);
         oscMain.start(now);
         oscMain.stop(now + decayDuration + 0.02);
 
@@ -657,7 +684,7 @@ class SoundEngine {
           gainShimmer.gain.exponentialRampToValueAtTime(0.0001, now + 0.14);
 
           oscShimmer.connect(gainShimmer);
-          gainShimmer.connect(this.masterGain);
+          gainShimmer.connect(this.sfxGain);
           oscShimmer.start(now);
           oscShimmer.stop(now + 0.16);
         }
@@ -668,9 +695,9 @@ class SoundEngine {
   }
 
   public playMiss() {
-    if (!this.soundEnabled) return;
+    if (this.globalMuted || !this.soundEnabled) return;
     this.init();
-    if (!this.ctx || !this.masterGain) return;
+    if (!this.ctx || !this.sfxGain) return;
 
     try {
       const now = this.ctx.currentTime;
@@ -692,7 +719,7 @@ class SoundEngine {
 
       osc.connect(filter);
       filter.connect(gain);
-      gain.connect(this.masterGain);
+      gain.connect(this.sfxGain);
       osc.start(now);
       osc.stop(now + 0.13);
     } catch {
@@ -701,9 +728,9 @@ class SoundEngine {
   }
 
   public playShieldAbsorb() {
-    if (!this.soundEnabled) return;
+    if (this.globalMuted || !this.soundEnabled) return;
     this.init();
-    if (!this.ctx || !this.masterGain) return;
+    if (!this.ctx || !this.sfxGain) return;
 
     try {
       const now = this.ctx.currentTime;
@@ -718,7 +745,7 @@ class SoundEngine {
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
 
       osc.connect(gain);
-      gain.connect(this.masterGain);
+      gain.connect(this.sfxGain);
       osc.start(now);
       osc.stop(now + 0.22);
     } catch {
@@ -727,9 +754,9 @@ class SoundEngine {
   }
 
   public playHyperspaceIgnition() {
-    if (!this.soundEnabled) return;
+    if (this.globalMuted || !this.soundEnabled) return;
     this.init();
-    if (!this.ctx || !this.masterGain) return;
+    if (!this.ctx || !this.sfxGain) return;
 
     try {
       const now = this.ctx.currentTime;
@@ -745,7 +772,7 @@ class SoundEngine {
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
 
       osc.connect(gain);
-      gain.connect(this.masterGain);
+      gain.connect(this.sfxGain);
       osc.start(now);
       osc.stop(now + 0.65);
     } catch {
@@ -754,9 +781,9 @@ class SoundEngine {
   }
 
   public playStarChime(starNumber: 1 | 2 | 3) {
-    if (!this.soundEnabled) return;
+    if (this.globalMuted || !this.soundEnabled) return;
     this.init();
-    if (!this.ctx || !this.masterGain) return;
+    if (!this.ctx || !this.sfxGain) return;
 
     try {
       const now = this.ctx.currentTime;
@@ -768,7 +795,7 @@ class SoundEngine {
           : [783.99, 1046.5];
 
       notes.forEach((freq, idx) => {
-        if (!this.ctx || !this.masterGain) return;
+        if (!this.ctx || !this.sfxGain) return;
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.type = 'triangle';
@@ -778,7 +805,7 @@ class SoundEngine {
         gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.35);
 
         osc.connect(gain);
-        gain.connect(this.masterGain);
+        gain.connect(this.sfxGain);
         osc.start(now + idx * 0.08);
         osc.stop(now + idx * 0.08 + 0.4);
       });
@@ -788,15 +815,15 @@ class SoundEngine {
   }
 
   public playStageVictory() {
-    if (!this.soundEnabled) return;
+    if (this.globalMuted || !this.soundEnabled) return;
     this.init();
-    if (!this.ctx || !this.masterGain) return;
+    if (!this.ctx || !this.sfxGain) return;
 
     try {
       const now = this.ctx.currentTime;
       const freqs = [523.25, 659.25, 783.99, 1046.5];
       freqs.forEach((f, i) => {
-        if (!this.ctx || !this.masterGain) return;
+        if (!this.ctx || !this.sfxGain) return;
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.type = 'sine';
@@ -806,7 +833,7 @@ class SoundEngine {
         gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.1 + 0.45);
 
         osc.connect(gain);
-        gain.connect(this.masterGain);
+        gain.connect(this.sfxGain);
         osc.start(now + i * 0.1);
         osc.stop(now + i * 0.1 + 0.5);
       });
@@ -816,13 +843,13 @@ class SoundEngine {
   }
 
   public playShieldUpgrade() {
-    if (!this.soundEnabled) return;
+    if (this.globalMuted || !this.soundEnabled) return;
     this.init();
-    if (!this.ctx || !this.masterGain) return;
+    if (!this.ctx || !this.sfxGain) return;
     try {
       const now = this.ctx.currentTime;
       [440, 554.37, 659.25, 880].forEach((freq, idx) => {
-        if (!this.ctx || !this.masterGain) return;
+        if (!this.ctx || !this.sfxGain) return;
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.type = 'triangle';
@@ -830,7 +857,7 @@ class SoundEngine {
         gain.gain.setValueAtTime(0.18, now + idx * 0.06);
         gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.06 + 0.3);
         osc.connect(gain);
-        gain.connect(this.masterGain);
+        gain.connect(this.sfxGain);
         osc.start(now + idx * 0.06);
         osc.stop(now + idx * 0.06 + 0.32);
       });
@@ -838,13 +865,13 @@ class SoundEngine {
   }
 
   public playEquipCosmetic() {
-    if (!this.soundEnabled) return;
+    if (this.globalMuted || !this.soundEnabled) return;
     this.init();
-    if (!this.ctx || !this.masterGain) return;
+    if (!this.ctx || !this.sfxGain) return;
     try {
       const now = this.ctx.currentTime;
       [659.25, 783.99].forEach((freq, idx) => {
-        if (!this.ctx || !this.masterGain) return;
+        if (!this.ctx || !this.sfxGain) return;
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.type = 'sine';
@@ -852,7 +879,7 @@ class SoundEngine {
         gain.gain.setValueAtTime(0.2, now + idx * 0.07);
         gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.07 + 0.25);
         osc.connect(gain);
-        gain.connect(this.masterGain);
+        gain.connect(this.sfxGain);
         osc.start(now + idx * 0.07);
         osc.stop(now + idx * 0.07 + 0.28);
       });

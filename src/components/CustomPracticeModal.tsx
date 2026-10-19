@@ -54,6 +54,9 @@ export const CustomPracticeModal: React.FC<CustomPracticeModalProps> = ({
       sampleText: customText.trim(),
       difficulty: targetWpm > 50 ? 'Expert' : targetWpm > 35 ? 'Advanced' : 'Intermediate',
       targetWpm,
+      focusFingers: 'Free Flight Custom Selection',
+      techniqueTip: 'Maintain relaxed posture and steady keystroke cadence across your custom text.',
+      drillPatternType: 'CADENCE_FLOW',
       starThresholds: {
         oneStarAccuracy: 75,
         twoStarWpm: targetWpm,

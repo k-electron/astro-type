@@ -7,6 +7,8 @@ interface TextPromptStreamProps {
   errorIndices: Set<number>;
   targetWpm: number;
   stageTitle: string;
+  techniqueTip?: string;
+  focusFingers?: string;
 }
 
 export const TextPromptStream: React.FC<TextPromptStreamProps> = ({
@@ -15,6 +17,8 @@ export const TextPromptStream: React.FC<TextPromptStreamProps> = ({
   errorIndices,
   targetWpm,
   stageTitle,
+  techniqueTip,
+  focusFingers,
 }) => {
   const activeCharRef = useRef<HTMLSpanElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -88,6 +92,23 @@ export const TextPromptStream: React.FC<TextPromptStreamProps> = ({
           <span className="font-mono tabular-nums text-slate-300 text-xs">{progressPercent}%</span>
         </div>
       </div>
+
+      {/* Mavis Beacon Pedagogical Technique Bar */}
+      {techniqueTip && (
+        <div className="px-4 py-1.5 bg-slate-950/60 border-b border-slate-800/80 flex items-center justify-between gap-3 text-xs shrink-0">
+          <div className="flex items-center gap-2 truncate">
+            <span className="px-1.5 py-0.5 rounded bg-cyan-950/80 border border-cyan-800/60 text-cyan-300 font-mono text-[10px] uppercase font-bold tracking-wider shrink-0">
+              Form Focus
+            </span>
+            <span className="truncate text-slate-300 text-[11px]">{techniqueTip}</span>
+          </div>
+          {focusFingers && (
+            <span className="shrink-0 font-mono text-[10px] text-amber-300 bg-amber-950/50 border border-amber-800/50 px-2 py-0.5 rounded whitespace-nowrap">
+              {focusFingers}
+            </span>
+          )}
+        </div>
+      )}
 
       {/* Main Streaming Text Content (Strict Fixed Height: h-32) */}
       <div

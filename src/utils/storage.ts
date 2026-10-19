@@ -27,11 +27,11 @@ export const DEFAULT_PROFILE: PlayerProfile = {
   ambientMusicVolume: 0.25,
   highwaySpeed: 'NORMAL',
   keyboardVisible: true,
-  handsOverlayMode: 'TRANSLUCENT',
-  compactHighway: false,
+  handsVisible: true,
   musicEnabled: true,
   musicVolume: 0.4,
   beatTheme: 'NEON_SYNTHWAVE',
+  globalMuted: false,
 };
 
 export function loadProfile(): PlayerProfile {
@@ -41,9 +41,13 @@ export function loadProfile(): PlayerProfile {
       return DEFAULT_PROFILE;
     }
     const parsed = JSON.parse(raw);
+    const stagesProgress = (parsed.stagesProgress || {}) as Record<string, StageProgress>;
+    const computedStars = calculateTotalStars(stagesProgress);
     return {
       ...DEFAULT_PROFILE,
       ...parsed,
+      totalStars: computedStars,
+      stagesProgress,
       upgrades: {
         ...DEFAULT_PROFILE.upgrades,
         ...(parsed.upgrades || {}),

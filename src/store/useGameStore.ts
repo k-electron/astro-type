@@ -8,6 +8,7 @@ import {
   Stage,
   TrailColorTheme,
   AudioSynthCore,
+  BeatTheme,
 } from '../types/game';
 import {
   CURRICULUM_SECTORS,
@@ -19,6 +20,7 @@ import {
   loadProfile,
   recordStageResult,
   saveProfile,
+  calculateTotalStars,
 } from '../utils/storage';
 import { soundEngine } from '../audio/soundEngine';
 import {
@@ -47,6 +49,7 @@ export interface VictoryResult {
   creditsEarned: number;
   isNewHighScore: boolean;
   newStarsAwarded: number;
+  cadenceConsistency?: number;
 }
 
 export interface GameStoreState {
@@ -65,6 +68,7 @@ export interface GameStoreState {
   stageStartTime: number | null;
   currentCharIndex: number;
   sessionKeyStats: Record<string, { hits: number; misses: number }>;
+  recentKeystrokeTimes: number[];
 
   // Actions
   sendGameEvent: (event: GameMachineEvent) => void;
@@ -78,28 +82,51 @@ export interface GameStoreState {
   launchNextStage: () => void;
 
   // Settings & Upgrades
+  toggleGlobalMute: () => void;
   toggleSound: () => void;
   toggleMusic: () => void;
+  setSoundVolume: (vol: number) => void;
+  setMusicVolume: (vol: number) => void;
+  setBeatTheme: (theme: BeatTheme) => void;
   cycleBeatTheme: () => void;
   toggleKeyboard: () => void;
+  toggleHands: () => void;
   upgradeShields: (cost: number) => void;
   upgradeReactor: (cost: number) => void;
   upgradeSensors: (cost: number) => void;
   unlockOrEquipTheme: (theme: TrailColorTheme, cost: number) => void;
   unlockOrEquipAudio: (coreId: AudioSynthCore, cost: number) => void;
   importProfile: (json: string) => boolean;
+  wipeCurriculumAchievements: () => void;
   resetProgress: () => void;
 }
 
 /**
  * Zod Validation Middleware:
  * Validates updates against Zod schemas before committing into Zustand state.
+ * Never destroys player progress or sets stars to 0 on non-fatal warnings.
  */
 function validateProfileWithZod(raw: unknown): PlayerProfile {
+  if (!raw || typeof raw !== 'object') {
+    return DEFAULT_PROFILE;
+  }
   const result = PlayerProfileSchema.safeParse(raw);
   if (!result.success) {
     console.warn('Profile schema validation warning:', result.error);
-    return DEFAULT_PROFILE;
+    const r = raw as Partial<PlayerProfile>;
+    const stagesProgress = r.stagesProgress || {};
+    const computedStars = calculateTotalStars(stagesProgress);
+    return {
+      ...DEFAULT_PROFILE,
+      ...r,
+      totalStars: computedStars,
+      totalCredits: r.totalCredits ?? DEFAULT_PROFILE.totalCredits,
+      stagesProgress,
+      upgrades: {
+        ...DEFAULT_PROFILE.upgrades,
+        ...(r.upgrades || {}),
+      },
+    };
   }
   return result.data as PlayerProfile;
 }
@@ -126,6 +153,7 @@ function validatePerformanceWithZod(raw: unknown): LivePerformance {
       timeElapsedSeconds: 0,
       timingFeedback: null,
       timingFeedbackKey: 0,
+      cadenceConsistency: 100,
     };
   }
   return result.data as LivePerformance;
@@ -172,12 +200,60 @@ export const useGameStore = create<GameStoreState>((set, get) => {
     stageStartTime: null,
     currentCharIndex: 0,
     sessionKeyStats: {},
+    recentKeystrokeTimes: [],
 
     sendGameEvent: (event: GameMachineEvent) => {
       gameActor.send(event);
     },
 
     setGameState: (nextState: GameState) => {
+      if (nextState !== 'PLAYING') {
+        soundEngine.stopBeat();
+        soundEngine.setOverdrive(false);
+        const currentPerf = get().performance;
+        set({
+          performance: {
+            ...currentPerf,
+            hyperspaceActive: false,
+            multiplier: 1,
+            currentStreak: 0,
+            hyperspaceEnergy: 0,
+          },
+          activeLaneIndex: null,
+          lastPressedKey: null,
+        });
+      }
+      if (nextState === 'MENU') {
+        set({
+          performance: {
+            score: 0,
+            currentStreak: 0,
+            maxStreak: 0,
+            multiplier: 1,
+            hyperspaceActive: false,
+            hyperspaceEnergy: 0,
+            shieldsRemaining: get().profile.upgrades.deflectorShields,
+            correctKeystrokes: 0,
+            incorrectKeystrokes: 0,
+            totalKeystrokes: 0,
+            grossWpm: 0,
+            netWpm: 0,
+            accuracy: 100,
+            currentCharIndex: 0,
+            timeElapsedSeconds: 0,
+            timingFeedback: null,
+            timingFeedbackKey: 0,
+            cadenceConsistency: 100,
+          },
+          activeLaneIndex: null,
+          lastPressedKey: null,
+          fallingNotes: [],
+          errorIndices: new Set(),
+          victoryResult: null,
+          stageStartTime: null,
+          sessionKeyStats: {},
+        });
+      }
       const event = mapGameStateToMachineEvent(nextState);
       gameActor.send(event);
     },
@@ -189,6 +265,11 @@ export const useGameStore = create<GameStoreState>((set, get) => {
     startStage: (stage: Stage, customSpeed?: 'SLOW' | 'NORMAL' | 'FAST' | 'HYPER') => {
       soundEngine.init();
       const { profile } = get();
+      if (customSpeed && customSpeed !== profile.highwaySpeed) {
+        const speedProfile = validateProfileWithZod({ ...profile, highwaySpeed: customSpeed });
+        set({ profile: speedProfile });
+        saveProfile(speedProfile);
+      }
       if (profile.musicEnabled) {
         soundEngine.startBeat();
       }
@@ -237,12 +318,14 @@ export const useGameStore = create<GameStoreState>((set, get) => {
         timeElapsedSeconds: 0,
         timingFeedback: null,
         timingFeedbackKey: 0,
+        cadenceConsistency: 100,
       };
 
       set({
         currentStage: stage,
         errorIndices: new Set<number>(),
         sessionKeyStats: {},
+        recentKeystrokeTimes: [],
         stageStartTime: Date.now(),
         currentCharIndex: 0,
         fallingNotes: initialNotes,
@@ -353,6 +436,24 @@ export const useGameStore = create<GameStoreState>((set, get) => {
           return n;
         });
 
+        // Track inter-keystroke intervals for Mavis Beacon steady cadence scoring
+        const now = Date.now();
+        const updatedKeystrokeTimes = [...state.recentKeystrokeTimes, now].slice(-10);
+        let liveCadence = state.performance.cadenceConsistency ?? 100;
+        if (updatedKeystrokeTimes.length >= 4) {
+          const intervals: number[] = [];
+          for (let i = 1; i < updatedKeystrokeTimes.length; i++) {
+            intervals.push(updatedKeystrokeTimes[i] - updatedKeystrokeTimes[i - 1]);
+          }
+          const mean = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+          if (mean > 0) {
+            const variance = intervals.reduce((sum, v) => sum + Math.pow(v - mean, 2), 0) / intervals.length;
+            const stdDev = Math.sqrt(variance);
+            const cv = stdDev / mean;
+            liveCadence = Math.max(30, Math.min(100, Math.round(100 - cv * 65)));
+          }
+        }
+
         const patchPerf: LivePerformance = {
           ...state.performance,
           score: state.performance.score + earnedScore,
@@ -366,6 +467,7 @@ export const useGameStore = create<GameStoreState>((set, get) => {
           currentCharIndex: nextCharIndex,
           timingFeedback: rating,
           timingFeedbackKey: state.performance.timingFeedbackKey + 1,
+          cadenceConsistency: liveCadence,
         };
 
         set({
@@ -373,6 +475,7 @@ export const useGameStore = create<GameStoreState>((set, get) => {
           fallingNotes: nextFallingNotes,
           currentCharIndex: nextCharIndex,
           sessionKeyStats: updatedKeyStats,
+          recentKeystrokeTimes: updatedKeystrokeTimes,
         });
 
         // Stage completed check
@@ -384,6 +487,7 @@ export const useGameStore = create<GameStoreState>((set, get) => {
         updatedKeyStats[targetChar].misses += 1;
         const newErrorIndices = new Set(state.errorIndices);
         newErrorIndices.add(currentCharIdx);
+        const disruptedCadence = Math.max(25, (state.performance.cadenceConsistency ?? 100) - 15);
 
         if (state.performance.shieldsRemaining > 0) {
           soundEngine.playShieldAbsorb();
@@ -394,6 +498,7 @@ export const useGameStore = create<GameStoreState>((set, get) => {
             totalKeystrokes: state.performance.totalKeystrokes + 1,
             timingFeedback: 'GOOD',
             timingFeedbackKey: state.performance.timingFeedbackKey + 1,
+            cadenceConsistency: disruptedCadence,
           };
           set({
             errorIndices: newErrorIndices,
@@ -412,6 +517,7 @@ export const useGameStore = create<GameStoreState>((set, get) => {
             totalKeystrokes: state.performance.totalKeystrokes + 1,
             timingFeedback: 'MISS',
             timingFeedbackKey: state.performance.timingFeedbackKey + 1,
+            cadenceConsistency: disruptedCadence,
           };
           set({
             errorIndices: newErrorIndices,
@@ -434,7 +540,11 @@ export const useGameStore = create<GameStoreState>((set, get) => {
         }
 
         const slotY = Math.max(6, 84 - idx * 16);
-        const nextY = note.yPercent + (slotY - note.yPercent) * 0.18;
+        const speedFactor =
+          state.profile.highwaySpeed === 'SLOW' ? 0.12 :
+          state.profile.highwaySpeed === 'FAST' ? 0.25 :
+          state.profile.highwaySpeed === 'HYPER' ? 0.35 : 0.18;
+        const nextY = note.yPercent + (slotY - note.yPercent) * speedFactor;
         return {
           ...note,
           yPercent: nextY,
@@ -477,6 +587,7 @@ export const useGameStore = create<GameStoreState>((set, get) => {
       const state = get();
       gameActor.send({ type: 'STAGE_CLEAR' });
       soundEngine.stopBeat();
+      soundEngine.setOverdrive(false);
       soundEngine.playStageVictory();
 
       const elapsedSeconds = state.stageStartTime
@@ -534,7 +645,16 @@ export const useGameStore = create<GameStoreState>((set, get) => {
       const validatedProfile = validateProfileWithZod(updatedProfile);
       saveProfile(validatedProfile);
 
+      const peacefulPerf: LivePerformance = {
+        ...state.performance,
+        hyperspaceActive: false,
+        hyperspaceEnergy: 0,
+        multiplier: 1,
+        currentStreak: 0,
+      };
+
       set({
+        performance: validatePerformanceWithZod(peacefulPerf),
         profile: validatedProfile,
         victoryResult: {
           score: state.performance.score,
@@ -545,6 +665,7 @@ export const useGameStore = create<GameStoreState>((set, get) => {
           creditsEarned,
           isNewHighScore,
           newStarsAwarded,
+          cadenceConsistency: state.performance.cadenceConsistency ?? 100,
         },
       });
     },
@@ -559,6 +680,18 @@ export const useGameStore = create<GameStoreState>((set, get) => {
       }
     },
 
+    toggleGlobalMute: () => {
+      const { profile, gameState } = get();
+      const nextMuted = !profile.globalMuted;
+      const updated = validateProfileWithZod({ ...profile, globalMuted: nextMuted });
+      set({ profile: updated });
+      saveProfile(updated);
+      soundEngine.setGlobalMute(nextMuted);
+      if (!nextMuted && profile.musicEnabled && (profile.musicVolume ?? 0.4) > 0 && gameState === 'PLAYING') {
+        soundEngine.startBeat();
+      }
+    },
+
     toggleSound: () => {
       const { profile } = get();
       const next = !profile.soundEnabled;
@@ -569,12 +702,52 @@ export const useGameStore = create<GameStoreState>((set, get) => {
     },
 
     toggleMusic: () => {
-      const { profile } = get();
+      const { profile, gameState } = get();
       const next = !profile.musicEnabled;
       const updated = validateProfileWithZod({ ...profile, musicEnabled: next });
       set({ profile: updated });
       saveProfile(updated);
       soundEngine.setMusicEnabled(next);
+      if (next && !profile.globalMuted && (profile.musicVolume ?? 0.4) > 0 && gameState === 'PLAYING') {
+        soundEngine.startBeat();
+      } else if (!next) {
+        soundEngine.stopBeat();
+      }
+    },
+
+    setSoundVolume: (vol: number) => {
+      const { profile } = get();
+      const clamped = Math.max(0, Math.min(1, vol));
+      const enabled = clamped > 0;
+      const updated = validateProfileWithZod({ ...profile, soundVolume: clamped, soundEnabled: enabled });
+      set({ profile: updated });
+      saveProfile(updated);
+      soundEngine.setSoundEnabled(enabled);
+      soundEngine.setSoundVolume(clamped);
+    },
+
+    setMusicVolume: (vol: number) => {
+      const { profile, gameState } = get();
+      const clamped = Math.max(0, Math.min(1, vol));
+      const enabled = clamped > 0;
+      const updated = validateProfileWithZod({ ...profile, musicVolume: clamped, musicEnabled: enabled });
+      set({ profile: updated });
+      saveProfile(updated);
+      soundEngine.setMusicEnabled(enabled);
+      soundEngine.setMusicVolume(clamped);
+      if (enabled && !profile.globalMuted && gameState === 'PLAYING') {
+        soundEngine.startBeat();
+      } else if (!enabled) {
+        soundEngine.stopBeat();
+      }
+    },
+
+    setBeatTheme: (theme: BeatTheme) => {
+      const { profile } = get();
+      const updated = validateProfileWithZod({ ...profile, beatTheme: theme });
+      set({ profile: updated });
+      saveProfile(updated);
+      soundEngine.setBeatTheme(theme);
     },
 
     cycleBeatTheme: () => {
@@ -588,6 +761,13 @@ export const useGameStore = create<GameStoreState>((set, get) => {
     toggleKeyboard: () => {
       const { profile } = get();
       const updated = validateProfileWithZod({ ...profile, keyboardVisible: !profile.keyboardVisible });
+      set({ profile: updated });
+      saveProfile(updated);
+    },
+
+    toggleHands: () => {
+      const { profile } = get();
+      const updated = validateProfileWithZod({ ...profile, handsVisible: !profile.handsVisible });
       set({ profile: updated });
       saveProfile(updated);
     },
@@ -714,8 +894,28 @@ export const useGameStore = create<GameStoreState>((set, get) => {
       }
     },
 
+    wipeCurriculumAchievements: () => {
+      const { profile } = get();
+      const updated: PlayerProfile = {
+        ...profile,
+        totalStars: 0,
+        stagesProgress: {},
+      };
+      const validated = validateProfileWithZod(updated);
+      set({
+        profile: validated,
+        currentStage: CURRICULUM_SECTORS[0].stages[0],
+        victoryResult: null,
+      });
+      saveProfile(validated);
+    },
+
     resetProgress: () => {
-      set({ profile: DEFAULT_PROFILE });
+      set({
+        profile: DEFAULT_PROFILE,
+        currentStage: CURRICULUM_SECTORS[0].stages[0],
+        victoryResult: null,
+      });
       saveProfile(DEFAULT_PROFILE);
     },
   };

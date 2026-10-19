@@ -1,36 +1,19 @@
-import { Volume2, VolumeX, Shield, Zap, Pause, Music, Radio } from 'lucide-react';
-import { LivePerformance, BeatTheme } from '../types/game';
+import React from 'react';
+import { Shield, Zap, Pause } from 'lucide-react';
+import { LivePerformance } from '../types/game';
 
 interface HUDProps {
   performance: LivePerformance;
-  soundEnabled: boolean;
-  onToggleSound: () => void;
   onPause: () => void;
   onToggleKeyboard: () => void;
   keyboardVisible: boolean;
-  musicEnabled: boolean;
-  onToggleMusic: () => void;
-  beatTheme: BeatTheme;
-  onCycleBeatTheme: () => void;
 }
-
-const BEAT_LABELS: Record<BeatTheme, { name: string; bpm: number }> = {
-  NEON_SYNTHWAVE: { name: 'Synthwave', bpm: 106 },
-  CYBER_PULSE: { name: 'Cyber Pulse', bpm: 122 },
-  COSMIC_LOFI: { name: 'Cosmic Lo-Fi', bpm: 84 },
-};
 
 export const HUD: React.FC<HUDProps> = ({
   performance,
-  soundEnabled,
-  onToggleSound,
   onPause,
   onToggleKeyboard,
   keyboardVisible,
-  musicEnabled,
-  onToggleMusic,
-  beatTheme,
-  onCycleBeatTheme,
 }) => {
   const {
     score,
@@ -116,6 +99,37 @@ export const HUD: React.FC<HUDProps> = ({
           </div>
         </div>
 
+        {/* Mavis Beacon Cadence & Rhythm Gauge */}
+        <div className="hidden md:flex flex-col items-center min-w-[68px]">
+          <span className="block text-[9px] uppercase font-mono tracking-wider text-slate-500 leading-none mb-0.5">Rhythm</span>
+          <div className="flex items-center gap-1.5 mt-0.5">
+            <span
+              className={`w-2 h-2 rounded-full ${
+                (performance.cadenceConsistency ?? 100) >= 85
+                  ? 'bg-emerald-400 shadow-[0_0_8px_#34d399] animate-pulse'
+                  : (performance.cadenceConsistency ?? 100) >= 70
+                  ? 'bg-cyan-400 shadow-[0_0_8px_#38bdf8]'
+                  : 'bg-amber-400'
+              }`}
+            />
+            <span
+              className={`text-xs font-mono font-bold leading-none ${
+                (performance.cadenceConsistency ?? 100) >= 85
+                  ? 'text-emerald-300'
+                  : (performance.cadenceConsistency ?? 100) >= 70
+                  ? 'text-cyan-300'
+                  : 'text-amber-300'
+              }`}
+            >
+              {(performance.cadenceConsistency ?? 100) >= 85
+                ? 'Steady'
+                : (performance.cadenceConsistency ?? 100) >= 70
+                ? 'Paced'
+                : 'Uneven'}
+            </span>
+          </div>
+        </div>
+
         {/* Shield Status */}
         <div className="w-12 h-6 flex items-center justify-center shrink-0">
           {shieldsRemaining > 0 ? (
@@ -129,38 +143,11 @@ export const HUD: React.FC<HUDProps> = ({
         </div>
       </div>
 
-      {/* Right: Quick Action Controls */}
-      <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-        {/* Procedural Beat Controls */}
-        <button
-          onClick={onCycleBeatTheme}
-          className={`flex items-center gap-1 px-2 py-1 text-[11px] font-mono rounded-md border transition-colors whitespace-nowrap ${
-            musicEnabled
-              ? 'border-fuchsia-500/50 bg-fuchsia-950/40 text-fuchsia-300 shadow-[0_0_8px_rgba(217,70,239,0.3)]'
-              : 'border-slate-800 bg-slate-950 text-slate-500'
-          }`}
-          title="Click to cycle cosmic beat style"
-        >
-          <Radio className="w-3 h-3 text-fuchsia-400 shrink-0" />
-          <span className="hidden md:inline font-bold">Beat:</span>
-          <span>{BEAT_LABELS[beatTheme]?.name || 'Beat'} ({BEAT_LABELS[beatTheme]?.bpm} BPM)</span>
-        </button>
-
-        <button
-          onClick={onToggleMusic}
-          className={`p-1 rounded-md border transition-colors ${
-            musicEnabled
-              ? 'border-fuchsia-600 bg-fuchsia-950/50 text-fuchsia-300'
-              : 'border-slate-800 bg-slate-950 text-slate-500 hover:text-slate-300'
-          }`}
-          title={musicEnabled ? 'Mute Background Beats' : 'Play Background Beats'}
-        >
-          <Music className="w-4 h-4" />
-        </button>
-
+      {/* Right: Flight Deck Navigation Controls */}
+      <div className="flex items-center gap-2 shrink-0">
         <button
           onClick={onToggleKeyboard}
-          className={`px-2 py-1 text-xs font-medium rounded-md border transition-colors whitespace-nowrap ${
+          className={`px-2.5 py-1 text-xs font-medium rounded-md border transition-colors whitespace-nowrap cursor-pointer ${
             keyboardVisible
               ? 'border-cyan-500/50 bg-cyan-950/40 text-cyan-300'
               : 'border-slate-800 bg-slate-950 text-slate-400 hover:text-slate-200'
@@ -171,16 +158,8 @@ export const HUD: React.FC<HUDProps> = ({
         </button>
 
         <button
-          onClick={onToggleSound}
-          className="p-1 rounded-md border border-slate-800 bg-slate-950 text-slate-400 hover:text-slate-200 hover:border-slate-700 transition-colors"
-          title={soundEnabled ? 'Mute Keystroke SFX' : 'Unmute Keystroke SFX'}
-        >
-          {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4 text-rose-400" />}
-        </button>
-
-        <button
           onClick={onPause}
-          className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md border border-slate-800 bg-slate-950 text-slate-300 hover:bg-slate-800 transition-colors whitespace-nowrap"
+          className="flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-md border border-slate-800 bg-slate-950 text-slate-300 hover:bg-slate-800 transition-colors whitespace-nowrap cursor-pointer"
         >
           <Pause className="w-3.5 h-3.5" />
           <span>Pause</span>

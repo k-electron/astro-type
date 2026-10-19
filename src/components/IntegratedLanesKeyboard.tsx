@@ -1,8 +1,8 @@
-import React, { useEffect, useRef, useMemo } from 'react';
-import { Application, Container, Graphics, Text, TextStyle } from 'pixi.js';
+import React, { useEffect, useRef, useMemo, useState, useCallback } from 'react';
 import { FallingNote, TrailColorTheme, FingerZone } from '../types/game';
 import { FINGER_LANES, KEY_FINGER_MAP } from '../data/curriculum';
-import { Sparkles, Flame } from 'lucide-react';
+import { Sparkles, Flame, Award, Hand } from 'lucide-react';
+import { SmallHandVisualizer } from './SmallHandVisualizer';
 
 interface IntegratedLanesKeyboardProps {
   notes: FallingNote[];
@@ -15,8 +15,111 @@ interface IntegratedLanesKeyboardProps {
   timingFeedbackKey: number;
   trailTheme: TrailColorTheme;
   activeChar: string | null;
+  previousChar?: string | null;
+  nextChar?: string | null;
   lastPressedKey: string | null;
+  keyboardVisible?: boolean;
+  handsVisible?: boolean;
+  onToggleHands?: () => void;
+  initialHandEnabled?: boolean;
 }
+
+interface KeySpec {
+  key: string;
+  display: string;
+  subDisplay?: string;
+  finger: FingerZone;
+  lane: number;
+  units: number; // Mechanical standard units (1u = 1.0)
+  isBump?: boolean;
+}
+
+// Mechanically balanced ANSI keyboard: EVERY row is exactly 15.0 units!
+const KEYBOARD_ROWS: KeySpec[][] = [
+  // Row 0: Numbers & Symbols (Total = 15.0 units)
+  [
+    { key: '`', display: '`', subDisplay: '~', finger: 'LEFT_PINKY', lane: 0, units: 1.0 },
+    { key: '1', display: '1', subDisplay: '!', finger: 'LEFT_PINKY', lane: 0, units: 1.0 },
+    { key: '2', display: '2', subDisplay: '@', finger: 'LEFT_RING', lane: 1, units: 1.0 },
+    { key: '3', display: '3', subDisplay: '#', finger: 'LEFT_MIDDLE', lane: 2, units: 1.0 },
+    { key: '4', display: '4', subDisplay: '$', finger: 'LEFT_INDEX', lane: 3, units: 1.0 },
+    { key: '5', display: '5', subDisplay: '%', finger: 'LEFT_INDEX', lane: 3, units: 1.0 },
+    { key: '6', display: '6', subDisplay: '^', finger: 'RIGHT_INDEX', lane: 5, units: 1.0 },
+    { key: '7', display: '7', subDisplay: '&', finger: 'RIGHT_INDEX', lane: 5, units: 1.0 },
+    { key: '8', display: '8', subDisplay: '*', finger: 'RIGHT_MIDDLE', lane: 6, units: 1.0 },
+    { key: '9', display: '9', subDisplay: '(', finger: 'RIGHT_RING', lane: 7, units: 1.0 },
+    { key: '0', display: '0', subDisplay: ')', finger: 'RIGHT_PINKY', lane: 8, units: 1.0 },
+    { key: '-', display: '-', subDisplay: '_', finger: 'RIGHT_PINKY', lane: 8, units: 1.0 },
+    { key: '=', display: '=', subDisplay: '+', finger: 'RIGHT_PINKY', lane: 8, units: 1.0 },
+    { key: 'Backspace', display: '⌫ BACK', finger: 'RIGHT_PINKY', lane: 8, units: 2.0 },
+  ],
+  // Row 1: Top Row (Total = 15.0 units)
+  [
+    { key: 'Tab', display: 'TAB ⇥', finger: 'LEFT_PINKY', lane: 0, units: 1.5 },
+    { key: 'q', display: 'Q', finger: 'LEFT_PINKY', lane: 0, units: 1.0 },
+    { key: 'w', display: 'W', finger: 'LEFT_RING', lane: 1, units: 1.0 },
+    { key: 'e', display: 'E', finger: 'LEFT_MIDDLE', lane: 2, units: 1.0 },
+    { key: 'r', display: 'R', finger: 'LEFT_INDEX', lane: 3, units: 1.0 },
+    { key: 't', display: 'T', finger: 'LEFT_INDEX', lane: 3, units: 1.0 },
+    { key: 'y', display: 'Y', finger: 'RIGHT_INDEX', lane: 5, units: 1.0 },
+    { key: 'u', display: 'U', finger: 'RIGHT_INDEX', lane: 5, units: 1.0 },
+    { key: 'i', display: 'I', finger: 'RIGHT_MIDDLE', lane: 6, units: 1.0 },
+    { key: 'o', display: 'O', finger: 'RIGHT_RING', lane: 7, units: 1.0 },
+    { key: 'p', display: 'P', finger: 'RIGHT_PINKY', lane: 8, units: 1.0 },
+    { key: '[', display: '[', subDisplay: '{', finger: 'RIGHT_PINKY', lane: 8, units: 1.0 },
+    { key: ']', display: ']', subDisplay: '}', finger: 'RIGHT_PINKY', lane: 8, units: 1.0 },
+    { key: '\\', display: '\\', subDisplay: '|', finger: 'RIGHT_PINKY', lane: 8, units: 1.5 },
+  ],
+  // Row 2: Home Row (Total = 15.0 units)
+  [
+    { key: 'CapsLock', display: 'CAPS ⇪', finger: 'LEFT_PINKY', lane: 0, units: 1.75 },
+    { key: 'a', display: 'A', finger: 'LEFT_PINKY', lane: 0, units: 1.0 },
+    { key: 's', display: 'S', finger: 'LEFT_RING', lane: 1, units: 1.0 },
+    { key: 'd', display: 'D', finger: 'LEFT_MIDDLE', lane: 2, units: 1.0 },
+    { key: 'f', display: 'F', finger: 'LEFT_INDEX', lane: 3, units: 1.0, isBump: true },
+    { key: 'g', display: 'G', finger: 'LEFT_INDEX', lane: 3, units: 1.0 },
+    { key: 'h', display: 'H', finger: 'RIGHT_INDEX', lane: 5, units: 1.0 },
+    { key: 'j', display: 'J', finger: 'RIGHT_INDEX', lane: 5, units: 1.0, isBump: true },
+    { key: 'k', display: 'K', finger: 'RIGHT_MIDDLE', lane: 6, units: 1.0 },
+    { key: 'l', display: 'L', finger: 'RIGHT_RING', lane: 7, units: 1.0 },
+    { key: ';', display: ';', subDisplay: ':', finger: 'RIGHT_PINKY', lane: 8, units: 1.0 },
+    { key: "'", display: "'", subDisplay: '"', finger: 'RIGHT_PINKY', lane: 8, units: 1.0 },
+    { key: 'Enter', display: 'ENTER ⏎', finger: 'RIGHT_PINKY', lane: 8, units: 2.25 },
+  ],
+  // Row 3: Bottom Row (Total = 15.0 units)
+  [
+    { key: 'ShiftLeft', display: '⇧ SHIFT', finger: 'LEFT_PINKY', lane: 0, units: 2.25 },
+    { key: 'z', display: 'Z', finger: 'LEFT_PINKY', lane: 0, units: 1.0 },
+    { key: 'x', display: 'X', finger: 'LEFT_RING', lane: 1, units: 1.0 },
+    { key: 'c', display: 'C', finger: 'LEFT_MIDDLE', lane: 2, units: 1.0 },
+    { key: 'v', display: 'V', finger: 'LEFT_INDEX', lane: 3, units: 1.0 },
+    { key: 'b', display: 'B', finger: 'LEFT_INDEX', lane: 3, units: 1.0 },
+    { key: 'n', display: 'N', finger: 'RIGHT_INDEX', lane: 5, units: 1.0 },
+    { key: 'm', display: 'M', finger: 'RIGHT_INDEX', lane: 5, units: 1.0 },
+    { key: ',', display: ',', subDisplay: '<', finger: 'RIGHT_MIDDLE', lane: 6, units: 1.0 },
+    { key: '.', display: '.', subDisplay: '>', finger: 'RIGHT_RING', lane: 7, units: 1.0 },
+    { key: '/', display: '/', subDisplay: '?', finger: 'RIGHT_PINKY', lane: 8, units: 1.0 },
+    { key: 'ShiftRight', display: 'SHIFT ⇧', finger: 'RIGHT_PINKY', lane: 8, units: 2.75 },
+  ],
+  // Row 4: Space Bar Row (Total = 15.0 units)
+  [
+    { key: 'ControlLeft', display: 'CTRL', finger: 'LEFT_PINKY', lane: 0, units: 1.5 },
+    { key: 'AltLeft', display: 'ALT', finger: 'LEFT_RING', lane: 1, units: 1.25 },
+    { key: 'MetaLeft', display: 'CMD', finger: 'THUMB', lane: 4, units: 1.25 },
+    { key: ' ', display: 'SPACE', finger: 'THUMB', lane: 4, units: 6.25 },
+    { key: 'MetaRight', display: 'CMD', finger: 'THUMB', lane: 4, units: 1.25 },
+    { key: 'AltRight', display: 'ALT', finger: 'RIGHT_RING', lane: 7, units: 1.25 },
+    { key: 'ControlRight', display: 'CTRL', finger: 'RIGHT_PINKY', lane: 8, units: 2.25 },
+  ],
+];
+
+const THEME_ACCENTS: Record<TrailColorTheme, string> = {
+  CYAN: '#06b6d4',
+  AMBER: '#f59e0b',
+  EMERALD: '#10b981',
+  VIOLET: '#8b5cf6',
+  SUPERNOVA: '#f43f5e',
+};
 
 interface Particle {
   x: number;
@@ -33,20 +136,10 @@ interface Particle {
 interface Shockwave {
   x: number;
   y: number;
-  rx: number;
-  ry: number;
-  maxRx: number;
-  maxRy: number;
+  radius: number;
+  maxRadius: number;
   color: string;
   alpha: number;
-}
-
-interface Star {
-  x: number;
-  y: number;
-  z: number;
-  speed: number;
-  size: number;
 }
 
 interface FeedbackPopup {
@@ -55,104 +148,11 @@ interface FeedbackPopup {
   x: number;
   y: number;
   vy: number;
-  scale: number;
   alpha: number;
+  scale: number;
   life: number;
   maxLife: number;
 }
-
-interface KeyConfig {
-  key: string;
-  display: string;
-  finger: FingerZone;
-  lane: number;
-  width?: string;
-  isBump?: boolean;
-}
-
-const KEYBOARD_GRID: KeyConfig[][] = [
-  // Row 0: Numbers
-  [
-    { key: '`', display: '~ `', finger: 'LEFT_PINKY', lane: 0 },
-    { key: '1', display: '1', finger: 'LEFT_PINKY', lane: 0 },
-    { key: '2', display: '2', finger: 'LEFT_RING', lane: 1 },
-    { key: '3', display: '3', finger: 'LEFT_MIDDLE', lane: 2 },
-    { key: '4', display: '4', finger: 'LEFT_INDEX', lane: 3 },
-    { key: '5', display: '5', finger: 'LEFT_INDEX', lane: 3 },
-    { key: '6', display: '6', finger: 'RIGHT_INDEX', lane: 5 },
-    { key: '7', display: '7', finger: 'RIGHT_INDEX', lane: 5 },
-    { key: '8', display: '8', finger: 'RIGHT_MIDDLE', lane: 6 },
-    { key: '9', display: '9', finger: 'RIGHT_RING', lane: 7 },
-    { key: '0', display: '0', finger: 'RIGHT_PINKY', lane: 8 },
-    { key: '-', display: '_ -', finger: 'RIGHT_PINKY', lane: 8 },
-    { key: '=', display: '+ =', finger: 'RIGHT_PINKY', lane: 8 },
-    { key: 'Backspace', display: '⌫', finger: 'RIGHT_PINKY', lane: 8, width: 'w-10 sm:w-14' },
-  ],
-  // Row 1: Top Row
-  [
-    { key: 'Tab', display: 'Tab', finger: 'LEFT_PINKY', lane: 0, width: 'w-10 sm:w-12' },
-    { key: 'q', display: 'Q', finger: 'LEFT_PINKY', lane: 0 },
-    { key: 'w', display: 'W', finger: 'LEFT_RING', lane: 1 },
-    { key: 'e', display: 'E', finger: 'LEFT_MIDDLE', lane: 2 },
-    { key: 'r', display: 'R', finger: 'LEFT_INDEX', lane: 3 },
-    { key: 't', display: 'T', finger: 'LEFT_INDEX', lane: 3 },
-    { key: 'y', display: 'Y', finger: 'RIGHT_INDEX', lane: 5 },
-    { key: 'u', display: 'U', finger: 'RIGHT_INDEX', lane: 5 },
-    { key: 'i', display: 'I', finger: 'RIGHT_MIDDLE', lane: 6 },
-    { key: 'o', display: 'O', finger: 'RIGHT_RING', lane: 7 },
-    { key: 'p', display: 'P', finger: 'RIGHT_PINKY', lane: 8 },
-    { key: '[', display: '{ [', finger: 'RIGHT_PINKY', lane: 8 },
-    { key: ']', display: '} ]', finger: 'RIGHT_PINKY', lane: 8 },
-    { key: '\\', display: '| \\', finger: 'RIGHT_PINKY', lane: 8, width: 'w-8 sm:w-10' },
-  ],
-  // Row 2: Home Row
-  [
-    { key: 'CapsLock', display: 'Caps', finger: 'LEFT_PINKY', lane: 0, width: 'w-12 sm:w-14' },
-    { key: 'a', display: 'A', finger: 'LEFT_PINKY', lane: 0 },
-    { key: 's', display: 'S', finger: 'LEFT_RING', lane: 1 },
-    { key: 'd', display: 'D', finger: 'LEFT_MIDDLE', lane: 2 },
-    { key: 'f', display: 'F', finger: 'LEFT_INDEX', lane: 3, isBump: true },
-    { key: 'g', display: 'G', finger: 'LEFT_INDEX', lane: 3 },
-    { key: 'h', display: 'H', finger: 'RIGHT_INDEX', lane: 5 },
-    { key: 'j', display: 'J', finger: 'RIGHT_INDEX', lane: 5, isBump: true },
-    { key: 'k', display: 'K', finger: 'RIGHT_MIDDLE', lane: 6 },
-    { key: 'l', display: 'L', finger: 'RIGHT_RING', lane: 7 },
-    { key: ';', display: ': ;', finger: 'RIGHT_PINKY', lane: 8 },
-    { key: "'", display: '" \'', finger: 'RIGHT_PINKY', lane: 8 },
-    { key: 'Enter', display: 'Enter', finger: 'RIGHT_PINKY', lane: 8, width: 'w-14 sm:w-16' },
-  ],
-  // Row 3: Bottom Row
-  [
-    { key: 'ShiftLeft', display: 'Shift', finger: 'LEFT_PINKY', lane: 0, width: 'w-14 sm:w-16' },
-    { key: 'z', display: 'Z', finger: 'LEFT_PINKY', lane: 0 },
-    { key: 'x', display: 'X', finger: 'LEFT_RING', lane: 1 },
-    { key: 'c', display: 'C', finger: 'LEFT_MIDDLE', lane: 2 },
-    { key: 'v', display: 'V', finger: 'LEFT_INDEX', lane: 3 },
-    { key: 'b', display: 'B', finger: 'LEFT_INDEX', lane: 3 },
-    { key: 'n', display: 'N', finger: 'RIGHT_INDEX', lane: 5 },
-    { key: 'm', display: 'M', finger: 'RIGHT_INDEX', lane: 5 },
-    { key: ',', display: '< ,', finger: 'RIGHT_MIDDLE', lane: 6 },
-    { key: '.', display: '> .', finger: 'RIGHT_RING', lane: 7 },
-    { key: '/', display: '? /', finger: 'RIGHT_PINKY', lane: 8 },
-    { key: 'ShiftRight', display: 'Shift', finger: 'RIGHT_PINKY', lane: 8, width: 'w-16 sm:w-20' },
-  ],
-  // Row 4: Space Bar Row
-  [
-    { key: 'ControlLeft', display: 'Ctrl', finger: 'LEFT_PINKY', lane: 0, width: 'w-10 sm:w-12' },
-    { key: 'AltLeft', display: 'Alt', finger: 'LEFT_RING', lane: 1, width: 'w-10 sm:w-12' },
-    { key: ' ', display: 'SPACEBAR', finger: 'THUMB', lane: 4, width: 'w-48 sm:w-72' },
-    { key: 'AltRight', display: 'Alt', finger: 'RIGHT_RING', lane: 7, width: 'w-10 sm:w-12' },
-    { key: 'ControlRight', display: 'Ctrl', finger: 'RIGHT_PINKY', lane: 8, width: 'w-10 sm:w-12' },
-  ],
-];
-
-const THEME_ACCENTS: Record<TrailColorTheme, string> = {
-  CYAN: '#06b6d4',
-  AMBER: '#f59e0b',
-  EMERALD: '#10b981',
-  VIOLET: '#8b5cf6',
-  SUPERNOVA: '#f43f5e',
-};
 
 export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = ({
   notes,
@@ -165,107 +165,23 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
   timingFeedbackKey,
   trailTheme,
   activeChar,
+  previousChar,
+  nextChar,
   lastPressedKey,
+  keyboardVisible = true,
+  handsVisible: controlledHandsVisible,
+  onToggleHands,
+  initialHandEnabled = true,
 }) => {
-  const stageRef = useRef<HTMLDivElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const appRef = useRef<Application | null>(null);
+  const keyboardDeckRef = useRef<HTMLDivElement | null>(null);
   const keyRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
-  // Helper to measure exact layout of a key on the visual keyboard
-  const getKeyLayout = (char: string, screenWidth: number, screenHeight: number, laneIndex: number) => {
-    const stage = stageRef.current;
-    const lookupKey = char === ' ' ? ' ' : char.toLowerCase();
-    const keyEl = keyRefs.current[lookupKey];
-
-    if (stage && keyEl) {
-      const sRect = stage.getBoundingClientRect();
-      const kRect = keyEl.getBoundingClientRect();
-      if (kRect.width > 0 && kRect.height > 0) {
-        return {
-          x: kRect.left - sRect.left + kRect.width / 2,
-          y: kRect.top - sRect.top + kRect.height / 2,
-          width: kRect.width,
-          height: kRect.height,
-          top: kRect.top - sRect.top,
-        };
-      }
-    }
-
-    // Proportional fallbacks if element not yet measured
-    const bottomWidth = screenWidth * 0.92;
-    const bottomStartX = (screenWidth - bottomWidth) / 2;
-    const bottomLaneWidth = bottomWidth / 9;
-    return {
-      x: bottomStartX + (laneIndex + 0.5) * bottomLaneWidth,
-      y: screenHeight - 60,
-      width: char === ' ' ? 180 : 36,
-      height: 34,
-      top: screenHeight - 140,
-    };
-  };
-
-  // Get top Y coordinate of the visual keyboard
-  const getKeyboardTopY = (screenHeight: number): number => {
-    const stage = stageRef.current;
-    const sampleKey = keyRefs.current['`'] || keyRefs.current['1'] || keyRefs.current['q'];
-    if (stage && sampleKey) {
-      const sRect = stage.getBoundingClientRect();
-      const kRect = sampleKey.getBoundingClientRect();
-      if (kRect.top > 0) {
-        return kRect.top - sRect.top;
-      }
-    }
-    return screenHeight - 160;
-  };
-
-  // State ref for high-frequency 60+ FPS Pixi ticker
-  const stateRef = useRef({
-    notes,
-    hyperspaceActive,
-    multiplier,
-    currentStreak,
-    activeLaneIndex,
-    targetLaneIndex,
-    timingFeedback,
-    timingFeedbackKey,
-    trailTheme,
-    activeChar,
-  });
-
-  useEffect(() => {
-    stateRef.current = {
-      notes,
-      hyperspaceActive,
-      multiplier,
-      currentStreak,
-      activeLaneIndex,
-      targetLaneIndex,
-      timingFeedback,
-      timingFeedbackKey,
-      trailTheme,
-      activeChar,
-    };
-  }, [
-    notes,
-    hyperspaceActive,
-    multiplier,
-    currentStreak,
-    activeLaneIndex,
-    targetLaneIndex,
-    timingFeedback,
-    timingFeedbackKey,
-    trailTheme,
-    activeChar,
-  ]);
-
-  // Particle & FX systems
-  const particlesRef = useRef<Particle[]>([]);
-  const shockwavesRef = useRef<Shockwave[]>([]);
-  const starsRef = useRef<Star[]>([]);
-  const feedbacksRef = useRef<FeedbackPopup[]>([]);
-  const laneFlashesRef = useRef<number[]>(new Array(9).fill(0));
-  const lastFeedbackKeyRef = useRef<number>(timingFeedbackKey);
+  // Hand visualizer guides mode (controlled or fallback local state)
+  const [localHandsVisible, setLocalHandsVisible] = useState<boolean>(initialHandEnabled);
+  const handsVisible = controlledHandsVisible !== undefined ? controlledHandsVisible : localHandsVisible;
+  const toggleHandsGuide = onToggleHands || (() => setLocalHandsVisible((prev) => !prev));
 
   // Active target character info
   const activeCharInfo = useMemo(() => {
@@ -276,566 +192,650 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
   const targetKeyLower = activeChar ? (activeChar === ' ' ? ' ' : activeChar.toLowerCase()) : null;
   const isShiftNeeded = activeCharInfo?.shiftRequired || false;
   const recommendedShift = activeCharInfo?.recommendedShiftHand || null;
+  const isSpaceActive = activeChar === ' ';
 
-  // Spawning hit particles & shockwaves directly on the visual keyboard key
-  useEffect(() => {
-    if (timingFeedbackKey !== lastFeedbackKeyRef.current) {
-      lastFeedbackKeyRef.current = timingFeedbackKey;
+  // Main key target finger, hand, and key display
+  const mainKeyFinger: FingerZone | null = activeCharInfo?.finger || null;
+  const mainKeyHand: 'left' | 'right' | 'thumb' | null = activeCharInfo?.hand || null;
+  const targetKeyDisplay = activeChar ? (activeChar === ' ' ? '␣' : activeChar) : null;
 
-      if (activeLaneIndex !== null && activeLaneIndex >= 0 && activeLaneIndex < 9) {
-        laneFlashesRef.current[activeLaneIndex] = 1.0;
-      }
-
-      if (timingFeedback && appRef.current) {
-        const app = appRef.current;
-        const width = app.screen.width;
-        const height = app.screen.height;
-
-        const keyLayout = activeChar
-          ? getKeyLayout(activeChar, width, height, activeLaneIndex ?? 4)
-          : { x: width / 2, y: height - 60, width: 36, height: 34, top: height - 80 };
-
-        const laneColor =
-          activeLaneIndex !== null && FINGER_LANES[activeLaneIndex]
-            ? FINGER_LANES[activeLaneIndex].color
-            : '#06b6d4';
-
-        const hitColor =
-          timingFeedback === 'PERFECT'
-            ? '#38bdf8'
-            : timingFeedback === 'GREAT'
-            ? '#4ade80'
-            : timingFeedback === 'GOOD'
-            ? '#facc15'
-            : '#f43f5e';
-
-        // 1. Spawning Spark Particles right on the key cap
-        const particleCount = timingFeedback === 'PERFECT' ? 24 : timingFeedback === 'GREAT' ? 16 : 10;
-        for (let i = 0; i < particleCount; i++) {
-          const angle = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI * 1.1;
-          const speed = 2.0 + Math.random() * 5.0;
-          particlesRef.current.push({
-            x: keyLayout.x,
-            y: keyLayout.y,
-            vx: Math.cos(angle) * speed,
-            vy: Math.sin(angle) * speed,
-            color: i % 2 === 0 ? hitColor : laneColor,
-            size: 2.5 + Math.random() * 3.5,
-            alpha: 1.0,
-            life: 0,
-            maxLife: 20 + Math.random() * 18,
-          });
-        }
-
-        // 2. Shockwave expanding right off the key cap
-        shockwavesRef.current.push({
-          x: keyLayout.x,
-          y: keyLayout.y,
-          rx: keyLayout.width * 0.4,
-          ry: keyLayout.height * 0.4,
-          maxRx: keyLayout.width * 1.2,
-          maxRy: keyLayout.height * 0.9,
-          color: hitColor,
-          alpha: 1.0,
-        });
-
-        // 3. Floating Score / Rating Popup from the key cap
-        const textLabel =
-          timingFeedback === 'PERFECT'
-            ? '+100 PERFECT'
-            : timingFeedback === 'GREAT'
-            ? '+75 GREAT'
-            : timingFeedback === 'GOOD'
-            ? '+50 GOOD'
-            : 'MISS';
-
-        feedbacksRef.current.push({
-          text: textLabel,
-          color: hitColor,
-          x: keyLayout.x,
-          y: keyLayout.y - 18,
-          vy: -1.5,
-          scale: 1.1,
-          alpha: 1.0,
-          life: 0,
-          maxLife: 30,
-        });
+  // Smart ergonomic thumb allocation based on cognitive and motor load:
+  // If the preceding keystroke was struck with the LEFT hand -> Left hand muscles are contracted/loaded,
+  // so the RIGHT thumb is completely free with lesser cognitive load!
+  // If the preceding keystroke was struck with the RIGHT hand -> Left thumb is completely free with lesser cognitive load!
+  const smartThumbHand: 'left' | 'right' = useMemo(() => {
+    // 1. Evaluate preceding key in the typing stream
+    const prev = previousChar || (lastPressedKey && lastPressedKey.length === 1 ? lastPressedKey : null);
+    if (prev && prev !== ' ') {
+      const prevInfo = KEY_FINGER_MAP[prev] || KEY_FINGER_MAP[prev.toLowerCase()];
+      if (prevInfo) {
+        if (prevInfo.hand === 'left') return 'right';
+        if (prevInfo.hand === 'right') return 'left';
       }
     }
-  }, [timingFeedbackKey, timingFeedback, activeLaneIndex, activeChar]);
 
-  // PixiJS Setup & LifeCycle
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    const stageEl = stageRef.current;
-    if (!canvas || !stageEl) return;
-
-    let isDestroyed = false;
-    const app = new Application();
-
-    const initPixi = async () => {
-      const rect = stageEl.getBoundingClientRect();
-      const initialWidth = Math.max(300, Math.floor(rect.width || stageEl.clientWidth || 800));
-      const initialHeight = Math.max(300, Math.floor(rect.height || stageEl.clientHeight || 420));
-
-      await app.init({
-        canvas,
-        resizeTo: stageEl,
-        backgroundAlpha: 0, // Transparent overlay: keyboard and clean cosmic drop zone show through
-        antialias: true,
-        autoDensity: true,
-        resolution: Math.min(2, typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1),
-      });
-
-      if (isDestroyed) {
-        app.destroy(false, { children: true });
-        return;
+    // 2. If previous character was space or unavailable, evaluate upcoming next character
+    if (nextChar && nextChar !== ' ') {
+      const nextInfo = KEY_FINGER_MAP[nextChar] || KEY_FINGER_MAP[nextChar.toLowerCase()];
+      if (nextInfo) {
+        if (nextInfo.hand === 'left') return 'right';
+        if (nextInfo.hand === 'right') return 'left';
       }
+    }
 
-      appRef.current = app;
+    // Default touch typing anchor
+    return 'right';
+  }, [previousChar, nextChar, lastPressedKey]);
 
-      // Seed Starfield in upper drop zone
-      starsRef.current = [];
-      for (let i = 0; i < 60; i++) {
-        starsRef.current.push({
-          x: Math.random(),
-          y: Math.random() * 0.55,
-          z: 0.2 + Math.random() * 0.8,
-          speed: 0.0015 + Math.random() * 0.005,
-          size: 1 + Math.random() * 2,
-        });
+  // Modifier combo resolution (Shift, Ctrl, etc.)
+  const modifierHand: 'left' | 'right' | null = isShiftNeeded ? recommendedShift : null;
+  const modifierFinger: FingerZone | null = isShiftNeeded
+    ? recommendedShift === 'left'
+      ? 'LEFT_PINKY'
+      : 'RIGHT_PINKY'
+    : null;
+  const modifierLabel: string | null = isShiftNeeded ? 'SHIFT' : null;
+
+  // Track key positions and keyboard deck position in real-time
+  const [keyPositions, setKeyPositions] = useState<Record<string, { x: number; y: number; width: number; height: number }>>({});
+  const [keyboardTopY, setKeyboardTopY] = useState<number>(180);
+
+  const updateKeyPositions = useCallback(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const cRect = container.getBoundingClientRect();
+
+    // Measure keyboard deck top position
+    if (keyboardDeckRef.current) {
+      const deckRect = keyboardDeckRef.current.getBoundingClientRect();
+      setKeyboardTopY(deckRect.top - cRect.top);
+    }
+
+    const newPositions: Record<string, { x: number; y: number; width: number; height: number }> = {};
+    Object.entries(keyRefs.current).forEach(([k, el]) => {
+      if (el) {
+        const kRect = el.getBoundingClientRect();
+        if (kRect.width > 0) {
+          newPositions[k] = {
+            x: kRect.left - cRect.left + kRect.width / 2,
+            y: kRect.top - cRect.top + kRect.height / 2,
+            width: kRect.width,
+            height: kRect.height,
+          };
+        }
       }
+    });
 
-      // Root Layers
-      const stage = app.stage;
-      const bgGraphics = new Graphics();
-      const guideGraphics = new Graphics();
-      const notesGraphics = new Graphics();
-      const fxGraphics = new Graphics();
-
-      stage.addChild(bgGraphics);
-      stage.addChild(guideGraphics);
-      stage.addChild(notesGraphics);
-      stage.addChild(fxGraphics);
-
-      // Note text pool
-      const noteTextPool: Text[] = [];
-      const noteStyle = new TextStyle({
-        fontFamily: 'monospace',
-        fontSize: 13,
-        fontWeight: '900',
-        fill: '#ffffff',
-        align: 'center',
-      });
-
-      const noteTextContainer = new Container();
-      stage.addChild(noteTextContainer);
-
-      for (let i = 0; i < 16; i++) {
-        const t = new Text({ text: '', style: noteStyle });
-        t.anchor.set(0.5);
-        t.visible = false;
-        noteTextPool.push(t);
-        noteTextContainer.addChild(t);
-      }
-
-      // Floating Feedback Pool
-      const feedbackTextPool: Text[] = [];
-      const feedbackStyle = new TextStyle({
-        fontFamily: 'monospace',
-        fontSize: 12,
-        fontWeight: '900',
-        fill: '#ffffff',
-        align: 'center',
-        stroke: { color: '#030712', width: 2 },
-      });
-
-      const feedbackContainer = new Container();
-      stage.addChild(feedbackContainer);
-
-      for (let i = 0; i < 8; i++) {
-        const ft = new Text({ text: '', style: feedbackStyle });
-        ft.anchor.set(0.5);
-        ft.visible = false;
-        feedbackTextPool.push(ft);
-        feedbackContainer.addChild(ft);
-      }
-
-      // 60+ FPS Hardware-Accelerated Render Loop
-      app.ticker.add((ticker) => {
-        const width = app.screen.width;
-        const height = app.screen.height;
-        if (!width || !height || width < 10 || height < 10) return;
-        const delta = ticker.deltaTime;
-
-        const {
-          notes: currentNotes,
-          hyperspaceActive: isHyperspace,
-          multiplier: currentMultiplier,
-          activeLaneIndex: curActiveLane,
-          targetLaneIndex: curTargetLane,
-          trailTheme: curTheme,
-          activeChar: curActiveChar,
-        } = stateRef.current;
-
-        const themeColor = THEME_ACCENTS[curTheme] || '#06b6d4';
-        const warpSpeed = isHyperspace ? 4.0 : currentMultiplier > 1 ? 1.0 + (currentMultiplier - 1) * 0.3 : 1.0;
-
-        // Clear graphics
-        bgGraphics.clear();
-        guideGraphics.clear();
-        notesGraphics.clear();
-        fxGraphics.clear();
-
-        // Detect top row of keyboard
-        const keyboardTopY = getKeyboardTopY(height);
-        const topY = 16;
-
-        // 1. CLEAN COSMIC AMBIENCE in upper drop stage
-        const nebulaColor = isHyperspace ? '#ec4899' : themeColor;
-        bgGraphics.ellipse(width / 2, keyboardTopY * 0.35, width * 0.45, keyboardTopY * 0.3);
-        bgGraphics.fill({ color: nebulaColor, alpha: isHyperspace ? 0.12 : 0.05 });
-
-        // Stars falling straight down
-        starsRef.current.forEach((star) => {
-          star.y += star.speed * warpSpeed * delta;
-          if (star.y * height > keyboardTopY - 10) {
-            star.y = 0;
-            star.x = Math.random();
-          }
-          const sx = star.x * width;
-          const sy = star.y * height;
-          const starAlpha = star.z * (isHyperspace ? 0.9 : 0.55);
-
-          if (isHyperspace || currentMultiplier >= 4) {
-            const tailLen = star.speed * 400 * warpSpeed;
-            bgGraphics.moveTo(sx, sy);
-            bgGraphics.lineTo(sx, sy - tailLen);
-            bgGraphics.stroke({ width: star.size * 1.2, color: '#bae6fd', alpha: starAlpha });
-          } else {
-            bgGraphics.rect(sx, sy, star.size, star.size);
-            bgGraphics.fill({ color: '#ffffff', alpha: starAlpha });
-          }
-        });
-
-        // 2. STRAIGHT VERTICAL DROP GUIDE: Exactly aligned with the active key (NO fake perspective lanes)
-        if (curActiveChar) {
-          const targetLayout = getKeyLayout(curActiveChar, width, height, curTargetLane ?? 4);
-          const laneColor = (curTargetLane !== null && FINGER_LANES[curTargetLane]?.color) || themeColor;
-
-          const colW = Math.max(26, targetLayout.width);
-          const colX = targetLayout.x - colW / 2;
-          const beamH = Math.max(10, targetLayout.top - topY);
-
-          // Subtle vertical translucent guide channel
-          guideGraphics.rect(colX, topY, colW, beamH);
-          guideGraphics.fill({ color: laneColor, alpha: 0.06 });
-
-          // Subtle vertical guide lines exactly on the edges of the key
-          guideGraphics.moveTo(colX, topY);
-          guideGraphics.lineTo(colX, targetLayout.top);
-          guideGraphics.stroke({ width: 1, color: laneColor, alpha: 0.22 });
-
-          guideGraphics.moveTo(colX + colW, topY);
-          guideGraphics.lineTo(colX + colW, targetLayout.top);
-          guideGraphics.stroke({ width: 1, color: laneColor, alpha: 0.22 });
-        }
-
-        // Active Lane Flash Beam on Keystroke (Straight Vertical)
-        if (curActiveLane !== null && curActiveLane >= 0 && curActiveLane < 9) {
-          const flash = laneFlashesRef.current[curActiveLane];
-          if (flash > 0 && curActiveChar) {
-            const layout = getKeyLayout(curActiveChar, width, height, curActiveLane);
-            const flashColor = FINGER_LANES[curActiveLane]?.color || themeColor;
-
-            const colW = Math.max(26, layout.width);
-            const colX = layout.x - colW / 2;
-            const beamH = Math.max(10, layout.top - topY);
-
-            guideGraphics.rect(colX, topY, colW, beamH);
-            guideGraphics.fill({ color: flashColor, alpha: flash * 0.22 });
-
-            laneFlashesRef.current[curActiveLane] = Math.max(0, flash - 0.08 * delta);
-          }
-        }
-
-        // 3. DRAW FALLING NOTES: RECTANGLES ALIGNED DIRECTLY TO KEYS
-        let noteTextIdx = 0;
-
-        currentNotes.forEach((note, noteIdx) => {
-          if (note.status === 'PROCESSED') return;
-
-          const keyLayout = getKeyLayout(note.char, width, height, note.lane);
-          const laneColor = FINGER_LANES[note.lane]?.color || '#06b6d4';
-
-          // DIRECT VERTICAL ALIGNMENT: noteX is ALWAYS identical to keyLayout.x!
-          const noteX = keyLayout.x;
-          let noteY: number;
-          let normProgress = 0;
-
-          if (noteIdx === 0) {
-            // Active note descends straight down into its key
-            normProgress = Math.min(1.0, note.yPercent / 84);
-            const startY = 24;
-            const targetY = keyLayout.y;
-            noteY = startY + (targetY - startY) * Math.pow(normProgress, 1.25);
-          } else {
-            // Upcoming notes stay queued in the drop zone strictly above keyboardTopY!
-            const maxQueueY = Math.max(24, keyboardTopY - 26);
-            noteY = Math.max(24, maxQueueY - (noteIdx - 1) * 36);
-          }
-
-          if (noteY < topY - 10 || noteY > height + 20) return;
-
-          const targetW = Math.max(28, keyLayout.width);
-          const targetH = Math.max(26, keyLayout.height);
-          const rectW = note.char === ' ' ? Math.max(120, targetW * 0.9) : targetW;
-          const rectH = targetH;
-          const cornerRadius = 6;
-          const isLandingOnKey = noteIdx === 0 && normProgress >= 0.88;
-
-          // Trail behind active falling note
-          if (noteIdx === 0 && normProgress < 0.9) {
-            const trailLen = 14 * (isHyperspace ? 2.0 : 1.0);
-            notesGraphics.roundRect(noteX - rectW / 2 + 2, noteY - rectH / 2 - trailLen, rectW - 4, trailLen, 4);
-            notesGraphics.fill({ color: laneColor, alpha: 0.2 });
-          }
-
-          // Rectangular Keycap Tile Body
-          notesGraphics.roundRect(noteX - rectW / 2, noteY - rectH / 2, rectW, rectH, cornerRadius);
-          notesGraphics.fill({
-            color: noteIdx === 0 ? '#0f172a' : '#1e293b',
-            alpha: noteIdx === 0 ? 0.92 : 0.75,
-          });
-          notesGraphics.stroke({
-            width: noteIdx === 0 ? 2 : 1,
-            color: laneColor,
-            alpha: noteIdx === 0 ? 1.0 : 0.5,
-          });
-
-          // Landing pulse outline (ring outline only, NEVER solid opaque fill)
-          if (isLandingOnKey) {
-            const pulse = (Math.sin(Date.now() / 100) + 1) / 2;
-            notesGraphics.roundRect(noteX - rectW / 2 - 2, noteY - rectH / 2 - 2, rectW + 4, rectH + 4, cornerRadius + 2);
-            notesGraphics.stroke({ width: 2, color: laneColor, alpha: 0.5 + pulse * 0.5 });
-          }
-
-          // Character text on rectangular tile (Bright white and crystal clear)
-          if (noteTextIdx < noteTextPool.length) {
-            const txt = noteTextPool[noteTextIdx];
-            txt.text = note.displayChar;
-            txt.position.set(noteX, noteY);
-            txt.scale.set(1.0);
-            txt.style.fill = '#ffffff';
-            txt.style.fontSize = 13;
-            txt.style.fontWeight = '900';
-            txt.visible = true;
-            noteTextIdx++;
-          }
-        });
-
-        // Hide unused note text objects
-        for (let i = noteTextIdx; i < noteTextPool.length; i++) {
-          noteTextPool[i].visible = false;
-        }
-
-        // 4. UPDATE PARTICLES & SHOCKWAVES
-        particlesRef.current = particlesRef.current.filter((p) => {
-          p.x += p.vx * delta;
-          p.y += p.vy * delta;
-          p.life += delta;
-          p.alpha = Math.max(0, 1 - p.life / p.maxLife);
-
-          if (p.alpha > 0) {
-            fxGraphics.circle(p.x, p.y, p.size * p.alpha);
-            fxGraphics.fill({ color: p.color, alpha: p.alpha });
-            return true;
-          }
-          return false;
-        });
-
-        shockwavesRef.current = shockwavesRef.current.filter((sw) => {
-          sw.rx += (sw.maxRx - sw.rx) * 0.2 * delta;
-          sw.ry += (sw.maxRy - sw.ry) * 0.2 * delta;
-          sw.alpha -= 0.05 * delta;
-
-          if (sw.alpha > 0) {
-            fxGraphics.ellipse(sw.x, sw.y, sw.rx, sw.ry);
-            fxGraphics.stroke({ width: 2, color: sw.color, alpha: sw.alpha });
-            return true;
-          }
-          return false;
-        });
-
-        // 5. UPDATE FLOATING FEEDBACK TEXT
-        let fbIdx = 0;
-        feedbacksRef.current = feedbacksRef.current.filter((fb) => {
-          fb.y += fb.vy * delta;
-          fb.life += delta;
-          fb.alpha = Math.max(0, 1 - fb.life / fb.maxLife);
-
-          if (fb.alpha > 0 && fbIdx < feedbackTextPool.length) {
-            const ft = feedbackTextPool[fbIdx];
-            ft.text = fb.text;
-            ft.position.set(fb.x, fb.y);
-            ft.alpha = fb.alpha;
-            ft.style.fill = fb.color;
-            ft.visible = true;
-            fbIdx++;
-            return true;
-          }
-          return false;
-        });
-
-        for (let i = fbIdx; i < feedbackTextPool.length; i++) {
-          feedbackTextPool[i].visible = false;
-        }
-      });
-    };
-
-    initPixi();
-
-    const handleResize = () => {
-      const stage = stageRef.current;
-      if (!stage || !appRef.current) return;
-      const rect = stage.getBoundingClientRect();
-      const newWidth = Math.max(300, Math.floor(rect.width || stage.clientWidth || 800));
-      const newHeight = Math.max(300, Math.floor(rect.height || stage.clientHeight || 420));
-      appRef.current.renderer.resize(newWidth, newHeight);
-    };
-
-    const resizeObserver = new ResizeObserver(() => handleResize());
-    resizeObserver.observe(stageEl);
-
-    return () => {
-      isDestroyed = true;
-      resizeObserver.disconnect();
-      if (appRef.current) {
-        try {
-          appRef.current.destroy(false, { children: true });
-        } catch {
-          // Cleanup exception ignored
-        }
-        appRef.current = null;
-      }
-    };
+    setKeyPositions(newPositions);
   }, []);
 
+  useEffect(() => {
+    updateKeyPositions();
+    const handleResize = () => updateKeyPositions();
+    window.addEventListener('resize', handleResize);
+
+    let observer: ResizeObserver | null = null;
+    if (containerRef.current && window.ResizeObserver) {
+      observer = new ResizeObserver(() => updateKeyPositions());
+      observer.observe(containerRef.current);
+    }
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      if (observer) observer.disconnect();
+    };
+  }, [updateKeyPositions]);
+
+  // Particle & FX systems on 2D Canvas (Sparks, Shockwaves, Combat Rating Popups)
+  const particlesRef = useRef<Particle[]>([]);
+  const shockwavesRef = useRef<Shockwave[]>([]);
+  const feedbacksRef = useRef<FeedbackPopup[]>([]);
+  const lastHitKeyRef = useRef<number>(timingFeedbackKey);
+
+  // Trigger burst effects on keystroke hit
+  useEffect(() => {
+    if (timingFeedbackKey !== lastHitKeyRef.current) {
+      lastHitKeyRef.current = timingFeedbackKey;
+
+      if (activeChar) {
+        const lookupKey = activeChar === ' ' ? ' ' : activeChar.toLowerCase();
+        const pos = keyPositions[lookupKey];
+
+        if (pos) {
+          const hitColor =
+            timingFeedback === 'PERFECT'
+              ? '#38bdf8'
+              : timingFeedback === 'GREAT'
+              ? '#4ade80'
+              : timingFeedback === 'GOOD'
+              ? '#facc15'
+              : '#f43f5e';
+
+          // Spawn 36 high-velocity sparks erupting upward
+          const count = timingFeedback === 'PERFECT' ? 36 : 22;
+          for (let i = 0; i < count; i++) {
+            const angle = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI * 1.4;
+            const speed = 3.5 + Math.random() * 7.0;
+            particlesRef.current.push({
+              x: pos.x + (Math.random() - 0.5) * (pos.width * 0.4),
+              y: pos.y - pos.height * 0.2,
+              vx: Math.cos(angle) * speed,
+              vy: Math.sin(angle) * speed,
+              color: i % 3 === 0 ? '#ffffff' : hitColor,
+              size: 2 + Math.random() * 3.5,
+              alpha: 1.0,
+              life: 0,
+              maxLife: 26 + Math.random() * 18,
+            });
+          }
+
+          // Expanding shockwave ring
+          shockwavesRef.current.push({
+            x: pos.x,
+            y: pos.y,
+            radius: pos.width * 0.35,
+            maxRadius: pos.width * 1.8,
+            color: hitColor,
+            alpha: 0.95,
+          });
+
+          // Floating combat score feedback
+          const textLabel =
+            timingFeedback === 'PERFECT'
+              ? '+100 PERFECT'
+              : timingFeedback === 'GREAT'
+              ? '+75 GREAT'
+              : timingFeedback === 'GOOD'
+              ? '+50 GOOD'
+              : 'MISS';
+
+          feedbacksRef.current.push({
+            text: textLabel,
+            color: hitColor,
+            x: pos.x,
+            y: pos.y - 25,
+            vy: -2.0,
+            alpha: 1.0,
+            scale: 1.3,
+            life: 0,
+            maxLife: 32,
+          });
+        }
+      }
+    }
+  }, [timingFeedbackKey, timingFeedback, activeChar, keyPositions]);
+
+  // Canvas VFX Loop for Hit Sparks, Shockwaves, and Rating Popups
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const container = containerRef.current;
+    if (!canvas || !container) return;
+
+    let isRunning = true;
+    let animId: number;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const render = () => {
+      if (!isRunning) return;
+      animId = requestAnimationFrame(render);
+
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+      if (canvas.width !== width || canvas.height !== height) {
+        canvas.width = width;
+        canvas.height = height;
+        updateKeyPositions();
+      }
+
+      ctx.clearRect(0, 0, width, height);
+
+      // 1. Draw Sparks (Particles)
+      particlesRef.current = particlesRef.current.filter((p) => {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.24; // Gravity pulling sparks downwards
+        p.life += 1;
+        p.alpha = Math.max(0, 1 - p.life / p.maxLife);
+
+        if (p.alpha > 0) {
+          ctx.fillStyle = p.color;
+          ctx.globalAlpha = p.alpha;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size * p.alpha, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.globalAlpha = 1.0;
+          return true;
+        }
+        return false;
+      });
+
+      // 2. Draw Expanding Shockwaves
+      shockwavesRef.current = shockwavesRef.current.filter((sw) => {
+        sw.radius += (sw.maxRadius - sw.radius) * 0.18;
+        sw.alpha -= 0.042;
+
+        if (sw.alpha > 0) {
+          ctx.strokeStyle = sw.color;
+          ctx.lineWidth = 2.5;
+          ctx.globalAlpha = Math.max(0, sw.alpha);
+          ctx.beginPath();
+          ctx.arc(sw.x, sw.y, sw.radius, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.globalAlpha = 1.0;
+          return true;
+        }
+        return false;
+      });
+
+      // 3. Draw Floating Score Rating Popups
+      feedbacksRef.current = feedbacksRef.current.filter((fb) => {
+        fb.y += fb.vy;
+        fb.life += 1;
+        fb.scale = Math.max(1.0, fb.scale - 0.015);
+        fb.alpha = Math.max(0, 1 - fb.life / fb.maxLife);
+
+        if (fb.alpha > 0) {
+          ctx.save();
+          ctx.font = '900 13px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace';
+          ctx.textAlign = 'center';
+          ctx.fillStyle = fb.color;
+          ctx.globalAlpha = fb.alpha;
+          ctx.shadowColor = 'rgba(0, 0, 0, 0.95)';
+          ctx.shadowBlur = 8;
+          ctx.fillText(fb.text, fb.x, fb.y);
+          ctx.restore();
+          return true;
+        }
+        return false;
+      });
+    };
+
+    render();
+
+    return () => {
+      isRunning = false;
+      cancelAnimationFrame(animId);
+    };
+  }, [updateKeyPositions]);
+
+  // Active target key position and lane color
+  const activeKeyPos = targetKeyLower ? keyPositions[targetKeyLower] : null;
+  const activeLaneColor =
+    (targetLaneIndex !== null && FINGER_LANES[targetLaneIndex]?.color) || THEME_ACCENTS[trailTheme] || '#06b6d4';
+
+  // Handle direct click/touch on a virtual keycap
+  const handleVirtualKeyClick = (k: KeySpec) => {
+    let charToSend = k.key;
+    if (k.key === 'Backspace') charToSend = 'Backspace';
+    else if (k.key === 'Enter') charToSend = 'Enter';
+    else if (k.key === 'Tab') charToSend = 'Tab';
+    else if (k.key === 'ShiftLeft' || k.key === 'ShiftRight') return;
+    else if (k.key === 'CapsLock' || k.key === 'ControlLeft' || k.key === 'ControlRight' || k.key === 'AltLeft' || k.key === 'AltRight' || k.key === 'MetaLeft' || k.key === 'MetaRight') return;
+
+    window.dispatchEvent(
+      new KeyboardEvent('keydown', {
+        key: charToSend,
+        bubbles: true,
+      })
+    );
+  };
+
   return (
-    <div className="w-full flex flex-col rounded-2xl border border-slate-800 bg-slate-950 shadow-2xl overflow-hidden backdrop-blur-md">
-      {/* Header bar: Clean product branding without internal nomenclature */}
+    <div className="w-full flex flex-col rounded-2xl border border-slate-800 bg-slate-950/80 shadow-2xl overflow-hidden backdrop-blur-md relative">
+      {/* Header bar: Sleek HUD indicators */}
       <div className="flex items-center justify-between px-3.5 py-2 border-b border-slate-800/90 bg-slate-900/90 z-30 relative">
         <div className="flex items-center gap-2">
-          <div className="px-2.5 py-1 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 font-mono text-xs font-bold uppercase tracking-wider flex items-center gap-2">
+          <div className="px-2.5 py-1 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 font-mono text-xs font-bold uppercase tracking-wider flex items-center gap-2 shadow-[0_0_12px_rgba(6,182,212,0.15)]">
             <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-            <span>Interactive Keyboard Deck</span>
+            <span>Tactile Rhythm Flight Deck</span>
           </div>
           {hyperspaceActive && (
-            <span className="flex items-center gap-1 text-[11px] font-mono font-extrabold text-amber-300 bg-amber-950/80 px-2 py-0.5 rounded border border-amber-500 animate-pulse">
+            <span className="flex items-center gap-1 text-[11px] font-mono font-extrabold text-amber-300 bg-amber-950/80 px-2 py-0.5 rounded border border-amber-500 shadow-[0_0_12px_rgba(245,158,11,0.4)] animate-pulse">
               <Flame className="w-3.5 h-3.5 text-amber-400 fill-current" />
               WARP x{multiplier}
             </span>
           )}
+          {currentStreak >= 10 && (
+            <span className="hidden sm:flex items-center gap-1 text-[11px] font-mono font-bold text-emerald-300 bg-emerald-950/70 px-2 py-0.5 rounded border border-emerald-500/40">
+              <Award className="w-3.5 h-3.5 text-emerald-400" />
+              {currentStreak} STREAK
+            </span>
+          )}
         </div>
 
-        {/* Home Row Anchor Guidance */}
+        {/* Home Row Anchor Guidance & Hand Guide Mode Toggle */}
         <div className="text-[11px] font-mono text-slate-400 flex items-center gap-2">
-          <span className="hidden sm:inline text-slate-500">Home Anchors:</span>
-          <span className="px-1.5 py-0.5 rounded bg-slate-800 text-cyan-300 font-bold border border-cyan-500/30">
-            [F] Left Bump
+          <button
+            type="button"
+            onClick={toggleHandsGuide}
+            className={`flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-mono transition-all border ${
+              handsVisible
+                ? 'bg-cyan-950/60 border-cyan-500/40 text-cyan-300 shadow-[0_0_8px_rgba(6,182,212,0.2)]'
+                : 'bg-slate-800/60 border-slate-700 text-slate-400 hover:text-slate-200'
+            }`}
+            title="Toggle Hand Visualizer Guides"
+          >
+            <Hand className="w-3.5 h-3.5" />
+            <span>Hands: {handsVisible ? 'ON' : 'OFF'}</span>
+          </button>
+
+          <span className="hidden sm:inline text-slate-500">Home:</span>
+          <span className="hidden sm:inline-block px-1.5 py-0.5 rounded bg-slate-800 text-cyan-300 font-bold border border-cyan-500/30">
+            [F]
           </span>
-          <span className="px-1.5 py-0.5 rounded bg-slate-800 text-amber-300 font-bold border border-amber-500/30">
-            [J] Right Bump
+          <span className="hidden sm:inline-block px-1.5 py-0.5 rounded bg-slate-800 text-amber-300 font-bold border border-amber-500/30">
+            [J]
           </span>
         </div>
       </div>
 
-      {/* UNIFIED STAGE: Canvas runs over highway & keyboard so notes fall LITERALLY ONTO the keys */}
+      {/* FLIGHT STAGE: Integrated Drop Highway + Mechanical Receptor Deck */}
       <div
-        ref={stageRef}
-        className="relative w-full h-[410px] sm:h-[450px] bg-slate-950 overflow-hidden flex flex-col justify-between"
+        ref={containerRef}
+        className="relative w-full h-[440px] sm:h-[480px] bg-transparent overflow-hidden flex flex-col justify-between select-none"
       >
-        {/* Full-stage PixiJS Canvas Layer */}
+        {/* Canvas for Hit Sparks, Shockwaves, and Combat Rating Popups */}
         <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none z-10 block" />
 
-        {/* Top Drop Stage Label */}
-        <div className="relative z-0 pt-2 px-6 flex justify-between items-center opacity-40 text-[9px] font-mono text-slate-500 pointer-events-none">
-          <span>FALLING TARGET STREAM</span>
-          <span>KEYBOARD RECEPTOR MATRIX</span>
+        {/* 1. LASER GUIDANCE CHANNEL (Layer z-5: Vertical beam from top of drop zone directly to destination key) */}
+        {activeKeyPos && (
+          <div
+            className="absolute top-0 pointer-events-none transition-all duration-75 z-5"
+            style={{
+              left: `${activeKeyPos.x - activeKeyPos.width / 2}px`,
+              width: `${activeKeyPos.width}px`,
+              height: `${Math.max(10, activeKeyPos.y - activeKeyPos.height / 2)}px`,
+            }}
+          >
+            {/* Soft luminous vertical laser conduit */}
+            <div
+              className="w-full h-full opacity-15"
+              style={{
+                background: `linear-gradient(to bottom, transparent 0%, ${activeLaneColor}25 50%, ${activeLaneColor}65 100%)`,
+              }}
+            />
+            {/* Left & Right laser boundaries */}
+            <div
+              className="absolute inset-y-0 left-0 w-[1.5px] opacity-60 shadow-[0_0_8px_currentColor]"
+              style={{ backgroundColor: activeLaneColor, color: activeLaneColor }}
+            />
+            <div
+              className="absolute inset-y-0 right-0 w-[1.5px] opacity-60 shadow-[0_0_8px_currentColor]"
+              style={{ backgroundColor: activeLaneColor, color: activeLaneColor }}
+            />
+          </div>
+        )}
+
+        {/* 2. FALLING KEYS & STAGING QUEUE (Layer z-30: In front of keyboard so next key lands ON keycap, never behind!) */}
+        <div className="absolute inset-0 pointer-events-none z-30">
+          {notes.map((note, noteIdx) => {
+            if (note.status === 'PROCESSED') return null;
+
+            const lookupKey = note.char === ' ' ? ' ' : note.char.toLowerCase();
+            const pos = keyPositions[lookupKey];
+            if (!pos) return null;
+
+            const laneMatch = FINGER_LANES[note.lane];
+            const laneColor = laneMatch?.color || '#06b6d4';
+            const isSpace = note.char === ' ';
+
+            // Stop line is strictly above the keyboard deck
+            // Queued notes (noteIdx > 0) MUST STOP above the keyboard!
+            const stopLineY = Math.max(24, keyboardTopY - 44);
+
+            let topPx = 0;
+            if (noteIdx === 0) {
+              // The NEXT KEY: Drops down from the staging zone and lands directly ON the target keycap!
+              const normProgress = Math.min(1.0, note.yPercent / 84);
+              const startY = 16;
+              const targetY = pos.y - pos.height / 2;
+              topPx = startY + (targetY - startY) * Math.pow(normProgress, 1.25);
+            } else {
+              // QUEUED NOTES: Stop above the keyboard, waiting in staging queue until it is their turn!
+              const parkedY = Math.max(16, stopLineY - (noteIdx - 1) * 44);
+              // Gradually travel down from the top to their parked staging position and STOP there
+              const travelProgress = Math.min(1.0, note.yPercent / 35);
+              topPx = 16 + (parkedY - 16) * Math.pow(travelProgress, 1.1);
+            }
+
+            // Note dimensions: Proportional, never stretched!
+            const noteWidth = isSpace ? Math.min(pos.width, 220) : Math.max(34, pos.width);
+            const noteHeight = Math.max(32, pos.height);
+
+            return (
+              <div
+                key={note.id}
+                className={`absolute -translate-x-1/2 flex items-center justify-center rounded-xl font-mono font-black transition-transform duration-75 shadow-lg select-none ${
+                  noteIdx === 0
+                    ? 'bg-slate-900 border-2 text-white'
+                    : 'bg-slate-900/90 border border-slate-700/80 text-slate-300 opacity-80'
+                }`}
+                style={{
+                  left: `${pos.x}px`,
+                  top: `${topPx}px`,
+                  width: `${noteWidth}px`,
+                  height: `${noteHeight}px`,
+                  borderColor: noteIdx === 0 ? laneColor : undefined,
+                  boxShadow:
+                    noteIdx === 0
+                      ? `0 0 22px ${laneColor}90, inset 0 0 10px ${laneColor}40`
+                      : '0 4px 10px rgba(0,0,0,0.5)',
+                }}
+              >
+                {/* Top frosted glass shine */}
+                <div className="absolute inset-x-0 top-0 h-1/2 rounded-t-xl bg-gradient-to-b from-white/20 to-transparent pointer-events-none" />
+
+                {/* Character label: 100% Vector Sharp, NEVER inverted, centered with pure white contrast */}
+                <span
+                  className={`truncate tracking-wider z-10 ${
+                    isSpace ? 'text-xs font-bold text-cyan-300 px-3' : 'text-sm sm:text-base text-white'
+                  }`}
+                >
+                  {note.displayChar}
+                </span>
+
+                {/* Energy tail behind active descending note */}
+                {noteIdx === 0 && (
+                  <div
+                    className="absolute -top-5 inset-x-3 h-5 rounded-t-md opacity-50 pointer-events-none"
+                    style={{
+                      background: `linear-gradient(to top, ${laneColor}, transparent)`,
+                    }}
+                  />
+                )}
+              </div>
+            );
+          })}
         </div>
 
-        {/* BOTTOM: Physical Visual Keyboard Grid (The Strike Zone!) */}
-        <div className="relative z-0 pb-3 sm:pb-4 px-2 sm:px-4 overflow-x-auto select-none">
-          <div className="flex flex-col gap-1 sm:gap-1.5 min-w-[620px] max-w-4xl mx-auto relative">
-            {KEYBOARD_GRID.map((row, rowIdx) => (
-              <div key={rowIdx} className="flex justify-center gap-1 sm:gap-1.5">
-                {row.map((k) => {
-                  const laneMatch = FINGER_LANES[k.lane];
-                  const isTargetKey = targetKeyLower === k.key;
-                  const isTargetShift =
-                    isShiftNeeded &&
-                    ((recommendedShift === 'left' && k.key === 'ShiftLeft') ||
-                      (recommendedShift === 'right' && k.key === 'ShiftRight'));
+        {/* 3. KEYBOARD RECEPTOR MATRIX: Foreground Mechanical Deck Flanked by Hand Visualizers */}
+        <div
+          ref={keyboardDeckRef}
+          className="relative z-20 pb-3 sm:pb-4 px-1 sm:px-3 overflow-x-auto select-none mt-auto"
+        >
+          <div className="flex items-center sm:items-end justify-center gap-2 sm:gap-3 max-w-6xl mx-auto">
+            {/* Left Hand Visualizer */}
+            {handsVisible && (
+              <SmallHandVisualizer
+                hand="left"
+                activeFinger={mainKeyHand === 'left' ? mainKeyFinger : (isSpaceActive ? 'THUMB' : null)}
+                activeKeyDisplay={mainKeyHand === 'left' ? targetKeyDisplay : (isSpaceActive ? ' ' : null)}
+                modifierFinger={modifierHand === 'left' ? modifierFinger : null}
+                modifierLabel={modifierHand === 'left' ? modifierLabel : null}
+                lastPressedKey={lastPressedKey}
+                thumbRole={isSpaceActive ? (smartThumbHand === 'left' ? 'primary' : 'secondary') : null}
+              />
+            )}
 
-                  const isRecentlyPressed = lastPressedKey?.toLowerCase() === k.key.toLowerCase();
-                  const laneColor = laneMatch?.color || '#06b6d4';
+            {/* Main Mechanical Keyboard Deck */}
+            <div className="flex flex-col gap-1.5 min-w-[580px] max-w-4xl flex-1 relative p-2.5 sm:p-3 rounded-2xl bg-slate-950/95 border-2 border-slate-800 shadow-[0_-8px_30px_rgba(0,0,0,0.8),0_10px_30px_rgba(0,0,0,0.9)] backdrop-blur-md">
+              {/* Keyboard Deck Chassis Bevel Highlight */}
+              <div className="absolute inset-x-0 top-0 h-[1.5px] rounded-t-2xl bg-gradient-to-r from-transparent via-slate-600/40 to-transparent pointer-events-none" />
 
-                  return (
-                    <div
-                      key={k.key}
-                      ref={(el) => {
-                        keyRefs.current[k.key.toLowerCase()] = el;
-                      }}
-                      className={`relative flex items-center justify-center h-8 sm:h-9 rounded-md text-[11px] sm:text-xs font-mono transition-all duration-100 select-none ${
-                        k.width || 'w-7 sm:w-9'
-                      } ${
-                        isTargetKey
-                          ? 'bg-slate-900 border-2 font-black z-20 scale-105 ring-2 ring-offset-1 ring-offset-slate-950'
-                          : isTargetShift
-                          ? 'bg-amber-950/70 border-2 border-amber-400 text-amber-200 font-bold z-10 scale-105 ring-2 ring-amber-400/50 ring-offset-1 ring-offset-slate-950'
-                          : isRecentlyPressed
-                          ? 'bg-slate-800 border border-cyan-400 text-white'
-                          : 'bg-slate-950/90 border border-slate-800/90 text-slate-300 hover:border-slate-700'
-                      }`}
-                      style={{
-                        borderColor: isTargetKey ? laneColor : undefined,
-                        boxShadow: isTargetKey ? `0 0 12px ${laneColor}40` : undefined,
-                      }}
-                    >
-                      {/* Finger lane accent stripe at bottom of key */}
-                      <span
-                        className={`absolute bottom-0 inset-x-1 rounded-full transition-all ${
-                          isTargetKey ? 'h-1 opacity-100' : 'h-[2px] opacity-40'
-                        }`}
-                        style={{ backgroundColor: laneColor }}
-                      />
+              {KEYBOARD_ROWS.map((row, rowIdx) => (
+                <div key={rowIdx} className="flex gap-1.5 w-full">
+                  {row.map((k) => {
+                    const laneMatch = FINGER_LANES[k.lane];
+                    const isTargetKey = targetKeyLower === k.key;
+                    const isTargetShift =
+                      isShiftNeeded &&
+                      ((recommendedShift === 'left' && k.key === 'ShiftLeft') ||
+                        (recommendedShift === 'right' && k.key === 'ShiftRight'));
 
-                      {/* Tactile bump marker for F & J */}
-                      {k.isBump && (
-                        <span
-                          className={`absolute bottom-1.5 w-2.5 h-0.5 rounded-full ${
-                            isTargetKey ? 'bg-cyan-300' : 'bg-slate-400'
-                          }`}
-                        />
-                      )}
+                    const isTargetModifier = isTargetShift;
+                    const isRecentlyPressed = lastPressedKey?.toLowerCase() === k.key.toLowerCase();
+                    const laneColor = laneMatch?.color || '#06b6d4';
 
-                      {/* Key Character: High contrast, bold, crystal clear white */}
-                      <span
-                        className={`truncate font-mono ${
+                    return (
+                      <div
+                        key={k.key}
+                        ref={(el) => {
+                          keyRefs.current[k.key.toLowerCase()] = el;
+                        }}
+                        onClick={() => handleVirtualKeyClick(k)}
+                        style={{
+                          flex: `${k.units} ${k.units} 0%`,
+                          borderColor: isTargetKey
+                            ? laneColor
+                            : isTargetModifier
+                            ? '#fbbf24'
+                            : isRecentlyPressed
+                            ? '#38bdf8'
+                            : undefined,
+                          borderStyle: isTargetModifier ? 'dashed' : 'solid',
+                          boxShadow: isTargetKey
+                            ? `0 3px 0 #020617, 0 0 20px ${laneColor}70, inset 0 1px 1px rgba(255,255,255,0.4)`
+                            : isTargetModifier
+                            ? `0 3px 0 #020617, 0 0 20px rgba(251,191,36,0.65), inset 0 1px 1px rgba(255,255,255,0.4)`
+                            : isRecentlyPressed
+                            ? `0 1px 0 #020617, 0 0 16px rgba(56,189,248,0.7), inset 0 1px 1px rgba(255,255,255,0.3)`
+                            : '0 3px 0 #020617, 0 4px 8px rgba(0,0,0,0.6), inset 0 1px 1px rgba(255,255,255,0.1)',
+                        }}
+                        className={`relative flex flex-col items-center justify-center h-8 sm:h-9 rounded-md text-[11px] sm:text-xs font-mono transition-all duration-75 select-none cursor-pointer group ${
                           isTargetKey
-                            ? 'text-white font-black text-sm sm:text-base drop-shadow-[0_1px_2px_rgba(0,0,0,1)]'
-                            : isTargetShift
-                            ? 'text-amber-200 font-bold text-xs'
-                            : 'text-slate-300 font-semibold text-xs'
+                            ? 'bg-gradient-to-b from-slate-800 to-slate-900 border-2 border-solid font-black z-20 scale-[1.02] text-white ring-2 ring-offset-1 ring-offset-slate-950'
+                            : isTargetModifier
+                            ? 'bg-gradient-to-b from-amber-950/80 to-slate-900 border-2 border-dashed border-amber-400 text-amber-200 font-bold z-10 scale-[1.02] ring-2 ring-amber-400/50 ring-offset-1 ring-offset-slate-950'
+                            : isRecentlyPressed
+                            ? 'bg-gradient-to-b from-slate-700 to-slate-800 border-2 border-cyan-400 text-cyan-300 translate-y-[2px]'
+                            : 'bg-gradient-to-b from-slate-800/90 to-slate-900 border border-slate-700/80 text-slate-300 hover:border-slate-500 active:translate-y-[2px]'
                         }`}
                       >
-                        {k.display}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            ))}
+                        {/* Finger lane accent stripe at bottom of keycap */}
+                        <span
+                          className={`absolute bottom-0 inset-x-1 rounded-full transition-all ${
+                            isTargetKey
+                              ? 'h-1 opacity-100'
+                              : isTargetModifier
+                              ? 'h-1 opacity-100 bg-amber-400'
+                              : 'h-[2px] opacity-40 group-hover:opacity-80'
+                          }`}
+                          style={{ backgroundColor: isTargetModifier ? '#fbbf24' : laneColor }}
+                        />
+
+                        {/* Tactile bump marker for standard touch typing (F & J) */}
+                        {k.isBump && (
+                          <span
+                            className={`absolute bottom-1 w-2.5 h-0.5 rounded-full ${
+                              isTargetKey ? 'bg-cyan-300' : 'bg-slate-400'
+                            }`}
+                          />
+                        )}
+
+                        {/* Modifier Dotted Highlight Badge */}
+                        {isTargetModifier && (
+                          <span className="absolute -top-2.5 px-1.5 py-0.2 rounded text-[8px] font-black bg-amber-400 text-slate-950 tracking-tighter shadow-md animate-bounce border border-dashed border-amber-300">
+                            ·· HOLD {k.key.includes('Control') ? 'CTRL' : 'SHIFT'} ··
+                          </span>
+                        )}
+
+                        {/* Key Legend (Sub-display for shift symbols) */}
+                        {k.subDisplay && keyboardVisible && (
+                          <span
+                            className={`text-[9px] leading-none mb-0.5 font-bold ${
+                              isTargetKey ? 'text-cyan-300' : isTargetModifier ? 'text-amber-300' : 'text-slate-500'
+                            }`}
+                          >
+                            {k.subDisplay}
+                          </span>
+                        )}
+
+                        {/* Character label: 100% Vector Sharp, or Blind Touch Dot when deck guides are hidden */}
+                        {k.key === ' ' && isTargetKey ? (
+                          <div className="flex items-center justify-between w-full px-2 sm:px-3 text-[9px] font-mono pointer-events-none">
+                            <span
+                              className={`transition-all ${
+                                smartThumbHand === 'left'
+                                  ? 'text-emerald-300 font-black drop-shadow-[0_0_6px_rgba(16,185,129,0.8)]'
+                                  : 'text-emerald-500/50 font-semibold text-[8px]'
+                              }`}
+                            >
+                              {smartThumbHand === 'left' ? '◀ L. THUMB [REC]' : 'L. Thumb (Alt)'}
+                            </span>
+                            <span className="truncate font-mono font-black text-xs text-white drop-shadow-[0_1px_2px_rgba(0,0,0,1)]">
+                              SPACE
+                            </span>
+                            <span
+                              className={`transition-all ${
+                                smartThumbHand === 'right'
+                                  ? 'text-emerald-300 font-black drop-shadow-[0_0_6px_rgba(16,185,129,0.8)]'
+                                  : 'text-emerald-500/50 font-semibold text-[8px]'
+                              }`}
+                            >
+                              {smartThumbHand === 'right' ? 'R. THUMB [REC] ▶' : 'R. Thumb (Alt)'}
+                            </span>
+                          </div>
+                        ) : !keyboardVisible ? (
+                          /* Blind Touch-Typing Mode: Hide letter print so user relies on finger memory */
+                          <div className="flex items-center justify-center pointer-events-none">
+                            {isTargetKey ? (
+                              <span
+                                className="w-2 h-2 rounded-full shadow-[0_0_8px_currentColor] animate-pulse"
+                                style={{ backgroundColor: laneColor, color: laneColor }}
+                              />
+                            ) : isTargetModifier ? (
+                              <span className="w-2 h-2 rounded-full border border-dashed border-amber-400 bg-amber-400/40" />
+                            ) : k.isBump ? (
+                              <span className="w-2 h-1 rounded-full bg-slate-500" />
+                            ) : (
+                              <span className="w-1 h-1 rounded-full bg-slate-800" />
+                            )}
+                          </div>
+                        ) : (
+                          <span
+                            className={`truncate font-mono leading-none ${
+                              isTargetKey
+                                ? 'text-white font-black text-xs sm:text-sm drop-shadow-[0_1px_2px_rgba(0,0,0,1)]'
+                                : isTargetModifier
+                                ? 'text-amber-200 font-bold text-xs'
+                                : isRecentlyPressed
+                                ? 'text-cyan-300 font-black text-xs'
+                                : 'text-slate-200 font-semibold text-xs'
+                            }`}
+                          >
+                            {k.display}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+
+            {/* Right Hand Visualizer */}
+            {handsVisible && (
+              <SmallHandVisualizer
+                hand="right"
+                activeFinger={mainKeyHand === 'right' ? mainKeyFinger : (isSpaceActive ? 'THUMB' : null)}
+                activeKeyDisplay={mainKeyHand === 'right' ? targetKeyDisplay : (isSpaceActive ? ' ' : null)}
+                modifierFinger={modifierHand === 'right' ? modifierFinger : null}
+                modifierLabel={modifierHand === 'right' ? modifierLabel : null}
+                lastPressedKey={lastPressedKey}
+                thumbRole={isSpaceActive ? (smartThumbHand === 'right' ? 'primary' : 'secondary') : null}
+              />
+            )}
           </div>
         </div>
       </div>
