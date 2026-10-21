@@ -295,7 +295,7 @@ export const useGameStore = create<GameStoreState>((set, get) => {
           lane,
           finger,
           targetTimeMs: Date.now() + 2000,
-          yPercent: isTarget ? 84 : Math.max(6, 84 - i * 16),
+          yPercent: isTarget ? 62 : Math.max(6, 62 - i * 14),
           status: 'PENDING',
           isTargetLocked: isTarget,
         });
@@ -385,7 +385,7 @@ export const useGameStore = create<GameStoreState>((set, get) => {
           }
         }
 
-        soundEngine.playLaneHit(targetInfo.lane, rating);
+        soundEngine.playLaneHit(targetInfo.lane, rating, targetChar === ' ');
 
         const nextStreak = state.performance.currentStreak + 1;
         const newMaxStreak = Math.max(state.performance.maxStreak, nextStreak);
@@ -469,6 +469,12 @@ export const useGameStore = create<GameStoreState>((set, get) => {
           timingFeedback: rating,
           timingFeedbackKey: state.performance.timingFeedbackKey + 1,
           cadenceConsistency: liveCadence,
+          lastHitDrone: {
+            id: matchingNote?.id,
+            char: targetChar,
+            yPercent: matchingNote ? matchingNote.yPercent : 84,
+            lane: targetInfo.lane,
+          },
         };
 
         set({
@@ -540,18 +546,31 @@ export const useGameStore = create<GameStoreState>((set, get) => {
       const state = get();
       if (state.gameState !== 'PLAYING') return;
 
+      const speedStep =
+        state.profile.highwaySpeed === 'SLOW' ? 0.9 :
+        state.profile.highwaySpeed === 'FAST' ? 2.2 :
+        state.profile.highwaySpeed === 'HYPER' ? 3.4 : 1.5;
+
       const updated = state.fallingNotes.map((note, idx) => {
         if (note.status === 'PROCESSED') return note;
 
-        if (idx === 0 || note.isTargetLocked || note.yPercent >= 83.5) {
-          return { ...note, yPercent: 84, isTargetLocked: true };
+        if (idx === 0) {
+          if (note.yPercent >= 83.5) {
+            return { ...note, yPercent: 84, isTargetLocked: true };
+          }
+          const nextY = Math.min(84, note.yPercent + speedStep);
+          return {
+            ...note,
+            yPercent: nextY,
+            isTargetLocked: nextY >= 83.5,
+          };
         }
 
         const slotY = Math.max(6, 84 - idx * 16);
         const speedFactor =
-          state.profile.highwaySpeed === 'SLOW' ? 0.12 :
-          state.profile.highwaySpeed === 'FAST' ? 0.25 :
-          state.profile.highwaySpeed === 'HYPER' ? 0.35 : 0.18;
+          state.profile.highwaySpeed === 'SLOW' ? 0.10 :
+          state.profile.highwaySpeed === 'FAST' ? 0.22 :
+          state.profile.highwaySpeed === 'HYPER' ? 0.32 : 0.16;
         const nextY = note.yPercent + (slotY - note.yPercent) * speedFactor;
         return {
           ...note,

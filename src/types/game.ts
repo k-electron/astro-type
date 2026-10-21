@@ -150,4 +150,10 @@ export interface LivePerformance {
   timingFeedback: 'PERFECT' | 'GREAT' | 'GOOD' | 'MISS' | null;
   timingFeedbackKey: number; // counter to re-trigger animations
   cadenceConsistency?: number; // 0 to 100% rhythm regularity between keystrokes
+  lastHitDrone?: {
+    id?: string;
+    char: string;
+    yPercent: number;
+    lane: number;
+  } | null;
 }

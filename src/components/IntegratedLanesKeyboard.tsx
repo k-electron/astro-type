@@ -13,6 +13,12 @@ interface IntegratedLanesKeyboardProps {
   targetLaneIndex: number | null;
   timingFeedback: 'PERFECT' | 'GREAT' | 'GOOD' | 'MISS' | null;
   timingFeedbackKey: number;
+  lastHitDrone?: {
+    id?: string;
+    char: string;
+    yPercent: number;
+    lane: number;
+  } | null;
   trailTheme: TrailColorTheme;
   activeChar: string | null;
   previousChar?: string | null;
@@ -161,6 +167,103 @@ interface FeedbackPopup {
   maxLife: number;
 }
 
+interface LaserBeam {
+  x: number;
+  startY: number;
+  targetY: number;
+  color: string;
+  width: number;
+  alpha: number;
+  life: number;
+  maxLife: number;
+}
+
+interface DebrisFragment {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  rotation: number;
+  vRot: number;
+  size: number;
+  color: string;
+  alpha: number;
+  life: number;
+  maxLife: number;
+}
+
+interface CrystalScrap {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  color: string;
+  size: number;
+  alpha: number;
+  life: number;
+  maxLife: number;
+}
+
+interface BlasterBolt {
+  startX1: number;
+  startY1: number;
+  startX2: number;
+  startY2: number;
+  targetX1: number;
+  targetY1: number;
+  targetX2: number;
+  targetY2: number;
+  targetX: number;
+  targetY: number;
+  currentX1: number;
+  currentY1: number;
+  currentX2: number;
+  currentY2: number;
+  distance: number;
+  traveled: number;
+  targetWidth: number;
+  targetHeight: number;
+  color: string;
+  hitColor: string;
+  isSpace: boolean;
+  feedback: 'PERFECT' | 'GREAT' | 'GOOD' | 'MISS' | null;
+  missedKeyDisplay?: string;
+  targetDrone?: {
+    char: string;
+    display: string;
+    subDisplay?: string;
+    isSpace: boolean;
+    color: string;
+    width: number;
+    height: number;
+  };
+  speed: number;
+  life: number;
+  maxLife: number;
+  hasDetonated: boolean;
+}
+
+interface NuclearFlash {
+  x: number;
+  y: number;
+  radius: number;
+  maxRadius: number;
+  color: string;
+  alpha: number;
+}
+
+interface ExplodingDrone {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  color: string;
+  char: string;
+  isSpace: boolean;
+  life: number;
+  maxLife: number;
+}
+
 export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = ({
   notes,
   hyperspaceActive,
@@ -170,6 +273,7 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
   targetLaneIndex,
   timingFeedback,
   timingFeedbackKey,
+  lastHitDrone,
   trailTheme,
   activeChar,
   previousChar,
@@ -246,16 +350,20 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
   // Track key positions and keyboard deck position in real-time
   const [keyPositions, setKeyPositions] = useState<Record<string, { x: number; y: number; width: number; height: number }>>({});
   const [keyboardTopY, setKeyboardTopY] = useState<number>(180);
+  const [keyboardBottomY, setKeyboardBottomY] = useState<number>(440);
+  const [containerHeight, setContainerHeight] = useState<number>(500);
 
   const updateKeyPositions = useCallback(() => {
     const container = containerRef.current;
     if (!container) return;
     const cRect = container.getBoundingClientRect();
+    setContainerHeight(cRect.height);
 
-    // Measure keyboard deck top position
+    // Measure keyboard deck top and bottom position
     if (keyboardDeckRef.current) {
       const deckRect = keyboardDeckRef.current.getBoundingClientRect();
       setKeyboardTopY(deckRect.top - cRect.top);
+      setKeyboardBottomY(deckRect.bottom - cRect.top);
     }
 
     const newPositions: Record<string, { x: number; y: number; width: number; height: number }> = {};
@@ -293,86 +401,199 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
     };
   }, [updateKeyPositions]);
 
-  // Particle & FX systems on 2D Canvas (Sparks, Shockwaves, Combat Rating Popups)
+  // Active target key position and lane color
+  const activeKeyPos = targetKeyLower ? keyPositions[targetKeyLower] : null;
+  const activeLaneColor =
+    (targetLaneIndex !== null && FINGER_LANES[targetLaneIndex]?.color) || THEME_ACCENTS[trailTheme] || '#06b6d4';
+  const shipY = Math.max(keyboardBottomY + 6, containerHeight - 34);
+
+  // Particle & FX systems on 2D Canvas (Laser Cannons, Debris Shatter, Sparks, Shockwaves, Crystals, Combat Popups)
   const particlesRef = useRef<Particle[]>([]);
   const shockwavesRef = useRef<Shockwave[]>([]);
   const feedbacksRef = useRef<FeedbackPopup[]>([]);
+  const blasterBoltsRef = useRef<BlasterBolt[]>([]);
+  const nuclearFlashesRef = useRef<NuclearFlash[]>([]);
+  const explodingDronesRef = useRef<ExplodingDrone[]>([]);
+  const debrisRef = useRef<DebrisFragment[]>([]);
+  const crystalsRef = useRef<CrystalScrap[]>([]);
   const lastHitKeyRef = useRef<number>(timingFeedbackKey);
+  const activeDronePosRef = useRef<{ x: number; y: number; width: number; height: number; char: string; display?: string; subDisplay?: string } | null>(null);
+  const liveDronesMapRef = useRef<Map<string, { id: string; char: string; x: number; y: number; width: number; height: number; isSpace: boolean; laneColor: string; display: string; subDisplay?: string }>>(new Map());
+  const liveDronesByCharRef = useRef<Map<string, { id: string; char: string; x: number; y: number; width: number; height: number; isSpace: boolean; laneColor: string; display: string; subDisplay?: string }>>(new Map());
+  const [muzzleFlashActive, setMuzzleFlashActive] = useState<number>(0);
+  const [shotAimAngle, setShotAimAngle] = useState<number>(0);
 
-  // Trigger burst effects on keystroke hit
+  // Trigger Orbital Interceptor burst effects on keystroke hit
   useEffect(() => {
     if (timingFeedbackKey !== lastHitKeyRef.current) {
       lastHitKeyRef.current = timingFeedbackKey;
 
-      if (activeChar) {
-        const lookupKey = activeChar === ' ' ? ' ' : activeChar.toLowerCase();
-        const pos = keyPositions[lookupKey];
+      const isMiss = timingFeedback === 'MISS';
 
-        if (pos) {
-          const hitColor =
-            timingFeedback === 'PERFECT'
-              ? '#38bdf8'
-              : timingFeedback === 'GREAT'
-              ? '#4ade80'
-              : timingFeedback === 'GOOD'
-              ? '#facc15'
-              : '#f43f5e';
+      // 1. Expected active key position (where the ship is currently mounted underneath)
+      const expectedChar = activeChar;
+      const expectedLookup = expectedChar === ' ' ? ' ' : (expectedChar ? expectedChar.toLowerCase() : null);
+      const expectedPos = expectedLookup ? keyPositions[expectedLookup] : null;
 
-          // Spawn 36 high-velocity sparks erupting upward
-          const count = timingFeedback === 'PERFECT' ? 36 : 22;
-          for (let i = 0; i < count; i++) {
-            const angle = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI * 1.4;
-            const speed = 3.5 + Math.random() * 7.0;
-            particlesRef.current.push({
-              x: pos.x + (Math.random() - 0.5) * (pos.width * 0.4),
-              y: pos.y - pos.height * 0.2,
-              vx: Math.cos(angle) * speed,
-              vy: Math.sin(angle) * speed,
-              color: i % 3 === 0 ? '#ffffff' : hitColor,
-              size: 2 + Math.random() * 3.5,
-              alpha: 1.0,
-              life: 0,
-              maxLife: 26 + Math.random() * 18,
-            });
-          }
+      const currentShipY = Math.max(keyboardBottomY + 6, containerHeight - 34);
+      const cannonOriginY = currentShipY - 14;
+      const shipX = activeKeyPos ? activeKeyPos.x : (expectedPos ? expectedPos.x : 0);
 
-          // Expanding shockwave ring
-          shockwavesRef.current.push({
-            x: pos.x,
-            y: pos.y,
-            radius: pos.width * 0.35,
-            maxRadius: pos.width * 1.8,
-            color: hitColor,
-            alpha: 0.95,
-          });
+      if (!isMiss) {
+        // SUCCESSFUL HIT: Destroy the incoming enemy drone straight up the corridor!
+        const hitChar = lastHitDrone?.char || previousChar || activeChar;
+        if (!hitChar) return;
+        const lookupKey = hitChar === ' ' ? ' ' : hitChar.toLowerCase();
+        const pos = keyPositions[lookupKey] || expectedPos;
+        if (!pos) return;
 
-          // Floating combat score feedback
-          const textLabel =
-            timingFeedback === 'PERFECT'
-              ? '+100 PERFECT'
-              : timingFeedback === 'GREAT'
-              ? '+75 GREAT'
-              : timingFeedback === 'GOOD'
-              ? '+50 GOOD'
-              : 'MISS';
+        const isSpace = hitChar === ' ';
+        const fingerInfo = KEY_FINGER_MAP[hitChar] || KEY_FINGER_MAP[hitChar.toLowerCase()];
+        const laneColor = fingerInfo ? FINGER_COLOR_MAP[fingerInfo.finger] : '#38bdf8';
 
-          feedbacksRef.current.push({
-            text: textLabel,
-            color: hitColor,
-            x: pos.x,
-            y: pos.y - 25,
-            vy: -2.0,
-            alpha: 1.0,
-            scale: 1.3,
-            life: 0,
-            maxLife: 32,
-          });
-        }
+        const hitColor =
+          timingFeedback === 'PERFECT'
+            ? (isSpace ? '#34d399' : '#38bdf8')
+            : timingFeedback === 'GREAT'
+            ? '#4ade80'
+            : '#facc15';
+
+        // Retrieve the exact live drone record
+        const skyCeilingY = 18;
+        const defensePerimeterY = Math.max(skyCeilingY + 36, keyboardTopY - 38);
+        const calculatedAltitudeY = lastHitDrone
+          ? skyCeilingY + (defensePerimeterY - skyCeilingY) * Math.min(1.0, Math.max(0, lastHitDrone.yPercent / 84))
+          : defensePerimeterY;
+
+        const liveDrone = (lastHitDrone?.id ? liveDronesMapRef.current.get(lastHitDrone.id) : null)
+          || liveDronesByCharRef.current.get(lookupKey)
+          || (activeDronePosRef.current?.char.toLowerCase() === lookupKey ? activeDronePosRef.current : null);
+
+        const targetX = liveDrone ? liveDrone.x : pos.x;
+        // The laser MUST fly directly to that specific drone's actual live Y height!
+        const targetY = liveDrone ? liveDrone.y : calculatedAltitudeY;
+        const targetWidth = liveDrone ? liveDrone.width : pos.width;
+        const targetHeight = liveDrone ? liveDrone.height : pos.height;
+
+        setShotAimAngle(0);
+        setMuzzleFlashActive(Date.now() + 160);
+
+        // Twin cannon launch straight up towards that specific drone's altitude
+        const barrelSpacing = isSpace ? 14 : 7;
+        const startX1 = targetX - barrelSpacing;
+        const startX2 = targetX + barrelSpacing;
+        const dist = Math.max(1, cannonOriginY - targetY);
+
+        blasterBoltsRef.current.push({
+          startX1,
+          startY1: cannonOriginY,
+          startX2,
+          startY2: cannonOriginY,
+          targetX1: startX1,
+          targetY1: targetY,
+          targetX2: startX2,
+          targetY2: targetY,
+          targetX,
+          targetY,
+          currentX1: startX1,
+          currentY1: cannonOriginY,
+          currentX2: startX2,
+          currentY2: cannonOriginY,
+          distance: dist,
+          traveled: 0,
+          speed: 46,
+          targetWidth,
+          targetHeight,
+          color: isSpace ? '#10b981' : laneColor,
+          hitColor,
+          isSpace,
+          feedback: timingFeedback || 'PERFECT',
+          targetDrone: {
+            char: hitChar,
+            display: liveDrone?.display || (hitChar === ' ' ? 'SPACE' : hitChar.toUpperCase()),
+            subDisplay: liveDrone?.subDisplay,
+            isSpace,
+            color: laneColor,
+            width: targetWidth,
+            height: targetHeight,
+          },
+          life: 0,
+          maxLife: 24,
+          hasDetonated: false,
+        });
+      } else {
+        // MISFIRE / WRONG KEY PRESSED:
+        // The user clicked/typed the wrong key!
+        // The ship visibly fires an angled laser directly to the key that was pressed, making the mistake unmistakable!
+        const pressedChar = lastPressedKey;
+        const pressedLookup = pressedChar === ' ' ? ' ' : (pressedChar ? pressedChar.toLowerCase() : null);
+        const pressedPos = pressedLookup ? keyPositions[pressedLookup] : null;
+
+        const targetX = pressedPos ? pressedPos.x : (shipX + (Math.random() > 0.5 ? 90 : -90));
+        const targetY = pressedPos ? pressedPos.y : (keyboardTopY + 30);
+        const targetWidth = pressedPos ? pressedPos.width : 40;
+        const targetHeight = pressedPos ? pressedPos.height : 36;
+        const missedKeyDisplay = pressedLookup === ' ' ? 'SPACE' : (pressedChar ? pressedChar.toUpperCase() : 'WRONG KEY');
+
+        // Calculate aim angle from ship to the pressed key
+        const dx = targetX - shipX;
+        const dy = targetY - cannonOriginY;
+        const dist = Math.max(1, Math.hypot(dx, dy));
+        const angleDeg = Math.max(-48, Math.min(48, Math.atan2(dx, -dy) * (180 / Math.PI)));
+
+        setShotAimAngle(angleDeg);
+        setMuzzleFlashActive(Date.now() + 180);
+        setTimeout(() => setShotAimAngle(0), 220);
+
+        // Perpendicular barrel offset for angled twin cannons
+        const nx = -dy / dist;
+        const ny = dx / dist;
+        const barrelSpacing = 6;
+
+        const startX1 = shipX + nx * barrelSpacing;
+        const startY1 = cannonOriginY + ny * barrelSpacing;
+        const startX2 = shipX - nx * barrelSpacing;
+        const startY2 = cannonOriginY - ny * barrelSpacing;
+
+        const targetX1 = targetX + nx * 4;
+        const targetY1 = targetY + ny * 4;
+        const targetX2 = targetX - nx * 4;
+        const targetY2 = targetY - ny * 4;
+
+        blasterBoltsRef.current.push({
+          startX1,
+          startY1,
+          startX2,
+          startY2,
+          targetX1,
+          targetY1,
+          targetX2,
+          targetY2,
+          targetX,
+          targetY,
+          currentX1: startX1,
+          currentY1: startY1,
+          currentX2: startX2,
+          currentY2: startY2,
+          distance: dist,
+          traveled: 0,
+          speed: 40,
+          targetWidth,
+          targetHeight,
+          color: '#f43f5e', // Crimson warning laser
+          hitColor: '#ef4444',
+          isSpace: false,
+          feedback: 'MISS',
+          missedKeyDisplay,
+          life: 0,
+          maxLife: 24,
+          hasDetonated: false,
+        });
       }
     }
-  }, [timingFeedbackKey, timingFeedback, activeChar, keyPositions]);
+  }, [timingFeedbackKey, timingFeedback, activeChar, previousChar, lastPressedKey, keyPositions, hyperspaceActive, keyboardTopY, keyboardBottomY, containerHeight, activeKeyPos]);
 
-  // Canvas VFX Loop for Hit Sparks, Shockwaves, and Rating Popups
+  // Canvas VFX Loop for Laser Cannons, Debris Shatter, Sparks, Shockwaves, and Rating Popups
   useEffect(() => {
     const canvas = canvasRef.current;
     const container = containerRef.current;
@@ -397,7 +618,404 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
 
       ctx.clearRect(0, 0, width, height);
 
-      // 1. Draw Sparks (Particles)
+      // 1. UPDATE & DRAW HIGH-SPEED BLASTER BOLTS (Visible laser projectiles with 2D trajectory)
+      blasterBoltsRef.current = blasterBoltsRef.current.filter((bolt) => {
+        bolt.traveled += bolt.speed;
+        bolt.life += 1;
+        const t = Math.min(1.0, bolt.traveled / bolt.distance);
+
+        bolt.currentX1 = bolt.startX1 + (bolt.targetX1 - bolt.startX1) * t;
+        bolt.currentY1 = bolt.startY1 + (bolt.targetY1 - bolt.startY1) * t;
+
+        bolt.currentX2 = bolt.startX2 + (bolt.targetX2 - bolt.startX2) * t;
+        bolt.currentY2 = bolt.startY2 + (bolt.targetY2 - bolt.startY2) * t;
+
+        // While the laser bolt is traveling towards the target drone, keep the target drone locked and rendered at (bolt.targetX, bolt.targetY)!
+        if (bolt.feedback !== 'MISS' && bolt.targetDrone && !bolt.hasDetonated) {
+          const td = bolt.targetDrone;
+          ctx.save();
+          ctx.translate(bolt.targetX, bolt.targetY);
+
+          // Sci-fi tactical target lock-on brackets
+          ctx.strokeStyle = bolt.color;
+          ctx.lineWidth = 1.8;
+          ctx.shadowColor = bolt.color;
+          ctx.shadowBlur = 10;
+
+          const hw = td.width / 2;
+          const hh = td.height / 2;
+          const cLen = 7;
+
+          ctx.beginPath();
+          // Top-left bracket
+          ctx.moveTo(-hw - 4, -hh + cLen - 4);
+          ctx.lineTo(-hw - 4, -hh - 4);
+          ctx.lineTo(-hw + cLen - 4, -hh - 4);
+          // Top-right bracket
+          ctx.moveTo(hw - cLen + 4, -hh - 4);
+          ctx.lineTo(hw + 4, -hh - 4);
+          ctx.lineTo(hw + 4, -hh + cLen - 4);
+          // Bottom-left bracket
+          ctx.moveTo(-hw - 4, hh - cLen + 4);
+          ctx.lineTo(-hw - 4, hh + 4);
+          ctx.lineTo(-hw + cLen - 4, hh + 4);
+          // Bottom-right bracket
+          ctx.moveTo(hw - cLen + 4, hh + 4);
+          ctx.lineTo(hw + 4, hh + 4);
+          ctx.lineTo(hw + 4, hh - cLen + 4);
+          ctx.stroke();
+
+          // Hostile drone hull
+          ctx.fillStyle = '#020617';
+          ctx.strokeStyle = td.color;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.roundRect(-hw, -hh, td.width, td.height, 6);
+          ctx.fill();
+          ctx.stroke();
+
+          // Ion thruster plumes on top
+          ctx.fillStyle = td.color;
+          ctx.beginPath();
+          ctx.arc(-hw + 8, -hh - 2, 2.5, 0, Math.PI * 2);
+          ctx.arc(hw - 8, -hh - 2, 2.5, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Letter glyph in crisp white
+          ctx.fillStyle = '#ffffff';
+          ctx.font = 'bold 15px monospace';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(td.display, 0, 1);
+
+          ctx.restore();
+        }
+
+        const boltWidth = bolt.isSpace ? 5 : 3.5;
+
+        // Draw twin high-energy laser beams connecting cannons to the projectile tip
+        ctx.save();
+        // Outer glowing plasma sheath
+        ctx.strokeStyle = bolt.color;
+        ctx.lineWidth = boltWidth * 2.8;
+        ctx.globalAlpha = 0.55;
+        ctx.shadowColor = bolt.color;
+        ctx.shadowBlur = 16;
+        ctx.beginPath();
+        ctx.moveTo(bolt.startX1, bolt.startY1);
+        ctx.lineTo(bolt.currentX1, bolt.currentY1);
+        ctx.moveTo(bolt.startX2, bolt.startY2);
+        ctx.lineTo(bolt.currentX2, bolt.currentY2);
+        ctx.stroke();
+
+        // White-hot core laser beam
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = boltWidth;
+        ctx.globalAlpha = 0.95;
+        ctx.shadowBlur = 6;
+        ctx.beginPath();
+        ctx.moveTo(bolt.startX1, bolt.startY1);
+        ctx.lineTo(bolt.currentX1, bolt.currentY1);
+        ctx.moveTo(bolt.startX2, bolt.startY2);
+        ctx.lineTo(bolt.currentX2, bolt.currentY2);
+        ctx.stroke();
+
+        // Twin blazing projectile torpedo heads
+        [
+          { x: bolt.currentX1, y: bolt.currentY1 },
+          { x: bolt.currentX2, y: bolt.currentY2 },
+        ].forEach((pt) => {
+          const grad = ctx.createRadialGradient(pt.x, pt.y, 1, pt.x, pt.y, boltWidth * 3.5);
+          grad.addColorStop(0, '#ffffff');
+          grad.addColorStop(0.4, bolt.color);
+          grad.addColorStop(1, 'transparent');
+          ctx.fillStyle = grad;
+          ctx.beginPath();
+          ctx.arc(pt.x, pt.y, boltWidth * 3.5, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        ctx.restore();
+
+        // Trailing ion sparks behind the projectile
+        [
+          { x: bolt.currentX1, y: bolt.currentY1 },
+          { x: bolt.currentX2, y: bolt.currentY2 },
+        ].forEach((pt) => {
+          if (Math.random() > 0.35) {
+            particlesRef.current.push({
+              x: pt.x + (Math.random() - 0.5) * 4,
+              y: pt.y + (Math.random() - 0.5) * 4,
+              vx: (Math.random() - 0.5) * 1.5,
+              vy: (Math.random() - 0.5) * 1.5,
+              color: Math.random() > 0.5 ? '#ffffff' : bolt.color,
+              size: 2.0 + Math.random() * 2.5,
+              alpha: 1.0,
+              life: 0,
+              maxLife: 10 + Math.random() * 8,
+            });
+          }
+        });
+
+        // 2. CHECK IMPACT: When bolt reaches or passes target destination
+        if (t >= 1.0 && !bolt.hasDetonated) {
+          bolt.hasDetonated = true;
+          const impactX = bolt.targetX;
+          const impactY = bolt.targetY;
+          const isSpace = bolt.isSpace;
+          const hitColor = bolt.hitColor;
+          const laneColor = bolt.color;
+
+          if (bolt.feedback !== 'MISS') {
+            // A. Trigger Drone Vaporization Ghost right at impact
+            explodingDronesRef.current.push({
+              x: impactX,
+              y: impactY,
+              width: bolt.targetWidth,
+              height: bolt.targetHeight,
+              color: laneColor,
+              char: bolt.targetDrone?.char || '',
+              isSpace: isSpace,
+              life: 0,
+              maxLife: 15,
+            });
+
+            // B. NUCLEAR WHITE CORE FLASH
+            nuclearFlashesRef.current.push({
+              x: impactX,
+              y: impactY,
+              radius: 12,
+              maxRadius: isSpace ? 85 : 60,
+              color: '#ffffff',
+              alpha: 1.0,
+            });
+
+            // B. SHATTERING DRONE DEBRIS: 16 to 30 spinning hull armor shards
+            const debrisCount = bolt.feedback === 'PERFECT' ? (isSpace ? 30 : 22) : 15;
+            for (let i = 0; i < debrisCount; i++) {
+              const angle = Math.random() * Math.PI * 2;
+              const speed = 4.0 + Math.random() * 9.0;
+              debrisRef.current.push({
+                x: impactX + (Math.random() - 0.5) * (bolt.targetWidth * 0.5),
+                y: impactY,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed - 2.8,
+                rotation: Math.random() * Math.PI * 2,
+                vRot: (Math.random() - 0.5) * 0.5,
+                size: 4.5 + Math.random() * 6.5,
+                color: i % 2 === 0 ? laneColor : (i % 3 === 0 ? '#ffffff' : '#334155'),
+                alpha: 1.0,
+                life: 0,
+                maxLife: 32 + Math.random() * 18,
+              });
+            }
+
+            // C. COMBUSTION FIREBALL SPARKS: 28 to 55 plasma embers
+            const sparkCount = bolt.feedback === 'PERFECT' ? (isSpace ? 55 : 40) : 26;
+            for (let i = 0; i < sparkCount; i++) {
+              const angle = Math.random() * Math.PI * 2;
+              const speed = 4.5 + Math.random() * 9.5;
+              particlesRef.current.push({
+                x: impactX + (Math.random() - 0.5) * (bolt.targetWidth * 0.4),
+                y: impactY,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed - 1.5,
+                color: i % 3 === 0 ? '#ffffff' : (i % 2 === 0 ? hitColor : '#f97316'),
+                size: 3.0 + Math.random() * 4.5,
+                alpha: 1.0,
+                life: 0,
+                maxLife: 28 + Math.random() * 20,
+              });
+            }
+
+            // D. ARCADE ENERGY CRYSTALS: 2 to 4 glittering diamonds
+            const crystalCount = bolt.feedback === 'PERFECT' ? (isSpace ? 4 : 3) : 2;
+            for (let i = 0; i < crystalCount; i++) {
+              crystalsRef.current.push({
+                x: impactX + (Math.random() - 0.5) * 24,
+                y: impactY,
+                vx: (Math.random() - 0.5) * 5.5,
+                vy: -(5.0 + Math.random() * 4.0),
+                color: isSpace ? '#34d399' : (i === 0 ? '#38bdf8' : '#fbbf24'),
+                size: 6.0 + Math.random() * 3.5,
+                alpha: 1.0,
+                life: 0,
+                maxLife: 42 + Math.random() * 12,
+              });
+            }
+
+            // E. EXPANDING SHOCKWAVES
+            shockwavesRef.current.push({
+              x: impactX,
+              y: impactY,
+              radius: 12,
+              maxRadius: isSpace ? bolt.targetWidth * 1.6 : bolt.targetWidth * 2.2,
+              color: hitColor,
+              alpha: 1.0,
+            });
+            shockwavesRef.current.push({
+              x: impactX,
+              y: impactY,
+              radius: 6,
+              maxRadius: isSpace ? bolt.targetWidth * 2.2 : bolt.targetWidth * 2.8,
+              color: '#ffffff',
+              alpha: 0.9,
+            });
+
+            // F. COMBAT RATING POPUP LABELS (Bold, high-impact arcade text right at blast coordinate!)
+            let textLabel = '+50 GOOD';
+            if (bolt.feedback === 'PERFECT') {
+              if (isSpace) {
+                textLabel = '💥 FLAGSHIP OBLITERATED! +100';
+              } else if (hyperspaceActive) {
+                textLabel = '⚡ WARP STRIKE! +400';
+              } else {
+                const labels = ['💥 VAPORIZED! +100', '🎯 CRITICAL HIT! +100', '⚡ DRONE DESTROYED! +100', '🔥 DIRECT HIT! +100'];
+                textLabel = labels[Math.floor(Math.random() * labels.length)];
+              }
+            } else if (bolt.feedback === 'GREAT') {
+              if (isSpace) {
+                textLabel = '🚀 DREADNOUGHT DOWN! +75';
+              } else {
+                const labels = ['⚡ SHATTERED! +75', '🎯 INTERCEPTED! +75', '💥 TARGET DOWN! +75'];
+                textLabel = labels[Math.floor(Math.random() * labels.length)];
+              }
+            } else {
+              const labels = ['✨ GRAZED! +50', '🛡️ DEFUSED! +50', '⚡ CONTACT! +50'];
+              textLabel = labels[Math.floor(Math.random() * labels.length)];
+            }
+
+            feedbacksRef.current.push({
+              text: textLabel,
+              color: hitColor,
+              x: impactX,
+              y: impactY - 26,
+              vy: -2.6,
+              alpha: 1.0,
+              scale: bolt.feedback === 'PERFECT' ? 1.5 : 1.3,
+              life: 0,
+              maxLife: 40,
+            });
+          } else {
+            // MISS / WRONG KEY STRUCK:
+            // Laser strikes the wrong physical keycap on the keyboard!
+            shockwavesRef.current.push({
+              x: impactX,
+              y: impactY,
+              radius: 8,
+              maxRadius: bolt.targetWidth * 1.3,
+              color: '#ef4444',
+              alpha: 1.0,
+            });
+            for (let i = 0; i < 24; i++) {
+              const angle = Math.random() * Math.PI * 2;
+              const speed = 2.5 + Math.random() * 6.5;
+              particlesRef.current.push({
+                x: impactX,
+                y: impactY,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed - 1.0,
+                color: i % 2 === 0 ? '#ef4444' : '#fca5a5',
+                size: 2.5 + Math.random() * 3.5,
+                alpha: 1.0,
+                life: 0,
+                maxLife: 22 + Math.random() * 10,
+              });
+            }
+            feedbacksRef.current.push({
+              text: `❌ WRONG KEY: [${bolt.missedKeyDisplay || 'MISFIRE'}]`,
+              color: '#ef4444',
+              x: impactX,
+              y: impactY - 22,
+              vy: -2.0,
+              alpha: 1.0,
+              scale: 1.3,
+              life: 0,
+              maxLife: 38,
+            });
+          }
+        }
+
+        // Keep bolt alive until it detonates or completes trajectory
+        return t < 1.0 && !bolt.hasDetonated && bolt.life < bolt.maxLife;
+      });
+
+      // 2. DRAW NUCLEAR DETONATION FLASHES
+      nuclearFlashesRef.current = nuclearFlashesRef.current.filter((nf) => {
+        nf.radius += (nf.maxRadius - nf.radius) * 0.35;
+        nf.alpha -= 0.12;
+        if (nf.alpha > 0) {
+          ctx.save();
+          const grad = ctx.createRadialGradient(nf.x, nf.y, 0, nf.x, nf.y, nf.radius);
+          grad.addColorStop(0, `rgba(255, 255, 255, ${nf.alpha})`);
+          grad.addColorStop(0.4, `rgba(255, 240, 180, ${nf.alpha * 0.75})`);
+          grad.addColorStop(1, 'transparent');
+          ctx.fillStyle = grad;
+          ctx.beginPath();
+          ctx.arc(nf.x, nf.y, nf.radius, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+          return true;
+        }
+        return false;
+      });
+
+      // 3. DRAW EXPLODING DRONE VAPORIZATION GHOSTS (Fracturing hull silhouette dissolving in white light)
+      explodingDronesRef.current = explodingDronesRef.current.filter((ed) => {
+        ed.life += 1;
+        const progress = ed.life / ed.maxLife;
+        const alpha = Math.max(0, 1 - progress);
+        if (alpha > 0) {
+          ctx.save();
+          ctx.translate(ed.x, ed.y);
+          ctx.globalAlpha = alpha;
+          const scale = 1 + progress * 0.25;
+          ctx.scale(scale, scale);
+
+          // White-hot fracturing drone boundary
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 3;
+          ctx.shadowColor = ed.color;
+          ctx.shadowBlur = 20;
+          ctx.strokeRect(-ed.width / 2, -ed.height / 2, ed.width, ed.height);
+
+          // Fiery plasma fill
+          ctx.fillStyle = `rgba(255, 255, 255, ${alpha * 0.85})`;
+          ctx.fillRect(-ed.width / 2, -ed.height / 2, ed.width, ed.height);
+          ctx.restore();
+          return true;
+        }
+        return false;
+      });
+
+      // 4. DRAW SHATTERING DEBRIS (Spinning Rock & Drone Voxel Shards)
+      debrisRef.current = debrisRef.current.filter((df) => {
+        df.x += df.vx;
+        df.y += df.vy;
+        df.vy += 0.28; // Gravity
+        df.rotation += df.vRot;
+        df.life += 1;
+        df.alpha = Math.max(0, 1 - df.life / df.maxLife);
+
+        if (df.alpha > 0) {
+          ctx.save();
+          ctx.translate(df.x, df.y);
+          ctx.rotate(df.rotation);
+          ctx.fillStyle = df.color;
+          ctx.globalAlpha = df.alpha;
+          ctx.beginPath();
+          ctx.moveTo(-df.size, -df.size * 0.6);
+          ctx.lineTo(df.size * 0.8, -df.size * 0.4);
+          ctx.lineTo(df.size * 0.5, df.size * 0.8);
+          ctx.lineTo(-df.size * 0.7, df.size * 0.5);
+          ctx.closePath();
+          ctx.fill();
+          ctx.restore();
+          return true;
+        }
+        return false;
+      });
+
+      // 5. DRAW SPARKS (Combustion Plasma Particles)
       particlesRef.current = particlesRef.current.filter((p) => {
         p.x += p.vx;
         p.y += p.vy;
@@ -417,7 +1035,7 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
         return false;
       });
 
-      // 2. Draw Expanding Shockwaves
+      // 6. DRAW EXPANDING SHOCKWAVES
       shockwavesRef.current = shockwavesRef.current.filter((sw) => {
         sw.radius += (sw.maxRadius - sw.radius) * 0.18;
         sw.alpha -= 0.042;
@@ -435,7 +1053,41 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
         return false;
       });
 
-      // 3. Draw Floating Score Rating Popups
+      // 7. DRAW ARCADE ENERGY CRYSTALS (Floating Diamonds with Glints)
+      crystalsRef.current = crystalsRef.current.filter((cs) => {
+        cs.x += cs.vx;
+        cs.y += cs.vy;
+        cs.vy += 0.12; // gentle float gravity
+        cs.life += 1;
+        cs.alpha = Math.max(0, 1 - cs.life / cs.maxLife);
+
+        if (cs.alpha > 0) {
+          ctx.save();
+          ctx.translate(cs.x, cs.y);
+          ctx.fillStyle = cs.color;
+          ctx.shadowColor = cs.color;
+          ctx.shadowBlur = 8;
+          ctx.globalAlpha = cs.alpha;
+          ctx.beginPath();
+          ctx.moveTo(0, -cs.size);
+          ctx.lineTo(cs.size * 0.7, 0);
+          ctx.lineTo(0, cs.size);
+          ctx.lineTo(-cs.size * 0.7, 0);
+          ctx.closePath();
+          ctx.fill();
+
+          // White center specular glint
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.arc(0, 0, cs.size * 0.35, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+          return true;
+        }
+        return false;
+      });
+
+      // 8. DRAW FLOATING SCORE RATING POPUPS
       feedbacksRef.current = feedbacksRef.current.filter((fb) => {
         fb.y += fb.vy;
         fb.life += 1;
@@ -444,12 +1096,12 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
 
         if (fb.alpha > 0) {
           ctx.save();
-          ctx.font = '900 13px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace';
+          ctx.font = '900 15px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace';
           ctx.textAlign = 'center';
           ctx.fillStyle = fb.color;
           ctx.globalAlpha = fb.alpha;
-          ctx.shadowColor = 'rgba(0, 0, 0, 0.95)';
-          ctx.shadowBlur = 8;
+          ctx.shadowColor = 'rgba(0, 0, 0, 1)';
+          ctx.shadowBlur = 10;
           ctx.fillText(fb.text, fb.x, fb.y);
           ctx.restore();
           return true;
@@ -465,11 +1117,6 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
       cancelAnimationFrame(animId);
     };
   }, [updateKeyPositions]);
-
-  // Active target key position and lane color
-  const activeKeyPos = targetKeyLower ? keyPositions[targetKeyLower] : null;
-  const activeLaneColor =
-    (targetLaneIndex !== null && FINGER_LANES[targetLaneIndex]?.color) || THEME_ACCENTS[trailTheme] || '#06b6d4';
 
   // Handle direct click/touch on a virtual keycap
   const handleVirtualKeyClick = (k: KeySpec) => {
@@ -554,22 +1201,22 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
         </div>
       </div>
 
-      {/* FLIGHT STAGE: Integrated Drop Highway + Mechanical Receptor Deck */}
+      {/* FLIGHT STAGE: Integrated Drop Highway + Mechanical Receptor Deck + Under-Keyboard Defense Trench */}
       <div
         ref={containerRef}
-        className="relative w-full h-[440px] sm:h-[480px] bg-transparent overflow-hidden flex flex-col justify-between select-none"
+        className="relative w-full h-[480px] sm:h-[520px] bg-transparent overflow-hidden flex flex-col justify-between select-none"
       >
-        {/* Canvas for Hit Sparks, Shockwaves, and Combat Rating Popups */}
-        <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none z-10 block" />
+        {/* Canvas for Hit Sparks, Shockwaves, and Combat Rating Popups (Layer z-40: IN FRONT OF EVERYTHING for un-occluded VFX) */}
+        <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none z-40 block" />
 
-        {/* 1. LASER GUIDANCE MARKER (Layer z-5: Single diffused center line with ramp up and down glow) */}
+        {/* 1. LASER GUIDANCE MARKER (Layer z-5: Single diffused center line with ramp up and down glow, spanning from top to ship) */}
         {activeKeyPos && (
           <div
             className="absolute top-0 -translate-x-1/2 pointer-events-none transition-all duration-100 ease-out z-5 flex items-center justify-center"
             style={{
               left: `${activeKeyPos.x}px`,
               width: '24px',
-              height: `${Math.max(20, activeKeyPos.y)}px`,
+              height: `${Math.max(20, shipY - 14)}px`,
             }}
           >
             {/* Outer diffused glow aura (constant width, soft Gaussian dispersion) */}
@@ -592,7 +1239,69 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
           </div>
         )}
 
-        {/* 2. FALLING KEYS & STAGING QUEUE (Layer z-30: In front of keyboard so next key lands ON keycap, never behind!) */}
+        {/* 1.5. PLAYER ASTRO-INTERCEPTOR DEFENSE STARFIGHTER (Mounted UNDERNEATH the keyboard, tracking active key and firing UPWARD) */}
+        {activeKeyPos && (
+          <div
+            className="absolute pointer-events-none transition-all duration-100 ease-out z-35 flex flex-col items-center"
+            style={{
+              left: `${activeKeyPos.x}px`,
+              top: `${shipY - 26}px`,
+              transform: `translateX(-50%) rotate(${shotAimAngle}deg)`,
+              transformOrigin: '50% 85%',
+            }}
+          >
+            {/* Starfighter Craft with visceral recoil and twin muzzle flares */}
+            <div className={`relative transition-transform duration-75 ${muzzleFlashActive > Date.now() ? 'translate-y-1.5 scale-90' : ''}`}>
+              {/* Twin High-Intensity Muzzle Flash Flares when firing */}
+              <span
+                className={`absolute -top-3.5 left-0.5 w-2.5 h-5 rounded-full pointer-events-none transition-all duration-75 ${
+                  muzzleFlashActive > Date.now() ? 'opacity-100 scale-125' : 'opacity-0 scale-50'
+                }`}
+                style={{
+                  background:
+                    timingFeedback === 'MISS'
+                      ? 'radial-gradient(circle, #ffffff 40%, #ef4444 80%, transparent)'
+                      : 'radial-gradient(circle, #ffffff 40%, #facc15 80%, transparent)',
+                  boxShadow:
+                    timingFeedback === 'MISS'
+                      ? '0 0 16px #ef4444, 0 0 24px #f43f5e'
+                      : `0 0 16px ${activeLaneColor}, 0 0 24px #facc15`,
+                }}
+              />
+              <span
+                className={`absolute -top-3.5 right-0.5 w-2.5 h-5 rounded-full pointer-events-none transition-all duration-75 ${
+                  muzzleFlashActive > Date.now() ? 'opacity-100 scale-125' : 'opacity-0 scale-50'
+                }`}
+                style={{
+                  background:
+                    timingFeedback === 'MISS'
+                      ? 'radial-gradient(circle, #ffffff 40%, #ef4444 80%, transparent)'
+                      : 'radial-gradient(circle, #ffffff 40%, #facc15 80%, transparent)',
+                  boxShadow:
+                    timingFeedback === 'MISS'
+                      ? '0 0 16px #ef4444, 0 0 24px #f43f5e'
+                      : `0 0 16px ${activeLaneColor}, 0 0 24px #facc15`,
+                }}
+              />
+
+              {/* Starfighter Craft Silhouette (Cannons pointing UP) */}
+              <svg width="42" height="28" viewBox="0 0 42 28" fill="none" className="drop-shadow-[0_4px_14px_rgba(0,0,0,0.95)]">
+                {/* Rear ion engine glow pointing downward */}
+                <ellipse cx="21" cy="24" rx="5.5" ry="3" fill={activeLaneColor} opacity="0.9" className="animate-pulse" />
+                <ellipse cx="21" cy="25" rx="3" ry="1.5" fill="#ffffff" />
+                {/* Starfighter Armor Hull & Swept Cannons */}
+                <polygon points="21,2 25,11 38,17 41,23 30,21 24,24 21,21 18,24 12,21 1,23 4,17 17,11" fill="#090d16" stroke={activeLaneColor} strokeWidth="1.6" />
+                {/* Cockpit Canopy Glass */}
+                <polygon points="21,6 23.5,14 21,17 18.5,14" fill="#38bdf8" opacity="0.95" />
+                {/* Twin Heavy Blaster Cannons pointing UP */}
+                <rect x="13" y="2" width="2.5" height="9" rx="1" fill="#f8fafc" stroke="#334155" strokeWidth="0.5" />
+                <rect x="26.5" y="2" width="2.5" height="9" rx="1" fill="#f8fafc" stroke="#334155" strokeWidth="0.5" />
+              </svg>
+            </div>
+          </div>
+        )}
+
+        {/* 2. INCOMING ALIEN DRONES & HOSTILE STAGING SQUADRON (Layer z-30: In front of keyboard) */}
         <div className="absolute inset-0 pointer-events-none z-30">
           {notes.map((note, noteIdx) => {
             if (note.status === 'PROCESSED') return null;
@@ -604,117 +1313,223 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
             const laneMatch = FINGER_LANES[note.lane];
             const laneColor = laneMatch?.color || '#06b6d4';
             const isSpace = note.char === ' ';
-
-            // Stop line is strictly above the keyboard deck
-            // Queued notes (noteIdx > 0) MUST STOP above the keyboard!
-            const stopLineY = Math.max(24, keyboardTopY - 44);
+            // Sky ceiling and defense perimeter line strictly above keyboard deck
+            const skyCeilingY = 18;
+            const defensePerimeterY = Math.max(skyCeilingY + 36, keyboardTopY - 38);
 
             let topPx = 0;
             if (noteIdx === 0) {
-              // The NEXT KEY: Drops down from the staging zone and lands directly ON the target keycap!
-              const normProgress = Math.min(1.0, note.yPercent / 84);
-              const startY = 16;
-              const targetY = pos.y - pos.height / 2;
-              topPx = startY + (targetY - startY) * Math.pow(normProgress, 1.25);
+              // The NEXT TARGET DRONE: Smoothly flies down the flight corridor
+              const progress = Math.min(1.0, Math.max(0, note.yPercent / 84));
+              topPx = skyCeilingY + (defensePerimeterY - skyCeilingY) * progress;
             } else {
-              // QUEUED NOTES: Stop above the keyboard, waiting in staging queue until it is their turn!
-              const parkedY = Math.max(16, stopLineY - (noteIdx - 1) * 44);
-              // Gradually travel down from the top to their parked staging position and STOP there
+              // QUEUED SQUADRON: Stationed in echelon formation in orbit
+              const echelonSlotY = Math.max(skyCeilingY, defensePerimeterY - noteIdx * 40);
               const travelProgress = Math.min(1.0, note.yPercent / 35);
-              topPx = 16 + (parkedY - 16) * Math.pow(travelProgress, 1.1);
+              topPx = skyCeilingY + (echelonSlotY - skyCeilingY) * travelProgress;
             }
 
-            // EXACT SAME SIZE & SHAPE as the corresponding physical key on the keyboard deck!
             const noteWidth = pos.width;
             const noteHeight = pos.height;
             const kSpec = KEY_SPEC_LOOKUP[lookupKey];
 
+            // Register live drone in active registry for laser aiming
+            const droneRecord = {
+              id: note.id,
+              char: note.char,
+              x: pos.x,
+              y: topPx,
+              width: noteWidth,
+              height: noteHeight,
+              isSpace,
+              laneColor,
+              display: kSpec?.display || note.displayChar,
+              subDisplay: kSpec?.subDisplay,
+            };
+            liveDronesMapRef.current.set(note.id, droneRecord);
+            liveDronesByCharRef.current.set(lookupKey, droneRecord);
+            if (noteIdx === 0) {
+              activeDronePosRef.current = droneRecord;
+            }
+
             return (
               <div
                 key={note.id}
-                className={`absolute -translate-x-1/2 flex items-center justify-center rounded-md font-mono transition-transform duration-75 shadow-lg select-none ${
+                className={`absolute -translate-x-1/2 flex items-center justify-center rounded-lg font-mono transition-transform duration-75 select-none ${
                   noteIdx === 0
                     ? isSpace
-                      ? 'bg-slate-900/60 border-2 text-white z-30'
-                      : 'bg-slate-900/90 border-2 text-white z-30'
+                      ? 'bg-slate-950/90 border-2 text-white z-30'
+                      : 'bg-slate-950/95 border-2 text-white z-30'
                     : isSpace
-                    ? 'bg-slate-900/70 border text-slate-300 opacity-90 z-20'
-                    : 'bg-slate-900/95 border text-slate-300 opacity-90 z-20'
+                    ? 'bg-slate-900/80 border text-slate-300 opacity-90 z-20'
+                    : 'bg-slate-900/90 border text-slate-300 opacity-90 z-20'
                 }`}
                 style={{
                   left: `${pos.x}px`,
                   top: `${topPx}px`,
                   width: `${noteWidth}px`,
                   height: `${noteHeight}px`,
-                  borderColor: noteIdx === 0 ? laneColor : `${laneColor}85`,
+                  borderColor: noteIdx === 0 ? laneColor : `${laneColor}80`,
                   boxShadow:
                     noteIdx === 0
-                      ? `0 3px 0 #020617, 0 0 24px ${laneColor}90, inset 0 1px 1px rgba(255,255,255,0.4)`
+                      ? `0 4px 0 #020617, 0 0 24px ${laneColor}90, inset 0 1px 1px rgba(255,255,255,0.4)`
                       : `0 3px 0 #020617, 0 4px 10px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.1)`,
                 }}
               >
-                {/* Top frosted glass shine */}
-                <div className="absolute inset-x-0 top-0 h-1/2 rounded-t-md bg-gradient-to-b from-white/20 to-transparent pointer-events-none" />
+                {/* HOSTILE CRAFT HULL DETAILS */}
+                {isSpace ? (
+                  /* ALIEN HEAVY DREADNOUGHT / FLAGSHIP CRUISER */
+                  <div className="relative w-full h-full flex items-center justify-center">
+                    {/* Quad Plasma Thrusters on Top (Propelling the dreadnought down) */}
+                    <div className="absolute -top-3.5 inset-x-8 flex justify-around items-end pointer-events-none">
+                      {[0, 1, 2, 3].map((i) => (
+                        <span
+                          key={i}
+                          className="w-2.5 h-3.5 rounded-full animate-pulse shadow-lg"
+                          style={{
+                            background: 'linear-gradient(to top, #ffffff, #10b981, transparent)',
+                            boxShadow: '0 0 10px #10b981',
+                          }}
+                        />
+                      ))}
+                    </div>
 
-                {/* Finger color accent bar at bottom of falling note (matches keyboard keycaps!) */}
+                    {/* Port & Starboard Heavy Outboard Weapon Wings */}
+                    <div
+                      className="absolute top-1/2 -left-4 -translate-y-1/2 w-4 h-6 border-l-2 border-t-2 border-b-2 rounded-l-md pointer-events-none flex items-center justify-center bg-slate-950 shadow-md"
+                      style={{ borderColor: '#10b981' }}
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping" />
+                    </div>
+                    <div
+                      className="absolute top-1/2 -right-4 -translate-y-1/2 w-4 h-6 border-r-2 border-t-2 border-b-2 rounded-r-md pointer-events-none flex items-center justify-center bg-slate-950 shadow-md"
+                      style={{ borderColor: '#10b981' }}
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping" />
+                    </div>
+
+                    {/* Center Command Bridge */}
+                    <div className="flex items-center justify-center gap-2 z-10 pointer-events-none">
+                      {noteIdx === 0 && (
+                        <span className="text-[9px] font-black tracking-widest text-emerald-400 bg-emerald-950/80 px-1.5 py-0.5 rounded border border-emerald-500/40 animate-pulse">
+                          HOSTILE FLAGSHIP
+                        </span>
+                      )}
+                      <span
+                        className={`truncate font-mono font-black text-xs sm:text-sm tracking-wider select-none ${
+                          noteIdx === 0
+                            ? 'text-white drop-shadow-[0_0_8px_rgba(16,185,129,0.9)]'
+                            : 'text-slate-300'
+                        }`}
+                      >
+                        SPACE
+                      </span>
+                      {noteIdx === 0 && (
+                        <span className="text-[9px] font-black tracking-widest text-emerald-400 bg-emerald-950/80 px-1.5 py-0.5 rounded border border-emerald-500/40 animate-pulse">
+                          LOCK
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  /* ALIEN ATTACK DRONE / SCOUT FIGHTER */
+                  <div className="relative w-full h-full flex items-center justify-center">
+                    {/* Twin Ion Thruster Plumes on Top (Firing upward) */}
+                    <div className="absolute -top-3.5 inset-x-2 flex justify-between items-end pointer-events-none px-1">
+                      <span
+                        className="w-2 h-3.5 rounded-full animate-pulse shadow-md"
+                        style={{
+                          background: `linear-gradient(to top, #ffffff, ${laneColor}, transparent)`,
+                          boxShadow: `0 0 8px ${laneColor}`,
+                        }}
+                      />
+                      <span
+                        className="w-2 h-3.5 rounded-full animate-pulse shadow-md"
+                        style={{
+                          background: `linear-gradient(to top, #ffffff, ${laneColor}, transparent)`,
+                          boxShadow: `0 0 8px ${laneColor}`,
+                        }}
+                      />
+                    </div>
+
+                    {/* Outboard Alien Fighter Wings (Left & Right) */}
+                    <div
+                      className="absolute top-1/2 -left-3.5 -translate-y-1/2 w-3.5 h-5 border-l-2 border-t-2 border-b-2 rounded-l-md pointer-events-none flex items-center justify-center bg-slate-950 shadow-md"
+                      style={{ borderColor: laneColor }}
+                    >
+                      <span className="w-1 h-1 rounded-full bg-rose-500 animate-ping" />
+                    </div>
+                    <div
+                      className="absolute top-1/2 -right-3.5 -translate-y-1/2 w-3.5 h-5 border-r-2 border-t-2 border-b-2 rounded-r-md pointer-events-none flex items-center justify-center bg-slate-950 shadow-md"
+                      style={{ borderColor: laneColor }}
+                    >
+                      <span className="w-1 h-1 rounded-full bg-rose-500 animate-ping" />
+                    </div>
+
+                    {/* Forward Hostile Optical Sensor Eye (Pointing down toward player) */}
+                    <div className="absolute -bottom-1 inset-x-0 flex justify-center pointer-events-none">
+                      <span
+                        className={`w-2.5 h-1 rounded-full ${
+                          noteIdx === 0
+                            ? 'bg-rose-500 shadow-[0_0_8px_#f43f5e] animate-pulse'
+                            : 'bg-amber-400 opacity-70'
+                        }`}
+                      />
+                    </div>
+
+                    {/* Reinforced Cockpit Core (Letter glyph in crisp, pristine high-contrast) */}
+                    <div className="flex flex-col items-center justify-center leading-none pointer-events-none select-none z-10">
+                      {kSpec?.subDisplay && (
+                        <span
+                          className={`text-[8px] leading-none mb-0.5 font-bold ${
+                            noteIdx === 0 ? 'text-white' : 'text-slate-400'
+                          }`}
+                          style={{ color: noteIdx === 0 ? laneColor : undefined }}
+                        >
+                          {kSpec.subDisplay}
+                        </span>
+                      )}
+                      <span
+                        className={`truncate font-mono leading-none ${
+                          noteIdx === 0
+                            ? 'text-white font-black text-sm sm:text-base drop-shadow-[0_0_10px_rgba(255,255,255,0.95)]'
+                            : 'text-slate-200 font-semibold text-xs'
+                        }`}
+                      >
+                        {kSpec?.display || note.displayChar}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Finger color accent bar at bottom of drone chassis */}
                 <span
                   className={`absolute bottom-0 inset-x-1 rounded-full ${
-                    noteIdx === 0 ? 'h-1 opacity-100 shadow-[0_0_8px_currentColor]' : 'h-[2.5px] opacity-75'
+                    noteIdx === 0 ? 'h-1 opacity-100 shadow-[0_0_8px_currentColor]' : 'h-[2px] opacity-75'
                   }`}
                   style={{ backgroundColor: laneColor, color: laneColor }}
                 />
 
-                {/* Tactile bump marker on index keys (F & J) */}
-                {kSpec?.isBump && (
-                  <span
-                    className="absolute bottom-1 w-2.5 h-0.5 rounded-full"
-                    style={{ backgroundColor: noteIdx === 0 ? '#ffffff' : laneColor }}
-                  />
-                )}
-
-                {/* Content: Clean, uncluttered falling keycap */}
-                {isSpace ? (
-                  <span
-                    className={`truncate font-mono font-black text-xs tracking-wider select-none ${
-                      noteIdx === 0
-                        ? 'text-white drop-shadow-[0_1px_2px_rgba(0,0,0,1)]'
-                        : 'text-slate-300'
-                    }`}
-                  >
-                    SPACE
-                  </span>
-                ) : (
-                  <div className="flex flex-col items-center justify-center leading-none pointer-events-none select-none">
-                    {kSpec?.subDisplay && (
-                      <span
-                        className={`text-[8px] leading-none mb-0.5 font-bold ${
-                          noteIdx === 0 ? 'text-white' : 'text-slate-400'
-                        }`}
-                        style={{ color: noteIdx === 0 ? laneColor : undefined }}
-                      >
-                        {kSpec.subDisplay}
-                      </span>
-                    )}
-                    <span
-                      className={`truncate font-mono leading-none ${
-                        noteIdx === 0
-                          ? 'text-white font-black text-xs sm:text-sm drop-shadow-[0_1px_2px_rgba(0,0,0,1)]'
-                          : 'text-slate-200 font-semibold text-xs'
-                      }`}
-                    >
-                      {kSpec?.display || note.displayChar}
-                    </span>
-                  </div>
-                )}
-
-                {/* Energy tail behind active descending note */}
+                {/* Sci-Fi Tactical Lock-On Corner Brackets for Active Target */}
                 {noteIdx === 0 && (
-                  <div
-                    className="absolute -top-4 inset-x-2 h-4 rounded-t-md opacity-60 pointer-events-none"
-                    style={{
-                      background: `linear-gradient(to top, ${laneColor}, transparent)`,
-                    }}
-                  />
+                  <>
+                    <span
+                      className="absolute -top-[4px] -left-[4px] w-2.5 h-2.5 border-t-2 border-l-2 pointer-events-none rounded-tl-sm animate-pulse"
+                      style={{ borderColor: laneColor }}
+                    />
+                    <span
+                      className="absolute -top-[4px] -right-[4px] w-2.5 h-2.5 border-t-2 border-r-2 pointer-events-none rounded-tr-sm animate-pulse"
+                      style={{ borderColor: laneColor }}
+                    />
+                    <span
+                      className="absolute -bottom-[4px] -left-[4px] w-2.5 h-2.5 border-b-2 border-l-2 pointer-events-none rounded-bl-sm animate-pulse"
+                      style={{ borderColor: laneColor }}
+                    />
+                    <span
+                      className="absolute -bottom-[4px] -right-[4px] w-2.5 h-2.5 border-b-2 border-r-2 pointer-events-none rounded-br-sm animate-pulse"
+                      style={{ borderColor: laneColor }}
+                    />
+                  </>
                 )}
               </div>
             );
@@ -918,6 +1733,22 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
                 thumbRole={isSpaceActive ? (smartThumbHand === 'right' ? 'primary' : 'secondary') : null}
               />
             )}
+          </div>
+        </div>
+
+        {/* 4. DEFENSE LAUNCH TRENCH (Mounted directly underneath the mechanical keyboard) */}
+        <div className="relative z-20 pb-2 px-1 sm:px-3 overflow-hidden select-none">
+          <div className="max-w-4xl min-w-[580px] mx-auto h-7 rounded-xl bg-slate-950/90 border border-slate-800/80 shadow-[inset_0_2px_4px_rgba(0,0,0,0.8)] flex items-center justify-between px-3.5 relative overflow-hidden">
+            {/* Mag-Lev Track Guide Line */}
+            <div className="absolute inset-x-0 h-[1.5px] bg-gradient-to-r from-transparent via-cyan-500/40 to-transparent" />
+            <span className="text-[8px] font-mono font-bold tracking-widest text-slate-500 uppercase select-none flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+              INTERCEPTOR DEFENSE RAIL // ACTIVE KEY VECTOR
+            </span>
+            <span className="text-[8px] font-mono text-cyan-400 font-bold uppercase select-none flex items-center gap-1">
+              <span>BATTERY ARMED</span>
+              <span className="text-[10px]">▲</span>
+            </span>
           </div>
         </div>
       </div>

@@ -1,0 +1,376 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
+  <defs>
+    <!-- Background Gradients -->
+    <radialGradient id="nebulaCyan" cx="30%" cy="35%" r="60%">
+      <stop offset="0%" stop-color="#083344" stop-opacity="0.85"/>
+      <stop offset="60%" stop-color="#030712" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#020617" stop-opacity="1"/>
+    </radialGradient>
+    <radialGradient id="nebulaPurple" cx="80%" cy="20%" r="50%">
+      <stop offset="0%" stop-color="#3b0764" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#030712" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="laserBeamGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#06b6d4" stop-opacity="0"/>
+      <stop offset="25%" stop-color="#06b6d4" stop-opacity="0.9"/>
+      <stop offset="85%" stop-color="#22d3ee" stop-opacity="1"/>
+      <stop offset="100%" stop-color="#06b6d4" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="blasterBoltGrad" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="50%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#0284c7"/>
+    </linearGradient>
+    <linearGradient id="hudGlass" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#020617" stop-opacity="0.9"/>
+    </linearGradient>
+    <linearGradient id="keycapGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+    <linearGradient id="keycapActiveGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0e7490"/>
+      <stop offset="100%" stop-color="#155e75"/>
+    </linearGradient>
+    <filter id="glowCyan" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="glowBright" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="14" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Deep Space Canvas -->
+  <rect width="1280" height="720" fill="#020617"/>
+  <rect width="1280" height="720" fill="url(#nebulaCyan)"/>
+  <rect width="1280" height="720" fill="url(#nebulaPurple)"/>
+
+  <!-- Starfield Points -->
+  <g fill="#ffffff" opacity="0.6">
+    <circle cx="45" cy="80" r="1.5" /><circle cx="120" cy="190" r="1" /><circle cx="210" cy="95" r="2" opacity="0.9" fill="#38bdf8"/>
+    <circle cx="340" cy="220" r="1.2" /><circle cx="430" cy="60" r="1.5" /><circle cx="560" cy="140" r="1" />
+    <circle cx="680" cy="40" r="2.2" opacity="0.95" fill="#a855f7"/><circle cx="790" cy="170" r="1.2" /><circle cx="910" cy="80" r="1.8" />
+    <circle cx="1020" cy="160" r="1" /><circle cx="1140" cy="90" r="1.5" /><circle cx="1220" cy="210" r="1.2" />
+    <circle cx="90" cy="380" r="1" /><circle cx="180" cy="510" r="1.8" /><circle cx="1110" cy="440" r="1.5" /><circle cx="1230" cy="580" r="2" />
+  </g>
+
+  <!-- Cosmic Speed Lines (Hyperspace highway feel) -->
+  <g stroke="#0891b2" stroke-opacity="0.15" stroke-width="1.5" stroke-dasharray="12 18">
+    <line x1="280" y1="90" x2="280" y2="480" />
+    <line x1="390" y1="90" x2="390" y2="480" />
+    <line x1="500" y1="90" x2="500" y2="480" />
+    <line x1="610" y1="90" x2="610" y2="480" />
+    <line x1="720" y1="90" x2="720" y2="480" />
+    <line x1="830" y1="90" x2="830" y2="480" />
+    <line x1="940" y1="90" x2="940" y2="480" />
+    <line x1="1050" y1="90" x2="1050" y2="480" />
+  </g>
+
+  <!-- TOP HEADER BAR -->
+  <rect x="0" y="0" width="1280" height="52" fill="#030712" fill-opacity="0.85" />
+  <line x1="0" y1="52" x2="1280" y2="52" stroke="#1e293b" stroke-width="1" />
+  
+  <!-- Logo -->
+  <g transform="translate(32, 14)">
+    <polygon points="12,0 24,24 12,18 0,24" fill="#06b6d4" filter="url(#glowCyan)"/>
+    <text x="32" y="18" font-family="'Outfit', 'Plus Jakarta Sans', sans-serif" font-weight="800" font-size="18" fill="#ffffff" letter-spacing="1.5">ASTRO<tspan fill="#22d3ee">TYPE</tspan></text>
+    <rect x="135" y="3" width="76" height="18" rx="4" fill="#083344" stroke="#0891b2" stroke-width="1"/>
+    <text x="141" y="16" font-family="'JetBrains Mono', monospace" font-size="10" font-weight="700" fill="#22d3ee">SECTOR 02</text>
+  </g>
+
+  <!-- Mission Stage Title & Target Subtitle -->
+  <text x="640" y="24" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-weight="700" font-size="14" fill="#f8fafc">Stage 2.3: Orbital Shipyards · Upper Deck Ascent</text>
+  <text x="640" y="42" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="11" fill="#94a3b8">Target Cadence: 75 WPM · Focus: E, I, R, U Reaches</text>
+
+  <!-- Header Right Controls -->
+  <g transform="translate(1040, 14)">
+    <rect x="0" y="0" width="90" height="26" rx="6" fill="#0f172a" stroke="#334155" stroke-width="1"/>
+    <text x="45" y="17" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="600" fill="#38bdf8">🔊 85%</text>
+    <rect x="100" y="0" width="105" height="26" rx="6" fill="#0e7490" fill-opacity="0.3" stroke="#06b6d4" stroke-width="1"/>
+    <text x="152" y="17" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700" fill="#67e8f9">HANGAR [H]</text>
+  </g>
+
+  <!-- HUD TELEMETRY BAR -->
+  <g transform="translate(190, 68)">
+    <rect width="900" height="64" rx="12" fill="url(#hudGlass)" stroke="#1e293b" stroke-width="1.5"/>
+    
+    <!-- Stat 1: WPM -->
+    <g transform="translate(45, 14)">
+      <text x="0" y="12" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="600" fill="#64748b" letter-spacing="1">VELOCITY</text>
+      <text x="0" y="38" font-family="'Outfit', sans-serif" font-size="28" font-weight="800" fill="#38bdf8">88 <tspan font-size="13" font-weight="600" fill="#94a3b8">WPM</tspan></text>
+    </g>
+
+    <line x1="175" y1="12" x2="175" y2="52" stroke="#1e293b" stroke-width="1"/>
+
+    <!-- Stat 2: Accuracy -->
+    <g transform="translate(210, 14)">
+      <text x="0" y="12" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="600" fill="#64748b" letter-spacing="1">PRECISION</text>
+      <text x="0" y="38" font-family="'Outfit', sans-serif" font-size="28" font-weight="800" fill="#10b981">99.4<tspan font-size="16" font-weight="600" fill="#6ee7b7">%</tspan></text>
+    </g>
+
+    <line x1="340" y1="12" x2="340" y2="52" stroke="#1e293b" stroke-width="1"/>
+
+    <!-- Stat 3: Streak / Overdrive -->
+    <g transform="translate(375, 14)">
+      <text x="0" y="12" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="600" fill="#64748b" letter-spacing="1">COMBO STREAK</text>
+      <text x="0" y="38" font-family="'Outfit', sans-serif" font-size="28" font-weight="800" fill="#f59e0b">48<tspan font-size="16" font-weight="700" fill="#fbbf24">x</tspan> <tspan font-size="12" font-weight="800" fill="#ec4899">OVERDRIVE</tspan></text>
+    </g>
+
+    <line x1="560" y1="12" x2="560" y2="52" stroke="#1e293b" stroke-width="1"/>
+
+    <!-- Stat 4: Overdrive Reactor Gauge -->
+    <g transform="translate(595, 14)">
+      <text x="0" y="12" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="600" fill="#64748b" letter-spacing="1">HYPERDRIVE REACTOR</text>
+      <rect x="0" y="22" width="160" height="14" rx="7" fill="#0f172a" stroke="#334155" stroke-width="1"/>
+      <rect x="2" y="24" width="156" height="10" rx="5" fill="#ec4899" filter="url(#glowCyan)"/>
+      <text x="180" y="34" font-family="'JetBrains Mono', monospace" font-size="12" font-weight="800" fill="#f43f5e">100%</text>
+    </g>
+
+    <!-- Stat 5: Shield Status -->
+    <g transform="translate(815, 16)">
+      <rect x="0" y="0" width="60" height="32" rx="6" fill="#042f2e" stroke="#0d9488" stroke-width="1"/>
+      <text x="30" y="21" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="12" font-weight="700" fill="#2dd4bf">🛡️ x3</text>
+    </g>
+  </g>
+
+  <!-- LIVE PROMPT STREAM -->
+  <g transform="translate(240, 144)">
+    <rect width="800" height="42" rx="8" fill="#0f172a" fill-opacity="0.9" stroke="#334155" stroke-width="1"/>
+    <text x="30" y="27" font-family="'JetBrains Mono', monospace" font-size="17" fill="#64748b" letter-spacing="2">the quick orbital fleet </text>
+    <rect x="270" y="8" width="28" height="26" rx="4" fill="#0891b2" fill-opacity="0.4" stroke="#22d3ee" stroke-width="1.5"/>
+    <text x="278" y="26" font-family="'JetBrains Mono', monospace" font-size="18" font-weight="800" fill="#ffffff">u</text>
+    <text x="308" y="27" font-family="'JetBrains Mono', monospace" font-size="17" fill="#94a3b8" letter-spacing="2">nlocks hyperdrive protocol</text>
+    
+    <!-- Target Finger Pill -->
+    <rect x="635" y="8" width="150" height="26" rx="13" fill="#84cc16" fill-opacity="0.2" stroke="#84cc16" stroke-width="1"/>
+    <circle cx="648" cy="21" r="5" fill="#84cc16"/>
+    <text x="660" y="25" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="700" fill="#bef264">R. INDEX FINGER</text>
+  </g>
+
+  <!-- RHYTHM HIGHWAY & FALLING NOTES -->
+  <!-- Target Lane Guidance Laser Beam (Points to 'U' key in lane) -->
+  <line x1="718" y1="190" x2="718" y2="480" stroke="url(#laserBeamGrad)" stroke-width="4" filter="url(#glowBright)" />
+  <line x1="718" y1="190" x2="718" y2="480" stroke="#ffffff" stroke-width="1.5" stroke-opacity="0.9" />
+
+  <!-- Descending Alien Drone 1 (Further down - Target 'U' at y=310) -->
+  <g transform="translate(688, 290)">
+    <!-- Drone Chassis -->
+    <rect x="0" y="0" width="60" height="38" rx="8" fill="#1e293b" stroke="#84cc16" stroke-width="2" filter="url(#glowCyan)"/>
+    <!-- Sci-fi Corner Brackets (Lock-On Reticle) -->
+    <path d="M -6,4 L -6,-6 L 4,-6" stroke="#22d3ee" stroke-width="2" fill="none"/>
+    <path d="M 66,4 L 66,-6 L 56,-6" stroke="#22d3ee" stroke-width="2" fill="none"/>
+    <path d="M -6,34 L -6,44 L 4,44" stroke="#22d3ee" stroke-width="2" fill="none"/>
+    <path d="M 66,34 L 66,44 L 56,44" stroke="#22d3ee" stroke-width="2" fill="none"/>
+    <!-- Note Character -->
+    <text x="30" y="26" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="20" font-weight="800" fill="#ffffff">U</text>
+    <circle cx="12" cy="19" r="3" fill="#84cc16"/>
+    <circle cx="48" cy="19" r="3" fill="#84cc16"/>
+  </g>
+
+  <!-- Descending Drone 2 ('N' in lane, higher altitude y=220) -->
+  <g transform="translate(650, 205)">
+    <rect x="0" y="0" width="56" height="34" rx="8" fill="#0f172a" stroke="#84cc16" stroke-width="1.5" stroke-opacity="0.8"/>
+    <text x="28" y="24" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="18" font-weight="700" fill="#e2e8f0">N</text>
+  </g>
+
+  <!-- Descending Drone 3 ('L' in lane, higher altitude y=235) -->
+  <g transform="translate(790, 220)">
+    <rect x="0" y="0" width="56" height="34" rx="8" fill="#0f172a" stroke="#f97316" stroke-width="1.5" stroke-opacity="0.8"/>
+    <text x="28" y="24" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="18" font-weight="700" fill="#e2e8f0">L</text>
+  </g>
+
+  <!-- Descending Drone 4 ('O' in lane, altitude y=260) -->
+  <g transform="translate(770, 255)">
+    <rect x="0" y="0" width="56" height="34" rx="8" fill="#0f172a" stroke="#f97316" stroke-width="1.5" stroke-opacity="0.8"/>
+    <text x="28" y="24" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="18" font-weight="700" fill="#e2e8f0">O</text>
+  </g>
+
+  <!-- Descending Drone 5 ('C' in lane, altitude y=275) -->
+  <g transform="translate(460, 260)">
+    <rect x="0" y="0" width="56" height="34" rx="8" fill="#0f172a" stroke="#3b82f6" stroke-width="1.5" stroke-opacity="0.8"/>
+    <text x="28" y="24" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="18" font-weight="700" fill="#e2e8f0">C</text>
+  </g>
+
+  <!-- HIGH ENERGY BLASTER BOLT (Fired from Ship below keyboard toward Drone at y=310) -->
+  <line x1="718" y1="580" x2="718" y2="330" stroke="url(#blasterBoltGrad)" stroke-width="5" filter="url(#glowBright)"/>
+  <circle cx="718" cy="330" r="10" fill="#ffffff" filter="url(#glowBright)"/>
+
+  <!-- IMPACT EXPLOSION & DEBRIS (Detonating previously struck drone 'R') -->
+  <g transform="translate(540, 260)">
+    <!-- Shockwave Rings -->
+    <circle cx="0" cy="0" r="28" stroke="#06b6d4" stroke-width="2" fill="none" opacity="0.6"/>
+    <circle cx="0" cy="0" r="42" stroke="#22d3ee" stroke-width="1.5" stroke-dasharray="6 4" fill="none" opacity="0.4"/>
+    <circle cx="0" cy="0" r="14" fill="#ffffff" filter="url(#glowCyan)"/>
+    <!-- Shattered Voxel Debris -->
+    <polygon points="-16,-12 -24,-8 -20,-18" fill="#38bdf8"/>
+    <polygon points="18,-15 26,-22 24,-10" fill="#06b6d4"/>
+    <polygon points="-12,18 -18,24 -8,22" fill="#22d3ee"/>
+    <polygon points="20,14 28,12 22,22" fill="#38bdf8"/>
+    <!-- Diamond Energy Crystal Shards -->
+    <polygon points="0,-26 6,-20 0,-14 -6,-20" fill="#a5f3fc" filter="url(#glowCyan)"/>
+    <polygon points="24,0 30,6 24,12 18,6" fill="#a5f3fc" filter="url(#glowCyan)"/>
+    <!-- Exclamation Popups -->
+    <text x="35" y="-18" font-family="'Outfit', sans-serif" font-weight="900" font-size="15" fill="#38bdf8" filter="url(#glowCyan)">VAPORIZED! +100</text>
+  </g>
+
+  <!-- MECHANICAL KEYBOARD FLIGHT DECK (ANSI 60%) -->
+  <g transform="translate(230, 480)">
+    <!-- Deck Chassis Case -->
+    <rect width="820" height="150" rx="14" fill="#090d16" stroke="#1e293b" stroke-width="2"/>
+    <rect x="4" y="4" width="812" height="142" rx="10" fill="#0b1120" stroke="#0f172a" stroke-width="1"/>
+
+    <!-- ROW 1 (Numbers row snippet) -->
+    <!-- ` ~ -->
+    <rect x="15" y="10" width="46" height="24" rx="4" fill="url(#keycapGrad)" stroke="#334155" stroke-width="1"/>
+    <rect x="15" y="31" width="46" height="3" rx="1" fill="#ec4899"/>
+    <!-- 1 - 0 -->
+    <g font-family="'JetBrains Mono', monospace" font-size="10" fill="#94a3b8" text-anchor="middle">
+      <rect x="67" y="10" width="46" height="24" rx="4" fill="url(#keycapGrad)" stroke="#334155"/><rect x="67" y="31" width="46" height="3" fill="#ec4899"/><text x="90" y="26">1</text>
+      <rect x="119" y="10" width="46" height="24" rx="4" fill="url(#keycapGrad)" stroke="#334155"/><rect x="119" y="31" width="46" height="3" fill="#8b5cf6"/><text x="142" y="26">2</text>
+      <rect x="171" y="10" width="46" height="24" rx="4" fill="url(#keycapGrad)" stroke="#334155"/><rect x="171" y="31" width="46" height="3" fill="#3b82f6"/><text x="194" y="26">3</text>
+      <rect x="223" y="10" width="46" height="24" rx="4" fill="url(#keycapGrad)" stroke="#334155"/><rect x="223" y="31" width="46" height="3" fill="#06b6d4"/><text x="246" y="26">4</text>
+      <rect x="275" y="10" width="46" height="24" rx="4" fill="url(#keycapGrad)" stroke="#334155"/><rect x="275" y="31" width="46" height="3" fill="#06b6d4"/><text x="298" y="26">5</text>
+      <rect x="327" y="10" width="46" height="24" rx="4" fill="url(#keycapGrad)" stroke="#334155"/><rect x="327" y="31" width="46" height="3" fill="#84cc16"/><text x="350" y="26">6</text>
+      <rect x="379" y="10" width="46" height="24" rx="4" fill="url(#keycapGrad)" stroke="#334155"/><rect x="379" y="31" width="46" height="3" fill="#84cc16"/><text x="402" y="26">7</text>
+      <rect x="431" y="10" width="46" height="24" rx="4" fill="url(#keycapGrad)" stroke="#334155"/><rect x="431" y="31" width="46" height="3" fill="#eab308"/><text x="454" y="26">8</text>
+      <rect x="483" y="10" width="46" height="24" rx="4" fill="url(#keycapGrad)" stroke="#334155"/><rect x="483" y="31" width="46" height="3" fill="#f97316"/><text x="506" y="26">9</text>
+      <rect x="535" y="10" width="46" height="24" rx="4" fill="url(#keycapGrad)" stroke="#334155"/><rect x="535" y="31" width="46" height="3" fill="#ef4444"/><text x="558" y="26">0</text>
+      <rect x="587" y="10" width="46" height="24" rx="4" fill="url(#keycapGrad)" stroke="#334155"/><rect x="587" y="31" width="46" height="3" fill="#ef4444"/><text x="610" y="26">-</text>
+      <rect x="639" y="10" width="46" height="24" rx="4" fill="url(#keycapGrad)" stroke="#334155"/><rect x="639" y="31" width="46" height="3" fill="#ef4444"/><text x="662" y="26">=</text>
+      <rect x="691" y="10" width="114" height="24" rx="4" fill="url(#keycapGrad)" stroke="#334155"/><rect x="691" y="31" width="114" height="3" fill="#ef4444"/><text x="748" y="26">BACKSPACE</text>
+    </g>
+
+    <!-- ROW 2 (Q W E R T Y U I O P) -->
+    <g transform="translate(0, 38)" font-family="'JetBrains Mono', monospace" font-size="11" fill="#cbd5e1" text-anchor="middle">
+      <rect x="15" y="0" width="68" height="25" rx="4" fill="url(#keycapGrad)" stroke="#334155"/><rect x="15" y="22" width="68" height="3" fill="#ec4899"/><text x="49" y="16">TAB</text>
+      <rect x="89" y="0" width="46" height="25" rx="4" fill="url(#keycapGrad)" stroke="#334155"/><rect x="89" y="22" width="46" height="3" fill="#ec4899"/><text x="112" y="17">Q</text>
+      <rect x="141" y="0" width="46" height="25" rx="4" fill="url(#keycapGrad)" stroke="#334155"/><rect x="141" y="22" width="46" height="3" fill="#8b5cf6"/><text x="164" y="17">W</text>
+      <rect x="193" y="0" width="46" height="25" rx="4" fill="url(#keycapGrad)" stroke="#334155"/><rect x="193" y="22" width="46" height="3" fill="#3b82f6"/><text x="216" y="17">E</text>
+      <rect x="245" y="0" width="46" height="25" rx="4" fill="url(#keycapGrad)" stroke="#334155"/><rect x="245" y="22" width="46" height="3" fill="#06b6d4"/><text x="268" y="17">R</text>
+      <rect x="297" y="0" width="46" height="25" rx="4" fill="url(#keycapGrad)" stroke="#334155"/><rect x="297" y="22" width="46" height="3" fill="#06b6d4"/><text x="320" y="17">T</text>
+      <rect x="349" y="0" width="46" height="25" rx="4" fill="url(#keycapGrad)" stroke="#334155"/><rect x="349" y="22" width="46" height="3" fill="#84cc16"/><text x="372" y="17">Y</text>
+
+      <!-- ACTIVE TARGET KEY 'U' WITH HIGHLIGHT GLOW -->
+      <g filter="url(#glowCyan)">
+        <rect x="401" y="0" width="46" height="25" rx="4" fill="url(#keycapActiveGrad)" stroke="#22d3ee" stroke-width="1.5"/>
+        <rect x="401" y="22" width="46" height="3" fill="#84cc16"/>
+        <text x="424" y="17" font-weight="800" fill="#ffffff">U</text>
+      </g>
+
+      <rect x="453" y="0" width="46" height="25" rx="4" fill="url(#keycapGrad)" stroke="#334155"/><rect x="453" y="22" width="46" height="3" fill="#eab308"/><text x="476" y="17">I</text>
+      <rect x="505" y="0" width="46" height="25" rx="4" fill="url(#keycapGrad)" stroke="#334155"/><rect x="505" y="22" width="46" height="3" fill="#f97316"/><text x="528" y="17">O</text>
+      <rect x="557" y="0" width="46" height="25" rx="4" fill="url(#keycapGrad)" stroke="#334155"/><rect x="557" y="22" width="46" height="3" fill="#ef4444"/><text x="580" y="17">P</text>
+      <rect x="609" y="0" width="46" height="25" rx="4" fill="url(#keycapGrad)" stroke="#334155"/><rect x="609" y="22" width="46" height="3" fill="#ef4444"/><text x="632" y="17">[</text>
+      <rect x="661" y="0" width="46" height="25" rx="4" fill="url(#keycapGrad)" stroke="#334155"/><rect x="661" y="22" width="46" height="3" fill="#ef4444"/><text x="684" y="17">]</text>
+      <rect x="713" y="0" width="92" height="25" rx="4" fill="url(#keycapGrad)" stroke="#334155"/><rect x="713" y="22" width="92" height="3" fill="#ef4444"/><text x="759" y="17">\</text>
+    </g>
+
+    <!-- ROW 3 (Home Row A S D F G H J K L ; ') -->
+    <g transform="translate(0, 67)" font-family="'JetBrains Mono', monospace" font-size="11" fill="#cbd5e1" text-anchor="middle">
+      <rect x="15" y="0" width="78" height="25" rx="4" fill="url(#keycapGrad)" stroke="#334155"/><rect x="15" y="22" width="78" height="3" fill="#ec4899"/><text x="54" y="16">CAPS</text>
+      <rect x="99" y="0" width="46" height="25" rx="4" fill="url(#keycapGrad)" stroke="#334155"/><rect x="99" y="22" width="46" height="3" fill="#ec4899"/><text x="122" y="17">A</text>
+      <rect x="151" y="0" width="46" height="25" rx="4" fill="url(#keycapGrad)" stroke="#334155"/><rect x="151" y="22" width="46" height="3" fill="#8b5cf6"/><text x="174" y="17">S</text>
+      <rect x="203" y="0" width="46" height="25" rx="4" fill="url(#keycapGrad)" stroke="#334155"/><rect x="203" y="22" width="46" height="3" fill="#3b82f6"/><text x="226" y="17">D</text>
+
+      <!-- F (Home Row Anchor Nub) -->
+      <rect x="255" y="0" width="46" height="25" rx="4" fill="url(#keycapGrad)" stroke="#06b6d4" stroke-width="1.2"/>
+      <rect x="255" y="22" width="46" height="3" fill="#06b6d4"/>
+      <text x="278" y="17" font-weight="700">F</text>
+      <rect x="273" y="20" width="10" height="2" rx="1" fill="#06b6d4"/> <!-- Tactile Nub -->
+
+      <rect x="307" y="0" width="46" height="25" rx="4" fill="url(#keycapGrad)" stroke="#334155"/><rect x="307" y="22" width="46" height="3" fill="#06b6d4"/><text x="330" y="17">G</text>
+      <rect x="359" y="0" width="46" height="25" rx="4" fill="url(#keycapGrad)" stroke="#334155"/><rect x="359" y="22" width="46" height="3" fill="#84cc16"/><text x="382" y="17">H</text>
+
+      <!-- J (Home Row Anchor Nub) -->
+      <rect x="411" y="0" width="46" height="25" rx="4" fill="url(#keycapGrad)" stroke="#84cc16" stroke-width="1.2"/>
+      <rect x="411" y="22" width="46" height="3" fill="#84cc16"/>
+      <text x="434" y="17" font-weight="700">J</text>
+      <rect x="429" y="20" width="10" height="2" rx="1" fill="#84cc16"/> <!-- Tactile Nub -->
+
+      <rect x="463" y="0" width="46" height="25" rx="4" fill="url(#keycapGrad)" stroke="#334155"/><rect x="463" y="22" width="46" height="3" fill="#eab308"/><text x="486" y="17">K</text>
+      <rect x="515" y="0" width="46" height="25" rx="4" fill="url(#keycapGrad)" stroke="#334155"/><rect x="515" y="22" width="46" height="3" fill="#f97316"/><text x="538" y="17">L</text>
+      <rect x="567" y="0" width="46" height="25" rx="4" fill="url(#keycapGrad)" stroke="#334155"/><rect x="567" y="22" width="46" height="3" fill="#ef4444"/><text x="590" y="17">;</text>
+      <rect x="619" y="0" width="46" height="25" rx="4" fill="url(#keycapGrad)" stroke="#334155"/><rect x="619" y="22" width="46" height="3" fill="#ef4444"/><text x="642" y="17">'</text>
+      <rect x="671" y="0" width="134" height="25" rx="4" fill="url(#keycapGrad)" stroke="#334155"/><rect x="671" y="22" width="134" height="3" fill="#ef4444"/><text x="738" y="16">ENTER</text>
+    </g>
+
+    <!-- ROW 4 & 5 (Bottom row + Spacebar) -->
+    <g transform="translate(0, 96)" font-family="'JetBrains Mono', monospace" font-size="11" fill="#cbd5e1" text-anchor="middle">
+      <rect x="15" y="0" width="102" height="25" rx="4" fill="url(#keycapGrad)" stroke="#334155"/><rect x="15" y="22" width="102" height="3" fill="#ec4899"/><text x="66" y="16">SHIFT</text>
+      <rect x="123" y="0" width="46" height="25" rx="4" fill="url(#keycapGrad)" stroke="#334155"/><rect x="123" y="22" width="46" height="3" fill="#ec4899"/><text x="146" y="17">Z</text>
+      <rect x="175" y="0" width="46" height="25" rx="4" fill="url(#keycapGrad)" stroke="#334155"/><rect x="175" y="22" width="46" height="3" fill="#8b5cf6"/><text x="198" y="17">X</text>
+      <rect x="227" y="0" width="46" height="25" rx="4" fill="url(#keycapGrad)" stroke="#334155"/><rect x="227" y="22" width="46" height="3" fill="#3b82f6"/><text x="250" y="17">C</text>
+      <rect x="279" y="0" width="46" height="25" rx="4" fill="url(#keycapGrad)" stroke="#334155"/><rect x="279" y="22" width="46" height="3" fill="#06b6d4"/><text x="302" y="17">V</text>
+      <rect x="331" y="0" width="46" height="25" rx="4" fill="url(#keycapGrad)" stroke="#334155"/><rect x="331" y="22" width="46" height="3" fill="#06b6d4"/><text x="354" y="17">B</text>
+      <rect x="383" y="0" width="46" height="25" rx="4" fill="url(#keycapGrad)" stroke="#334155"/><rect x="383" y="22" width="46" height="3" fill="#84cc16"/><text x="406" y="17">N</text>
+      <rect x="435" y="0" width="46" height="25" rx="4" fill="url(#keycapGrad)" stroke="#334155"/><rect x="435" y="22" width="46" height="3" fill="#84cc16"/><text x="458" y="17">M</text>
+      <rect x="487" y="0" width="46" height="25" rx="4" fill="url(#keycapGrad)" stroke="#334155"/><rect x="487" y="22" width="46" height="3" fill="#eab308"/><text x="510" y="17">,</text>
+      <rect x="539" y="0" width="46" height="25" rx="4" fill="url(#keycapGrad)" stroke="#334155"/><rect x="539" y="22" width="46" height="3" fill="#f97316"/><text x="562" y="17">.</text>
+      <rect x="591" y="0" width="46" height="25" rx="4" fill="url(#keycapGrad)" stroke="#334155"/><rect x="591" y="22" width="46" height="3" fill="#ef4444"/><text x="614" y="17">/</text>
+      <rect x="643" y="0" width="162" height="25" rx="4" fill="url(#keycapGrad)" stroke="#334155"/><rect x="643" y="22" width="162" height="3" fill="#ef4444"/><text x="724" y="16">SHIFT</text>
+
+      <!-- Spacebar Row (6.25u Emerald green) -->
+      <rect x="245" y="29" width="310" height="20" rx="4" fill="url(#keycapGrad)" stroke="#10b981" stroke-width="1.2"/>
+      <rect x="245" y="46" width="310" height="3" fill="#10b981"/>
+      <text x="400" y="43" font-size="9" font-weight="700" fill="#6ee7b7" letter-spacing="1.5">SPACEBAR [6.25u]</text>
+    </g>
+  </g>
+
+  <!-- PLAYER'S ORBITAL INTERCEPTOR STARSHIP (Positioned directly underneath the keyboard) -->
+  <g transform="translate(640, 650)">
+    <!-- Ship Thruster Flames -->
+    <polygon points="-16,25 0,45 16,25" fill="#38bdf8" filter="url(#glowBright)"/>
+    <polygon points="-8,25 0,38 8,25" fill="#ffffff"/>
+    
+    <!-- Fighter Wings and Hull -->
+    <path d="M 0,-25 L 35,15 L 20,22 L 0,16 L -20,22 L -35,15 Z" fill="#0f172a" stroke="#06b6d4" stroke-width="2"/>
+    <polygon points="0,-22 12,12 -12,12" fill="#1e293b"/>
+    <!-- Cockpit Canopy Glass -->
+    <ellipse cx="0" cy="-6" rx="5" ry="10" fill="#38bdf8" filter="url(#glowCyan)"/>
+    <!-- Dual Laser Cannon Pods -->
+    <rect x="-26" y="2" width="4" height="12" rx="2" fill="#06b6d4"/>
+    <rect x="22" y="2" width="4" height="12" rx="2" fill="#06b6d4"/>
+    <circle cx="-24" cy="2" r="3" fill="#38bdf8" filter="url(#glowCyan)"/>
+    <circle cx="24" cy="2" r="3" fill="#38bdf8" filter="url(#glowCyan)"/>
+  </g>
+
+  <!-- ERGONOMIC BILATERAL HAND GUIDES (Flanking the keyboard deck) -->
+  <!-- Left Hand Guide -->
+  <g transform="translate(85, 490)">
+    <rect width="120" height="130" rx="10" fill="#0f172a" fill-opacity="0.8" stroke="#1e293b" stroke-width="1"/>
+    <text x="60" y="20" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="10" font-weight="700" fill="#94a3b8">LEFT HAND</text>
+    <!-- Finger indicators -->
+    <circle cx="30" cy="50" r="7" fill="#ec4899" fill-opacity="0.3" stroke="#ec4899" stroke-width="1.5"/><text x="30" y="54" font-family="'JetBrains Mono', monospace" font-size="9" font-weight="800" fill="#ec4899" text-anchor="middle">P</text>
+    <circle cx="48" cy="40" r="7" fill="#8b5cf6" fill-opacity="0.3" stroke="#8b5cf6" stroke-width="1.5"/><text x="48" y="44" font-family="'JetBrains Mono', monospace" font-size="9" font-weight="800" fill="#8b5cf6" text-anchor="middle">R</text>
+    <circle cx="68" cy="35" r="7" fill="#3b82f6" fill-opacity="0.3" stroke="#3b82f6" stroke-width="1.5"/><text x="68" y="39" font-family="'JetBrains Mono', monospace" font-size="9" font-weight="800" fill="#3b82f6" text-anchor="middle">M</text>
+    <circle cx="88" cy="42" r="7" fill="#06b6d4" fill-opacity="0.3" stroke="#06b6d4" stroke-width="1.5"/><text x="88" y="46" font-family="'JetBrains Mono', monospace" font-size="9" font-weight="800" fill="#06b6d4" text-anchor="middle">I</text>
+    <circle cx="98" cy="85" r="7" fill="#10b981" fill-opacity="0.3" stroke="#10b981" stroke-width="1.5"/><text x="98" y="89" font-family="'JetBrains Mono', monospace" font-size="9" font-weight="800" fill="#10b981" text-anchor="middle">T</text>
+    <text x="60" y="115" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="9" fill="#64748b">Anchor: [F]</text>
+  </g>
+
+  <!-- Right Hand Guide (Active Reach on Index Finger) -->
+  <g transform="translate(1075, 490)">
+    <rect width="120" height="130" rx="10" fill="#0f172a" fill-opacity="0.8" stroke="#1e293b" stroke-width="1"/>
+    <text x="60" y="20" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="10" font-weight="700" fill="#94a3b8">RIGHT HAND</text>
+    <!-- Finger indicators -->
+    <circle cx="22" cy="85" r="7" fill="#10b981" fill-opacity="0.3" stroke="#10b981" stroke-width="1.5"/><text x="22" y="89" font-family="'JetBrains Mono', monospace" font-size="9" font-weight="800" fill="#10b981" text-anchor="middle">T</text>
+    <!-- ACTIVE RIGHT INDEX FINGER REACH -->
+    <circle cx="32" cy="42" r="10" fill="#84cc16" filter="url(#glowCyan)"/>
+    <circle cx="32" cy="42" r="6" fill="#ffffff"/>
+    <text x="32" y="46" font-family="'JetBrains Mono', monospace" font-size="10" font-weight="900" fill="#000000" text-anchor="middle">I</text>
+
+    <circle cx="52" cy="35" r="7" fill="#eab308" fill-opacity="0.3" stroke="#eab308" stroke-width="1.5"/><text x="52" y="39" font-family="'JetBrains Mono', monospace" font-size="9" font-weight="800" fill="#eab308" text-anchor="middle">M</text>
+    <circle cx="72" cy="40" r="7" fill="#f97316" fill-opacity="0.3" stroke="#f97316" stroke-width="1.5"/><text x="72" y="44" font-family="'JetBrains Mono', monospace" font-size="9" font-weight="800" fill="#f97316" text-anchor="middle">R</text>
+    <circle cx="90" cy="50" r="7" fill="#ef4444" fill-opacity="0.3" stroke="#ef4444" stroke-width="1.5"/><text x="90" y="54" font-family="'JetBrains Mono', monospace" font-size="9" font-weight="800" fill="#ef4444" text-anchor="middle">P</text>
+    <text x="60" y="115" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="9" fill="#84cc16" font-weight="700">TARGET: REACH [U]</text>
+  </g>
+</svg>

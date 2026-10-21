@@ -329,6 +329,7 @@ export default function App() {
               targetLaneIndex={targetCharInfo ? targetCharInfo.lane : null}
               timingFeedback={performance.timingFeedback}
               timingFeedbackKey={performance.timingFeedbackKey}
+              lastHitDrone={performance.lastHitDrone}
               trailTheme={profile.upgrades.equippedTrailTheme}
               activeChar={activeChar}
               previousChar={previousChar}

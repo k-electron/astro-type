@@ -587,18 +587,22 @@ class SoundEngine {
   // INTERACTIVE KEYSTROKE SFX
   // ==========================================
 
-  public playLaneHit(laneIndex: number, rating: 'PERFECT' | 'GREAT' | 'GOOD') {
+  public playLaneHit(laneIndex: number, rating: 'PERFECT' | 'GREAT' | 'GOOD', isSpace: boolean = laneIndex === 4) {
     if (this.globalMuted || !this.soundEnabled) return;
     this.init();
     if (!this.ctx || !this.sfxGain) return;
+
+    if (this.ctx.state === 'suspended') {
+      this.ctx.resume().catch(() => {});
+    }
 
     try {
       const now = this.ctx.currentTime;
       // Exact pentatonic harmonic pitch (pure, perfectly in-tune with background beats)
       const baseFreq = this.laneFrequencies[laneIndex] || 440;
 
-      // Gentle, velvety volume levels (never startling or abrasive)
-      const targetGain = rating === 'PERFECT' ? 0.11 : rating === 'GREAT' ? 0.09 : 0.07;
+      // Melodic chime volume
+      const targetGain = rating === 'PERFECT' ? 0.14 : rating === 'GREAT' ? 0.11 : 0.085;
       const decayDuration = rating === 'PERFECT' ? 0.22 : 0.16;
 
       if (this.currentCore === 'RETRO_8BIT') {
@@ -680,7 +684,7 @@ class SoundEngine {
           oscShimmer.frequency.setValueAtTime(baseFreq * 2, now); // Pure harmonic octave
 
           gainShimmer.gain.setValueAtTime(0, now);
-          gainShimmer.gain.linearRampToValueAtTime(0.035, now + 0.008);
+          gainShimmer.gain.linearRampToValueAtTime(0.045, now + 0.008);
           gainShimmer.gain.exponentialRampToValueAtTime(0.0001, now + 0.14);
 
           oscShimmer.connect(gainShimmer);
@@ -689,9 +693,114 @@ class SoundEngine {
           oscShimmer.stop(now + 0.16);
         }
       }
+
+      // Orbital Interceptor: Visceral laser zap & target shatter crunch
+      this.playPhotonBlast(now, rating, isSpace);
+      this.playTargetDetonation(now, rating, isSpace);
+      if (rating === 'PERFECT' || rating === 'GREAT') {
+        this.playCrystalChime(now);
+      }
     } catch {
       // Audio exception ignored
     }
+  }
+
+  // Snappy photon cannon bolt or heavy torpedo discharge
+  private playPhotonBlast(now: number, rating: 'PERFECT' | 'GREAT' | 'GOOD', isSpace: boolean) {
+    if (!this.ctx || !this.sfxGain) return;
+    try {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      const filter = this.ctx.createBiquadFilter();
+
+      if (isSpace) {
+        // Heavy Torpedo salvo: resonant low dive
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(280, now);
+        osc.frequency.exponentialRampToValueAtTime(45, now + 0.18);
+
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(850, now);
+        filter.frequency.exponentialRampToValueAtTime(140, now + 0.18);
+
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(0.22, now + 0.005);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.22);
+      } else {
+        // Snappy laser pulse: high to mid chirp
+        osc.type = 'sawtooth';
+        const startFreq = rating === 'PERFECT' ? 1280 : 1020;
+        osc.frequency.setValueAtTime(startFreq, now);
+        osc.frequency.exponentialRampToValueAtTime(220, now + 0.06);
+
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(2600, now);
+        filter.frequency.exponentialRampToValueAtTime(500, now + 0.06);
+
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(rating === 'PERFECT' ? 0.16 : 0.12, now + 0.003);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.08);
+      }
+
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(this.sfxGain);
+      osc.start(now);
+      osc.stop(now + (isSpace ? 0.24 : 0.09));
+    } catch {}
+  }
+
+  // Target shatter / asteroid mine detonation crunch
+  private playTargetDetonation(now: number, rating: 'PERFECT' | 'GREAT' | 'GOOD', isSpace: boolean) {
+    if (!this.ctx || !this.sfxGain) return;
+    try {
+      const dur = isSpace ? 0.18 : 0.11;
+      const bufferSize = Math.floor(this.ctx.sampleRate * dur);
+      const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = Math.random() * 2 - 1;
+      }
+      const noise = this.ctx.createBufferSource();
+      noise.buffer = buffer;
+
+      const filter = this.ctx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.setValueAtTime(isSpace ? 380 : (rating === 'PERFECT' ? 1600 : 1200), now);
+      filter.frequency.exponentialRampToValueAtTime(isSpace ? 90 : 260, now + dur);
+
+      const gain = this.ctx.createGain();
+      gain.gain.setValueAtTime(0, now);
+      gain.gain.linearRampToValueAtTime(isSpace ? 0.22 : (rating === 'PERFECT' ? 0.15 : 0.11), now + 0.004);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+
+      noise.connect(filter);
+      filter.connect(gain);
+      gain.connect(this.sfxGain);
+      noise.start(now);
+      noise.stop(now + dur + 0.01);
+    } catch {}
+  }
+
+  // Sparkling crystal scrap collection chime
+  private playCrystalChime(now: number) {
+    if (!this.ctx || !this.sfxGain) return;
+    try {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(2093, now + 0.025); // C7 sparkling chime
+      osc.frequency.exponentialRampToValueAtTime(2637, now + 0.075); // E7
+
+      gain.gain.setValueAtTime(0, now + 0.025);
+      gain.gain.linearRampToValueAtTime(0.065, now + 0.035);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.14);
+
+      osc.connect(gain);
+      gain.connect(this.sfxGain);
+      osc.start(now + 0.025);
+      osc.stop(now + 0.15);
+    } catch {}
   }
 
   public playMiss() {

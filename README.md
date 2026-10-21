@@ -6,22 +6,32 @@
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-v4-38bdf8.svg)](https://tailwindcss.com/)
 [![Web Audio API](https://img.shields.io/badge/Audio-Web_Audio_API-emerald.svg)](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API)
 
-> **A space-futuristic touch-typing rhythm simulator that blends time-tested touch-typing pedagogy with arcade rhythm mechanics.** Master the entire keyboard matrix across 7 star-gated galaxy sectors, guide falling laser notes onto a physical mechanical receptor deck, and track real-time ergonomic telemetry.
+> **A space-futuristic touch-typing rhythm simulator that blends time-tested touch-typing pedagogy with arcade rhythm mechanics.** Master the entire keyboard matrix across 7 star-gated galaxy sectors, guide falling laser notes onto an ANSI 60% mechanical receptor deck, shoot down descending drone swarms with dynamic altitude blasters, and track real-time ergonomic telemetry.
+
+---
+
+<p align="center">
+  <img src="public/screenshots/gameplay_highway.svg" alt="AstroType Cosmic Highway Gameplay" width="100%" />
+</p>
 
 ---
 
 ## 🌟 Table of Contents
 1. [Overview & Philosophy](#-overview--philosophy)
-2. [Key Features](#-key-features)
-3. [The 8-Finger + Thumb Color System](#-the-8-finger--thumb-color-system)
-4. [7-Sector Pedagogical Curriculum](#-7-sector-pedagogical-curriculum)
-5. [Rhythm Highway & Laser Guidance](#-rhythm-highway--laser-guidance)
-6. [Synthesized Audio Engine](#-synthesized-audio-engine)
-7. [Diagnostics, Analytics & Heatmap](#-diagnostics-analytics--heatmap)
-8. [Starship Hangar Upgrades](#-starship-hangar-upgrades)
-9. [Architecture & Project Structure](#-architecture--project-structure)
-10. [Getting Started & Development](#-getting-started--development)
-11. [License](#-license)
+2. [Visual Showcase](#-visual-showcase)
+3. [Key Features](#-key-features)
+4. [The 8-Finger + Thumb Color System](#-the-8-finger--thumb-color-system)
+5. [7-Sector Pedagogical Curriculum](#-7-sector-pedagogical-curriculum)
+6. [Rhythm Highway & Combat Mechanics](#-rhythm-highway--combat-mechanics)
+7. [Tactile Deck & Hand Ergonomics](#-tactile-deck--hand-ergonomics)
+8. [Synthesized Audio Engine](#-synthesized-audio-engine)
+9. [Diagnostics, Analytics & Heatmap](#-diagnostics-analytics--heatmap)
+10. [Starship Hangar Upgrades](#-starship-hangar-upgrades)
+11. [Architecture & Technical Stack](#-architecture--technical-stack)
+12. [Project Structure](#-project-structure)
+13. [Getting Started & Development](#-getting-started--development)
+14. [Controls & Shortcuts](#-controls--shortcuts)
+15. [License](#-license)
 
 ---
 
@@ -29,11 +39,38 @@
 
 Most typing tutors feel like sterile word processors; rhythm games often lack structured educational progression. **AstroType bridges both worlds**:
 
-- **Real Muscle-Memory Pedagogy**: Grounded in classic touch-typing fundamentals (anchor keys `F` & `J`, strict finger-to-column isolation, and the opposite-hand shift pinky rule).
+- **Real Muscle-Memory Pedagogy**: Grounded in classic touch-typing fundamentals—anchor keys `F` & `J`, strict finger-to-column isolation, and the opposite-hand shift pinky rule.
 - **Physical Keycap Alignment**: Falling notes match the exact shape and unit width (`1u`, `1.5u`, `2.25u`, `6.25u`) of your physical keys and land directly on the keyboard receptor deck.
+- **Dynamic Altitude Targeting**: When typing a character, your ship's plasma blaster calculates the exact live vertical altitude and horizontal coordinate of the targeted enemy drone, firing a frame-accurate bolt that detonates on impact.
+- **Misfire Angle Guidance**: Striking the wrong key fires an angled tracer straight toward the keycap you pressed, immediately showing you which reach error occurred.
 - **Diffused Single-Beam Laser Guidance**: A constant-width, vertically ramped laser beam guides your eyes to the center of each falling note, eliminating jarring visual shifts across keys of different sizes.
-- **Ergonomic Bilateral Hand Guides**: Vector SVG hands flank the keyboard to illuminate target fingers in real-time, complete with smart spacebar thumb alternation.
+- **Ergonomic Bilateral Hand Guides**: Vector SVG hands flank the keyboard to illuminate target fingers in real-time, complete with smart spacebar thumb alternation recommendations.
 - **Zero-Latency Web Audio Synthesis**: Completely procedural sound design—no heavy audio samples. Keystroke blasters and rhythm beats are synthesized live with Web Audio oscillators.
+
+---
+
+## 📸 Visual Showcase
+
+### 1. Orbital Rhythm Highway & Combat Interceptor
+Descending enemy drones drop down continuous laser conduits toward your mechanical flight deck. Correct keystrokes fire plasma bolts upwards into incoming targets, vaporizing drones into crystalline debris and floating arcade energy crystals.
+
+<p align="center">
+  <img src="public/screenshots/gameplay_highway.svg" alt="Rhythm Highway and Blaster Mechanics" width="100%" />
+</p>
+
+### 2. ANSI 60% Keyboard Matrix & Finger Visualizers
+Every key column is bound to one of 8 ergonomic neon finger lanes with tactile anchor nubs on `[F]` and `[J]`. Bilateral hand guides flank the deck, while spacebar helper badges recommend smart thumb alternation.
+
+<p align="center">
+  <img src="public/screenshots/keyboard_visualizer.svg" alt="ANSI Mechanical Keyboard and Bilateral Hand Guides" width="100%" />
+</p>
+
+### 3. Biometric Telemetry & Key Accuracy Heatmap
+After each mission, access the Diagnostic Center to inspect per-key lifetime hit accuracy, bilateral left vs. right hand speed splits, finger reach latencies, and targeted drill recommendations.
+
+<p align="center">
+  <img src="public/screenshots/analytics_telemetry.svg" alt="Biometric Telemetry and Key Accuracy Heatmap" width="100%" />
+</p>
 
 ---
 
@@ -42,6 +79,8 @@ Most typing tutors feel like sterile word processors; rhythm games often lack st
 | Feature | Description |
 | :--- | :--- |
 | **Tactile Flight Deck** | 1:1 ANSI layout with tactile homing nubs (`F` & `J`), reactive duration-of-press glow, and dynamic keycap labels. |
+| **Live Altitude Blaster Tracking** | Plasma bolts calculate the exact frame coordinate of falling drones, producing realistic detonations at any height. |
+| **Misfire Error Tracers** | Striking an incorrect key fires an angled laser line directly to the pressed keycap, reinforcing visual error correction. |
 | **Laser Guidance Marker** | Single center line with vertical ramp up and down glow; constant width regardless of whether targeting letter keys or the spacebar. |
 | **Dual SVG Hand Visualizers** | Ergonomic left and right palms indicating finger positions, tactile bumps, and intelligent spacebar hand recommendations. |
 | **Blind Touch-Typing Mode** | Toggle deck legends off to replace key characters with tactile muscle-memory dots for true sightless mastery. |
@@ -99,14 +138,27 @@ Progress through **28 stages across 7 galaxy sectors**, earning up to **84 Stars
 
 ---
 
-## ⚡ Rhythm Highway & Laser Guidance
+## ⚡ Rhythm Highway & Combat Mechanics
 
-AstroType features a falling-highway mechanic designed specifically for typing accuracy:
+AstroType features a falling-highway mechanic designed specifically for typing accuracy and instant micro-gratification:
 
-- **1:1 Keycap Proportions**: Each falling note has the exact shape, border radius, and unit width of the underlying physical keycap. Spacebars fall as full 6.25u bars; standard letters fall as 1u blocks.
-- **Center Diffused Laser Beam**: A single vertical beam passes through the horizontal center of the target key. It has a constant width across all keys and features a vertical glow ramp-up from top and ramp-down to bottom, dissolving softly into the destination keycap.
-- **Target Help Text Exclusivity**: Helper badges (`SPACE ◀ L. THUMB [REC] ▶`) appear exclusively on the physical destination keycap to keep the falling highway clean and uncluttered.
-- **Timing Windows**: Keystrokes are rated as **PERFECT**, **GOOD**, **EARLY**, or **LATE**, triggering directional particle sparks, sound bursts, and combat multiplier scores.
+- **Orbital Interceptor Position**: Your starship sits directly underneath the keyboard flight deck, aligning intuitively with the upward flight path of the lasers into the descending hazards above.
+- **Dynamic Altitude Blaster Bolts**: Plasma projectiles calculate the exact altitude of targeted drones at the moment of key press. High drones are struck near the top of the screen; low drones detonate just above the keycaps.
+- **Misfire Angle Guidance**: Pressing the wrong key fires an angled tracer straight toward the keycap you pressed, immediately illustrating which key was erroneously struck.
+- **Shattering Debris & Voxel Physics**: Falling notes detonate into angular spinning rock/metal fragments that burst outward with physics-driven velocity and gravity.
+- **Flying Arcade Energy Crystals**: Detonations dislodge glittering diamond energy shards that pop up and drift toward your score counter for classic arcade collection gratification.
+- **Dynamic Combat Exclamations**: Impact ratings pop up at the blast zone with high-energy military ratings (`VAPORIZED! +100`, `CRITICAL HIT! +100`, `SHATTERED! +75`, `WARP STRIKE! +400`).
+- **Photon Torpedo Salvo (Spacebar Finishers)**: Hitting the spacebar launches a heavy ordinance torpedo with a double-ring shockwave and deep sub-bass resonance.
+- **Active Lock-On Reticle**: The descending target note displays subtle pulsed sci-fi corner targeting brackets (`[ ]`), focusing your attention on the incoming cosmic hazard without obstructing text.
+
+---
+
+## ⌨️ Tactile Deck & Hand Ergonomics
+
+- **1:1 Keycap Proportions**: Each key has physical ANSI unit dimensions (`1u = 46px`, `Tab = 1.5u`, `Caps = 1.75u`, `Backspace = 2u`, `Enter = 2.25u`, `Space = 6.25u`).
+- **Tactile Homing Nubs**: Visual raised bumps on `[F]` and `[J]` replicate standard Cherry MX and OEM homing keys.
+- **Center Diffused Laser Beam**: A single vertical beam passes through the horizontal center of the target key. It has a constant width across all keys and features a vertical glow ramp-up from top and ramp-down to bottom.
+- **Smart Thumb Guidance**: The Spacebar displays dynamic recommendation badges (`SPACE ◀ L. THUMB [REC] ▶`) based on the preceding keystroke to ensure even hand alternation.
 
 ---
 
@@ -136,8 +188,8 @@ Access the **Touch Typing Diagnostic Center** anytime from the flight deck:
   - 🔵 **88%–95%**: Proficient touch reach
   - 🟡 **80%–88%**: Developing reach
   - 🔴 **<80%**: High error rate
-- **Bilateral Hand Balance**: Real-time split measuring left-hand vs. right-hand accuracy.
-- **Struggling Reaches Breakdown**: Identifies error-prone fingers and provides targeted ergonomic tips.
+- **Bilateral Hand Balance**: Real-time split measuring left-hand vs. right-hand accuracy and speed.
+- **Struggling Reaches Breakdown**: Identifies error-prone fingers (e.g. pinky reaches to `Q`, `Z`, `-`) and provides targeted ergonomic tips.
 - **Data Backup & Restore**: One-click JSON backup export and import to preserve progress across devices.
 - **Curriculum Reset Utility**: Safely wipe achievements to start fresh on newly unlocked curriculum versions while keeping hangar unlocks.
 
@@ -154,45 +206,94 @@ Earn credits on every completed mission to unlock starship enhancements:
 
 ---
 
-## 📁 Architecture & Project Structure
+## 🏛️ Architecture & Technical Stack
+
+AstroType is built using modern, type-safe, production-grade frontend architecture:
+
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│                              App.tsx                                   │
+│            (Top-Level Orchestrator & View Switcher)                    │
+└──────┬──────────────────┬──────────────────┬────────────────────┬──────┘
+       │                  │                  │                    │
+┌──────▼────────┐  ┌──────▼────────┐  ┌──────▼───────────┐  ┌─────▼───────┐
+│ HeaderNav.tsx │  │    HUD.tsx    │  │ TextPromptStream │  │ GlobalCosmic│
+│ (Volume/Menu) │  │  (Telemetry)  │  │ (Live Finger UI) │  │ Background  │
+└───────────────┘  └───────────────┘  └──────────────────┘  └─────────────┘
+       │
+┌──────▼─────────────────────────────────────────────────────────────────┐
+│                      IntegratedLanesKeyboard.tsx                        │
+│  - Falling Drones Canvas / SVG Highway (Active altitude coordinates)   │
+│  - Laser Guidance Conduits & Dynamic Plasma Blaster Cannons            │
+│  - Physical ANSI 60% Mechanical Keycap Deck with Homing Nubs           │
+│  - Flanking Bilateral SVG Hand Visualizers                             │
+│  - Misfire Angle Guidance System                                       │
+│  - Particle Physics (Shattered Debris & Crystals)                      │
+└──────────────────────────────────┬─────────────────────────────────────┘
+                                   │
+┌──────────────────────────────────▼─────────────────────────────────────┐
+│                          Core State & Engines                          │
+├──────────────────────────┬─────────────────────────┬───────────────────┤
+│    useGameStore.ts       │      gameMachine.ts     │   soundEngine.ts  │
+│   (Zustand Reactive)     │   (XState Finite State) │(Web Audio Synth)  │
+├──────────────────────────┴─────────────────────────┴───────────────────┤
+│            schemas.ts (Zod Validation) & curriculum.ts (ANSI)          │
+└────────────────────────────────────────────────────────────────────────┘
+```
+
+- **Frontend Framework**: React 19 SPA running on Vite 8.
+- **State Management**: Zustand store (`useGameStore.ts`) providing instantaneous reactive state across modals, telemetry calculations, and gameplay loops.
+- **State Machine**: XState v5 (`gameMachine.ts`) orchestrating predictable game flow transitions (`IDLE` ➔ `COUNTDOWN` ➔ `PLAYING` ➔ `PAUSED` ➔ `LEVEL_COMPLETE` / `FAILED`).
+- **Validation**: Zod schema validation (`schemas.ts`) enforcing runtime validation on profile state, JSON backup files, and curriculum structures.
+- **Audio Core**: Native Web Audio API (`soundEngine.ts`) with zero external mp3/wav assets; live synthesis via multi-voice oscillators and biquad filter sweeps.
+- **Styling**: Tailwind CSS v4 using modern `@import "tailwindcss"` standards, custom font stacks (`Outfit`, `JetBrains Mono`, `Plus Jakarta Sans`), and zero inline CSS.
+
+---
+
+## 📁 Project Structure
 
 ```
 astrotype/
-├── public/                     # Static assets and icons
+├── public/
+│   ├── screenshots/
+│   │   ├── gameplay_highway.svg      # Rhythm highway & blaster mechanics
+│   │   ├── keyboard_visualizer.svg   # 60% ANSI matrix & hand visualizers
+│   │   └── analytics_telemetry.svg   # Diagnostic center & accuracy heatmap
+│   └── test_hand.png
 ├── src/
 │   ├── audio/
-│   │   └── soundEngine.ts      # Web Audio API procedural synthesis & rhythm tracks
+│   │   └── soundEngine.ts            # Web Audio API procedural synthesis & beats
 │   ├── components/
-│   │   ├── AnalyticsModal.tsx  # Interactive heatmap & bilateral diagnostic center
-│   │   ├── CustomPracticeModal.tsx # Free-flight custom text practice runner
-│   │   ├── GlobalCosmicBackground.tsx # Canvas starfield & hyperspace warp particle engine
-│   │   ├── HangarUpgradesModal.tsx # Upgrades shop for shields, reactor, and audio cores
-│   │   ├── HeaderNav.tsx       # Navigation, audio mixer menu, and telemetry bar
-│   │   ├── HUD.tsx             # Flight telemetry: WPM, Accuracy, Streak, Rhythm Cadence
-│   │   ├── IntegratedLanesKeyboard.tsx # Falling rhythm highway, keycap deck & laser beam
-│   │   ├── LevelCompleteModal.tsx # Victory debriefing, star calculation & score rating
-│   │   ├── SmallHandVisualizer.tsx # Ergonomic bilateral SVG hand guides
-│   │   ├── StageSelectModal.tsx # 7-Sector galaxy mission selector & achievement reset
-│   │   └── TextPromptStream.tsx # Prompt stream with live finger guidance pill
+│   │   ├── AnalyticsModal.tsx        # Heatmap & bilateral diagnostic center
+│   │   ├── CustomPracticeModal.tsx   # Free-flight custom text practice runner
+│   │   ├── GlobalCosmicBackground.tsx # Starfield & hyperspace warp particle engine
+│   │   ├── HangarUpgradesModal.tsx   # Upgrades shop for shields, reactor, and cores
+│   │   ├── HeaderNav.tsx             # Navigation, audio mixer menu, and telemetry
+│   │   ├── HUD.tsx                   # Flight telemetry: WPM, Accuracy, Streak, Cadence
+│   │   ├── IntegratedLanesKeyboard.tsx # Falling highway, keycap deck, and blasters
+│   │   ├── LevelCompleteModal.tsx    # Victory debriefing, star calculation & rating
+│   │   ├── SmallHandVisualizer.tsx   # Ergonomic bilateral SVG hand guides
+│   │   ├── StageSelectModal.tsx      # 7-Sector galaxy mission selector
+│   │   └── TextPromptStream.tsx       # Prompt stream with live finger guidance pill
 │   ├── data/
-│   │   └── curriculum.ts       # 28 stages, 7 sectors, finger maps, and color definitions
+│   │   └── curriculum.ts             # 28 stages, 7 sectors, and ANSI finger maps
 │   ├── store/
-│   │   ├── gameMachine.ts      # Finite state machine logic
-│   │   ├── schemas.ts          # Zod validation schemas for player profiles & stages
-│   │   └── useGameStore.ts     # Zustand persistent reactive state store
+│   │   ├── gameMachine.ts            # Finite state machine logic
+│   │   ├── schemas.ts                # Zod validation schemas for player profiles
+│   │   └── useGameStore.ts           # Zustand persistent reactive state store
 │   ├── types/
-│   │   └── game.ts             # TypeScript interfaces and domain type definitions
+│   │   └── game.ts                   # TypeScript interfaces and domain definitions
 │   ├── utils/
-│   │   └── storage.ts          # LocalStorage persistence, upgrades catalog, star math
-│   ├── App.tsx                 # Root application controller and modal orchestrator
-│   ├── index.css               # Tailwind CSS v4 styling & typography
-│   └── main.tsx                # React 19 bootstrap entry point
-├── index.html                  # HTML5 entry with JetBrains Mono and Outfit fonts
-├── LICENSE                     # MIT License
-├── metadata.json               # AI Studio project metadata
-├── package.json                # Project dependencies and npm scripts
-├── tsconfig.json               # TypeScript configuration
-└── vite.config.ts              # Vite configuration
+│   │   └── storage.ts                # LocalStorage persistence, upgrades, star math
+│   ├── App.tsx                       # Root application controller and modal orchestrator
+│   ├── index.css                     # Tailwind CSS v4 styling & typography
+│   └── main.tsx                      # React 19 bootstrap entry point
+├── index.html                        # HTML5 entry with metadata & font preconnects
+├── LICENSE                           # MIT License
+├── metadata.json                     # AI Studio project configuration
+├── package.json                      # Project dependencies and npm scripts
+├── tsconfig.json                     # TypeScript configuration
+└── vite.config.ts                    # Vite configuration with React & Tailwind plugins
 ```
 
 ---
@@ -249,6 +350,9 @@ npm run lint
 | **Toggle Deck View** | Click **Hide Deck / Show Deck** in the top HUD |
 | **Toggle Hands Guide** | Click **Hands: ON/OFF** in the keyboard deck header |
 | **Audio Controls** | Click the Volume icon in the navigation bar to mix music and sound effects |
+| **Open Hangar Upgrades** | Click **Hangar** in navigation or press `[H]` |
+| **Open Analytics Heatmap** | Click **Diagnostics** in navigation or press `[D]` |
+| **Custom Text Practice** | Click **Custom Drill** in navigation or press `[P]` |
 
 ---
 
