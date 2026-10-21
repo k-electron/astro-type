@@ -71,6 +71,13 @@ export default function App() {
     setGameState(target);
   };
 
+  useEffect(() => {
+    (window as any).__astrotype = {
+      useGameStore,
+      CURRICULUM_SECTORS,
+    };
+  }, []);
+
   // Synchronize audio engine with current profile settings
   useEffect(() => {
     soundEngine.setGlobalMute(Boolean(profile.globalMuted));

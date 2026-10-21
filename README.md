@@ -11,14 +11,14 @@
 ---
 
 <p align="center">
-  <img src="public/screenshots/gameplay_highway.svg" alt="AstroType Cosmic Highway Gameplay" width="100%" />
+  <img src="public/screenshots/real_gameplay.png" alt="AstroType Real Gameplay" width="100%" />
 </p>
 
 ---
 
 ## 🌟 Table of Contents
 1. [Overview & Philosophy](#-overview--philosophy)
-2. [Visual Showcase](#-visual-showcase)
+2. [Real In-Game Visual Showcase](#-real-in-game-visual-showcase)
 3. [Key Features](#-key-features)
 4. [The 8-Finger + Thumb Color System](#-the-8-finger--thumb-color-system)
 5. [7-Sector Pedagogical Curriculum](#-7-sector-pedagogical-curriculum)
@@ -49,27 +49,43 @@ Most typing tutors feel like sterile word processors; rhythm games often lack st
 
 ---
 
-## 📸 Visual Showcase
+## 📸 Real In-Game Visual Showcase
 
-### 1. Orbital Rhythm Highway & Combat Interceptor
-Descending enemy drones drop down continuous laser conduits toward your mechanical flight deck. Correct keystrokes fire plasma bolts upwards into incoming targets, vaporizing drones into crystalline debris and floating arcade energy crystals.
+All screenshots below are captured directly from the live running application:
+
+### 1. Active Combat Highway & Upward Laser Salvo
+Descending enemy drones drop down continuous laser conduits toward your mechanical flight deck. Correct keystrokes fire plasma blaster cannons straight up from the ship directly into the targeted drone, detonating hazards with circular shockwaves, shattered voxel debris, floating arcade energy crystals, and combat score ratings (`CONTACT! +50`, `DEFUSED! +50`, `TARGET DOWN! +75`).
 
 <p align="center">
-  <img src="public/screenshots/gameplay_highway.svg" alt="Rhythm Highway and Blaster Mechanics" width="100%" />
+  <img src="public/screenshots/real_gameplay.png" alt="AstroType Active Combat Highway Gameplay" width="100%" />
 </p>
 
-### 2. ANSI 60% Keyboard Matrix & Finger Visualizers
-Every key column is bound to one of 8 ergonomic neon finger lanes with tactile anchor nubs on `[F]` and `[J]`. Bilateral hand guides flank the deck, while spacebar helper badges recommend smart thumb alternation.
+### 2. Misfire Angle Guidance System
+Striking an incorrect key fires an angled plasma tracer line directly from your starship underneath the keyboard to the exact keycap you mistakenly pressed. A visual warning reticle and impact flash immediately illustrate the physical reach error.
 
 <p align="center">
-  <img src="public/screenshots/keyboard_visualizer.svg" alt="ANSI Mechanical Keyboard and Bilateral Hand Guides" width="100%" />
+  <img src="public/screenshots/real_misfire_guidance.png" alt="Misfire Angle Error Guidance" width="100%" />
 </p>
 
-### 3. Biometric Telemetry & Key Accuracy Heatmap
-After each mission, access the Diagnostic Center to inspect per-key lifetime hit accuracy, bilateral left vs. right hand speed splits, finger reach latencies, and targeted drill recommendations.
+### 3. Touch Typing Diagnostic Center & Key Accuracy Heatmap
+Access the real-time Diagnostic Center from the flight deck to view per-key lifetime hit accuracy percentages (>95% emerald, 88–95% cyan, 80–88% amber, <80% rose), bilateral left-hand vs. right-hand accuracy balance, words typed, and touch-typing master technique reminders.
 
 <p align="center">
-  <img src="public/screenshots/analytics_telemetry.svg" alt="Biometric Telemetry and Key Accuracy Heatmap" width="100%" />
+  <img src="public/screenshots/real_analytics_heatmap.png" alt="Typing Analytics and Key Accuracy Heatmap" width="100%" />
+</p>
+
+### 4. 7-Sector Galaxy Mission Progression Map
+Progress through 28 curated pedagogical stages across 7 star-gated galaxy sectors (Orion Belt, Andromeda Nebula, Kepler Expanse, Cygnus Corridor, Pulsar Core, Quantum Void, and Event Horizon). Each stage features target cadences, finger focus badges, and 3-star ratings.
+
+<p align="center">
+  <img src="public/screenshots/real_sector_map.png" alt="Galaxy Sectors and Mission Progression" width="100%" />
+</p>
+
+### 5. Starship Hangar Upgrades & Audio Cores
+Spend cosmic credits earned from high-precision flights to install Deflector Shields (absorbing mistake keystrokes), Hyperdrive Reactors (charging Overdrive warp mode faster), Precision Sensors (expanding timing windows), and procedural Web Audio synthesizer cores (Cyber Synth, 8-Bit Retro Arcade, Deep Space Drone, Neo Acoustic Harp).
+
+<p align="center">
+  <img src="public/screenshots/real_hangar.png" alt="Starship Hangar Upgrades" width="100%" />
 </p>
 
 ---
@@ -256,9 +272,11 @@ AstroType is built using modern, type-safe, production-grade frontend architectu
 astrotype/
 ├── public/
 │   ├── screenshots/
-│   │   ├── gameplay_highway.svg      # Rhythm highway & blaster mechanics
-│   │   ├── keyboard_visualizer.svg   # 60% ANSI matrix & hand visualizers
-│   │   └── analytics_telemetry.svg   # Diagnostic center & accuracy heatmap
+│   │   ├── real_gameplay.png         # Active combat flight, laser salvo & telemetry
+│   │   ├── real_misfire_guidance.png # Misfire angled tracer line to pressed keycap
+│   │   ├── real_analytics_heatmap.png# Diagnostic center, heatmap & bilateral balance
+│   │   ├── real_sector_map.png       # 7-Sector galaxy missions & star progression
+│   │   └── real_hangar.png           # Starship hangar upgrades shop & audio cores
 │   └── test_hand.png
 ├── src/
 │   ├── audio/
