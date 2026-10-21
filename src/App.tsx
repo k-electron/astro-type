@@ -32,6 +32,7 @@ export default function App() {
     setGameState,
     startStage,
     processKeystroke,
+    releaseKeystroke,
     updateFallingNotesOnTick,
     updateTelemetryOnInterval,
     launchNextStage,
@@ -128,7 +129,7 @@ export default function App() {
     return () => clearInterval(interval);
   }, [gameState, updateTelemetryOnInterval]);
 
-  // Main Keystroke Handler (Active touch-typing listener)
+  // Main Keystroke Handler (Active touch-typing listener with down/up press duration tracking)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (gameState !== 'PLAYING') return;
@@ -146,9 +147,24 @@ export default function App() {
       processKeystroke(e.key);
     };
 
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (gameState !== 'PLAYING') return;
+      releaseKeystroke(e.key);
+    };
+
+    const handleBlur = () => {
+      releaseKeystroke();
+    };
+
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [gameState, processKeystroke]);
+    window.addEventListener('keyup', handleKeyUp);
+    window.addEventListener('blur', handleBlur);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+      window.removeEventListener('blur', handleBlur);
+    };
+  }, [gameState, processKeystroke, releaseKeystroke]);
 
   const activeChar = currentStage.sampleText[performance.currentCharIndex] || null;
   const previousChar = performance.currentCharIndex > 0 ? currentStage.sampleText[performance.currentCharIndex - 1] : null;
@@ -233,6 +249,20 @@ export default function App() {
                 View Galaxy Sectors (7 Sectors)
               </button>
             </div>
+
+            {(profile.totalStars > 0 || Object.keys(profile.stagesProgress).length > 0) && (
+              <div className="flex flex-wrap items-center justify-center gap-2 mb-8 px-4 py-2 rounded-xl bg-slate-900/80 border border-slate-800 text-xs font-mono text-slate-400">
+                <span className="text-amber-400 font-bold">★ {profile.totalStars} Stars Earned</span>
+                <span>·</span>
+                <span className="text-slate-400">Curriculum updated?</span>
+                <button
+                  onClick={() => openModal('STAGE_SELECT')}
+                  className="text-rose-400 hover:text-rose-300 font-bold underline cursor-pointer ml-1"
+                >
+                  Wipe Achievements & Replay
+                </button>
+              </div>
+            )}
 
             {/* Feature Highlights Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full text-left">

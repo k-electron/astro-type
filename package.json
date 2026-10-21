@@ -1,7 +1,8 @@
 {
-  "name": "react-example",
-  "private": true,
-  "version": "0.0.0",
+  "name": "astrotype",
+  "version": "1.0.0",
+  "description": "AstroType: Cosmic Touch Typing Academy - Space-futuristic touch typing game with comprehensive pedagogical curriculum, rhythm highway, and real-time analytics",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "vite --port=3000 --host=0.0.0.0",

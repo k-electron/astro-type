@@ -1,16 +1,40 @@
 import { FingerLaneInfo, FingerZone, Sector, Stage } from '../types/game';
 
+export const FINGER_COLOR_MAP: Record<FingerZone, string> = {
+  LEFT_PINKY: '#ec4899',   // Vibrant Pink
+  LEFT_RING: '#8b5cf6',    // Deep Purple / Violet
+  LEFT_MIDDLE: '#3b82f6',  // Electric Blue
+  LEFT_INDEX: '#06b6d4',   // Bright Cyan
+  THUMB: '#10b981',        // Emerald Green (both thumbs)
+  RIGHT_INDEX: '#84cc16',  // Neon Lime
+  RIGHT_MIDDLE: '#eab308', // Golden Yellow
+  RIGHT_RING: '#f97316',   // Sunset Orange
+  RIGHT_PINKY: '#ef4444',  // Crimson Red
+};
+
 export const FINGER_LANES: FingerLaneInfo[] = [
-  { laneIndex: 0, finger: 'LEFT_PINKY', label: 'L.Pinky', hand: 'left', color: '#ec4899', glowColor: 'rgba(236, 72, 153, 0.5)' },
-  { laneIndex: 1, finger: 'LEFT_RING', label: 'L.Ring', hand: 'left', color: '#a855f7', glowColor: 'rgba(168, 85, 247, 0.5)' },
-  { laneIndex: 2, finger: 'LEFT_MIDDLE', label: 'L.Mid', hand: 'left', color: '#3b82f6', glowColor: 'rgba(59, 130, 246, 0.5)' },
-  { laneIndex: 3, finger: 'LEFT_INDEX', label: 'L.Index', hand: 'left', color: '#06b6d4', glowColor: 'rgba(6, 182, 212, 0.5)' },
-  { laneIndex: 4, finger: 'THUMB', label: 'Space', hand: 'thumb', color: '#10b981', glowColor: 'rgba(16, 185, 129, 0.5)' },
-  { laneIndex: 5, finger: 'RIGHT_INDEX', label: 'R.Index', hand: 'right', color: '#f59e0b', glowColor: 'rgba(245, 158, 11, 0.5)' },
-  { laneIndex: 6, finger: 'RIGHT_MIDDLE', label: 'R.Mid', hand: 'right', color: '#f97316', glowColor: 'rgba(249, 115, 22, 0.5)' },
-  { laneIndex: 7, finger: 'RIGHT_RING', label: 'R.Ring', hand: 'right', color: '#f43f5e', glowColor: 'rgba(244, 63, 94, 0.5)' },
-  { laneIndex: 8, finger: 'RIGHT_PINKY', label: 'R.Pinky', hand: 'right', color: '#8b5cf6', glowColor: 'rgba(139, 92, 246, 0.5)' },
+  { laneIndex: 0, finger: 'LEFT_PINKY', label: 'L.Pinky', hand: 'left', color: FINGER_COLOR_MAP.LEFT_PINKY, glowColor: 'rgba(236, 72, 153, 0.5)' },
+  { laneIndex: 1, finger: 'LEFT_RING', label: 'L.Ring', hand: 'left', color: FINGER_COLOR_MAP.LEFT_RING, glowColor: 'rgba(139, 92, 246, 0.5)' },
+  { laneIndex: 2, finger: 'LEFT_MIDDLE', label: 'L.Mid', hand: 'left', color: FINGER_COLOR_MAP.LEFT_MIDDLE, glowColor: 'rgba(59, 130, 246, 0.5)' },
+  { laneIndex: 3, finger: 'LEFT_INDEX', label: 'L.Index', hand: 'left', color: FINGER_COLOR_MAP.LEFT_INDEX, glowColor: 'rgba(6, 182, 212, 0.5)' },
+  { laneIndex: 4, finger: 'THUMB', label: 'Space', hand: 'thumb', color: FINGER_COLOR_MAP.THUMB, glowColor: 'rgba(16, 185, 129, 0.5)' },
+  { laneIndex: 5, finger: 'RIGHT_INDEX', label: 'R.Index', hand: 'right', color: FINGER_COLOR_MAP.RIGHT_INDEX, glowColor: 'rgba(132, 204, 22, 0.5)' },
+  { laneIndex: 6, finger: 'RIGHT_MIDDLE', label: 'R.Mid', hand: 'right', color: FINGER_COLOR_MAP.RIGHT_MIDDLE, glowColor: 'rgba(234, 179, 8, 0.5)' },
+  { laneIndex: 7, finger: 'RIGHT_RING', label: 'R.Ring', hand: 'right', color: FINGER_COLOR_MAP.RIGHT_RING, glowColor: 'rgba(249, 115, 22, 0.5)' },
+  { laneIndex: 8, finger: 'RIGHT_PINKY', label: 'R.Pinky', hand: 'right', color: FINGER_COLOR_MAP.RIGHT_PINKY, glowColor: 'rgba(239, 68, 68, 0.5)' },
 ];
+
+export const FINGER_DISPLAY_NAMES: Record<FingerZone, string> = {
+  LEFT_PINKY: 'Left Pinky',
+  LEFT_RING: 'Left Ring',
+  LEFT_MIDDLE: 'Left Middle',
+  LEFT_INDEX: 'Left Index',
+  THUMB: 'Thumb (Space)',
+  RIGHT_INDEX: 'Right Index',
+  RIGHT_MIDDLE: 'Right Middle',
+  RIGHT_RING: 'Right Ring',
+  RIGHT_PINKY: 'Right Pinky',
+};
 
 export const KEY_FINGER_MAP: Record<string, { lane: number; finger: FingerZone; hand: 'left' | 'right' | 'thumb'; shiftRequired: boolean; recommendedShiftHand: 'left' | 'right' | null }> = {
   // Home Row
@@ -119,6 +143,8 @@ export const KEY_FINGER_MAP: Record<string, { lane: number; finger: FingerZone; 
   '<': { lane: 6, finger: 'RIGHT_MIDDLE', hand: 'right', shiftRequired: true, recommendedShiftHand: 'left' },
   '>': { lane: 7, finger: 'RIGHT_RING', hand: 'right', shiftRequired: true, recommendedShiftHand: 'left' },
   '?': { lane: 8, finger: 'RIGHT_PINKY', hand: 'right', shiftRequired: true, recommendedShiftHand: 'left' },
+  '\\': { lane: 8, finger: 'RIGHT_PINKY', hand: 'right', shiftRequired: false, recommendedShiftHand: null },
+  '|': { lane: 8, finger: 'RIGHT_PINKY', hand: 'right', shiftRequired: true, recommendedShiftHand: 'left' },
 };
 
 export function getNoteLaneAndFinger(char: string): { lane: number; finger: FingerZone; hand: 'left' | 'right' | 'thumb'; shiftRequired: boolean; recommendedShiftHand: 'left' | 'right' | null } {

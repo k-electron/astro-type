@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useMemo, useState, useCallback } from 'react';
 import { FallingNote, TrailColorTheme, FingerZone } from '../types/game';
-import { FINGER_LANES, KEY_FINGER_MAP } from '../data/curriculum';
+import { FINGER_LANES, KEY_FINGER_MAP, FINGER_COLOR_MAP } from '../data/curriculum';
 import { Sparkles, Flame, Award, Hand } from 'lucide-react';
 import { SmallHandVisualizer } from './SmallHandVisualizer';
 
@@ -112,6 +112,13 @@ const KEYBOARD_ROWS: KeySpec[][] = [
     { key: 'ControlRight', display: 'CTRL', finger: 'RIGHT_PINKY', lane: 8, units: 2.25 },
   ],
 ];
+
+const KEY_SPEC_LOOKUP: Record<string, KeySpec> = {};
+KEYBOARD_ROWS.forEach((row) => {
+  row.forEach((k) => {
+    KEY_SPEC_LOOKUP[k.key.toLowerCase()] = k;
+  });
+});
 
 const THEME_ACCENTS: Record<TrailColorTheme, string> = {
   CYAN: '#06b6d4',
@@ -479,6 +486,15 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
         bubbles: true,
       })
     );
+
+    setTimeout(() => {
+      window.dispatchEvent(
+        new KeyboardEvent('keyup', {
+          key: charToSend,
+          bubbles: true,
+        })
+      );
+    }, 100);
   };
 
   return (
@@ -505,7 +521,7 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
         </div>
 
         {/* Home Row Anchor Guidance & Hand Guide Mode Toggle */}
-        <div className="text-[11px] font-mono text-slate-400 flex items-center gap-2">
+        <div className="text-[11px] font-mono text-slate-400 flex items-center gap-2 sm:gap-3">
           <button
             type="button"
             onClick={toggleHandsGuide}
@@ -521,10 +537,18 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
           </button>
 
           <span className="hidden sm:inline text-slate-500">Home:</span>
-          <span className="hidden sm:inline-block px-1.5 py-0.5 rounded bg-slate-800 text-cyan-300 font-bold border border-cyan-500/30">
+          <span
+            className="hidden sm:inline-block px-1.5 py-0.5 rounded bg-slate-800 font-bold border"
+            style={{ color: FINGER_COLOR_MAP.LEFT_INDEX, borderColor: `${FINGER_COLOR_MAP.LEFT_INDEX}60` }}
+            title="Left Index Finger Home Anchor [F]"
+          >
             [F]
           </span>
-          <span className="hidden sm:inline-block px-1.5 py-0.5 rounded bg-slate-800 text-amber-300 font-bold border border-amber-500/30">
+          <span
+            className="hidden sm:inline-block px-1.5 py-0.5 rounded bg-slate-800 font-bold border"
+            style={{ color: FINGER_COLOR_MAP.RIGHT_INDEX, borderColor: `${FINGER_COLOR_MAP.RIGHT_INDEX}60` }}
+            title="Right Index Finger Home Anchor [J]"
+          >
             [J]
           </span>
         </div>
@@ -538,31 +562,32 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
         {/* Canvas for Hit Sparks, Shockwaves, and Combat Rating Popups */}
         <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none z-10 block" />
 
-        {/* 1. LASER GUIDANCE CHANNEL (Layer z-5: Vertical beam from top of drop zone directly to destination key) */}
+        {/* 1. LASER GUIDANCE MARKER (Layer z-5: Single diffused center line with ramp up and down glow) */}
         {activeKeyPos && (
           <div
-            className="absolute top-0 pointer-events-none transition-all duration-75 z-5"
+            className="absolute top-0 -translate-x-1/2 pointer-events-none transition-all duration-100 ease-out z-5 flex items-center justify-center"
             style={{
-              left: `${activeKeyPos.x - activeKeyPos.width / 2}px`,
-              width: `${activeKeyPos.width}px`,
-              height: `${Math.max(10, activeKeyPos.y - activeKeyPos.height / 2)}px`,
+              left: `${activeKeyPos.x}px`,
+              width: '24px',
+              height: `${Math.max(20, activeKeyPos.y)}px`,
             }}
           >
-            {/* Soft luminous vertical laser conduit */}
+            {/* Outer diffused glow aura (constant width, soft Gaussian dispersion) */}
             <div
-              className="w-full h-full opacity-15"
+              className="absolute inset-y-0 w-full pointer-events-none"
               style={{
-                background: `linear-gradient(to bottom, transparent 0%, ${activeLaneColor}25 50%, ${activeLaneColor}65 100%)`,
+                background: `linear-gradient(to bottom, transparent 0%, ${activeLaneColor}15 15%, ${activeLaneColor}45 50%, ${activeLaneColor}15 85%, transparent 100%)`,
+                filter: 'blur(4px)',
               }}
             />
-            {/* Left & Right laser boundaries */}
+
+            {/* Core diffused luminous beam (constant 2px width, vertical ramp-up and ramp-down) */}
             <div
-              className="absolute inset-y-0 left-0 w-[1.5px] opacity-60 shadow-[0_0_8px_currentColor]"
-              style={{ backgroundColor: activeLaneColor, color: activeLaneColor }}
-            />
-            <div
-              className="absolute inset-y-0 right-0 w-[1.5px] opacity-60 shadow-[0_0_8px_currentColor]"
-              style={{ backgroundColor: activeLaneColor, color: activeLaneColor }}
+              className="w-[2px] h-full mx-auto rounded-full pointer-events-none"
+              style={{
+                background: `linear-gradient(to bottom, transparent 0%, ${activeLaneColor}40 12%, ${activeLaneColor} 50%, ${activeLaneColor}40 88%, transparent 100%)`,
+                boxShadow: `0 0 6px ${activeLaneColor}, 0 0 14px ${activeLaneColor}80, 0 0 24px ${activeLaneColor}35`,
+              }}
             />
           </div>
         )}
@@ -599,46 +624,93 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
               topPx = 16 + (parkedY - 16) * Math.pow(travelProgress, 1.1);
             }
 
-            // Note dimensions: Proportional, never stretched!
-            const noteWidth = isSpace ? Math.min(pos.width, 220) : Math.max(34, pos.width);
-            const noteHeight = Math.max(32, pos.height);
+            // EXACT SAME SIZE & SHAPE as the corresponding physical key on the keyboard deck!
+            const noteWidth = pos.width;
+            const noteHeight = pos.height;
+            const kSpec = KEY_SPEC_LOOKUP[lookupKey];
 
             return (
               <div
                 key={note.id}
-                className={`absolute -translate-x-1/2 flex items-center justify-center rounded-xl font-mono font-black transition-transform duration-75 shadow-lg select-none ${
+                className={`absolute -translate-x-1/2 flex items-center justify-center rounded-md font-mono transition-transform duration-75 shadow-lg select-none ${
                   noteIdx === 0
-                    ? 'bg-slate-900 border-2 text-white'
-                    : 'bg-slate-900/90 border border-slate-700/80 text-slate-300 opacity-80'
+                    ? isSpace
+                      ? 'bg-slate-900/60 border-2 text-white z-30'
+                      : 'bg-slate-900/90 border-2 text-white z-30'
+                    : isSpace
+                    ? 'bg-slate-900/70 border text-slate-300 opacity-90 z-20'
+                    : 'bg-slate-900/95 border text-slate-300 opacity-90 z-20'
                 }`}
                 style={{
                   left: `${pos.x}px`,
                   top: `${topPx}px`,
                   width: `${noteWidth}px`,
                   height: `${noteHeight}px`,
-                  borderColor: noteIdx === 0 ? laneColor : undefined,
+                  borderColor: noteIdx === 0 ? laneColor : `${laneColor}85`,
                   boxShadow:
                     noteIdx === 0
-                      ? `0 0 22px ${laneColor}90, inset 0 0 10px ${laneColor}40`
-                      : '0 4px 10px rgba(0,0,0,0.5)',
+                      ? `0 3px 0 #020617, 0 0 24px ${laneColor}90, inset 0 1px 1px rgba(255,255,255,0.4)`
+                      : `0 3px 0 #020617, 0 4px 10px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.1)`,
                 }}
               >
                 {/* Top frosted glass shine */}
-                <div className="absolute inset-x-0 top-0 h-1/2 rounded-t-xl bg-gradient-to-b from-white/20 to-transparent pointer-events-none" />
+                <div className="absolute inset-x-0 top-0 h-1/2 rounded-t-md bg-gradient-to-b from-white/20 to-transparent pointer-events-none" />
 
-                {/* Character label: 100% Vector Sharp, NEVER inverted, centered with pure white contrast */}
+                {/* Finger color accent bar at bottom of falling note (matches keyboard keycaps!) */}
                 <span
-                  className={`truncate tracking-wider z-10 ${
-                    isSpace ? 'text-xs font-bold text-cyan-300 px-3' : 'text-sm sm:text-base text-white'
+                  className={`absolute bottom-0 inset-x-1 rounded-full ${
+                    noteIdx === 0 ? 'h-1 opacity-100 shadow-[0_0_8px_currentColor]' : 'h-[2.5px] opacity-75'
                   }`}
-                >
-                  {note.displayChar}
-                </span>
+                  style={{ backgroundColor: laneColor, color: laneColor }}
+                />
+
+                {/* Tactile bump marker on index keys (F & J) */}
+                {kSpec?.isBump && (
+                  <span
+                    className="absolute bottom-1 w-2.5 h-0.5 rounded-full"
+                    style={{ backgroundColor: noteIdx === 0 ? '#ffffff' : laneColor }}
+                  />
+                )}
+
+                {/* Content: Clean, uncluttered falling keycap */}
+                {isSpace ? (
+                  <span
+                    className={`truncate font-mono font-black text-xs tracking-wider select-none ${
+                      noteIdx === 0
+                        ? 'text-white drop-shadow-[0_1px_2px_rgba(0,0,0,1)]'
+                        : 'text-slate-300'
+                    }`}
+                  >
+                    SPACE
+                  </span>
+                ) : (
+                  <div className="flex flex-col items-center justify-center leading-none pointer-events-none select-none">
+                    {kSpec?.subDisplay && (
+                      <span
+                        className={`text-[8px] leading-none mb-0.5 font-bold ${
+                          noteIdx === 0 ? 'text-white' : 'text-slate-400'
+                        }`}
+                        style={{ color: noteIdx === 0 ? laneColor : undefined }}
+                      >
+                        {kSpec.subDisplay}
+                      </span>
+                    )}
+                    <span
+                      className={`truncate font-mono leading-none ${
+                        noteIdx === 0
+                          ? 'text-white font-black text-xs sm:text-sm drop-shadow-[0_1px_2px_rgba(0,0,0,1)]'
+                          : 'text-slate-200 font-semibold text-xs'
+                      }`}
+                    >
+                      {kSpec?.display || note.displayChar}
+                    </span>
+                  </div>
+                )}
 
                 {/* Energy tail behind active descending note */}
                 {noteIdx === 0 && (
                   <div
-                    className="absolute -top-5 inset-x-3 h-5 rounded-t-md opacity-50 pointer-events-none"
+                    className="absolute -top-4 inset-x-2 h-4 rounded-t-md opacity-60 pointer-events-none"
                     style={{
                       background: `linear-gradient(to top, ${laneColor}, transparent)`,
                     }}
@@ -684,7 +756,7 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
                         (recommendedShift === 'right' && k.key === 'ShiftRight'));
 
                     const isTargetModifier = isTargetShift;
-                    const isRecentlyPressed = lastPressedKey?.toLowerCase() === k.key.toLowerCase();
+                    const isCurrentlyPressed = Boolean(lastPressedKey && lastPressedKey.toLowerCase() === k.key.toLowerCase());
                     const laneColor = laneMatch?.color || '#06b6d4';
 
                     return (
@@ -700,25 +772,25 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
                             ? laneColor
                             : isTargetModifier
                             ? '#fbbf24'
-                            : isRecentlyPressed
-                            ? '#38bdf8'
+                            : isCurrentlyPressed
+                            ? laneColor
                             : undefined,
                           borderStyle: isTargetModifier ? 'dashed' : 'solid',
                           boxShadow: isTargetKey
-                            ? `0 3px 0 #020617, 0 0 20px ${laneColor}70, inset 0 1px 1px rgba(255,255,255,0.4)`
+                            ? `0 3px 0 #020617, 0 0 24px ${laneColor}85, inset 0 1px 1px rgba(255,255,255,0.4)`
                             : isTargetModifier
                             ? `0 3px 0 #020617, 0 0 20px rgba(251,191,36,0.65), inset 0 1px 1px rgba(255,255,255,0.4)`
-                            : isRecentlyPressed
-                            ? `0 1px 0 #020617, 0 0 16px rgba(56,189,248,0.7), inset 0 1px 1px rgba(255,255,255,0.3)`
-                            : '0 3px 0 #020617, 0 4px 8px rgba(0,0,0,0.6), inset 0 1px 1px rgba(255,255,255,0.1)',
+                            : isCurrentlyPressed
+                            ? `0 1px 0 #020617, 0 0 20px ${laneColor}90, inset 0 1px 1px rgba(255,255,255,0.4)`
+                            : `0 3px 0 #020617, 0 4px 8px rgba(0,0,0,0.6), inset 0 -3px 0 ${laneColor}45, inset 0 1px 1px rgba(255,255,255,0.1)`,
                         }}
                         className={`relative flex flex-col items-center justify-center h-8 sm:h-9 rounded-md text-[11px] sm:text-xs font-mono transition-all duration-75 select-none cursor-pointer group ${
                           isTargetKey
                             ? 'bg-gradient-to-b from-slate-800 to-slate-900 border-2 border-solid font-black z-20 scale-[1.02] text-white ring-2 ring-offset-1 ring-offset-slate-950'
                             : isTargetModifier
                             ? 'bg-gradient-to-b from-amber-950/80 to-slate-900 border-2 border-dashed border-amber-400 text-amber-200 font-bold z-10 scale-[1.02] ring-2 ring-amber-400/50 ring-offset-1 ring-offset-slate-950'
-                            : isRecentlyPressed
-                            ? 'bg-gradient-to-b from-slate-700 to-slate-800 border-2 border-cyan-400 text-cyan-300 translate-y-[2px]'
+                            : isCurrentlyPressed
+                            ? 'bg-gradient-to-b from-slate-700 to-slate-800 border-2 font-bold translate-y-[2px] text-white scale-[0.98]'
                             : 'bg-gradient-to-b from-slate-800/90 to-slate-900 border border-slate-700/80 text-slate-300 hover:border-slate-500 active:translate-y-[2px]'
                         }`}
                       >
@@ -726,20 +798,22 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
                         <span
                           className={`absolute bottom-0 inset-x-1 rounded-full transition-all ${
                             isTargetKey
-                              ? 'h-1 opacity-100'
+                              ? 'h-1 opacity-100 shadow-[0_0_8px_currentColor]'
                               : isTargetModifier
                               ? 'h-1 opacity-100 bg-amber-400'
-                              : 'h-[2px] opacity-40 group-hover:opacity-80'
+                              : 'h-[2.5px] opacity-75 group-hover:opacity-100'
                           }`}
-                          style={{ backgroundColor: isTargetModifier ? '#fbbf24' : laneColor }}
+                          style={{
+                            backgroundColor: isTargetModifier ? '#fbbf24' : laneColor,
+                            color: laneColor,
+                          }}
                         />
 
                         {/* Tactile bump marker for standard touch typing (F & J) */}
                         {k.isBump && (
                           <span
-                            className={`absolute bottom-1 w-2.5 h-0.5 rounded-full ${
-                              isTargetKey ? 'bg-cyan-300' : 'bg-slate-400'
-                            }`}
+                            className="absolute bottom-1 w-2.5 h-0.5 rounded-full"
+                            style={{ backgroundColor: isTargetKey ? '#ffffff' : laneColor }}
                           />
                         )}
 
@@ -754,8 +828,9 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
                         {k.subDisplay && keyboardVisible && (
                           <span
                             className={`text-[9px] leading-none mb-0.5 font-bold ${
-                              isTargetKey ? 'text-cyan-300' : isTargetModifier ? 'text-amber-300' : 'text-slate-500'
+                              isTargetKey ? 'text-white' : isTargetModifier ? 'text-amber-300' : 'text-slate-400'
                             }`}
+                            style={{ color: isTargetKey ? laneColor : undefined }}
                           >
                             {k.subDisplay}
                           </span>
@@ -791,15 +866,21 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
                           <div className="flex items-center justify-center pointer-events-none">
                             {isTargetKey ? (
                               <span
-                                className="w-2 h-2 rounded-full shadow-[0_0_8px_currentColor] animate-pulse"
+                                className="w-2.5 h-2.5 rounded-full shadow-[0_0_10px_currentColor] animate-pulse"
                                 style={{ backgroundColor: laneColor, color: laneColor }}
                               />
                             ) : isTargetModifier ? (
                               <span className="w-2 h-2 rounded-full border border-dashed border-amber-400 bg-amber-400/40" />
                             ) : k.isBump ? (
-                              <span className="w-2 h-1 rounded-full bg-slate-500" />
+                              <span
+                                className="w-2.5 h-1 rounded-full"
+                                style={{ backgroundColor: laneColor }}
+                              />
                             ) : (
-                              <span className="w-1 h-1 rounded-full bg-slate-800" />
+                              <span
+                                className="w-1.5 h-1.5 rounded-full opacity-60"
+                                style={{ backgroundColor: laneColor }}
+                              />
                             )}
                           </div>
                         ) : (
@@ -809,10 +890,11 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
                                 ? 'text-white font-black text-xs sm:text-sm drop-shadow-[0_1px_2px_rgba(0,0,0,1)]'
                                 : isTargetModifier
                                 ? 'text-amber-200 font-bold text-xs'
-                                : isRecentlyPressed
-                                ? 'text-cyan-300 font-black text-xs'
+                                : isCurrentlyPressed
+                                ? 'text-white font-black text-xs drop-shadow-[0_0_8px_currentColor]'
                                 : 'text-slate-200 font-semibold text-xs'
                             }`}
+                            style={{ color: isCurrentlyPressed ? '#ffffff' : undefined }}
                           >
                             {k.display}
                           </span>

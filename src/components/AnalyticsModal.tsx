@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { PlayerProfile } from '../types/game';
-import { KEY_FINGER_MAP } from '../data/curriculum';
+import { KEY_FINGER_MAP, FINGER_COLOR_MAP, FINGER_DISPLAY_NAMES } from '../data/curriculum';
 import { Download, Upload, RotateCcw, AlertTriangle } from 'lucide-react';
 
 interface AnalyticsModalProps {
@@ -280,9 +280,15 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                           <span className="px-2 py-0.5 rounded bg-rose-950 text-rose-300 font-bold border border-rose-900">
                             {char === ' ' ? 'SPACE' : char.toUpperCase()}
                           </span>
-                          <span className="text-slate-400">
-                            {info ? `${info.hand} ${info.finger.split('_')[1]?.toLowerCase()}` : 'Key'}
-                          </span>
+                          {info && (
+                            <span className="flex items-center gap-1.5 text-slate-400">
+                              <span
+                                className="w-2 h-2 rounded-full inline-block shadow-sm"
+                                style={{ backgroundColor: FINGER_COLOR_MAP[info.finger] }}
+                              />
+                              <span>{FINGER_DISPLAY_NAMES[info.finger] || info.finger}</span>
+                            </span>
+                          )}
                         </div>
                         <span className="text-rose-400 font-bold">{missRate}% errors</span>
                       </div>

@@ -66,7 +66,7 @@ export const StageSelectModal: React.FC<StageSelectModalProps> = ({
                 </div>
               </div>
 
-              {totalStars > 0 && (
+              {(totalStars > 0 || Object.keys(stagesProgress).length > 0) && (
                 <button
                   onClick={() => setShowWipeConfirm(true)}
                   title="Wipe curriculum achievements and reset stars to 0 for the new Mavis Beacon curriculum"
@@ -415,6 +415,7 @@ export const StageSelectModal: React.FC<StageSelectModalProps> = ({
               <button
                 onClick={() => {
                   onWipeAchievements();
+                  setSelectedSectorId('sector-1');
                   setShowWipeConfirm(false);
                 }}
                 className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold font-mono transition-colors shadow-lg shadow-rose-950/50 cursor-pointer flex items-center justify-center gap-1.5"

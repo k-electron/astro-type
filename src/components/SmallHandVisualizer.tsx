@@ -1,5 +1,6 @@
 import React from 'react';
 import { FingerZone } from '../types/game';
+import { FINGER_COLOR_MAP } from '../data/curriculum';
 
 interface SmallHandVisualizerProps {
   hand: 'left' | 'right';
@@ -25,19 +26,19 @@ interface FingerConfig {
 }
 
 const LEFT_FINGERS: FingerConfig[] = [
-  { id: 'LEFT_PINKY', name: 'Pinky', home: 'A', x: 18, tipY: 44, baseY: 80, w: 12, color: '#ec4899' },
-  { id: 'LEFT_RING', name: 'Ring', home: 'S', x: 35, tipY: 28, baseY: 76, w: 13, color: '#a855f7' },
-  { id: 'LEFT_MIDDLE', name: 'Middle', home: 'D', x: 53, tipY: 18, baseY: 74, w: 13.5, color: '#3b82f6' },
-  { id: 'LEFT_INDEX', name: 'Index', home: 'F', x: 71, tipY: 30, baseY: 77, w: 13.5, color: '#06b6d4', isBump: true },
-  { id: 'THUMB', name: 'Thumb', home: '␣', x: 91, tipY: 66, baseY: 100, w: 14, color: '#10b981', isThumb: true },
+  { id: 'LEFT_PINKY', name: 'Pinky', home: 'A', x: 18, tipY: 44, baseY: 80, w: 12, color: FINGER_COLOR_MAP.LEFT_PINKY },
+  { id: 'LEFT_RING', name: 'Ring', home: 'S', x: 35, tipY: 28, baseY: 76, w: 13, color: FINGER_COLOR_MAP.LEFT_RING },
+  { id: 'LEFT_MIDDLE', name: 'Middle', home: 'D', x: 53, tipY: 18, baseY: 74, w: 13.5, color: FINGER_COLOR_MAP.LEFT_MIDDLE },
+  { id: 'LEFT_INDEX', name: 'Index', home: 'F', x: 71, tipY: 30, baseY: 77, w: 13.5, color: FINGER_COLOR_MAP.LEFT_INDEX, isBump: true },
+  { id: 'THUMB', name: 'Thumb', home: '␣', x: 91, tipY: 66, baseY: 100, w: 14, color: FINGER_COLOR_MAP.THUMB, isThumb: true },
 ];
 
 const RIGHT_FINGERS: FingerConfig[] = [
-  { id: 'THUMB', name: 'Thumb', home: '␣', x: 25, tipY: 66, baseY: 100, w: 14, color: '#10b981', isThumb: true },
-  { id: 'RIGHT_INDEX', name: 'Index', home: 'J', x: 45, tipY: 30, baseY: 77, w: 13.5, color: '#f59e0b', isBump: true },
-  { id: 'RIGHT_MIDDLE', name: 'Middle', home: 'K', x: 63, tipY: 18, baseY: 74, w: 13.5, color: '#f97316' },
-  { id: 'RIGHT_RING', name: 'Ring', home: 'L', x: 81, tipY: 28, baseY: 76, w: 13, color: '#f43f5e' },
-  { id: 'RIGHT_PINKY', name: 'Pinky', home: ';', x: 98, tipY: 44, baseY: 80, w: 12, color: '#8b5cf6' },
+  { id: 'THUMB', name: 'Thumb', home: '␣', x: 25, tipY: 66, baseY: 100, w: 14, color: FINGER_COLOR_MAP.THUMB, isThumb: true },
+  { id: 'RIGHT_INDEX', name: 'Index', home: 'J', x: 45, tipY: 30, baseY: 77, w: 13.5, color: FINGER_COLOR_MAP.RIGHT_INDEX, isBump: true },
+  { id: 'RIGHT_MIDDLE', name: 'Middle', home: 'K', x: 63, tipY: 18, baseY: 74, w: 13.5, color: FINGER_COLOR_MAP.RIGHT_MIDDLE },
+  { id: 'RIGHT_RING', name: 'Ring', home: 'L', x: 81, tipY: 28, baseY: 76, w: 13, color: FINGER_COLOR_MAP.RIGHT_RING },
+  { id: 'RIGHT_PINKY', name: 'Pinky', home: ';', x: 98, tipY: 44, baseY: 80, w: 12, color: FINGER_COLOR_MAP.RIGHT_PINKY },
 ];
 
 export const SmallHandVisualizer: React.FC<SmallHandVisualizerProps> = ({
@@ -97,8 +98,16 @@ export const SmallHandVisualizer: React.FC<SmallHandVisualizerProps> = ({
             ALT ␣
           </span>
         ) : isMainActiveOnThisHand ? (
-          <span className="text-[9px] font-mono font-bold px-1 py-0.2 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
-            {activeKeyDisplay ? activeKeyDisplay.toUpperCase() : 'ACTIVE'}
+          <span
+            className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded shadow-sm"
+            style={{
+              backgroundColor: `${activeFinger ? FINGER_COLOR_MAP[activeFinger] : '#06b6d4'}25`,
+              color: activeFinger ? FINGER_COLOR_MAP[activeFinger] : '#06b6d4',
+              borderColor: `${activeFinger ? FINGER_COLOR_MAP[activeFinger] : '#06b6d4'}80`,
+              borderWidth: '1px',
+            }}
+          >
+            {activeKeyDisplay ? (activeKeyDisplay === ' ' ? 'SPACE' : activeKeyDisplay.toUpperCase()) : 'ACTIVE'}
           </span>
         ) : isModActiveOnThisHand ? (
           <span className="text-[9px] font-mono font-bold px-1 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-dashed border-amber-400">
@@ -278,17 +287,20 @@ export const SmallHandVisualizer: React.FC<SmallHandVisualizerProps> = ({
                     ? f.color
                     : isModTarget
                     ? '#fbbf24'
-                    : '#090d16'
+                    : `${f.color}22`
                 }
                 stroke={
                   isSecondary
-                    ? 'rgba(16, 185, 129, 0.5)'
+                    ? 'rgba(16, 185, 129, 0.6)'
+                    : isMainTarget
+                    ? '#ffffff'
                     : isModTarget
                     ? '#fbbf24'
-                    : undefined
+                    : f.color
                 }
-                strokeWidth={isSecondary || isModTarget ? '1' : undefined}
+                strokeWidth={isMainTarget ? '1.5' : '1.2'}
                 strokeDasharray={isModTarget ? '2 2' : undefined}
+                strokeOpacity={isMainTarget ? 1 : 0.85}
               />
 
               {/* Fingertip Character Label */}
@@ -304,7 +316,7 @@ export const SmallHandVisualizer: React.FC<SmallHandVisualizerProps> = ({
                     ? '#6ee7b7'
                     : isMainTarget || isModTarget
                     ? '#020617'
-                    : '#94a3b8'
+                    : f.color
                 }
               >
                 {isMainTarget && activeKeyDisplay
@@ -332,18 +344,37 @@ export const SmallHandVisualizer: React.FC<SmallHandVisualizerProps> = ({
                 cy={f.baseY}
                 r="1.8"
                 fill={f.color}
-                opacity={isSecondary ? 0.6 : isMainTarget ? 1 : 0.4}
+                opacity={isSecondary ? 0.6 : isMainTarget ? 1 : 0.5}
               />
             </g>
           );
         })}
       </svg>
 
-      {/* Footer Finger Alignment Legend */}
+      {/* Footer Finger Alignment Legend with consistent color dots */}
       <div className="w-full text-center pt-1 border-t border-slate-800/80">
-        <span className="text-[9px] font-mono text-slate-500 tracking-wider truncate block">
-          {isPrimaryThumb ? 'THUMB · REC' : isSecondaryThumb ? 'THUMB · ALT' : isLeft ? 'A · S · D · F' : 'J · K · L · ;'}
-        </span>
+        <div className="flex items-center justify-center gap-1.5 text-[9px] font-mono">
+          {fingers
+            .filter((f) => !f.isThumb)
+            .map((f) => (
+              <span
+                key={f.id}
+                className="flex items-center gap-0.5"
+                title={`${f.name} Finger (${f.color})`}
+              >
+                <span
+                  className="w-1.5 h-1.5 rounded-full inline-block shadow-sm"
+                  style={{ backgroundColor: f.color }}
+                />
+                <span
+                  className="font-bold text-[9px]"
+                  style={{ color: activeFinger === f.id ? f.color : '#94a3b8' }}
+                >
+                  {f.home}
+                </span>
+              </span>
+            ))}
+        </div>
       </div>
     </div>
   );

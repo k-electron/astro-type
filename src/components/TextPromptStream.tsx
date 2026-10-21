@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { KEY_FINGER_MAP, FINGER_LANES } from '../data/curriculum';
+import { KEY_FINGER_MAP, FINGER_LANES, FINGER_DISPLAY_NAMES } from '../data/curriculum';
 
 interface TextPromptStreamProps {
   fullText: string;
@@ -66,9 +66,7 @@ export const TextPromptStream: React.FC<TextPromptStreamProps> = ({
                 style={{ backgroundColor: laneInfo.color, color: laneInfo.color }}
               />
               <span className="text-slate-300 font-mono text-[11px] whitespace-nowrap">
-                {charInfo.hand === 'thumb'
-                  ? 'Thumb (Space)'
-                  : `${charInfo.hand === 'left' ? 'Left' : 'Right'} ${laneInfo.label.replace(/^[LR]\./, '')}`}
+                {FINGER_DISPLAY_NAMES[charInfo.finger] || charInfo.finger}
               </span>
               {charInfo.shiftRequired && charInfo.recommendedShiftHand && (
                 <span className="text-amber-400 font-mono text-[10px] bg-amber-950/60 px-1 py-0.2 rounded border border-amber-800/60 whitespace-nowrap">

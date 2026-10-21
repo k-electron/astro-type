@@ -76,6 +76,7 @@ export interface GameStoreState {
   setCurrentStage: (stage: Stage) => void;
   startStage: (stage: Stage, customSpeed?: 'SLOW' | 'NORMAL' | 'FAST' | 'HYPER') => void;
   processKeystroke: (key: string) => void;
+  releaseKeystroke: (key?: string) => void;
   updateFallingNotesOnTick: () => void;
   updateTelemetryOnInterval: () => void;
   handleStageComplete: () => void;
@@ -525,6 +526,13 @@ export const useGameStore = create<GameStoreState>((set, get) => {
             performance: validatePerformanceWithZod(patchPerf),
           });
         }
+      }
+    },
+
+    releaseKeystroke: (key?: string) => {
+      const state = get();
+      if (!key || state.lastPressedKey?.toLowerCase() === key.toLowerCase()) {
+        set({ lastPressedKey: null });
       }
     },
 
