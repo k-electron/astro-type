@@ -93,6 +93,7 @@ Spend cosmic credits earned from high-precision flights to install Deflector Shi
 ## 🎮 Key Features
 
 | Feature | Description |
+| :--- | :--- |
 | **Subtle Space Indicators** | Elegant, non-boxed `␣` glyphs in the target stream that cleanly distinguish space characters without visual clutter, elevating to focused cyan glow when actively targeted. |
 | **Highway Note Speed** | Adjustable visual scroll rate (`SLOW` 0.9x, `NORMAL` 1.5x, `FAST` 2.2x, `HYPER` 3.4x) controlling how quickly approaching notes descend down the flight lanes for tailored reflex challenge without altering target WPM. |
 | **Vertically Taller Highway** | Expanded vertical corridor with elevated orbital ceiling, providing extended flight time and a clearer incoming roadmap. |
