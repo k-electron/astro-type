@@ -137,7 +137,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
             className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-cyan-950/40 border border-cyan-500/40 hover:border-cyan-400 text-cyan-300 transition-all cursor-pointer shadow-sm hover:shadow-[0_0_12px_rgba(6,182,212,0.25)]"
           >
             <Sparkles className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-            <span className="font-bold tabular-nums text-sm text-cyan-200">{totalCredits.toLocaleString()}</span>
+            <span className="font-bold tabular-nums text-sm text-cyan-200">{(totalCredits ?? 0).toLocaleString()}</span>
             <span className="text-[10px] text-cyan-400/80 font-medium">Cr</span>
           </button>
         </div>

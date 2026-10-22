@@ -166,7 +166,7 @@ export const LevelCompleteModal: React.FC<LevelCompleteModalProps> = ({
           <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800">
             <span className="text-[10px] uppercase font-mono text-slate-500 block">Score</span>
             <div className="flex items-center justify-center gap-1 font-mono font-bold text-white text-lg">
-              {score.toLocaleString()}
+              {(score ?? 0).toLocaleString()}
             </div>
             {isNewHighScore && (
               <span className="text-[9px] font-mono text-amber-400 uppercase font-semibold">New Best!</span>

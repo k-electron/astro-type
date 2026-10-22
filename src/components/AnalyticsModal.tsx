@@ -180,7 +180,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
               </span>
               <div className="flex items-baseline gap-1 font-mono">
                 <span className="text-2xl font-bold text-white tabular-nums">
-                  {totalWordsTyped.toLocaleString()}
+                  {(totalWordsTyped ?? 0).toLocaleString()}
                 </span>
               </div>
             </div>

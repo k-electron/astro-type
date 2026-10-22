@@ -33,7 +33,7 @@ export const HUD: React.FC<HUDProps> = ({
         <div>
           <span className="block text-[9px] uppercase font-mono tracking-wider text-slate-500 leading-none mb-0.5">Score</span>
           <span className="text-lg sm:text-xl font-bold font-mono tabular-nums text-white leading-none">
-            {score.toLocaleString()}
+            {(score ?? 0).toLocaleString()}
           </span>
         </div>
 
