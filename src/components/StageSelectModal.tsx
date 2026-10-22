@@ -10,6 +10,7 @@ interface StageSelectModalProps {
   totalCredits: number;
   onSelectStage: (stage: Stage) => void;
   onClose: () => void;
+  onGoToFlightDeck?: () => void;
   onOpenHangar: () => void;
   onOpenAnalytics: () => void;
   onWipeAchievements: () => void;
@@ -24,6 +25,7 @@ export const StageSelectModal: React.FC<StageSelectModalProps> = ({
   totalCredits,
   onSelectStage,
   onClose,
+  onGoToFlightDeck,
   onOpenHangar,
   onOpenAnalytics,
   onWipeAchievements,
@@ -69,7 +71,7 @@ export const StageSelectModal: React.FC<StageSelectModalProps> = ({
               {(totalStars > 0 || Object.keys(stagesProgress).length > 0) && (
                 <button
                   onClick={() => setShowWipeConfirm(true)}
-                  title="Wipe curriculum achievements and reset stars to 0 for the new Mavis Beacon curriculum"
+                  title="Wipe curriculum achievements and reset stars to 0 for the classical touch-typing curriculum"
                   className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-rose-900/60 bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 hover:text-white text-xs font-mono transition-all cursor-pointer shadow-sm"
                 >
                   <RotateCcw className="w-3.5 h-3.5 text-rose-400" />
@@ -122,6 +124,16 @@ export const StageSelectModal: React.FC<StageSelectModalProps> = ({
                 </div>
               ) : (
                 <div className="flex items-center gap-1.5">
+                  {onGoToFlightDeck && (
+                    <button
+                      onClick={onGoToFlightDeck}
+                      className="px-3 py-1.5 text-xs font-bold rounded-lg bg-cyan-400 hover:bg-cyan-300 text-slate-950 transition-all flex items-center gap-1 cursor-pointer shadow-sm shadow-cyan-950 whitespace-nowrap"
+                      title="Launch directly into the cockpit flight deck"
+                    >
+                      <Play className="w-3.5 h-3.5 fill-current" />
+                      <span>{sourceState === 'PLAYING' ? 'Resume Flight' : 'Enter Flight Deck'}</span>
+                    </button>
+                  )}
                   {onReturnToMenu && sourceState !== 'MENU' && (
                     <button
                       onClick={onReturnToMenu}
@@ -135,7 +147,7 @@ export const StageSelectModal: React.FC<StageSelectModalProps> = ({
                     onClick={onClose}
                     className="px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-700 bg-slate-800 text-slate-300 hover:text-white transition-colors cursor-pointer"
                   >
-                    {sourceState === 'PLAYING' ? 'Resume Flight' : 'Close'}
+                    Close
                   </button>
                 </div>
               )}
@@ -296,7 +308,7 @@ export const StageSelectModal: React.FC<StageSelectModalProps> = ({
                         {stage.subtitle}
                       </p>
 
-                      {/* Mavis Beacon Finger Focus Badge */}
+                      {/* Pedagogical Finger Focus Badge */}
                       {stage.focusFingers && (
                         <div className="flex items-center gap-1.5 mb-2 text-[11px] font-mono">
                           <span className="px-2 py-0.5 rounded bg-cyan-950/70 border border-cyan-800/60 text-cyan-300 font-semibold">
@@ -389,7 +401,7 @@ export const StageSelectModal: React.FC<StageSelectModalProps> = ({
             </h3>
 
             <p className="text-xs text-slate-300 leading-relaxed mb-4">
-              The touch-typing curriculum has been upgraded with the Mavis Beacon structured finger-building methodology. 
+              The touch-typing curriculum has been upgraded with structured classical finger-building methodology. 
               Wiping achievements will clear all <span className="text-amber-400 font-bold font-mono">{totalStars} ★ stars earned</span> and stage records, relocking sectors so you can master the progressive inside-out curriculum from Sector 1.
             </p>
 

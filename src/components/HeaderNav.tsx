@@ -3,6 +3,7 @@ import {
   Star,
   Sparkles,
   Play,
+  Pause,
   Volume2,
   VolumeX,
   SlidersHorizontal,
@@ -404,9 +405,19 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
         <button
           onClick={onQuickPlay}
           className="px-3.5 sm:px-4 py-2 text-xs font-bold text-slate-950 bg-cyan-400 rounded-lg hover:bg-cyan-300 shadow-md shadow-cyan-950 transition-all whitespace-nowrap shrink-0 cursor-pointer flex items-center gap-1.5"
+          title={isPlaying ? 'Pause active flight session' : 'Launch cockpit flight deck'}
         >
-          <Play className="w-3.5 h-3.5 fill-current" />
-          <span>{isPlaying ? 'Mission Active' : 'Start Mission'}</span>
+          {isPlaying ? (
+            <>
+              <Pause className="w-3.5 h-3.5 fill-current" />
+              <span>Pause Flight</span>
+            </>
+          ) : (
+            <>
+              <Play className="w-3.5 h-3.5 fill-current" />
+              <span>Start Mission</span>
+            </>
+          )}
         </button>
       </div>
     </header>

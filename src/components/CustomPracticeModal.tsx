@@ -86,7 +86,7 @@ export const CustomPracticeModal: React.FC<CustomPracticeModalProps> = ({
 
           <button
             onClick={onClose}
-            className="px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-700 text-slate-300 hover:text-white transition-colors"
+            className="px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer"
           >
             Cancel
           </button>
@@ -151,15 +151,20 @@ export const CustomPracticeModal: React.FC<CustomPracticeModalProps> = ({
           </div>
 
           <div className="p-3.5 rounded-xl border border-slate-800 bg-slate-950/60">
-            <span className="text-xs font-mono uppercase text-slate-400 block mb-2">
-              Highway Note Speed
-            </span>
+            <div className="flex justify-between items-center mb-1">
+              <span className="text-xs font-mono uppercase text-slate-400">Highway Note Speed</span>
+              <span className="text-[10px] font-mono text-cyan-400/80">{speed}</span>
+            </div>
+            <p className="text-[10px] text-slate-500 mb-2">
+              Visual scroll & descent velocity of approaching notes (does not alter target WPM).
+            </p>
             <div className="grid grid-cols-4 gap-1">
               {(['SLOW', 'NORMAL', 'FAST', 'HYPER'] as const).map((s) => (
                 <button
                   key={s}
                   onClick={() => setSpeed(s)}
-                  className={`py-1.5 text-[11px] font-mono rounded font-medium transition-colors ${
+                  title={`${s === 'SLOW' ? 'Relaxed approach (0.9x)' : s === 'NORMAL' ? 'Standard rhythm (1.5x)' : s === 'FAST' ? 'High-speed tempo (2.2x)' : 'Hyper-velocity reflex (3.4x)'}`}
+                  className={`py-1.5 text-[11px] font-mono rounded font-medium transition-colors cursor-pointer ${
                     speed === s
                       ? 'bg-cyan-500 text-slate-950 font-bold'
                       : 'bg-slate-800 text-slate-400 hover:text-slate-200'

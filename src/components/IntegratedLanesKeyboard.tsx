@@ -681,9 +681,9 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
           ctx.arc(hw - 8, -hh - 2, 2.5, 0, Math.PI * 2);
           ctx.fill();
 
-          // Letter glyph in crisp white
+          // Letter glyph in crisp white (Enlarged for high-speed legibility)
           ctx.fillStyle = '#ffffff';
-          ctx.font = 'bold 15px monospace';
+          ctx.font = 'bold 20px monospace';
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
           ctx.fillText(td.display, 0, 1);
@@ -1096,7 +1096,7 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
 
         if (fb.alpha > 0) {
           ctx.save();
-          ctx.font = '900 15px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace';
+          ctx.font = '900 16px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace';
           ctx.textAlign = 'center';
           ctx.fillStyle = fb.color;
           ctx.globalAlpha = fb.alpha;
@@ -1202,9 +1202,10 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
       </div>
 
       {/* FLIGHT STAGE: Integrated Drop Highway + Mechanical Receptor Deck + Under-Keyboard Defense Trench */}
+      {/* Vertically taller container (h-[620px] sm:h-[700px]) to render more of the falling roadmap without altering key dimensions */}
       <div
         ref={containerRef}
-        className="relative w-full h-[480px] sm:h-[520px] bg-transparent overflow-hidden flex flex-col justify-between select-none"
+        className="relative w-full h-[620px] sm:h-[700px] bg-transparent overflow-hidden flex flex-col justify-between select-none"
       >
         {/* Canvas for Hit Sparks, Shockwaves, and Combat Rating Popups (Layer z-40: IN FRONT OF EVERYTHING for un-occluded VFX) */}
         <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none z-40 block" />
@@ -1314,8 +1315,8 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
             const laneColor = laneMatch?.color || '#06b6d4';
             const isSpace = note.char === ' ';
             // Sky ceiling and defense perimeter line strictly above keyboard deck
-            const skyCeilingY = 18;
-            const defensePerimeterY = Math.max(skyCeilingY + 36, keyboardTopY - 38);
+            const skyCeilingY = 20;
+            const defensePerimeterY = Math.max(skyCeilingY + 48, keyboardTopY - 42);
 
             let topPx = 0;
             if (noteIdx === 0) {
@@ -1323,8 +1324,8 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
               const progress = Math.min(1.0, Math.max(0, note.yPercent / 84));
               topPx = skyCeilingY + (defensePerimeterY - skyCeilingY) * progress;
             } else {
-              // QUEUED SQUADRON: Stationed in echelon formation in orbit
-              const echelonSlotY = Math.max(skyCeilingY, defensePerimeterY - noteIdx * 40);
+              // QUEUED SQUADRON: Stationed in echelon formation in orbit (Expanded spacing for taller roadmap view)
+              const echelonSlotY = Math.max(skyCeilingY, defensePerimeterY - noteIdx * 62);
               const travelProgress = Math.min(1.0, note.yPercent / 35);
               topPx = skyCeilingY + (echelonSlotY - skyCeilingY) * travelProgress;
             }
@@ -1416,13 +1417,13 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
                         </span>
                       )}
                       <span
-                        className={`truncate font-mono font-black text-xs sm:text-sm tracking-wider select-none ${
+                        className={`truncate font-mono font-black tracking-wider select-none ${
                           noteIdx === 0
-                            ? 'text-white drop-shadow-[0_0_8px_rgba(16,185,129,0.9)]'
-                            : 'text-slate-300'
+                            ? 'text-white drop-shadow-[0_0_10px_rgba(16,185,129,0.95)] text-base sm:text-lg'
+                            : 'text-slate-200 text-sm sm:text-base'
                         }`}
                       >
-                        SPACE
+                        ␣ SPACE
                       </span>
                       {noteIdx === 0 && (
                         <span className="text-[9px] font-black tracking-widest text-emerald-400 bg-emerald-950/80 px-1.5 py-0.5 rounded border border-emerald-500/40 animate-pulse">
@@ -1477,12 +1478,12 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
                       />
                     </div>
 
-                    {/* Reinforced Cockpit Core (Letter glyph in crisp, pristine high-contrast) */}
+                    {/* Reinforced Cockpit Core (Letter glyph in crisp, pristine high-contrast, enlarged for visibility) */}
                     <div className="flex flex-col items-center justify-center leading-none pointer-events-none select-none z-10">
                       {kSpec?.subDisplay && (
                         <span
-                          className={`text-[8px] leading-none mb-0.5 font-bold ${
-                            noteIdx === 0 ? 'text-white' : 'text-slate-400'
+                          className={`text-[10px] sm:text-xs leading-none mb-0.5 font-black ${
+                            noteIdx === 0 ? 'text-white' : 'text-slate-300'
                           }`}
                           style={{ color: noteIdx === 0 ? laneColor : undefined }}
                         >
@@ -1492,8 +1493,14 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
                       <span
                         className={`truncate font-mono leading-none ${
                           noteIdx === 0
-                            ? 'text-white font-black text-sm sm:text-base drop-shadow-[0_0_10px_rgba(255,255,255,0.95)]'
-                            : 'text-slate-200 font-semibold text-xs'
+                            ? 'text-white font-black drop-shadow-[0_0_12px_rgba(255,255,255,0.95)]'
+                            : 'text-slate-100 font-extrabold'
+                        } ${
+                          (kSpec?.display || note.displayChar).length > 2
+                            ? 'text-xs sm:text-sm font-bold'
+                            : noteIdx === 0
+                            ? 'text-xl sm:text-2xl font-black'
+                            : 'text-base sm:text-lg font-bold'
                         }`}
                       >
                         {kSpec?.display || note.displayChar}
@@ -1642,8 +1649,8 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
                         {/* Key Legend (Sub-display for shift symbols) */}
                         {k.subDisplay && keyboardVisible && (
                           <span
-                            className={`text-[9px] leading-none mb-0.5 font-bold ${
-                              isTargetKey ? 'text-white' : isTargetModifier ? 'text-amber-300' : 'text-slate-400'
+                            className={`text-[10px] sm:text-xs leading-none mb-0.5 font-black ${
+                              isTargetKey ? 'text-white' : isTargetModifier ? 'text-amber-300' : 'text-slate-300'
                             }`}
                             style={{ color: isTargetKey ? laneColor : undefined }}
                           >
@@ -1653,24 +1660,25 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
 
                         {/* Character label: 100% Vector Sharp, or Blind Touch Dot when deck guides are hidden */}
                         {k.key === ' ' && isTargetKey ? (
-                          <div className="flex items-center justify-between w-full px-2 sm:px-3 text-[9px] font-mono pointer-events-none">
+                          <div className="flex items-center justify-between w-full px-2 sm:px-3 text-[10px] font-mono pointer-events-none">
                             <span
                               className={`transition-all ${
                                 smartThumbHand === 'left'
                                   ? 'text-emerald-300 font-black drop-shadow-[0_0_6px_rgba(16,185,129,0.8)]'
-                                  : 'text-emerald-500/50 font-semibold text-[8px]'
+                                  : 'text-emerald-500/50 font-semibold text-[9px]'
                               }`}
                             >
                               {smartThumbHand === 'left' ? '◀ L. THUMB [REC]' : 'L. Thumb (Alt)'}
                             </span>
-                            <span className="truncate font-mono font-black text-xs text-white drop-shadow-[0_1px_2px_rgba(0,0,0,1)]">
-                              SPACE
+                            <span className="truncate font-mono font-black text-sm sm:text-base text-white drop-shadow-[0_1px_2px_rgba(0,0,0,1)] flex items-center gap-1.5">
+                              <span>␣</span>
+                              <span>SPACE</span>
                             </span>
                             <span
                               className={`transition-all ${
                                 smartThumbHand === 'right'
                                   ? 'text-emerald-300 font-black drop-shadow-[0_0_6px_rgba(16,185,129,0.8)]'
-                                  : 'text-emerald-500/50 font-semibold text-[8px]'
+                                  : 'text-emerald-500/50 font-semibold text-[9px]'
                               }`}
                             >
                               {smartThumbHand === 'right' ? 'R. THUMB [REC] ▶' : 'R. Thumb (Alt)'}
@@ -1702,12 +1710,20 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
                           <span
                             className={`truncate font-mono leading-none ${
                               isTargetKey
-                                ? 'text-white font-black text-xs sm:text-sm drop-shadow-[0_1px_2px_rgba(0,0,0,1)]'
+                                ? 'text-white font-black drop-shadow-[0_1px_2px_rgba(0,0,0,1)]'
                                 : isTargetModifier
-                                ? 'text-amber-200 font-bold text-xs'
+                                ? 'text-amber-200 font-bold'
                                 : isCurrentlyPressed
-                                ? 'text-white font-black text-xs drop-shadow-[0_0_8px_currentColor]'
-                                : 'text-slate-200 font-semibold text-xs'
+                                ? 'text-white font-black drop-shadow-[0_0_8px_currentColor]'
+                                : 'text-slate-100 font-extrabold'
+                            } ${
+                              k.display.length > 3
+                                ? 'text-[10px] sm:text-xs font-bold'
+                                : k.display.length > 1
+                                ? 'text-xs sm:text-sm font-bold'
+                                : isTargetKey
+                                ? 'text-base sm:text-lg font-black'
+                                : 'text-base sm:text-lg font-extrabold'
                             }`}
                             style={{ color: isCurrentlyPressed ? '#ffffff' : undefined }}
                           >

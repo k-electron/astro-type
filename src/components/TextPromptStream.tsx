@@ -91,7 +91,7 @@ export const TextPromptStream: React.FC<TextPromptStreamProps> = ({
         </div>
       </div>
 
-      {/* Mavis Beacon Pedagogical Technique Bar */}
+      {/* Structured Pedagogical Technique Bar */}
       {techniqueTip && (
         <div className="px-4 py-1.5 bg-slate-950/60 border-b border-slate-800/80 flex items-center justify-between gap-3 text-xs shrink-0">
           <div className="flex items-center gap-2 truncate">
@@ -117,6 +117,28 @@ export const TextPromptStream: React.FC<TextPromptStreamProps> = ({
           const isTyped = index < currentIndex;
           const isCurrent = index === currentIndex;
           const hasError = errorIndices.has(index);
+          const isSpaceChar = char === ' ';
+
+          if (isSpaceChar) {
+            return (
+              <span
+                key={index}
+                ref={isCurrent ? activeCharRef : null}
+                className={`inline-block select-none transition-all duration-75 ${
+                  isCurrent
+                    ? 'px-1.5 py-0.2 mx-0.5 rounded bg-cyan-500/25 ring-1.5 ring-cyan-400 text-cyan-200 font-bold shadow-[0_0_10px_rgba(6,182,212,0.5)] scale-105'
+                    : isTyped
+                    ? hasError
+                      ? 'px-1 text-rose-400 line-through decoration-rose-500 font-bold'
+                      : 'px-1 text-emerald-500/60 font-medium'
+                    : 'px-1 text-slate-600/70 hover:text-slate-400 font-normal'
+                }`}
+                title="Space (␣)"
+              >
+                ␣
+              </span>
+            );
+          }
 
           let charClass = 'text-slate-500';
           if (isTyped) {
@@ -127,15 +149,13 @@ export const TextPromptStream: React.FC<TextPromptStreamProps> = ({
             charClass = 'text-white bg-cyan-500/30 ring-2 ring-cyan-400 rounded-sm font-bold shadow-[0_0_12px_rgba(6,182,212,0.6)]';
           }
 
-          const displayChar = char === ' ' ? (isCurrent ? '␣' : ' ') : char;
-
           return (
             <span
               key={index}
               ref={isCurrent ? activeCharRef : null}
               className={`inline-block px-[2px] transition-colors ${charClass}`}
             >
-              {displayChar}
+              {char}
             </span>
           );
         })}

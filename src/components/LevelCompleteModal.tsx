@@ -196,11 +196,11 @@ export const LevelCompleteModal: React.FC<LevelCompleteModalProps> = ({
           </div>
         </div>
 
-        {/* Mavis Beacon Pedagogical Assessment Card */}
+        {/* Form & Cadence Pedagogical Assessment Card */}
         <div className="w-full bg-slate-950/70 border border-slate-800 rounded-xl p-3.5 mb-5 text-left">
           <div className="flex items-center justify-between gap-2 mb-1.5">
             <span className="text-[11px] font-mono uppercase font-bold text-cyan-400">
-              Mavis Beacon Technique Assessment
+              Touch-Typing Technique Assessment
             </span>
             {result.cadenceConsistency !== undefined && (
               <span className={`text-[10px] font-mono px-2 py-0.5 rounded border ${

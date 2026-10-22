@@ -437,7 +437,7 @@ export const useGameStore = create<GameStoreState>((set, get) => {
           return n;
         });
 
-        // Track inter-keystroke intervals for Mavis Beacon steady cadence scoring
+        // Track inter-keystroke intervals for steady cadence and rhythm scoring
         const now = Date.now();
         const updatedKeystrokeTimes = [...state.recentKeystrokeTimes, now].slice(-10);
         let liveCadence = state.performance.cadenceConsistency ?? 100;
@@ -503,7 +503,7 @@ export const useGameStore = create<GameStoreState>((set, get) => {
             shieldsRemaining: state.performance.shieldsRemaining - 1,
             incorrectKeystrokes: state.performance.incorrectKeystrokes + 1,
             totalKeystrokes: state.performance.totalKeystrokes + 1,
-            timingFeedback: 'GOOD',
+            timingFeedback: 'MISS',
             timingFeedbackKey: state.performance.timingFeedbackKey + 1,
             cadenceConsistency: disruptedCadence,
           };

@@ -93,7 +93,10 @@ Spend cosmic credits earned from high-precision flights to install Deflector Shi
 ## 🎮 Key Features
 
 | Feature | Description |
-| :--- | :--- |
+| **Subtle Space Indicators** | Elegant, non-boxed `␣` glyphs in the target stream that cleanly distinguish space characters without visual clutter, elevating to focused cyan glow when actively targeted. |
+| **Highway Note Speed** | Adjustable visual scroll rate (`SLOW` 0.9x, `NORMAL` 1.5x, `FAST` 2.2x, `HYPER` 3.4x) controlling how quickly approaching notes descend down the flight lanes for tailored reflex challenge without altering target WPM. |
+| **Vertically Taller Highway** | Expanded vertical corridor with elevated orbital ceiling, providing extended flight time and a clearer incoming roadmap. |
+| **Enlarged Vector Key Legends** | Scaled-up, bold typeface on both physical keycaps and falling enemy drone hulls for effortless high-speed peripheral legibility. |
 | **Tactile Flight Deck** | 1:1 ANSI layout with tactile homing nubs (`F` & `J`), reactive duration-of-press glow, and dynamic keycap labels. |
 | **Live Altitude Blaster Tracking** | Plasma bolts calculate the exact frame coordinate of falling drones, producing realistic detonations at any height. |
 | **Misfire Error Tracers** | Striking an incorrect key fires an angled laser line directly to the pressed keycap, reinforcing visual error correction. |
@@ -101,6 +104,9 @@ Spend cosmic credits earned from high-precision flights to install Deflector Shi
 | **Dual SVG Hand Visualizers** | Ergonomic left and right palms indicating finger positions, tactile bumps, and intelligent spacebar hand recommendations. |
 | **Blind Touch-Typing Mode** | Toggle deck legends off to replace key characters with tactile muscle-memory dots for true sightless mastery. |
 | **Overdrive Warp Mode** | Maintain combos to fill your warp reactor. Activates a `x4` score overdrive with hyperspace starfield trails. |
+| **Direct Flight Deck Launchers** | Dedicated, 100% reliable "Enter Flight Deck" and "Resume Flight" buttons across Hangar, Analytics, and Sectors ensure instant cockpit entry from any screen. |
+| **Context-Aware Navigation** | Modals dynamically route back to their exact origin (Academy Home, Sectors, Debriefing, or Pause Menu) without broken redirects or dead ends. |
+| **Top Flight Deck Controls** | Persistent header action button dynamically toggles `Pause Flight` during active missions and `Resume Flight` / `Start Mission` when in menus. |
 | **Interactive Heatmap** | Color-coded keyboard diagnostic matrix revealing hit rates, bilateral hand balance, and struggling finger reaches. |
 | **Hangar Progression** | Earn cosmic credits to purchase Deflector Shields, Hyperdrive Reactors, Precision Sensors, and Synth Cores. |
 | **Offline Data Portability** | Full profile progress, stars, and key statistics are stored locally with JSON export and import capabilities. |
@@ -137,13 +143,13 @@ Progress through **28 stages across 7 galaxy sectors**, earning up to **84 Stars
 
 ```
 🌌 GALAXY SECTORS MAP
-├── Sector 1: Asteroid Outpost · Home Row Foundations (A, S, D, F, J, K, L, ;, G, H)
-├── Sector 2: Orbital Shipyards · Upper Deck Ascent (E, I, R, U, T, Y, W, O, Q, P)
-├── Sector 3: Subterranean Foundry · Lower Hull Reaches (V, M, C, ,, B, N, X, ., Z, /)
-├── Sector 4: Nebula Transit Route · Frequent Words & Cadence (Top 100 core English words)
-├── Sector 5: Astral Telemetry Station · Celestial Coordinates (Full number row 0–9)
-├── Sector 6: Pulsar Beacon Array · Capitalization & Symbols (Opposite-Hand Shift Pinky rules)
-└── Sector 7: Cybernetic Core Citadel · Code Syntax & Matrix Mastery (JS/TS brackets, logic, operators)
+├── Sector 1: Orion Belt · Home Row Foundations (Ergonomic Phase 1)
+├── Sector 2: Andromeda Nebula · Top Row & Vowels (Ergonomic Phase 2)
+├── Sector 3: Kepler Expanse · Bottom Row & Punctuation (Ergonomic Phase 3)
+├── Sector 4: Cygnus Corridor · Word Flow & Hand Alternation (Ergonomic Phase 4)
+├── Sector 5: Pulsar Core · Astral Numbers Row (Ergonomic Phase 5)
+├── Sector 6: Quantum Void · Symbols & Shift Key Mastery (Ergonomic Phase 6)
+└── Sector 7: Event Horizon · Grandmaster Prose & Fluidity (Ergonomic Phase 7)
 ```
 
 ### Pedagogical Touch-Typing Rules Enforced:
@@ -271,13 +277,12 @@ AstroType is built using modern, type-safe, production-grade frontend architectu
 ```
 astrotype/
 ├── public/
-│   ├── screenshots/
-│   │   ├── real_gameplay.png         # Active combat flight, laser salvo & telemetry
-│   │   ├── real_misfire_guidance.png # Misfire angled tracer line to pressed keycap
-│   │   ├── real_analytics_heatmap.png# Diagnostic center, heatmap & bilateral balance
-│   │   ├── real_sector_map.png       # 7-Sector galaxy missions & star progression
-│   │   └── real_hangar.png           # Starship hangar upgrades shop & audio cores
-│   └── test_hand.png
+│   └── screenshots/
+│       ├── real_gameplay.png         # Active combat flight, laser salvo & telemetry
+│       ├── real_misfire_guidance.png # Misfire angled tracer line to pressed keycap
+│       ├── real_analytics_heatmap.png# Diagnostic center, heatmap & bilateral balance
+│       ├── real_sector_map.png       # 7-Sector galaxy missions & star progression
+│       └── real_hangar.png           # Starship hangar upgrades shop & audio cores
 ├── src/
 │   ├── audio/
 │   │   └── soundEngine.ts            # Web Audio API procedural synthesis & beats

@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { PlayerProfile } from '../types/game';
 import { KEY_FINGER_MAP, FINGER_COLOR_MAP, FINGER_DISPLAY_NAMES } from '../data/curriculum';
-import { Download, Upload, RotateCcw, AlertTriangle } from 'lucide-react';
+import { Download, Upload, RotateCcw, AlertTriangle, Play } from 'lucide-react';
 
 interface AnalyticsModalProps {
   profile: PlayerProfile;
   onClose: () => void;
+  onGoToFlightDeck?: () => void;
+  sourceState?: 'MENU' | 'PLAYING' | 'VICTORY' | 'STAGE_SELECT';
   onImportProfile: (json: string) => void;
   onWipeAchievements?: () => void;
   onResetProgress: () => void;
@@ -14,6 +16,8 @@ interface AnalyticsModalProps {
 export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
   profile,
   onClose,
+  onGoToFlightDeck,
+  sourceState = 'MENU',
   onImportProfile,
   onWipeAchievements,
   onResetProgress,
@@ -116,12 +120,31 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
             </h2>
           </div>
 
-          <button
-            onClick={onClose}
-            className="px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-700 text-slate-300 hover:text-white transition-colors"
-          >
-            Close Report
-          </button>
+          <div className="flex flex-wrap items-center gap-2.5">
+            {onGoToFlightDeck && (
+              <button
+                onClick={onGoToFlightDeck}
+                className="px-3.5 py-1.5 text-xs font-bold rounded-lg bg-cyan-400 hover:bg-cyan-300 text-slate-950 transition-all flex items-center gap-1.5 cursor-pointer shadow-md shadow-cyan-950/60"
+                title="Launch directly into the cockpit flight deck"
+              >
+                <Play className="w-3.5 h-3.5 fill-current" />
+                <span>{sourceState === 'PLAYING' ? 'Resume Flight' : 'Enter Flight Deck'}</span>
+              </button>
+            )}
+
+            <button
+              onClick={onClose}
+              className="px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer"
+            >
+              {sourceState === 'STAGE_SELECT'
+                ? 'Back to Sectors'
+                : sourceState === 'VICTORY'
+                ? 'Back to Debriefing'
+                : sourceState === 'PLAYING'
+                ? 'Pause Menu'
+                : 'Back to Academy'}
+            </button>
+          </div>
         </div>
 
         {/* Content */}
@@ -387,7 +410,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
 
               <p className="text-xs text-slate-300 leading-relaxed mb-4">
                 {confirmMode === 'WIPE_ACHIEVEMENTS'
-                  ? `This will wipe all ${profile.totalStars} ★ stars earned and reset stage completions to 0 so you can experience the new Mavis Beacon curriculum from the beginning. Your credits and upgrades are preserved.`
+                  ? `This will wipe all ${profile.totalStars} ★ stars earned and reset stage completions to 0 so you can experience the classical touch-typing curriculum from the beginning. Your credits and upgrades are preserved.`
                   : 'This will irreversibly wipe ALL starship progress: stars, credits, ship upgrades, accuracy key analytics, and custom themes.'}
               </p>
 

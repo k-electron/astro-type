@@ -1,5 +1,5 @@
 import React from 'react';
-import { Shield, Zap, Sparkles, Volume2, Palette, Check } from 'lucide-react';
+import { Shield, Zap, Sparkles, Volume2, Palette, Check, Play } from 'lucide-react';
 import { ShipUpgrades, TrailColorTheme, AudioSynthCore } from '../types/game';
 import { UPGRADE_CATALOG } from '../utils/storage';
 
@@ -12,6 +12,8 @@ interface HangarUpgradesModalProps {
   onUnlockOrEquipTheme: (themeId: TrailColorTheme, cost: number) => void;
   onUnlockOrEquipAudio: (coreId: AudioSynthCore, cost: number) => void;
   onClose: () => void;
+  onGoToFlightDeck: () => void;
+  sourceState?: 'MENU' | 'PLAYING' | 'VICTORY' | 'STAGE_SELECT';
 }
 
 export const HangarUpgradesModal: React.FC<HangarUpgradesModalProps> = ({
@@ -23,6 +25,8 @@ export const HangarUpgradesModal: React.FC<HangarUpgradesModalProps> = ({
   onUnlockOrEquipTheme,
   onUnlockOrEquipAudio,
   onClose,
+  onGoToFlightDeck,
+  sourceState = 'MENU',
 }) => {
   const nextShield = UPGRADE_CATALOG.deflectorShields[upgrades.deflectorShields];
   const nextReactor = UPGRADE_CATALOG.hyperdriveReactor[upgrades.hyperdriveReactor];
@@ -32,7 +36,7 @@ export const HangarUpgradesModal: React.FC<HangarUpgradesModalProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
       <div className="w-full max-w-4xl rounded-2xl border border-slate-800 bg-slate-900 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 sm:p-6 border-b border-slate-800 bg-slate-950/70">
+        <div className="flex flex-wrap items-center justify-between gap-3 p-4 sm:p-6 border-b border-slate-800 bg-slate-950/70">
           <div>
             <span className="block text-xs uppercase font-mono text-cyan-400">Starship Engineering Bay</span>
             <h2 className="text-xl sm:text-2xl font-bold font-display text-white">
@@ -40,7 +44,7 @@ export const HangarUpgradesModal: React.FC<HangarUpgradesModalProps> = ({
             </h2>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-cyan-500/30 bg-cyan-950/30">
               <Sparkles className="w-4 h-4 text-cyan-400" />
               <div className="flex items-baseline gap-1 font-mono">
@@ -51,11 +55,28 @@ export const HangarUpgradesModal: React.FC<HangarUpgradesModalProps> = ({
               </div>
             </div>
 
+            {/* Direct Flight Deck Button (Always reliable: resumes flight or launches flight deck) */}
+            <button
+              onClick={onGoToFlightDeck}
+              className="px-3.5 py-1.5 text-xs font-bold rounded-lg bg-cyan-400 hover:bg-cyan-300 text-slate-950 transition-all flex items-center gap-1.5 cursor-pointer shadow-md shadow-cyan-950/60"
+              title="Launch directly into the cockpit flight deck"
+            >
+              <Play className="w-3.5 h-3.5 fill-current" />
+              <span>{sourceState === 'PLAYING' ? 'Resume Flight' : 'Enter Flight Deck'}</span>
+            </button>
+
+            {/* Context-Aware Return Button */}
             <button
               onClick={onClose}
-              className="px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-700 text-slate-300 hover:text-white transition-colors"
+              className="px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer"
             >
-              Back to Flight Deck
+              {sourceState === 'STAGE_SELECT'
+                ? 'Back to Sectors'
+                : sourceState === 'VICTORY'
+                ? 'Back to Debriefing'
+                : sourceState === 'PLAYING'
+                ? 'Pause Menu'
+                : 'Back to Academy'}
             </button>
           </div>
         </div>

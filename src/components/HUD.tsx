@@ -99,7 +99,7 @@ export const HUD: React.FC<HUDProps> = ({
           </div>
         </div>
 
-        {/* Mavis Beacon Cadence & Rhythm Gauge */}
+        {/* Steady Cadence & Rhythm Gauge */}
         <div className="hidden md:flex flex-col items-center min-w-[68px]">
           <span className="block text-[9px] uppercase font-mono tracking-wider text-slate-500 leading-none mb-0.5">Rhythm</span>
           <div className="flex items-center gap-1.5 mt-0.5">

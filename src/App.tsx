@@ -58,10 +58,29 @@ export default function App() {
   // Track the source screen before opening modal to guarantee clean return navigation
   const [modalSourceState, setModalSourceState] = useState<'MENU' | 'PLAYING' | 'VICTORY' | 'STAGE_SELECT'>('MENU');
 
+  const goToFlightDeck = () => {
+    // If a mission was in progress and incomplete, resume it!
+    if (
+      currentStage &&
+      currentStage.sampleText.length > 0 &&
+      performance.currentCharIndex < currentStage.sampleText.length &&
+      victoryResult === null
+    ) {
+      setGameState('PLAYING');
+      if (profile.musicEnabled && !profile.globalMuted && (profile.musicVolume ?? 0.4) > 0) {
+        soundEngine.startBeat();
+      }
+    } else {
+      // Start current stage or default stage fresh
+      startStage(currentStage || CURRICULUM_SECTORS[0].stages[0]);
+    }
+  };
+
   const openModal = (target: 'STAGE_SELECT' | 'HANGAR' | 'ANALYTICS' | 'CUSTOM_PRACTICE') => {
     if (gameState === 'VICTORY') {
       setModalSourceState('VICTORY');
     } else if (gameState === 'PLAYING') {
+      soundEngine.stopBeat();
       setModalSourceState('PLAYING');
     } else if (gameState === 'STAGE_SELECT') {
       setModalSourceState('STAGE_SELECT');
@@ -204,16 +223,20 @@ export default function App() {
         onSetMusicVolume={setMusicVolume}
         onSetBeatTheme={setBeatTheme}
         onSetAudioCore={(core) => unlockOrEquipAudio(core, 0)}
-        onGoHome={() => setGameState('MENU')}
+        onGoHome={() => {
+          soundEngine.stopBeat();
+          setGameState('MENU');
+        }}
         onOpenStages={() => openModal('STAGE_SELECT')}
         onOpenHangar={() => openModal('HANGAR')}
         onOpenAnalytics={() => openModal('ANALYTICS')}
         onOpenCustom={() => openModal('CUSTOM_PRACTICE')}
         onQuickPlay={() => {
           if (gameState === 'PLAYING') {
-            openModal('STAGE_SELECT');
+            soundEngine.stopBeat();
+            setGameState('PAUSED');
           } else {
-            startStage(currentStage);
+            goToFlightDeck();
           }
         }}
         isPlaying={gameState === 'PLAYING'}
@@ -241,9 +264,23 @@ export default function App() {
             </p>
 
             <div className="flex flex-wrap items-center justify-center gap-4 mb-10">
+              {performance.currentCharIndex > 0 && performance.currentCharIndex < currentStage.sampleText.length && !victoryResult && (
+                <button
+                  onClick={goToFlightDeck}
+                  className="px-6 py-3.5 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-bold text-sm sm:text-base flex items-center gap-2 shadow-xl shadow-cyan-950 transition-all cursor-pointer"
+                >
+                  <Play className="w-4 h-4 fill-current" />
+                  <span>Resume Flight Deck</span>
+                </button>
+              )}
+
               <button
                 onClick={() => startStage(CURRICULUM_SECTORS[0].stages[0])}
-                className="px-6 py-3.5 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-bold text-sm sm:text-base flex items-center gap-2 shadow-xl shadow-cyan-950 transition-all cursor-pointer"
+                className={`px-6 py-3.5 rounded-xl text-sm sm:text-base flex items-center gap-2 font-bold transition-all cursor-pointer ${
+                  performance.currentCharIndex > 0 && performance.currentCharIndex < currentStage.sampleText.length && !victoryResult
+                    ? 'border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-200'
+                    : 'bg-cyan-400 hover:bg-cyan-300 text-slate-950 shadow-xl shadow-cyan-950'
+                }`}
               >
                 <Play className="w-4 h-4 fill-current" />
                 <span>Begin Home Row Mission</span>
@@ -411,6 +448,7 @@ export default function App() {
           totalCredits={profile.totalCredits}
           sourceState={modalSourceState}
           onSelectStage={(stage) => startStage(stage)}
+          onGoToFlightDeck={goToFlightDeck}
           onReturnToDebrief={() => {
             soundEngine.stopBeat();
             setGameState('VICTORY');
@@ -459,6 +497,8 @@ export default function App() {
           onUpgradeSensors={upgradeSensors}
           onUnlockOrEquipTheme={unlockOrEquipTheme}
           onUnlockOrEquipAudio={unlockOrEquipAudio}
+          sourceState={modalSourceState}
+          onGoToFlightDeck={goToFlightDeck}
           onClose={() => {
             if (modalSourceState === 'MENU') setGameState('MENU');
             else if (modalSourceState === 'VICTORY') setGameState('VICTORY');
@@ -477,6 +517,8 @@ export default function App() {
       {gameState === 'ANALYTICS' && (
         <AnalyticsModal
           profile={profile}
+          sourceState={modalSourceState}
+          onGoToFlightDeck={goToFlightDeck}
           onClose={() => {
             if (modalSourceState === 'MENU') setGameState('MENU');
             else if (modalSourceState === 'VICTORY') setGameState('VICTORY');
