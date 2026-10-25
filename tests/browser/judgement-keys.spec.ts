@@ -111,6 +111,7 @@ test('a character key that is wrong still uses up a shield', async ({
   // shields stop working.
   await withShields(page, 2);
   await launchFreeFlight(page, 'abcdef');
+  await expectShields(page, 2);
 
   await typeText(page, 'abc');
   await page.keyboard.press('z');
@@ -183,6 +184,7 @@ test('holding a wrong key uses up one shield, not all of them', async ({
 }) => {
   await withShields(page, 2);
   await launchFreeFlight(page, 'abcdef');
+  await expectShields(page, 2);
 
   await typeText(page, 'abc');
   for (let i = 0; i < 5; i++) await page.keyboard.down('z');
