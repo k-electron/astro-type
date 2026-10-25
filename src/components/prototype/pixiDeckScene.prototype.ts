@@ -1186,6 +1186,7 @@ export class DeckScene {
   private rebuild(W: number, H: number, handsVisible: boolean) {
     const L = computeLayout(W, H, handsVisible);
     this.layout = L;
+    this.probe.keys = [];
     for (const v of this.keyViews.values()) v.root.destroy({ children: true });
     this.keyViews.clear();
     const res = this.res;

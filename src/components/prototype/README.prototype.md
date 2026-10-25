@@ -23,15 +23,16 @@ Measured in a real browser (Chromium on an Apple M4, Metal), not SwiftShader.
 
 | Check | Result |
 | --- | --- |
-| Renders every frame, Drones move | 149 of 150 animation frames rendered; Drone positions identical to the DOM deck (0.000 px) in every one of 150 frames across 7 Drones |
-| Layout | all 60 keycaps within 1.21 px of the DOM at 1100, 1280, 1440 and 1920 px wide, hands on and off; hand panels at the exact same spot |
-| Timing | identical, because Pixi reads the store's `yPercent`; the clock is the store's 60 Hz `setInterval`, not Pixi's ticker |
+| Renders every frame, Drones move | 149 of 150 animation frames rendered at 60 fps; Drones glide into place on Stage start. On screen: the `diff` variant shot 150 ms after `startStage` shows no double-imaged Drones, only text anti-aliasing residue. (Computed Drone `top` also matches the DOM to 0.000 px, but both sides run the same formula, so that proves the formula was copied, not what was drawn.) |
+| Layout | all 60 keycaps within 1.21 px of the DOM at 1100, 1280, 1440 and 1920 px wide; hands on and off, including the narrow case (1100 px: deck 772 px wide with hands, 896 px without) loaded fresh, toggled live, and after a live resize; hand panels at the exact same spot |
+| Timing | identical mapping, because Pixi reads the store's `yPercent`; the clock is the store's 60 Hz `setInterval`, not Pixi's ticker |
 | Clicking keycaps | 6 of 6 real mouse clicks on the Pixi canvas advanced the Stage with PERFECT hits; same synthetic `KeyboardEvent` path as today |
-| Typing burst (45 keys, 40 ms apart, explosions overlapping) | Pixi: steady 16.7 ms frames, 0 slow frames. DOM deck: avg 42-46 ms, ~50 of 60 frames over 25 ms. At DPR 1 and 2, repeated |
+| Frame time while typing (DPR 2, 30 keys, explosions overlapping) | Pixi: steady 16.7 ms, 0 frames over 25 ms at every speed. DOM deck: ~60 WPM (200 ms/key) avg 27 ms, 117 of 247 frames over 25 ms, worst 166 ms; ~100 WPM (120 ms/key) avg 31 ms, 96 of 138 over 25 ms; a 300 WPM stress (40 ms/key) avg 42-46 ms. The cost is in the DOM deck component (both variants re-render `App` at 60 Hz) |
+| Retina text | crisp at DPR 2 in both; Pixi legends are slightly lighter in weight than the DOM's |
 | Victory modal + confetti | `canvas-confetti`'s own fixed canvas (z-100) draws above the modal; the blurred Pixi deck behind it keeps rendering at 60 fps |
 | Bundle | main chunk 570 kB -> 896 kB (gzip 161 -> 260 kB) with a plain `pixi.js` import; not tuned |
 
-One machine, one run each for the burst; Karim should play it on his own display.
+One machine (M4), driven by Playwright keypresses; feel and smoothness still need Karim playing it on his own display.
 
 ## Where each effect lives
 
