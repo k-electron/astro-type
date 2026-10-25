@@ -46,7 +46,7 @@ pnpm preview    # serve dist/ locally
 pnpm test       # unit tests (Vitest)
 pnpm test:browser   # browser tests (Playwright)
 pnpm typecheck  # tsc --noEmit
-pnpm check      # Biome; fails on errors only
+pnpm check      # Biome; fails on any diagnostic
 pnpm fix        # apply Biome's safe fixes and formatting
 pnpm verify     # typecheck, check, test, build and test:browser: what CI runs
 pnpm smoke <url>    # check that a deployed URL serves the app and a Stage starts

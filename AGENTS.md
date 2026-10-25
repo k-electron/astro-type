@@ -6,18 +6,21 @@ A browser typing game: React and Tailwind for the screens, a Zustand store and a
 
 - Use pnpm on the Node version pinned in `package.json`. The scripts there install, run, check and build.
 - `pnpm verify` runs exactly what CI checks before a deploy. Run it before you push.
-- `pnpm check` fails only on Biome errors. The backlog of Biome warnings is being kept on purpose for now, so fix warnings only in the lines you change.
+- `pnpm check` runs Biome, and every Biome rule is an error: fix any diagnostic it reports. Where a rule truly can't apply, suppress that one line with a `// biome-ignore lint/...: reason` that says why. Don't weaken a rule in `biome.json`.
+- Screenshot checks compare a few key frames inside CI's fixed Playwright image: `pnpm screenshots` runs them and `pnpm screenshots:update` redraws the baselines on purpose. Both need Docker (linux/amd64). They're part of CI, but `pnpm verify` doesn't run them. See `docs/agents/testing.md`.
 - The README overstates the game: it describes shortcuts, states and features that don't exist. Treat the code and `GLOSSARY.md` as the truth.
 
 ## Where things live
 
-This is today's layout. The [v1 map (#1)](https://github.com/k-electron/astro-type/issues/1) is migrating it, and ADR-0001 sets the target split between the store and the machine.
-- **Game rules and the live Run:** `src/store/useGameStore.ts`. This covers Judgement, scoring, Streak, Overdrive, shields, Stars and Credits.
+ADR-0001 sets the split between the store and the machine.
+- **Game rules and the live Run:** `src/game/gameStore.ts` holds the Run and the Profile. The rules themselves are pure functions in `src/game/rules.ts` (Judgement, scoring, Streak, Overdrive, shields, Stars and Credits), and the Profile's defaults and helpers are in `src/game/profile.ts`. `src/store/useGameStore.ts` is only React's hook over that store.
+- **The game, built:** `src/game/createGame.ts` is the headless factory that wires the store, the machine, the clock and the Save together; tests build their own. `src/appGame.ts` is the app's composition root, with real time, localStorage and sound attached.
+- **Run clock:** `src/game/clock.ts` measures Run Time, and `src/game/frameLoop.ts` steps it from the browser's frames.
 - **Screens and the moves between them:** `src/store/gameMachine.ts`. It is the only authority on the screen and the Run phase. Buttons send what the player did (`game.send({ type: 'PRESS_CLOSE' })`), the machine changes data only through the store's named Run actions, and a move it refuses changes nothing: it warns in dev builds and throws `RefusedMoveError` in the headless game.
-- **Action Deck:** `src/components/IntegratedLanesKeyboard.tsx`. It's drawn with the DOM today; PixiJS is planned.
+- **Action Deck:** PixiJS, in `src/components/pixi-deck/` (`PixiActionDeck.tsx` mounts it). Its accessibility layer is what browser tests read.
 - **Curriculum:** `src/data/curriculum.ts`.
-- **Save and Backup:** `src/utils/storage.ts`, with the schemas in `src/store/schemas.ts`.
-- **Sound:** `src/audio/soundEngine.ts`.
+- **Save and Backup:** `src/game/save.ts` is the Save module, `src/utils/storage.ts` is the localStorage adapter, and the schemas are in `src/store/schemas.ts`.
+- **Sound:** `src/audio/soundEngine.ts`, attached to the game through the effects port in `src/audio/soundEffects.ts`.
 
 ## Ground rules
 
