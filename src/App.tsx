@@ -8,7 +8,7 @@ import { soundEngine } from './audio/soundEngine';
 import { HeaderNav } from './components/HeaderNav';
 import { HUD } from './components/HUD';
 import { TextPromptStream } from './components/TextPromptStream';
-import { IntegratedLanesKeyboard } from './components/IntegratedLanesKeyboard';
+import { ActionDeckVariants } from './components/prototype/ActionDeckVariants.prototype';
 import { StageSelectModal } from './components/StageSelectModal';
 import { HangarUpgradesModal } from './components/HangarUpgradesModal';
 import { AnalyticsModal } from './components/AnalyticsModal';
@@ -401,7 +401,7 @@ export default function App() {
             />
 
             {/* Interactive Rhythm Keyboard Flight Deck */}
-            <IntegratedLanesKeyboard
+            <ActionDeckVariants
               notes={fallingNotes}
               hyperspaceActive={performance.hyperspaceActive}
               multiplier={performance.multiplier}

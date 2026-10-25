@@ -40,7 +40,7 @@ interface IntegratedLanesKeyboardProps {
   initialHandEnabled?: boolean;
 }
 
-interface KeySpec {
+export interface KeySpec {
   key: string;
   display: string;
   subDisplay?: string;
@@ -51,7 +51,7 @@ interface KeySpec {
 }
 
 // Mechanically balanced ANSI keyboard: EVERY row is exactly 15.0 units!
-const KEYBOARD_ROWS: KeySpec[][] = [
+export const KEYBOARD_ROWS: KeySpec[][] = [
   // Row 0: Numbers & Symbols (Total = 15.0 units)
   [
     {
