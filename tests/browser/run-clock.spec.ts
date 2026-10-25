@@ -10,6 +10,10 @@ import {
 // Exact timing: `page.clock` takes the page's time over, so the test decides
 // how much time passes. The clock is stopped before the page loads and only
 // moves when a test says so. Nothing here sleeps.
+
+// Every step renders the Pixi deck in software GL, so a parallel run on a busy
+// machine takes far longer than the 25-30 s these take alone.
+test.setTimeout(180_000);
 //
 // The HUD has no timer to read. What the player sees of Run Time is the
 // Speed in the HUD and on the Debrief (WPM is measured against Run Time) and
