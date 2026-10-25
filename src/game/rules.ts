@@ -19,15 +19,24 @@ export type HighwaySpeed = PlayerProfile['highwaySpeed'];
 /** Where a Drone waits for the player, as a percentage down the Action Deck. */
 export const STRIKE_LINE_Y = 84;
 
-/** Keys that never count as a keystroke. */
-export const IGNORED_KEYS = [
-  'Shift',
-  'Control',
-  'Alt',
-  'Meta',
-  'CapsLock',
-  'Tab',
-];
+/**
+ * What judging one keystroke produced. Exactly one per keystroke that counts.
+ * `key` is the key the player pressed.
+ */
+export type Judgement =
+  | { type: 'hit'; grade: 'perfect' | 'great' | 'good'; key: string }
+  | { type: 'miss'; key: string }
+  | { type: 'shield'; key: string };
+
+/**
+ * Whether a keydown can be a hit or a Miss: only a key that types one
+ * character (a letter, digit, symbol or Space). Escape, Backspace, Enter, the
+ * arrows, function keys, Tab, CapsLock and modifiers have longer names and
+ * never count, and an auto-repeat keydown is dropped before it is judged.
+ */
+export function countsAsKeystroke(key: string, repeat = false): boolean {
+  return !repeat && Array.from(key).length === 1;
+}
 
 export function freshPerformance(shields: number): LivePerformance {
   return {

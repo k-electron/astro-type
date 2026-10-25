@@ -158,19 +158,17 @@ export default function App() {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (gameState !== 'PLAYING') return;
 
-      // Ignore functional modifier keystrokes alone
-      if (
-        ['Shift', 'Control', 'Alt', 'Meta', 'CapsLock', 'Tab'].includes(e.key)
-      ) {
-        return;
-      }
-
       // Prevent Spacebar from scrolling the page
       if (e.key === ' ') {
         e.preventDefault();
       }
 
-      processKeystroke(e.key);
+      // A shortcut such as Cmd+R types nothing. (Ctrl with Alt is how some
+      // layouts type AltGr characters, so that pair still counts.)
+      if (e.metaKey || (e.ctrlKey && !e.altKey)) return;
+
+      // Which keys count, and dropping auto-repeat, is the game's call.
+      processKeystroke(e.key, { repeat: e.repeat });
     };
 
     const handleKeyUp = (e: KeyboardEvent) => {
