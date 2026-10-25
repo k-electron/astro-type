@@ -219,6 +219,9 @@ export function createGameMachine(run: RunActions) {
 
   /** Open a header screen from `from`. Leaving the Flight Deck pauses the Run. */
   const open = (from: Screen, to: Screen): Move => {
+    // Pressing the button for the screen already showing does nothing, so
+    // one Close always gets back.
+    if (from === to) return ignore;
     if (from === 'flight-deck') {
       return {
         target: to,

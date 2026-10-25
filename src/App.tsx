@@ -354,7 +354,7 @@ export default function App() {
                 onClick={() => send({ type: 'OPEN_GALAXY_MAP' })}
                 className="w-full py-2.5 rounded-lg border border-slate-800 bg-slate-950 text-slate-300 hover:text-white hover:bg-slate-800 text-xs font-mono transition-colors cursor-pointer"
               >
-                Exit to Galaxy Map
+                View Galaxy Map
               </button>
 
               <button
@@ -428,6 +428,7 @@ export default function App() {
           onStartCustom={(stage, speed) =>
             send({ type: 'LAUNCH_FREE_FLIGHT', stage, speed })
           }
+          opener={opener}
           onClose={() => send({ type: 'PRESS_CLOSE' })}
         />
       )}
@@ -439,7 +440,7 @@ export default function App() {
           result={victoryResult}
           totalStars={profile.totalStars}
           totalCredits={profile.totalCredits}
-          hasUnlockedNextSector={victoryResult.newStarsAwarded > 0}
+          hasUnlockedNextSector={victoryResult.unlockedSector}
           hasNextStage={Boolean(getNextStage(currentStage.id))}
           onReplay={() => send({ type: 'PRESS_REPLAY' })}
           onNextStage={() => send({ type: 'PRESS_NEXT_STAGE' })}

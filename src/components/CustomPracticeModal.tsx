@@ -2,7 +2,8 @@ import type React from 'react';
 import { useState } from 'react';
 import { Play } from 'lucide-react';
 import { FreeFlightTextSchema } from '../store/schemas';
-import type { Stage } from '../types/game';
+import type { Screen, Stage } from '../types/game';
+import { closeLabel } from './closeLabel';
 
 interface CustomPracticeModalProps {
   onStartCustom: (
@@ -10,6 +11,8 @@ interface CustomPracticeModalProps {
     speed: 'SLOW' | 'NORMAL' | 'FAST' | 'HYPER',
   ) => void;
   onClose: () => void;
+  /** The screen Close returns to. */
+  opener?: Screen | null;
   initialSpeed: 'SLOW' | 'NORMAL' | 'FAST' | 'HYPER';
 }
 
@@ -39,6 +42,7 @@ const PRESET_TEXTS = [
 export const CustomPracticeModal: React.FC<CustomPracticeModalProps> = ({
   onStartCustom,
   onClose,
+  opener = null,
   initialSpeed,
 }) => {
   const [customText, setCustomText] = useState<string>(PRESET_TEXTS[0].text);
@@ -111,7 +115,7 @@ export const CustomPracticeModal: React.FC<CustomPracticeModalProps> = ({
             onClick={onClose}
             className="px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer"
           >
-            Cancel
+            {closeLabel(opener)}
           </button>
         </div>
 

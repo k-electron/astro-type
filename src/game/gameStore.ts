@@ -10,7 +10,12 @@ import type {
   BeatTheme,
 } from '../types/game';
 import { CURRICULUM_SECTORS, getNoteLaneAndFinger } from '../data/curriculum';
-import { DEFAULT_PROFILE, recordStageResult, UPGRADE_CATALOG } from './profile';
+import {
+  DEFAULT_PROFILE,
+  isSectorUnlocked,
+  recordStageResult,
+  UPGRADE_CATALOG,
+} from './profile';
 import {
   type BackupImport,
   createSave,
@@ -47,6 +52,8 @@ export interface VictoryResult {
   creditsEarned: number;
   isNewHighScore: boolean;
   newStarsAwarded: number;
+  /** This Run's Stars took the fleet past a Sector's gate. */
+  unlockedSector: boolean;
   cadenceConsistency?: number;
 }
 
@@ -487,6 +494,12 @@ export function createGameStore({
             creditsEarned,
             isNewHighScore,
             newStarsAwarded,
+            unlockedSector: CURRICULUM_SECTORS.some(
+              (sector) =>
+                !isSectorUnlocked(sector.id, state.profile.totalStars)
+                  .unlocked &&
+                isSectorUnlocked(sector.id, updatedProfile.totalStars).unlocked,
+            ),
             cadenceConsistency: state.performance.cadenceConsistency ?? 100,
           },
         });

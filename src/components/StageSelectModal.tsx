@@ -13,7 +13,7 @@ import {
   RotateCcw,
 } from 'lucide-react';
 import type { Screen, Stage, StageProgress } from '../types/game';
-import { flightDeckLabel } from './closeLabel';
+import { closeLabel, flightDeckLabel } from './closeLabel';
 import { CURRICULUM_SECTORS } from '../data/curriculum';
 import { isSectorUnlocked } from '../game/profile';
 
@@ -142,7 +142,7 @@ export const StageSelectModal: React.FC<StageSelectModalProps> = ({
                     className="px-3 py-1.5 text-xs font-medium rounded-lg border border-cyan-500/50 bg-cyan-950/50 text-cyan-300 hover:bg-cyan-900/60 transition-colors flex items-center gap-1 cursor-pointer whitespace-nowrap"
                   >
                     <ArrowLeft className="w-3.5 h-3.5" />
-                    <span>Debriefing</span>
+                    <span>{closeLabel(opener)}</span>
                   </button>
                   {onReturnToMenu && (
                     <button
@@ -183,7 +183,7 @@ export const StageSelectModal: React.FC<StageSelectModalProps> = ({
                     onClick={onClose}
                     className="px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-700 bg-slate-800 text-slate-300 hover:text-white transition-colors cursor-pointer"
                   >
-                    Close
+                    {closeLabel(opener)}
                   </button>
                 </div>
               )}
