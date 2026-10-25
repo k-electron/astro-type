@@ -1,7 +1,13 @@
 import { expect, type Locator, type Page, test } from '@playwright/test';
-import { flightDeck, launchFreeFlight, promptProgress } from './helpers';
+import {
+  clickWhereDrawn,
+  drone,
+  flightDeck,
+  keycap,
+  promptProgress,
+} from './helpers';
 
-// The PixiJS Action Deck, switched on with `?deck=pixi`. Its Drones and
+// The PixiJS Action Deck, the only Action Deck there is. Its Drones and
 // keycaps live in a canvas, so these journeys read them the only way a screen
 // reader (or a test) can: through PixiJS's accessibility layer, which labels
 // each Drone "Drone X" and each keycap "X key" at its drawn position. Nothing
@@ -19,32 +25,15 @@ const TEXT = 'abcdef';
 // screen at once, so a click lands where the keycap is drawn.
 test.use({ viewport: { width: 1280, height: 1100 } });
 
-/**
- * An element PixiJS's accessibility layer made for something it drew. PixiJS
- * puts the name in `aria-label` (an accessible hint) or in `title` (an
- * accessible title), so both are accepted. The name is matched whole and
- * ignoring case, since the layer may spell a character either way.
- */
-const labelled = (page: Page, name: RegExp): Locator =>
-  page.getByLabel(name).or(page.getByTitle(name));
-
-/** The Drone carrying this character. The tests use texts with no repeats. */
-const drone = (page: Page, character: string): Locator =>
-  labelled(page, new RegExp(`^Drone ${character}$`, 'i'));
-
-/** The keycap for this character on the Action Deck's keyboard. */
-const keycap = (page: Page, character: string): Locator =>
-  labelled(page, new RegExp(`^${character} key$`, 'i'));
-
 /** The bottom edge of an element on the page, or -1 while it isn't drawn. */
 async function bottomEdge(element: Locator): Promise<number> {
   const box = await element.boundingBox({ timeout: 2000 });
   return box ? box.y + box.height : -1;
 }
 
-/** Free Flight with the PixiJS deck, ready for the first key. */
-async function launchPixiFlight(page: Page, text: string) {
-  await page.goto('/?deck=pixi');
+/** Free Flight, ready for the first key. */
+async function launchPixiFlight(page: Page, text: string, url = '/') {
+  await page.goto(url);
   await page.getByRole('button', { name: 'Free Flight', exact: true }).click();
   await page.getByRole('textbox').fill(text);
   await page.getByRole('button', { name: 'Launch Custom Flight' }).click();
@@ -52,14 +41,6 @@ async function launchPixiFlight(page: Page, text: string) {
     page.getByRole('button', { name: 'Pause', exact: true }),
   ).toBeVisible();
   await expect(flightDeck(page)).toContainText(text);
-}
-
-/** A real mouse click in the middle of an element, wherever it is drawn. */
-async function clickWhereDrawn(page: Page, element: Locator) {
-  await element.scrollIntoViewIfNeeded();
-  const box = await element.boundingBox();
-  if (!box) throw new Error('Nothing is drawn there to click');
-  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
 }
 
 test('the Action Deck draws a Drone for each character of the text', async ({
@@ -240,16 +221,14 @@ test('the paused deck is frozen: Drones stay where they were, and fall on after 
   expect(await bottomEdge(drone(page, 'b'))).toBeGreaterThan(midFall);
 });
 
-test('without ?deck=pixi the default deck is played and PixiJS draws nothing', async ({
+test('an old ?deck=pixi link plays the same deck: no flag is needed', async ({
   page,
 }) => {
-  await launchFreeFlight(page, TEXT);
+  await launchPixiFlight(page, TEXT, '/?deck=pixi');
 
+  await expect(drone(page, 'a')).toBeVisible();
+  await expect(keycap(page, 'a')).toBeVisible();
   await page.keyboard.press('a');
   await expect(promptProgress(page)).toHaveText('17%');
-  await expect(flightDeck(page)).toContainText(/Streak\s*1(?!\d)/i);
-
-  // No Drone or keycap carries a PixiJS accessibility label.
-  await expect(labelled(page, /^Drone \w$/i)).toHaveCount(0);
-  await expect(labelled(page, /^\w key$/i)).toHaveCount(0);
+  await expect(drone(page, 'a')).toHaveCount(0);
 });
