@@ -19,6 +19,8 @@ concurrency:
 jobs:
   checks:
     runs-on: ubuntu-latest
+    # A hang fails the run in minutes instead of blocking main for hours.
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -49,6 +51,7 @@ jobs:
     needs: checks
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -81,6 +84,7 @@ jobs:
           test -n "$url" && test "$url" != "null"
           echo "url=$url" >> "$GITHUB_OUTPUT"
       - name: Smoke check the live URL
+        timeout-minutes: 10
         env:
           URL: ${{ steps.deploy.outputs.url }}
         run: pnpm smoke "$URL"
