@@ -18,15 +18,15 @@ A browser typing game that teaches touch typing. Drones fall down the Action Dec
 
 ## Controls
 
-| Action                                                    | Control                                        |
-| :-------------------------------------------------------- | :--------------------------------------------- |
-| Type a Drone's character                                  | The matching key on your keyboard              |
-| Type it with the mouse or touch                           | Click or tap a key on the on-screen keyboard   |
-| Pause a running Run                                       | `Esc`, or the Pause button in the HUD          |
-| Resume from the Pause Menu                                | `Esc`, or the Resume Flight button             |
-| Close a menu (Galaxy Map, Hangar, Analytics, Free Flight) | `Esc`, or its own Back to ... button           |
-| Hide or show the key legends on the on-screen keyboard    | Hide Deck / Show Deck in the HUD               |
-| Show or hide the hands                                    | The Hands button in the Action Deck header     |
+| Action                                                    | Control                                      |
+| :-------------------------------------------------------- | :------------------------------------------- |
+| Type a Drone's character                                  | The matching key on your keyboard            |
+| Type it with the mouse or touch                           | Click or tap a key on the on-screen keyboard |
+| Pause a running Run                                       | `Esc`, or the Pause button in the HUD        |
+| Resume from the Pause Menu                                | `Esc`, or the Resume Flight button           |
+| Close a menu (Galaxy Map, Hangar, Analytics, Free Flight) | `Esc`, or its own Back to ... button         |
+| Hide or show the key legends on the on-screen keyboard    | Hide Deck / Show Deck in the HUD             |
+| Show or hide the hands                                    | The Hands button in the Action Deck header   |
 
 A Run also pauses when the tab or window loses focus. The Pause Menu offers resume, restart, view the Galaxy Map, and exit to Academy Home.
 

@@ -1,5 +1,9 @@
 import { useEffect, useRef } from 'react';
-import { CURRICULUM_SECTORS, getNextStage } from './data/curriculum';
+import {
+  CURRICULUM_SECTORS,
+  getNextStage,
+  getStageById,
+} from './data/curriculum';
 import { soundEngine } from './audio/soundEngine';
 import { HeaderNav } from './components/HeaderNav';
 import { HUD } from './components/HUD';
@@ -442,6 +446,10 @@ export default function App() {
           totalCredits={profile.totalCredits}
           hasUnlockedNextSector={victoryResult.unlockedSector}
           hasNextStage={Boolean(getNextStage(currentStage.id))}
+          isLastStage={
+            getStageById(currentStage.id) !== undefined &&
+            !getNextStage(currentStage.id)
+          }
           onReplay={() => send({ type: 'PRESS_REPLAY' })}
           onNextStage={() => send({ type: 'PRESS_NEXT_STAGE' })}
           onReturnToMap={() => send({ type: 'OPEN_GALAXY_MAP' })}
