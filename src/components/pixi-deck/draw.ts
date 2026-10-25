@@ -76,3 +76,47 @@ export function keycapGradient(top: string): FillGradient {
     textureSpace: 'local',
   });
 }
+
+/** A dashed cubic Bezier curve (`M x0 y0 C x1 y1, x2 y2, x3 y3`), cut into dashes along its length. */
+export function dashedCubic(
+  g: Graphics,
+  [x0, y0, x1, y1, x2, y2, x3, y3]: number[],
+  dash: number,
+  gap: number,
+  stroke: { width: number; color: string; alpha?: number },
+): void {
+  const steps = 64;
+  const points: [number, number][] = [];
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps;
+    const u = 1 - t;
+    points.push([
+      u * u * u * x0 + 3 * u * u * t * x1 + 3 * u * t * t * x2 + t * t * t * x3,
+      u * u * u * y0 + 3 * u * u * t * y1 + 3 * u * t * t * y2 + t * t * t * y3,
+    ]);
+  }
+  // Walk the curve, drawing for `dash` and skipping for `gap`.
+  let drawing = true;
+  let left = dash;
+  g.moveTo(points[0][0], points[0][1]);
+  for (let i = 1; i < points.length; i++) {
+    let [px, py] = points[i - 1];
+    const [qx, qy] = points[i];
+    let seg = Math.hypot(qx - px, qy - py);
+    while (seg > 0) {
+      const take = Math.min(seg, left);
+      const f = take / seg;
+      px += (qx - px) * f;
+      py += (qy - py) * f;
+      if (drawing) g.lineTo(px, py);
+      else g.moveTo(px, py);
+      seg -= take;
+      left -= take;
+      if (left <= 1e-9) {
+        drawing = !drawing;
+        left = drawing ? dash : gap;
+      }
+    }
+  }
+  g.stroke(stroke);
+}

@@ -10,6 +10,7 @@ import { STEP_MS } from '../../game/clock';
 import type { Judgement } from '../../game/createGame';
 import type { GameStoreState } from '../../game/gameStore';
 import type { TrailColorTheme } from '../../types/game';
+import { pulseOpacity } from './animation';
 import { DeckEffects } from './DeckEffects';
 import { DroneView } from './DroneView';
 import type { DroneMotion } from './droneMotion';
@@ -62,6 +63,8 @@ export class DeckScene {
   private readonly keyLayer = new Container();
   private readonly trench = new Graphics();
   private readonly trenchLabels = new Container();
+  /** The trench's pulsing dot. */
+  private readonly trenchDot = new Graphics();
   private readonly droneLayer = new Container();
   private readonly hands: { left: HandView; right: HandView };
   private readonly keys = new Map<string, KeyView>();
@@ -88,6 +91,7 @@ export class DeckScene {
     this.chassis.accessibleChildren = false;
     this.trench.accessibleChildren = false;
     this.trenchLabels.accessibleChildren = false;
+    this.trenchDot.accessibleChildren = false;
     this.effects = new DeckEffects({
       resolution,
       isOverdrive: () => options.getState().performance.hyperspaceActive,
@@ -100,6 +104,7 @@ export class DeckScene {
       this.keyLayer,
       this.trench,
       this.trenchLabels,
+      this.trenchDot,
       this.droneLayer,
       this.ship.ship,
       this.effects.root,
@@ -172,10 +177,9 @@ export class DeckScene {
     g.roundRect(trench.x, trench.y, trench.w, TRENCH_H, 12)
       .fill({ color: '#020617', alpha: 0.9 })
       .stroke({ width: 1, color: '#1e293b', alpha: 0.8, alignment: 1 });
-    g.moveTo(trench.x, trench.y + TRENCH_H / 2)
-      .lineTo(trench.x + trench.w, trench.y + TRENCH_H / 2)
-      .stroke({ width: 1.5, color: '#06b6d4', alpha: 0.3 });
-    g.circle(trench.x + 17, trench.y + TRENCH_H / 2, 3).fill('#22d3ee');
+    const midY = trench.y + TRENCH_H / 2;
+    this.trenchDot.clear();
+    this.trenchDot.circle(trench.x + 17, midY, 3).fill('#22d3ee');
     for (const child of this.trenchLabels.removeChildren()) child.destroy();
     const left = makeText(
       'INTERCEPTOR DEFENSE RAIL // ACTIVE KEY VECTOR',
@@ -186,13 +190,29 @@ export class DeckScene {
       { letterSpacing: 0.8 },
     );
     left.anchor.set(0, 0.5);
-    left.position.set(trench.x + 26, trench.y + TRENCH_H / 2);
-    const right = makeText('BATTERY ARMED ▲', 8, '700', '#22d3ee', resolution, {
-      letterSpacing: 0.8,
-    });
-    right.anchor.set(1, 0.5);
-    right.position.set(trench.x + trench.w - 14, trench.y + TRENCH_H / 2);
-    this.trenchLabels.addChild(left, right);
+    left.position.set(trench.x + 26, midY);
+    // "BATTERY ARMED" and its arrow: no letter spacing, the arrow a size larger, 4 px apart.
+    const arrow = makeText('▲', 10, '700', '#22d3ee', resolution);
+    arrow.anchor.set(1, 0.5);
+    arrow.position.set(trench.x + trench.w - 14, midY);
+    const armed = makeText('BATTERY ARMED', 8, '700', '#22d3ee', resolution);
+    armed.anchor.set(1, 0.5);
+    armed.position.set(arrow.x - arrow.width - 4, midY);
+    this.trenchLabels.addChild(left, armed, arrow);
+
+    // The mag-lev guide line: 1.5 px, clear at both ends and 40 % cyan in the
+    // middle, running between the two labels and not through them.
+    const from = left.x + left.width + 2;
+    const to = armed.x - armed.width - 2;
+    const step = 4;
+    for (let x = from; x < to; x += step) {
+      const u = (x + step / 2 - trench.x) / trench.w;
+      const alpha = 0.4 * (1 - Math.abs(2 * u - 1));
+      g.rect(x, midY - 0.75, Math.min(step, to - x), 1.5).fill({
+        color: '#06b6d4',
+        alpha,
+      });
+    }
   }
 
   /**
@@ -211,6 +231,7 @@ export class DeckScene {
     this.timeMs += d * STEP_MS;
     this.updateKeysAndHands(state, layout);
     for (const view of this.keys.values()) view.animate(this.timeMs);
+    this.trenchDot.alpha = pulseOpacity(this.timeMs);
     this.updateDrones(state, layout, motion, fraction);
     this.updateShip(state, layout, d);
     if (d > 0) this.effects.advance(d);

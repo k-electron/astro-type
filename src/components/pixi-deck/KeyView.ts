@@ -225,9 +225,11 @@ export class KeyView {
     g.roundRect(-w / 2, -h / 2, w, h, 6).fill(
       modifier ? gradient.keyGradientAmber : gradient.keyGradient,
     );
-    // The finger-coloured band along the bottom edge (inset 0 -3px 0).
+    // The border is 2 px when lit and 1 px otherwise; the finger-coloured band
+    // (inset 0 -3px 0) and the accent stripe both sit inside it.
+    const bt = lit ? 2 : 1;
     if (!lit) {
-      g.roundRect(-w / 2 + 1, h / 2 - 4, w - 2, 3, 2).fill({
+      g.roundRect(-w / 2 + bt, h / 2 - bt - 3, w - 2 * bt, 3, 2).fill({
         color: laneColor,
         alpha: 0.27,
       });
@@ -255,7 +257,13 @@ export class KeyView {
       .stroke({ width: 1, color: '#ffffff', alpha: lit ? 0.4 : 0.1 });
     // Finger accent stripe.
     const stripe = target || modifier ? 4 : 2.5;
-    g.roundRect(-w / 2 + 4, h / 2 - stripe, w - 8, stripe, stripe / 2).fill({
+    g.roundRect(
+      -w / 2 + bt + 4,
+      h / 2 - bt - stripe,
+      w - 2 * bt - 8,
+      stripe,
+      stripe / 2,
+    ).fill({
       color: modifier ? '#fbbf24' : laneColor,
       alpha: target || modifier ? 1 : 0.75,
     });
