@@ -41,8 +41,38 @@ The verdict on one keystroke: Perfect, Great or Good by how close the Drone was 
 _Avoid_: Timing, timing feedback, rating
 
 **Run Time**:
-The time a Run has spent running, with pauses left out. WPM and stars are measured against it.
+The time a Run has spent running, with pauses left out. WPM and Stars are measured against it.
 _Avoid_: Elapsed time, stage time
+
+### Progress
+
+**Profile**:
+Everything the game remembers about the player between visits: Stage progress, Stars, Credits, Upgrades, Cosmetics, settings and key stats.
+_Avoid_: Account, player data, user
+
+**Save**:
+The Profile as stored in this browser.
+_Avoid_: Save file, storage
+
+**Backup**:
+A Profile exported to a file, which can be imported again.
+_Avoid_: Export, save file
+
+**Stars**:
+The 0–3 rating a Stage earns from a cleared Run; a Stage keeps its best. Stars open new Sectors.
+_Avoid_: Rating, score
+
+**Credits**:
+Currency earned on each Debrief and spent in the Hangar.
+_Avoid_: Coins, money, points
+
+**Upgrade**:
+A Hangar purchase that changes play: shields, reactor or sensors.
+_Avoid_: Power-up, perk
+
+**Cosmetic**:
+A Hangar purchase that changes only the look or sound: a trail theme or an audio core.
+_Avoid_: Skin, theme, upgrade
 
 ### Screens
 
@@ -59,7 +89,7 @@ The screen for choosing a Stage from the Sectors.
 _Avoid_: Stage select, level select, galaxy sectors
 
 **Hangar**:
-The screen for spending credits on upgrades and cosmetics.
+The screen for spending Credits on Upgrades and Cosmetics.
 _Avoid_: Shop, upgrades screen
 
 **Analytics**:
