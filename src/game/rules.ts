@@ -75,7 +75,6 @@ function makeDrone(
     displayChar: char === ' ' ? '␣' : char,
     lane,
     finger,
-    targetTimeMs: now + 2000,
     yPercent,
     status: 'PENDING',
     isTargetLocked,

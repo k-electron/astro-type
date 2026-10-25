@@ -53,7 +53,6 @@ export interface FallingNote {
   displayChar: string; // e.g. "␣" for space
   lane: number; // 0 to 8
   finger: FingerZone;
-  targetTimeMs: number; // absolute timestamp or stage progress time
   yPercent: number; // 0 to 100 on canvas
   status: 'PENDING' | 'PERFECT' | 'GREAT' | 'GOOD' | 'MISS' | 'PROCESSED';
   hitTimestamp?: number;
