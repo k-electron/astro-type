@@ -3,6 +3,7 @@ import {
   clearFirstStage,
   debrief,
   flightDeck,
+  launchFreeFlight,
   menuHeading,
   openMenu,
   seedStageStars,
@@ -93,4 +94,18 @@ test('the Debrief of any other Stage keeps its "Next Mission" button', async ({
   await expect
     .poll(() => debriefButtons(page))
     .toEqual(['Replay', 'Galaxy Map', 'Main Menu', 'Next Mission']);
+});
+
+test('the Debrief of a Free Flight Run has no "Next Mission" and no "Back to Galaxy Map"', async ({
+  page,
+}) => {
+  // A Free Flight Stage is not in the curriculum, so it has no next Stage.
+  const text = 'f j f j';
+  await launchFreeFlight(page, text);
+  await typeText(page, text);
+  await expect(page.getByText(/Mission Debriefing/)).toBeVisible();
+
+  await expect
+    .poll(() => debriefButtons(page))
+    .toEqual(['Replay', 'Galaxy Map', 'Main Menu']);
 });
