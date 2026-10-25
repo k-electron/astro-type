@@ -6,8 +6,9 @@ if (!base) {
   process.exit(2);
 }
 
-const attempts = 6;
-const delayMs = 5000;
+// A Worker's first workers.dev hostname can take a minute or two to resolve.
+const attempts = 12;
+const delayMs = 10000;
 
 async function fetchOk(url) {
   const response = await fetch(url);
