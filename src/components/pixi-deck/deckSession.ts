@@ -206,10 +206,11 @@ class DeckSession {
       fraction: stepFraction,
       wallMs: performance.now(),
     });
-    if (!app || !scene || !this.visible) return;
+    // Even with the deck off the page: a new Run's signal is only given once.
     if (reading.newRun || phase === 'abandoned' || phase === 'none') {
-      scene.clearEffects();
+      this.scene?.clearEffects();
     }
+    if (!app || !scene || !this.visible) return;
     // A cleared Run's last explosion plays out behind the Debrief.
     const playingOut = phase === 'cleared' && scene.effectsActive;
     if (!running && !playingOut && !this.dirty) return;
