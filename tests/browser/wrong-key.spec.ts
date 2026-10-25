@@ -188,3 +188,49 @@ test('holding a right key marks nothing; holding a wrong key marks once', async 
   await expectStruck(currentCharacter(page));
   await expectOnlyMarked(page, 'c');
 });
+
+// A space is a character too: when it is the one to type, a wrong key marks it
+// at once, the same way a space that was missed reads once the space key has
+// moved the cursor on (the colour and the strike-through).
+
+/** How the prompt draws its (one) space, once any transition has run. */
+async function spaceLook(page: Page) {
+  const space = promptCharacter(page, '␣');
+  await expect(space).toBeVisible();
+  return space.evaluate(async (element) => {
+    await Promise.all(element.getAnimations().map((a) => a.finished));
+    const style = getComputedStyle(element);
+    return {
+      color: style.color,
+      textDecorationLine: style.textDecorationLine,
+      textDecorationColor: style.textDecorationColor,
+    };
+  });
+}
+
+test('a wrong key on a space marks it at once, like a missed space after the space key', async ({
+  page,
+}) => {
+  const text = 'ab cd';
+
+  // How a missed space reads: the wrong key, then the space key moves on.
+  await launchFreeFlight(page, text);
+  await typeText(page, 'ab');
+  const untouched = await spaceLook(page);
+  await page.keyboard.press('z');
+  await page.keyboard.press('Space');
+  await expect(promptProgress(page)).toHaveText('60%');
+  const missed = await spaceLook(page);
+  expect(missed.textDecorationLine).toBe('line-through');
+  expect(missed.color, 'a missed space is drawn in its own colour').not.toBe(
+    untouched.color,
+  );
+
+  // The same space, right after the wrong key and before the space key.
+  await launchFreeFlight(page, text);
+  await typeText(page, 'ab');
+  await page.keyboard.press('z');
+  await expectStruck(promptCharacter(page, '␣'));
+  await expect(promptProgress(page)).toHaveText('40%');
+  expect(await spaceLook(page)).toEqual(missed);
+});

@@ -109,6 +109,18 @@ export function isSectorUnlocked(
   };
 }
 
+/** Whether going from `previousStars` to `nextStars` takes the fleet past some Sector's gate. */
+export function unlocksSector(
+  previousStars: number,
+  nextStars: number,
+): boolean {
+  return CURRICULUM_SECTORS.some(
+    (sector) =>
+      !isSectorUnlocked(sector.id, previousStars).unlocked &&
+      isSectorUnlocked(sector.id, nextStars).unlocked,
+  );
+}
+
 export const UPGRADE_CATALOG = {
   deflectorShields: [
     {

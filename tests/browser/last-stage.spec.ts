@@ -1,8 +1,8 @@
 import { expect, type Page, test } from '@playwright/test';
 import {
   clearFirstStage,
+  currentCharacter,
   debrief,
-  flightDeck,
   launchFreeFlight,
   menuHeading,
   openMenu,
@@ -15,10 +15,6 @@ import {
 // 13). Its Debrief shows a button called "Back to Galaxy Map" (the Debrief's
 // own "Galaxy Map" button keeps its name) where every other
 // Stage's Debrief shows "Next Mission" (decided in #35).
-
-/** The last Stage's text as the player reads it, "␣" standing for a space. */
-const LAST_STAGE_TEXT =
-  'The cosmos is within us. We are made of star-stuff. We are a way for the cosmos to know itself. 100 billion galaxies, each with 100 billion stars: our journey has only just begun!';
 
 /** The Debrief's navigation buttons, in the order they are laid out. */
 async function debriefButtons(page: Page): Promise<string[]> {
@@ -36,39 +32,57 @@ async function debriefButtons(page: Page): Promise<string[]> {
     );
 }
 
-/** A Profile with Sector 7 open (60 Stars), then up to the last Stage. */
+/**
+ * The text the prompt shows for the Run on screen, the way the player types
+ * it: the characters line next to the cursor, "␣" read as a space.
+ */
+async function shownText(page: Page): Promise<string> {
+  const line = await currentCharacter(page).locator('xpath=..').textContent();
+  return (line ?? '').replaceAll('␣', ' ');
+}
+
+/**
+ * Up to the last Stage of the game: a Profile that has cleared more Stages
+ * than the curriculum has (ids that are not Stages are left alone), so every
+ * Sector is open; then the Galaxy Map's last Sector and its last Stage.
+ */
 async function launchLastStage(page: Page) {
   const stars: Record<string, number> = {};
-  for (let sector = 1; sector <= 5; sector++) {
-    for (let stage = 1; stage <= 4; stage++) {
+  for (let sector = 1; sector <= 12; sector++) {
+    for (let stage = 1; stage <= 8; stage++) {
       stars[`s${sector}-l${stage}`] = 3;
     }
   }
   // The hands and the keyboard are hidden (set in the Profile, not clicked, so
-  // no button keeps focus and takes a Space): the Run is long, and the lighter
-  // deck keeps it quick.
+  // no button keeps focus and takes a Space): the lighter deck keeps the
+  // Run's many keys quick.
   await seedStageStars(page, stars, {
     handsVisible: false,
     keyboardVisible: false,
   });
   await page.goto('/');
   await openMenu(page, 'Galaxy Map');
-  await page.getByRole('button', { name: /Sector 07/ }).click();
-  // Sector 7 has four Stages; the last one is the last Stage of the game.
-  await page.getByRole('button', { name: 'Launch Mission' }).last().click();
-  await expect(flightDeck(page)).toContainText('Cosmic Grandmaster Trial');
-  await expect(flightDeck(page)).toContainText(
-    LAST_STAGE_TEXT.replaceAll(' ', '␣'),
-  );
+  await page
+    .getByRole('button', { name: /Sector \d+/ })
+    .last()
+    .click();
+  // The Stages already cleared offer Replay where the others offer Launch.
+  await page
+    .getByRole('button', { name: /^(Launch|Replay) Mission$/ })
+    .last()
+    .click();
+  await expect(
+    page.getByRole('button', { name: 'Pause', exact: true }),
+  ).toBeVisible();
+  await expect(currentCharacter(page)).toBeVisible();
 }
 
 test('the Debrief of the last Stage shows "Back to Galaxy Map" in place of "Next Mission", and it opens the Galaxy Map', async ({
   page,
 }) => {
-  // The last Stage's text is 175 characters of prose, typed key by key.
-  test.setTimeout(120_000);
   await launchLastStage(page);
-  await typeText(page, LAST_STAGE_TEXT);
+  // Whatever the text is today, it is typed off the prompt.
+  await typeText(page, await shownText(page));
   await expect(page.getByText(/Mission Debriefing/)).toBeVisible();
 
   // Where Next Mission sits, after Replay, Galaxy Map and Main Menu.

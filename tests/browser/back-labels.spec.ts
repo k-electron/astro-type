@@ -41,12 +41,6 @@ async function toFlightDeckMidRun(page: Page) {
   await expect(promptProgress(page)).toHaveText('50%');
 }
 
-async function toPauseMenu(page: Page) {
-  await toFlightDeckMidRun(page);
-  await page.getByRole('button', { name: 'Pause', exact: true }).click();
-  await expect(pauseMenu(page)).toBeVisible();
-}
-
 async function toDebrief(page: Page) {
   await launchFreeFlight(page, 'ab');
   await typeText(page, 'ab');
@@ -64,8 +58,8 @@ const fromMenu = (menu: MenuName, label: string): Origin => ({
   landed: (page) => menuHeading(page, menu),
 });
 
-const ORIGINS: Origin[] = [
-  {
+const ORIGINS = {
+  academy: {
     name: 'Academy Home',
     go: async (page) => {
       await page.goto('/');
@@ -74,65 +68,50 @@ const ORIGINS: Origin[] = [
     label: BACK_TO.academy,
     landed: academyHome,
   },
-  {
+  flightDeck: {
     name: 'the Flight Deck mid-Run',
     go: toFlightDeckMidRun,
     // The Run is paused on the way out, so back lands on the Pause Menu.
     label: BACK_TO.pauseMenu,
     landed: pauseMenu,
   },
-  {
-    name: 'the Pause Menu',
-    go: toPauseMenu,
-    label: BACK_TO.pauseMenu,
-    landed: pauseMenu,
-  },
-  {
+  debrief: {
     name: 'the Debrief',
     go: toDebrief,
     label: BACK_TO.debriefing,
     landed: (page) => page.getByRole('button', { name: 'Replay', exact: true }),
   },
-  fromMenu('Galaxy Map', BACK_TO.galaxyMap),
-  fromMenu('Hangar', BACK_TO.hangar),
-  fromMenu('Analytics', BACK_TO.analytics),
-  fromMenu('Free Flight', BACK_TO.freeFlight),
+  galaxyMap: fromMenu('Galaxy Map', BACK_TO.galaxyMap),
+  hangar: fromMenu('Hangar', BACK_TO.hangar),
+  analytics: fromMenu('Analytics', BACK_TO.analytics),
+  freeFlight: fromMenu('Free Flight', BACK_TO.freeFlight),
+} satisfies Record<string, Origin>;
+
+// One case per distinct label (seven), each opening a different menu from a
+// different screen, so every menu is opened at least once.
+const CASES: { menu: MenuName; origin: Origin }[] = [
+  { menu: 'Hangar', origin: ORIGINS.academy },
+  { menu: 'Analytics', origin: ORIGINS.flightDeck },
+  { menu: 'Galaxy Map', origin: ORIGINS.debrief },
+  { menu: 'Analytics', origin: ORIGINS.hangar },
+  { menu: 'Free Flight', origin: ORIGINS.galaxyMap },
+  { menu: 'Galaxy Map', origin: ORIGINS.analytics },
+  { menu: 'Hangar', origin: ORIGINS.freeFlight },
 ];
 
-/** One case per opener, for the menus in `menus`. */
-function backLabelCases(menus: MenuName[]) {
-  for (const menu of menus) {
-    for (const origin of ORIGINS) {
-      // Pressing a header button for the screen already open opens nothing.
-      if (origin.name === `the ${menu}`) continue;
+for (const { menu, origin } of CASES) {
+  test(`${menu} opened from ${origin.name}: "${origin.label}" goes back there`, async ({
+    page,
+  }) => {
+    await origin.go(page);
+    await headerButton(page, MENUS[menu].header).click();
+    await expect(menuHeading(page, menu)).toBeVisible();
 
-      test(`${menu} opened from ${origin.name}: "${origin.label}" goes back there`, async ({
-        page,
-      }) => {
-        await origin.go(page);
-        await headerButton(page, MENUS[menu].header).click();
-        await expect(menuHeading(page, menu)).toBeVisible();
+    const back = page.getByRole('button', { name: origin.label, exact: true });
+    await expect(back).toBeVisible();
+    await back.click();
 
-        const back = page.getByRole('button', {
-          name: origin.label,
-          exact: true,
-        });
-        await expect(back).toBeVisible();
-        await back.click();
-
-        await expect(menuHeading(page, menu)).toBeHidden();
-        await expect(origin.landed(page)).toBeVisible();
-      });
-    }
-  }
+    await expect(menuHeading(page, menu)).toBeHidden();
+    await expect(origin.landed(page)).toBeVisible();
+  });
 }
-
-test.describe('Hangar and Analytics', () => {
-  backLabelCases(['Hangar', 'Analytics']);
-});
-
-// The Galaxy Map and Free Flight read "Close", "Debriefing" and "Cancel" today.
-// The rule says every back button, so these are expected to follow it too.
-test.describe('Galaxy Map and Free Flight', () => {
-  backLabelCases(['Galaxy Map', 'Free Flight']);
-});

@@ -12,9 +12,9 @@ import type {
 import { CURRICULUM_SECTORS, getNoteLaneAndFinger } from '../data/curriculum';
 import {
   DEFAULT_PROFILE,
-  isSectorUnlocked,
   recordStageResult,
   UPGRADE_CATALOG,
+  unlocksSector,
 } from './profile';
 import {
   type BackupImport,
@@ -494,11 +494,9 @@ export function createGameStore({
             creditsEarned,
             isNewHighScore,
             newStarsAwarded,
-            unlockedSector: CURRICULUM_SECTORS.some(
-              (sector) =>
-                !isSectorUnlocked(sector.id, state.profile.totalStars)
-                  .unlocked &&
-                isSectorUnlocked(sector.id, updatedProfile.totalStars).unlocked,
+            unlockedSector: unlocksSector(
+              state.profile.totalStars,
+              updatedProfile.totalStars,
             ),
             cadenceConsistency: state.performance.cadenceConsistency ?? 100,
           },

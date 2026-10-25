@@ -12,7 +12,7 @@ interface CustomPracticeModalProps {
   ) => void;
   onClose: () => void;
   /** The screen Close returns to. */
-  opener?: Screen | null;
+  opener: Screen | null;
   initialSpeed: 'SLOW' | 'NORMAL' | 'FAST' | 'HYPER';
 }
 
@@ -42,7 +42,7 @@ const PRESET_TEXTS = [
 export const CustomPracticeModal: React.FC<CustomPracticeModalProps> = ({
   onStartCustom,
   onClose,
-  opener = null,
+  opener,
   initialSpeed,
 }) => {
   const [customText, setCustomText] = useState<string>(PRESET_TEXTS[0].text);
