@@ -136,7 +136,6 @@ class DeckSession {
       antialias: true,
       resolution: window.devicePixelRatio || 1,
       autoDensity: true,
-      roundPixels: true,
       // The Run clock's frame loop draws; PixiJS's ticker stays off.
       autoStart: false,
       preference: 'webgl',

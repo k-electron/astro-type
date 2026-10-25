@@ -47,6 +47,9 @@ export function makeText(
     resolution,
   });
   t.anchor.set(0.5);
+  // Small text stays crisp when it sits on whole device pixels. Only text: a
+  // Drone's hull still glides smoothly, and the text rides it to within half a pixel.
+  t.roundPixels = true;
   return t;
 }
 
