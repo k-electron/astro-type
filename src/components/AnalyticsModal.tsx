@@ -34,11 +34,9 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
   const [confirmMode, setConfirmMode] = useState<
     'NONE' | 'WIPE_ACHIEVEMENTS' | 'FULL_RESET'
   >('NONE');
-  // What the last import came to, shown beside the import control.
-  const [importOutcome, setImportOutcome] = useState<
-    'NONE' | 'IMPORTED' | 'REFUSED'
-  >('NONE');
-  const [refusal, setRefusal] = useState('');
+  // Why the last import was refused, shown beside the import control. A good
+  // import clears it: the header's Stars and Credits are the player's proof.
+  const [refusal, setRefusal] = useState<string | null>(null);
 
   const {
     totalPracticeSeconds,
@@ -131,11 +129,6 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
     downloadAnchor.remove();
   };
 
-  const refuse = (message: string) => {
-    setRefusal(message);
-    setImportOutcome('REFUSED');
-  };
-
   const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const input = e.target;
     const file = input.files?.[0];
@@ -145,10 +138,9 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
     const reader = new FileReader();
     reader.onload = () => {
       const outcome = onImportProfile(String(reader.result ?? ''));
-      if (outcome.ok) setImportOutcome('IMPORTED');
-      else refuse(outcome.message);
+      setRefusal(outcome.ok ? null : outcome.message);
     };
-    reader.onerror = () => refuse(REFUSED_BACKUP_MESSAGE);
+    reader.onerror = () => setRefusal(REFUSED_BACKUP_MESSAGE);
     reader.readAsText(file);
   };
 
@@ -493,20 +485,12 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
               </button>
             </div>
 
-            {importOutcome === 'REFUSED' && (
+            {refusal && (
               <p
                 role="alert"
                 className="basis-full text-xs font-medium text-rose-300"
               >
                 {refusal}
-              </p>
-            )}
-            {importOutcome === 'IMPORTED' && (
-              <p
-                role="status"
-                className="basis-full text-xs font-medium text-emerald-300"
-              >
-                Backup imported.
               </p>
             )}
           </div>
