@@ -16,7 +16,6 @@ import { CustomPracticeModal } from './components/CustomPracticeModal';
 import { LevelCompleteModal } from './components/LevelCompleteModal';
 import { GlobalCosmicBackground } from './components/GlobalCosmicBackground';
 import { game } from './appGame';
-import { STEP_MS } from './game/clock';
 import { useGameStore } from './store/useGameStore';
 import { useOpener, useRunPhase, useScreen } from './store/useGameScreen';
 import { Play, RotateCcw } from 'lucide-react';
@@ -77,18 +76,6 @@ export default function App() {
     profile.beatTheme,
     profile.upgrades.equippedAudioCore,
   ]);
-
-  // Drives the game's clock while flying: Drone motion at 60 steps a second,
-  // and live WPM and accuracy every 30 steps (500ms).
-  useEffect(() => {
-    if (phase !== 'running') return;
-
-    const interval = setInterval(() => {
-      game.step();
-    }, STEP_MS);
-
-    return () => clearInterval(interval);
-  }, [phase]);
 
   // Main Keystroke Handler (Active touch-typing listener with down/up press duration tracking)
   useEffect(() => {
