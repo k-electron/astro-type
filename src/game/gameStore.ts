@@ -16,8 +16,13 @@ import {
   getNoteLaneAndFinger,
 } from '../data/curriculum';
 import { DEFAULT_PROFILE, recordStageResult, UPGRADE_CATALOG } from './profile';
-import { createSave, type SaveStorage } from './save';
-import { MAX_UPGRADE_LEVEL, PlayerProfileSchema } from '../store/schemas';
+import {
+  type BackupImport,
+  createSave,
+  parseBackup,
+  type SaveStorage,
+} from './save';
+import { MAX_UPGRADE_LEVEL } from '../store/schemas';
 import type { Clock } from './clock';
 import type { GameEffects } from './effects';
 import {
@@ -115,7 +120,11 @@ export interface GameStoreState {
   upgradeSensors: () => void;
   unlockOrEquipTheme: (theme: TrailColorTheme, cost: number) => void;
   unlockOrEquipAudio: (coreId: AudioSynthCore, cost: number) => void;
-  importProfile: (json: string) => boolean;
+  /**
+   * Replaces the Profile with a Backup's, and saves it. A Backup that fails
+   * the Save's checks is refused: the Profile and the Save are left as they were.
+   */
+  importProfile: (text: string) => BackupImport;
   wipeCurriculumAchievements: () => void;
   resetProgress: () => void;
 }
@@ -730,16 +739,13 @@ export function createGameStore({
         }
       },
 
-      importProfile: (json: string): boolean => {
-        try {
-          const result = PlayerProfileSchema.safeParse(JSON.parse(json));
-          if (!result.success) return false;
-          set({ profile: result.data });
-          saveProfile(result.data);
-          return true;
-        } catch {
-          return false;
+      importProfile: (text: string): BackupImport => {
+        const backup = parseBackup(text);
+        if (backup.ok) {
+          set({ profile: backup.profile });
+          saveProfile(backup.profile);
         }
+        return backup;
       },
 
       wipeCurriculumAchievements: () => {

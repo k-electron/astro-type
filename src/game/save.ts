@@ -34,6 +34,41 @@ export interface SaveStorage {
 export const UNREADABLE_SAVE_NOTICE =
   "Your saved progress couldn't be read, so you're starting fresh.";
 
+export const REFUSED_BACKUP_MESSAGE =
+  "That file isn't a Backup this game can read, so your progress was left as it was.";
+
+/** What importing a Backup comes to: the new Profile, or a refusal. */
+export type BackupImport =
+  | { ok: true; profile: PlayerProfile }
+  | { ok: false; message: string };
+
+/**
+ * A Backup file for the Profile: its JSON text. It is the Save's own fields,
+ * so it carries `version: 1`, and the same schema checks it on the way back.
+ */
+export function exportBackup(profile: PlayerProfile): string {
+  return JSON.stringify({ ...profile, version: 1 }, null, 2);
+}
+
+/**
+ * Checks a Backup file's text with the Save's schema. Text that isn't JSON, an
+ * unknown version or a wrong field is refused. A Backup exported before
+ * versions existed, but passing the schema, is read as version 1. Nothing is
+ * stored or changed here: the caller replaces the Profile only on `ok`.
+ */
+export function parseBackup(text: string): BackupImport {
+  let value: unknown;
+  try {
+    value = JSON.parse(text);
+  } catch {
+    return { ok: false, message: REFUSED_BACKUP_MESSAGE };
+  }
+  const result = PlayerProfileSchema.safeParse(value);
+  return result.success
+    ? { ok: true, profile: result.data }
+    : { ok: false, message: REFUSED_BACKUP_MESSAGE };
+}
+
 export interface LoadedSave {
   profile: PlayerProfile;
   /** The line Academy Home shows when the Save was unreadable, else null. */
