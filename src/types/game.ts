@@ -122,8 +122,6 @@ export interface LivePerformance {
   accuracy: number;
   currentCharIndex: number;
   timeElapsedSeconds: number;
-  timingFeedback: 'PERFECT' | 'GREAT' | 'GOOD' | 'MISS' | null;
-  timingFeedbackKey: number; // counter to re-trigger animations
   cadenceConsistency?: number; // 0 to 100% rhythm regularity between keystrokes
   lastHitDrone?: {
     id?: string;

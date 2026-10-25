@@ -66,7 +66,6 @@ export interface GameStoreState {
   /** Set when the Save couldn't be read and the player started fresh. */
   loadNotice: string | null;
   performance: LivePerformance;
-  activeLaneIndex: number | null;
   lastPressedKey: string | null;
   errorIndices: Set<number>;
   fallingNotes: FallingNote[];
@@ -171,7 +170,6 @@ export function createGameStore({
       profile: savedProfile,
       loadNotice,
       performance: freshPerformance(savedProfile.upgrades.deflectorShields),
-      activeLaneIndex: null,
       lastPressedKey: null,
       errorIndices: new Set<number>(),
       fallingNotes: [],
@@ -211,7 +209,6 @@ export function createGameStore({
           currentCharIndex: 0,
           fallingNotes: seedDrones(stage, now),
           performance: freshPerformance(profile.upgrades.deflectorShields),
-          activeLaneIndex: null,
           lastPressedKey: null,
           victoryResult: null,
         });
@@ -221,7 +218,7 @@ export function createGameStore({
         effects.stopBeat();
         effects.setOverdrive(false);
         // Streak, Multiplier and Overdrive stay exactly as they were.
-        set({ activeLaneIndex: null, lastPressedKey: null });
+        set({ lastPressedKey: null });
       },
 
       resumeRun: () => {
@@ -240,7 +237,6 @@ export function createGameStore({
           performance: freshPerformance(
             get().profile.upgrades.deflectorShields,
           ),
-          activeLaneIndex: null,
           lastPressedKey: null,
           fallingNotes: [],
           errorIndices: new Set(),
@@ -266,9 +262,6 @@ export function createGameStore({
 
         const isMatch = pressedKey === targetChar;
         const targetInfo = getNoteLaneAndFinger(targetChar);
-        const pressedInfo = getNoteLaneAndFinger(pressedKey);
-
-        set({ activeLaneIndex: pressedInfo.lane });
 
         // Track per-key analytics
         const updatedKeyStats = { ...state.sessionKeyStats };
@@ -340,8 +333,6 @@ export function createGameStore({
             correctKeystrokes: state.performance.correctKeystrokes + 1,
             totalKeystrokes: state.performance.totalKeystrokes + 1,
             currentCharIndex: nextCharIndex,
-            timingFeedback: rating,
-            timingFeedbackKey: state.performance.timingFeedbackKey + 1,
             cadenceConsistency: liveCadence,
             lastHitDrone: {
               id: matchingNote?.id,

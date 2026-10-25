@@ -1,14 +1,9 @@
 import React, { lazy, Suspense, useEffect, useRef } from 'react';
-import {
-  CURRICULUM_SECTORS,
-  getNextStage,
-  getNoteLaneAndFinger,
-} from './data/curriculum';
+import { CURRICULUM_SECTORS, getNextStage } from './data/curriculum';
 import { soundEngine } from './audio/soundEngine';
 import { HeaderNav } from './components/HeaderNav';
 import { HUD } from './components/HUD';
 import { TextPromptStream } from './components/TextPromptStream';
-import { IntegratedLanesKeyboard } from './components/IntegratedLanesKeyboard';
 import { StageSelectModal } from './components/StageSelectModal';
 import { HangarUpgradesModal } from './components/HangarUpgradesModal';
 import { AnalyticsModal } from './components/AnalyticsModal';
@@ -16,19 +11,38 @@ import { CustomPracticeModal } from './components/CustomPracticeModal';
 import { LevelCompleteModal } from './components/LevelCompleteModal';
 import { GlobalCosmicBackground } from './components/GlobalCosmicBackground';
 import { game } from './appGame';
-import { PIXI_DECK } from './deckMode';
+import { useShallow } from 'zustand/react/shallow';
 import { useGameStore } from './store/useGameStore';
 import { useOpener, useRunPhase, useScreen } from './store/useGameScreen';
 import { Play, RotateCcw } from 'lucide-react';
 
-// The PixiJS Action Deck (?deck=pixi) is its own chunk: players of the default
-// deck never download it.
+// The PixiJS Action Deck is its own chunk, so Academy Home paints without it.
+// It starts loading with the app: the first Flight Deck rarely waits for it.
 const loadPixiDeck = () =>
   import('./components/pixi-deck/PixiActionDeck').then((module) => ({
     default: module.PixiActionDeck,
   }));
 const PixiActionDeck = lazy(loadPixiDeck);
-if (PIXI_DECK) void loadPixiDeck();
+void loadPixiDeck();
+
+/**
+ * The starfield behind everything. It reads the two fields that speed it up
+ * itself, so a change to either re-renders only the starfield, not the app.
+ */
+function CosmicBackdrop({ onFlightDeck }: { onFlightDeck: boolean }) {
+  const { hyperspaceActive, multiplier } = useGameStore(
+    useShallow((state) => ({
+      hyperspaceActive: state.performance.hyperspaceActive,
+      multiplier: state.performance.multiplier,
+    })),
+  );
+  return (
+    <GlobalCosmicBackground
+      hyperspaceActive={onFlightDeck && hyperspaceActive}
+      multiplier={onFlightDeck ? multiplier : 1}
+    />
+  );
+}
 
 export default function App() {
   const screen = useScreen();
@@ -37,16 +51,15 @@ export default function App() {
   const runPaused = phase === 'paused';
   const { send } = game;
 
+  // App reads only what it shows itself. The Run's moving fields (Drones,
+  // score, Streak, the typed index) belong to the deck, the HUD and the text
+  // prompt, which read them on their own.
+  const currentStage = useGameStore((state) => state.currentStage);
+  const profile = useGameStore((state) => state.profile);
+  const loadNotice = useGameStore((state) => state.loadNotice);
+  const victoryResult = useGameStore((state) => state.victoryResult);
+  // The store's actions never change, so reading them off the store is stable.
   const {
-    currentStage,
-    profile,
-    loadNotice,
-    performance,
-    activeLaneIndex,
-    lastPressedKey,
-    errorIndices,
-    fallingNotes,
-    victoryResult,
     processKeystroke,
     releaseKeystroke,
     toggleGlobalMute,
@@ -55,9 +68,6 @@ export default function App() {
     setSoundVolume,
     setMusicVolume,
     setBeatTheme,
-    cycleBeatTheme,
-    toggleKeyboard,
-    toggleHands,
     upgradeShields,
     upgradeReactor,
     upgradeSensors,
@@ -66,7 +76,7 @@ export default function App() {
     importProfile,
     wipeCurriculumAchievements,
     resetProgress,
-  } = useGameStore();
+  } = game.store.getState();
 
   // Synchronize audio engine with current profile settings
   useEffect(() => {
@@ -154,27 +164,10 @@ export default function App() {
     if (screen === 'pause-menu') pauseMenuRef.current?.focus();
   }, [screen]);
 
-  const activeChar =
-    currentStage.sampleText[performance.currentCharIndex] || null;
-  const previousChar =
-    performance.currentCharIndex > 0
-      ? currentStage.sampleText[performance.currentCharIndex - 1]
-      : null;
-  const nextChar =
-    performance.currentCharIndex + 1 < currentStage.sampleText.length
-      ? currentStage.sampleText[performance.currentCharIndex + 1]
-      : null;
-  const targetCharInfo = activeChar ? getNoteLaneAndFinger(activeChar) : null;
-
   return (
     <div className="relative min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-cyan-500/30 selection:text-cyan-200 overflow-x-hidden">
       {/* Global Cosmic Starfield Background: tranquil on home & modals; hyperwarp ONLY during active flight */}
-      <GlobalCosmicBackground
-        hyperspaceActive={
-          screen === 'flight-deck' && performance.hyperspaceActive
-        }
-        multiplier={screen === 'flight-deck' ? performance.multiplier : 1}
-      />
+      <CosmicBackdrop onFlightDeck={screen === 'flight-deck'} />
 
       {/* Strict Top Bar Contract */}
       <HeaderNav
@@ -314,56 +307,15 @@ export default function App() {
           /* Active Cockpit Flight Deck */
           <div className="flex-1 flex flex-col gap-4">
             {/* Top HUD Telemetry */}
-            <HUD
-              performance={performance}
-              onPause={() => send({ type: 'PRESS_PAUSE' })}
-              onToggleKeyboard={toggleKeyboard}
-              keyboardVisible={profile.keyboardVisible}
-            />
+            <HUD onPause={() => send({ type: 'PRESS_PAUSE' })} />
 
             {/* Text Prompt Stream */}
-            <TextPromptStream
-              fullText={currentStage.sampleText}
-              currentIndex={performance.currentCharIndex}
-              errorIndices={errorIndices}
-              targetWpm={currentStage.targetWpm}
-              stageTitle={`${currentStage.title} · ${currentStage.subtitle}`}
-              techniqueTip={currentStage.techniqueTip}
-              focusFingers={currentStage.focusFingers}
-            />
+            <TextPromptStream />
 
             {/* Interactive Rhythm Keyboard Flight Deck */}
-            {PIXI_DECK ? (
-              <Suspense fallback={null}>
-                <PixiActionDeck
-                  hyperspaceActive={performance.hyperspaceActive}
-                  multiplier={performance.multiplier}
-                  currentStreak={performance.currentStreak}
-                  handsVisible={profile.handsVisible}
-                  onToggleHands={toggleHands}
-                />
-              </Suspense>
-            ) : (
-              <IntegratedLanesKeyboard
-                notes={fallingNotes}
-                hyperspaceActive={performance.hyperspaceActive}
-                multiplier={performance.multiplier}
-                currentStreak={performance.currentStreak}
-                activeLaneIndex={activeLaneIndex}
-                targetLaneIndex={targetCharInfo ? targetCharInfo.lane : null}
-                timingFeedback={performance.timingFeedback}
-                timingFeedbackKey={performance.timingFeedbackKey}
-                lastHitDrone={performance.lastHitDrone}
-                trailTheme={profile.upgrades.equippedTrailTheme}
-                activeChar={activeChar}
-                previousChar={previousChar}
-                nextChar={nextChar}
-                lastPressedKey={lastPressedKey}
-                keyboardVisible={profile.keyboardVisible}
-                handsVisible={profile.handsVisible}
-                onToggleHands={toggleHands}
-              />
-            )}
+            <Suspense fallback={null}>
+              <PixiActionDeck />
+            </Suspense>
           </div>
         )}
       </main>

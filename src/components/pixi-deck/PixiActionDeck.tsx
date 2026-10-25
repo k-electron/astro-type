@@ -1,31 +1,29 @@
 import { Award, Flame, Hand, Sparkles } from 'lucide-react';
 import { memo, useLayoutEffect, useRef } from 'react';
+import { useShallow } from 'zustand/react/shallow';
+import { game } from '../../appGame';
 import { FINGER_COLOR_MAP } from '../../data/curriculum';
+import { useGameStore } from '../../store/useGameStore';
 import { getDeckSession } from './deckSession';
 
-interface PixiActionDeckProps {
-  hyperspaceActive: boolean;
-  multiplier: number;
-  currentStreak: number;
-  handsVisible: boolean;
-  onToggleHands: () => void;
-}
-
 /**
- * The Action Deck drawn with PixiJS, for `?deck=pixi`: the same card and header
- * bar as the DOM deck around a stage the session's PixiJS Application draws.
+ * The Action Deck: a card with a header bar around a stage that the session's
+ * PixiJS Application draws.
  *
- * It takes only what the header bar shows. The deck itself reads the store on
- * the Run clock, so React never re-renders it per frame; `memo` keeps App's
- * own re-renders from reaching it.
+ * React reads only what the header bar shows. The deck itself reads the store
+ * on the Run clock, so React never re-renders it per frame.
  */
-export const PixiActionDeck = memo(function PixiActionDeck({
-  hyperspaceActive,
-  multiplier,
-  currentStreak,
-  handsVisible,
-  onToggleHands,
-}: PixiActionDeckProps) {
+export const PixiActionDeck = memo(function PixiActionDeck() {
+  const { hyperspaceActive, multiplier, currentStreak, handsVisible } =
+    useGameStore(
+      useShallow((state) => ({
+        hyperspaceActive: state.performance.hyperspaceActive,
+        multiplier: state.performance.multiplier,
+        currentStreak: state.performance.currentStreak,
+        handsVisible: state.profile.handsVisible,
+      })),
+    );
+  const onToggleHands = game.store.getState().toggleHands;
   const stageRef = useRef<HTMLDivElement>(null);
 
   useLayoutEffect(() => {

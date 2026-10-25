@@ -55,8 +55,6 @@ export function freshPerformance(shields: number): LivePerformance {
     accuracy: 100,
     currentCharIndex: 0,
     timeElapsedSeconds: 0,
-    timingFeedback: null,
-    timingFeedbackKey: 0,
     cadenceConsistency: 100,
   };
 }
@@ -249,8 +247,6 @@ export function applyMiss(
   const base = {
     incorrectKeystrokes: perf.incorrectKeystrokes + 1,
     totalKeystrokes: perf.totalKeystrokes + 1,
-    timingFeedback: 'MISS' as const,
-    timingFeedbackKey: perf.timingFeedbackKey + 1,
     cadenceConsistency: cadence,
   };
   if (perf.shieldsRemaining > 0) {

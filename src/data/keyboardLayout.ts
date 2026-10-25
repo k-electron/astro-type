@@ -1,6 +1,6 @@
 import type { FingerZone } from '../types/game';
 
-/** One keycap of the Action Deck's keyboard. Shared by the DOM deck and the PixiJS deck. */
+/** One keycap of the Action Deck's keyboard. Drawn by the PixiJS deck. */
 export interface KeySpec {
   key: string;
   display: string;

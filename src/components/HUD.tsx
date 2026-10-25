@@ -1,20 +1,15 @@
 import React from 'react';
 import { Shield, Zap, Pause } from 'lucide-react';
-import { LivePerformance } from '../types/game';
+import { useShallow } from 'zustand/react/shallow';
+import { game } from '../appGame';
+import { useGameStore } from '../store/useGameStore';
 
 interface HUDProps {
-  performance: LivePerformance;
   onPause: () => void;
-  onToggleKeyboard: () => void;
-  keyboardVisible: boolean;
 }
 
-export const HUD: React.FC<HUDProps> = ({
-  performance,
-  onPause,
-  onToggleKeyboard,
-  keyboardVisible,
-}) => {
+/** The readouts above the deck. It reads only the fields it shows, so it re-renders when one of them changes. */
+export const HUD: React.FC<HUDProps> = ({ onPause }) => {
   const {
     score,
     currentStreak,
@@ -24,7 +19,23 @@ export const HUD: React.FC<HUDProps> = ({
     shieldsRemaining,
     netWpm,
     accuracy,
-  } = performance;
+    cadence,
+    keyboardVisible,
+  } = useGameStore(
+    useShallow((state) => ({
+      score: state.performance.score,
+      currentStreak: state.performance.currentStreak,
+      multiplier: state.performance.multiplier,
+      hyperspaceActive: state.performance.hyperspaceActive,
+      hyperspaceEnergy: state.performance.hyperspaceEnergy,
+      shieldsRemaining: state.performance.shieldsRemaining,
+      netWpm: state.performance.netWpm,
+      accuracy: state.performance.accuracy,
+      cadence: state.performance.cadenceConsistency ?? 100,
+      keyboardVisible: state.profile.keyboardVisible,
+    })),
+  );
+  const onToggleKeyboard = game.store.getState().toggleKeyboard;
 
   return (
     <section
@@ -38,7 +49,7 @@ export const HUD: React.FC<HUDProps> = ({
             Score
           </span>
           <span className="text-lg sm:text-xl font-bold font-mono tabular-nums text-white leading-none">
-            {(score ?? 0).toLocaleString()}
+            {score.toLocaleString()}
           </span>
         </div>
 
@@ -128,27 +139,23 @@ export const HUD: React.FC<HUDProps> = ({
           <div className="flex items-center gap-1.5 mt-0.5">
             <span
               className={`w-2 h-2 rounded-full ${
-                (performance.cadenceConsistency ?? 100) >= 85
+                cadence >= 85
                   ? 'bg-emerald-400 shadow-[0_0_8px_#34d399] animate-pulse'
-                  : (performance.cadenceConsistency ?? 100) >= 70
+                  : cadence >= 70
                     ? 'bg-cyan-400 shadow-[0_0_8px_#38bdf8]'
                     : 'bg-amber-400'
               }`}
             />
             <span
               className={`text-xs font-mono font-bold leading-none ${
-                (performance.cadenceConsistency ?? 100) >= 85
+                cadence >= 85
                   ? 'text-emerald-300'
-                  : (performance.cadenceConsistency ?? 100) >= 70
+                  : cadence >= 70
                     ? 'text-cyan-300'
                     : 'text-amber-300'
               }`}
             >
-              {(performance.cadenceConsistency ?? 100) >= 85
-                ? 'Steady'
-                : (performance.cadenceConsistency ?? 100) >= 70
-                  ? 'Paced'
-                  : 'Uneven'}
+              {cadence >= 85 ? 'Steady' : cadence >= 70 ? 'Paced' : 'Uneven'}
             </span>
           </div>
         </div>
