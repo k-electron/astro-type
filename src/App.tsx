@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
   CURRICULUM_SECTORS,
   getNextStage,
@@ -80,6 +80,14 @@ export default function App() {
   // Main Keystroke Handler (Active touch-typing listener with down/up press duration tracking)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Esc is a player event on every screen; the machine decides what it
+      // means there. It is never a keystroke. A header dropdown that took the
+      // Esc to close itself has already marked it handled.
+      if (e.key === 'Escape') {
+        if (!e.repeat && !e.defaultPrevented) send({ type: 'PRESS_ESC' });
+        return;
+      }
+
       if (phase !== 'running') return;
 
       // Prevent Spacebar from scrolling the page
@@ -112,7 +120,29 @@ export default function App() {
       window.removeEventListener('keyup', handleKeyUp);
       window.removeEventListener('blur', handleBlur);
     };
-  }, [phase, processKeystroke, releaseKeystroke]);
+  }, [phase, processKeystroke, releaseKeystroke, send]);
+
+  // Leaving the page (another window, another tab) is a player event: the
+  // machine pauses a running Run and ignores it anywhere else.
+  useEffect(() => {
+    const handleLostFocus = () => send({ type: 'LOST_FOCUS' });
+    const handleVisibility = () => {
+      if (document.visibilityState === 'hidden') handleLostFocus();
+    };
+    window.addEventListener('blur', handleLostFocus);
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => {
+      window.removeEventListener('blur', handleLostFocus);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, [send]);
+
+  // The Pause Menu takes focus itself, not a button, so a stray Enter or
+  // Space (typing on after a focus-loss pause) has nothing to activate.
+  const pauseMenuRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (screen === 'pause-menu') pauseMenuRef.current?.focus();
+  }, [screen]);
 
   const activeChar =
     currentStage.sampleText[performance.currentCharIndex] || null;
@@ -319,8 +349,18 @@ export default function App() {
       {/* Pause Menu Modal */}
       {screen === 'pause-menu' && (
         <div className="fixed inset-x-0 bottom-0 top-[var(--header-height,0px)] z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
-          <div className="w-full max-w-sm rounded-2xl border border-slate-800 bg-slate-900 shadow-2xl p-6 text-center">
-            <h3 className="text-xl font-bold font-display text-white mb-1">
+          <div
+            ref={pauseMenuRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="pause-menu-title"
+            tabIndex={-1}
+            className="w-full max-w-sm rounded-2xl border border-slate-800 bg-slate-900 shadow-2xl p-6 text-center outline-none"
+          >
+            <h3
+              id="pause-menu-title"
+              className="text-xl font-bold font-display text-white mb-1"
+            >
               Mission Paused
             </h3>
             <p className="text-xs text-slate-400 mb-6">

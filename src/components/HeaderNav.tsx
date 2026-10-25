@@ -112,6 +112,8 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
+        // The dropdown takes this Esc; the game doesn't also see it.
+        e.preventDefault();
         setIsAudioMenuOpen(false);
       }
     };
