@@ -40,6 +40,18 @@ _Avoid_: Receptor, hit line, target line
 The verdict on one keystroke: Perfect, Great or Good by how close the Drone was to the Strike Line, or Miss for a wrong key.
 _Avoid_: Timing, timing feedback, rating
 
+**Streak**:
+The number of correct keystrokes in a row in the current Run. A Miss that a shield doesn't absorb resets it.
+_Avoid_: Combo, chain
+
+**Multiplier**:
+The x1 to x4 factor on each hit's score, rising as the Streak grows.
+_Avoid_: Combo multiplier
+
+**Overdrive**:
+A boosted mode that doubles the score of each hit. Correct keystrokes fill the Overdrive meter, and Overdrive starts when the meter is full.
+_Avoid_: Hyperspace, warp, hyperdrive
+
 **Run Time**:
 The time a Run has spent running, with pauses left out. WPM and Stars are measured against it.
 _Avoid_: Elapsed time, stage time
