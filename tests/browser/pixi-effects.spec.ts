@@ -4,9 +4,9 @@ import {
   type Page,
   test as base,
 } from '@playwright/test';
-import { flightDeck } from './helpers';
+import { drone, flightDeck, keycap } from './helpers';
 
-// The effects on the PixiJS Action Deck (`?deck=pixi`): lasers, lock-on
+// The effects on the PixiJS Action Deck: lasers, lock-on
 // brackets, explosions, the ship, the guidance beam, Drone thrusters and keycap
 // glow. They are drawn in a canvas, so these journeys do what a player does:
 // look at the deck. They take screenshots of the deck and compare them pixel by
@@ -19,9 +19,9 @@ import { flightDeck } from './helpers';
 // caught mid-flight, and nothing else moves it. There are no stored baseline
 // images: each test compares captures taken in the same run.
 //
-// The numbers below are what today's DOM deck measures on the same screens,
-// with a wide margin (the PixiJS effects have to be there and run their course;
-// they are not pinned to the pixel).
+// The numbers below leave a wide margin (the effects have to be there and run
+// their course; they are not pinned to the pixel). Exact pictures are the job
+// of screenshots.spec.ts.
 
 // Letters on far apart keys, so each Drone falls in a lane of its own: the lead
 // ("q", far left) has an empty lane around it once it is destroyed, and the
@@ -147,16 +147,6 @@ test.use({ viewport: { width: 1280, height: 1100 } });
 // give each journey room.
 test.setTimeout(180_000);
 
-/** An element PixiJS's accessibility layer made for something it drew. */
-const labelled = (page: Page, name: RegExp): Locator =>
-  page.getByLabel(name).or(page.getByTitle(name));
-
-const drone = (page: Page, character: string): Locator =>
-  labelled(page, new RegExp(`^Drone ${character}$`, 'i'));
-
-const keycap = (page: Page, character: string): Locator =>
-  labelled(page, new RegExp(`^${character} key$`, 'i'));
-
 async function box(element: Locator): Promise<Rect> {
   const b = await element.boundingBox({ timeout: 2000 });
   if (!b) throw new Error('Nothing is drawn there');
@@ -170,7 +160,7 @@ async function box(element: Locator): Promise<Rect> {
 async function launchOnStoppedClock(page: Page, text: string) {
   await page.clock.install({ time: 0 });
   await page.clock.pauseAt(1000);
-  await page.goto('/?deck=pixi');
+  await page.goto('/');
   await page.getByRole('button', { name: 'Free Flight', exact: true }).click();
   await page.getByRole('textbox').fill(text);
   await page.getByRole('button', { name: 'Launch Custom Flight' }).click();

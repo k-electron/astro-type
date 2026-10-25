@@ -1,8 +1,10 @@
 import { expect, type Page, test } from '@playwright/test';
 import {
+  clickWhereDrawn,
   debrief,
   flightDeck,
   hud,
+  keycap,
   launchFreeFlight,
   promptProgress,
   typeText,
@@ -50,22 +52,6 @@ async function expectShields(page: Page, count: number) {
   const tags = hud(page).getByText(/^x\d$/);
   await expect(tags).toHaveCount(2);
   await expect(tags.last()).toHaveText(`x${count}`);
-}
-
-/**
- * A keycap on the Action Deck. Once the deck is labelled for screen readers
- * ("F key") it is found by that name. Today's DOM deck labels nothing: a
- * keycap is a clickable div holding the key's capital letter, and the deck's
- * keyboard comes last in the page, so the last element with exactly that text
- * is the keycap (earlier ones are Drones, the hand legend and the finger key).
- */
-async function keycap(page: Page, key: string) {
-  const letter = key.toUpperCase();
-  const labelled = page.getByRole('button', {
-    name: new RegExp(`^${letter} key$`, 'i'),
-  });
-  if ((await labelled.count()) > 0) return labelled.first();
-  return page.getByText(letter, { exact: true }).last();
 }
 
 for (const key of NON_CHARACTER_KEYS) {
@@ -201,9 +187,9 @@ test('clicking a keycap advances the text prompt like typing', async ({
 }) => {
   await launchFreeFlight(page, 'abcdef');
 
-  await (await keycap(page, 'a')).click();
+  await clickWhereDrawn(page, keycap(page, 'a'));
   await expect(promptProgress(page)).toHaveText('17%');
-  await (await keycap(page, 'b')).click();
+  await clickWhereDrawn(page, keycap(page, 'b'));
   await expect(promptProgress(page)).toHaveText('33%');
   await expect(flightDeck(page)).toContainText(/Streak\s*2(?!\d)/i);
 
@@ -222,7 +208,7 @@ test('clicking a wrong keycap is a Miss, like typing a wrong key', async ({
   await typeText(page, 'abc');
   await expect(deck).toContainText(/Streak\s*3(?!\d)/i);
 
-  await (await keycap(page, 'z')).click();
+  await clickWhereDrawn(page, keycap(page, 'z'));
   await expect(deck).toContainText(/Streak\s*0(?!\d)/i);
   // The Miss didn't consume the character.
   await expect(promptProgress(page)).toHaveText('50%');

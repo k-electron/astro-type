@@ -1,7 +1,8 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 
 // Shared by the browser journeys. Everything here finds things the way a
-// player sees them: by role and visible text.
+// player sees them: by role and visible text, and, inside the Action Deck's
+// canvas, through the PixiJS accessibility layer.
 
 /** The first Stage's text as the player reads it, "␣" standing for a space. */
 export const FIRST_STAGE_TEXT =
@@ -43,6 +44,31 @@ export const debrief = (page: Page): Locator =>
     .filter({ has: page.getByRole('button', { name: 'Replay' }) })
     .filter({ has: page.getByRole('heading', { level: 2 }) })
     .last();
+
+/**
+ * An element PixiJS's accessibility layer made for something it drew. PixiJS
+ * puts the name in `aria-label` (an accessible hint) or in `title` (an
+ * accessible title), so both are accepted. The name is matched whole and
+ * ignoring case, since the layer may spell a character either way.
+ */
+export const labelled = (page: Page, name: RegExp): Locator =>
+  page.getByLabel(name).or(page.getByTitle(name));
+
+/** The Drone carrying this character. Use texts with no repeats. */
+export const drone = (page: Page, character: string): Locator =>
+  labelled(page, new RegExp(`^Drone ${character}$`, 'i'));
+
+/** The keycap for this character on the Action Deck's keyboard. */
+export const keycap = (page: Page, character: string): Locator =>
+  labelled(page, new RegExp(`^${character} key$`, 'i'));
+
+/** A real mouse click in the middle of an element, wherever it is drawn. */
+export async function clickWhereDrawn(page: Page, element: Locator) {
+  await element.scrollIntoViewIfNeeded();
+  const box = await element.boundingBox();
+  if (!box) throw new Error('Nothing is drawn there to click');
+  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+}
 
 /** Types text with real key presses, one key at a time. */
 export async function typeText(page: Page, text: string): Promise<void> {
