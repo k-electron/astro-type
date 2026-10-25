@@ -27,7 +27,10 @@ export const HUD: React.FC<HUDProps> = ({
   } = performance;
 
   return (
-    <div className="w-full h-14 flex items-center justify-between gap-2 sm:gap-4 px-3 sm:px-4 rounded-xl border border-slate-800 bg-slate-900/90 shadow-lg backdrop-blur-md shrink-0 overflow-hidden">
+    <section
+      aria-label="HUD"
+      className="w-full h-14 flex items-center justify-between gap-2 sm:gap-4 px-3 sm:px-4 rounded-xl border border-slate-800 bg-slate-900/90 shadow-lg backdrop-blur-md shrink-0 overflow-hidden"
+    >
       {/* Left: Score & Multiplier */}
       <div className="flex items-center gap-3 sm:gap-5 shrink-0">
         <div>
@@ -185,6 +188,6 @@ export const HUD: React.FC<HUDProps> = ({
           <span>Pause</span>
         </button>
       </div>
-    </div>
+    </section>
   );
 };
