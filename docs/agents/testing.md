@@ -11,8 +11,8 @@ A test that restates the code is a change detector: delete it. That covers check
 ## Unit tests
 
 Vitest, in `src/**/*.test.ts(x)`, only where the logic is real:
-- Judgement and scoring: Perfect, Great or Good by distance to the Strike Line, multiplier steps, hyperspace, shields
-- Stars from WPM, accuracy and streak
+- Judgement and scoring: Perfect, Great or Good by distance to the Strike Line, Multiplier steps, Overdrive, shields
+- Stars from WPM, accuracy and Streak
 - WPM, accuracy and cadence measured in Run Time
 - the machine's promises from [#10](https://github.com/k-electron/astro-type/issues/10): every chain of opened screens unwinds back to its start, every header button works on every screen, only Academy Home and starting a Stage abandon a Run, and Close onto a paused Run lands on the Pause Menu. Test the promises, never a copy of the transition table.
 - the curriculum's integrity check from [#11](https://github.com/k-electron/astro-type/issues/11): its schema, unique Stage ids, every character typeable, star thresholds stricter at each level, Sector unlocks only going up
