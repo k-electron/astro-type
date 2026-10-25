@@ -56,7 +56,10 @@ export const TextPromptStream: React.FC<TextPromptStreamProps> = ({
   const laneInfo = charInfo ? FINGER_LANES[charInfo.lane] : null;
 
   return (
-    <div className="w-full flex flex-col rounded-xl border border-slate-800 bg-slate-900/90 shadow-xl backdrop-blur-md overflow-hidden">
+    <section
+      aria-label="Text prompt"
+      className="w-full flex flex-col rounded-xl border border-slate-800 bg-slate-900/90 shadow-xl backdrop-blur-md overflow-hidden"
+    >
       {/* Top Header bar with live target finger indicator (Fixed Height: h-11) */}
       <div className="h-11 flex items-center justify-between gap-3 px-4 border-b border-slate-800/80 bg-slate-950/70 text-xs shrink-0">
         <div className="flex items-center gap-3 truncate">
@@ -98,7 +101,15 @@ export const TextPromptStream: React.FC<TextPromptStreamProps> = ({
         </div>
 
         {/* Progress bar */}
-        <div className="flex items-center gap-2 shrink-0">
+        <div
+          role="progressbar"
+          aria-label="Progress"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={progressPercent}
+          aria-valuetext={`${progressPercent}%`}
+          className="flex items-center gap-2 shrink-0"
+        >
           <div className="w-20 sm:w-28 h-1.5 rounded-full bg-slate-800 overflow-hidden">
             <div
               className="h-full bg-cyan-400 transition-all duration-150"
@@ -146,6 +157,7 @@ export const TextPromptStream: React.FC<TextPromptStreamProps> = ({
               <span
                 key={index}
                 ref={isCurrent ? activeCharRef : null}
+                aria-current={isCurrent ? 'true' : undefined}
                 className={`inline-block select-none transition-all duration-75 ${
                   isCurrent
                     ? 'px-1.5 py-0.2 mx-0.5 rounded bg-cyan-500/25 ring-1.5 ring-cyan-400 text-cyan-200 font-bold shadow-[0_0_10px_rgba(6,182,212,0.5)] scale-105'
@@ -176,6 +188,7 @@ export const TextPromptStream: React.FC<TextPromptStreamProps> = ({
             <span
               key={index}
               ref={isCurrent ? activeCharRef : null}
+              aria-current={isCurrent ? 'true' : undefined}
               className={`inline-block px-[2px] transition-colors ${charClass}`}
             >
               {char}
@@ -183,6 +196,6 @@ export const TextPromptStream: React.FC<TextPromptStreamProps> = ({
           );
         })}
       </div>
-    </div>
+    </section>
   );
 };

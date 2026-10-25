@@ -11,11 +11,30 @@ export const FIRST_STAGE_TEXT =
 export const flightDeck = (page: Page): Locator => page.getByRole('main');
 
 /**
- * The text prompt's progress readout. The HUD's Accuracy readout is also a
- * percentage and comes first on the page, so the prompt's is the last one.
+ * The accessible names a screen reader user hears on the Flight Deck. They
+ * are the only place the tests spell them out.
  */
+export const LABELS = {
+  hud: 'HUD',
+  textPrompt: 'Text prompt',
+  promptProgress: 'Progress',
+} as const;
+
+/** The HUD: a labelled region holding the score, speed, accuracy and Streak. */
+export const hud = (page: Page): Locator =>
+  page.getByRole('region', { name: LABELS.hud, exact: true });
+
+/** The text prompt the player types along. */
+export const textPrompt = (page: Page): Locator =>
+  page.getByLabel(LABELS.textPrompt, { exact: true });
+
+/** The text prompt's progress readout, which reads like "50%". */
 export const promptProgress = (page: Page): Locator =>
-  page.getByText(/^\d{1,3}%$/).last();
+  page.getByLabel(LABELS.promptProgress, { exact: true });
+
+/** The character the player has to type next, marked `aria-current`. */
+export const currentCharacter = (page: Page): Locator =>
+  textPrompt(page).locator('[aria-current]:not([aria-current="false"])');
 
 /** The card the Debrief shows over the Flight Deck. */
 export const debrief = (page: Page): Locator =>
@@ -33,7 +52,11 @@ export async function typeText(page: Page, text: string): Promise<void> {
 }
 
 /** Academy Home -> Free Flight -> Launch with the given text. */
-export async function launchFreeFlight(page: Page, text: string) {
+export async function launchFreeFlight(
+  page: Page,
+  text: string,
+  shown: string = text,
+) {
   await page.goto('/');
   await page.getByRole('button', { name: 'Free Flight', exact: true }).click();
   await page.getByRole('textbox').fill(text);
@@ -41,7 +64,10 @@ export async function launchFreeFlight(page: Page, text: string) {
   await expect(
     page.getByRole('button', { name: 'Pause', exact: true }),
   ).toBeVisible();
-  await expect(promptProgress(page)).toHaveText('0%');
+  // The prompt shows the player's text, so the Run is ready for its first key.
+  await expect(page.getByRole('main')).toContainText(
+    shown.replaceAll(/\s/g, '␣'),
+  );
 }
 
 /** Academy Home -> the first Stage, ready for its first key. */
@@ -51,7 +77,6 @@ export async function startFirstStage(page: Page) {
   await expect(
     page.getByRole('button', { name: 'Pause', exact: true }),
   ).toBeVisible();
-  await expect(promptProgress(page)).toHaveText('0%');
   // The prompt shows the text the journeys type; a Stage whose text changed
   // fails here instead of hanging later.
   await expect(flightDeck(page)).toContainText(
