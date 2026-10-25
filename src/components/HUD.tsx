@@ -59,7 +59,7 @@ export const HUD: React.FC<HUDProps> = ({
           {/* Overdrive Energy Meter */}
           <div className="hidden sm:flex flex-col gap-0.5">
             <span className="text-[8px] uppercase font-mono text-slate-500 leading-none">
-              Warp Energy
+              Overdrive Meter
             </span>
             <div className="w-16 sm:w-20 h-1.5 rounded bg-slate-800 overflow-hidden border border-slate-700/60">
               <div

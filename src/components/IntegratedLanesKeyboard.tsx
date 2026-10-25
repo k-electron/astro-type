@@ -932,7 +932,7 @@ export const IntegratedLanesKeyboard: React.FC<
               if (isSpace) {
                 textLabel = '💥 FLAGSHIP OBLITERATED! +100';
               } else if (hyperspaceActive) {
-                textLabel = '⚡ WARP STRIKE! +400';
+                textLabel = '⚡ OVERDRIVE STRIKE! +400';
               } else {
                 const labels = [
                   '💥 VAPORIZED! +100',
@@ -1251,7 +1251,7 @@ export const IntegratedLanesKeyboard: React.FC<
           {hyperspaceActive && (
             <span className="flex items-center gap-1 text-[11px] font-mono font-extrabold text-amber-300 bg-amber-950/80 px-2 py-0.5 rounded border border-amber-500 shadow-[0_0_12px_rgba(245,158,11,0.4)] animate-pulse">
               <Flame className="w-3.5 h-3.5 text-amber-400 fill-current" />
-              WARP x{multiplier}
+              OVERDRIVE x{multiplier}
             </span>
           )}
           {currentStreak >= 10 && (

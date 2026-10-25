@@ -330,7 +330,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
                         Keystroke Laser SFX
                       </span>
                       <span className="text-[10px] text-slate-400">
-                        Tactile hits, combo alarms & shield absorbs
+                        Tactile hits, Streak alarms & shield absorbs
                       </span>
                     </div>
                   </div>

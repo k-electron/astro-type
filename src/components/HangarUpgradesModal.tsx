@@ -122,8 +122,8 @@ export const HangarUpgradesModal: React.FC<HangarUpgradesModalProps> = ({
                     </span>
                   </div>
                   <p className="text-xs text-slate-400 mb-3">
-                    Absorbs typing error keystrokes without breaking combo
-                    streak or multiplier.
+                    Absorbs typing error keystrokes without breaking your Streak
+                    or Multiplier.
                   </p>
                   <div className="flex items-center gap-1.5 mb-4">
                     {[1, 2, 3].map((lvl) => (
@@ -159,14 +159,14 @@ export const HangarUpgradesModal: React.FC<HangarUpgradesModalProps> = ({
                 )}
               </div>
 
-              {/* Hyperdrive Reactor */}
+              {/* Overdrive Reactor */}
               <div className="p-4 rounded-xl border border-slate-800 bg-slate-950/60 flex flex-col justify-between">
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2 text-amber-400">
                       <Zap className="w-4 h-4" />
                       <span className="font-bold text-sm text-white">
-                        Hyperdrive Reactor
+                        Overdrive Reactor
                       </span>
                     </div>
                     <span className="text-xs font-mono text-amber-400">
@@ -174,8 +174,8 @@ export const HangarUpgradesModal: React.FC<HangarUpgradesModalProps> = ({
                     </span>
                   </div>
                   <p className="text-xs text-slate-400 mb-3">
-                    Accelerates Overdrive energy charging rate so you trigger
-                    Hyperspace 4x mode faster.
+                    Speeds up how fast the Overdrive meter fills, so Overdrive
+                    starts sooner.
                   </p>
                   <div className="flex items-center gap-1.5 mb-4">
                     {[1, 2, 3].map((lvl) => (

@@ -194,6 +194,8 @@ export function createGameStore({
           set({ profile: speedProfile });
           saveProfile(speedProfile);
         }
+        // A fresh Run starts with Overdrive off, so its beat does too.
+        effects.setOverdrive(false);
         if (beatAllowed(profile)) {
           effects.startBeat();
         }
@@ -226,6 +228,8 @@ export function createGameStore({
         if (beatAllowed(get().profile)) {
           effects.startBeat();
         }
+        // Overdrive was kept through the pause, so its beat comes back with it.
+        effects.setOverdrive(get().performance.hyperspaceActive);
       },
 
       abandonRun: () => {
@@ -367,6 +371,7 @@ export function createGameStore({
           });
           // Overdrive catching fire is its own sound, after the hit's.
           if (charge.ignites) {
+            effects.setOverdrive(true);
             effects.playHyperspaceIgnition();
           }
 
@@ -389,6 +394,10 @@ export function createGameStore({
             sessionKeyStats: updatedKeyStats,
             performance: perf,
           });
+          // A Miss no shield absorbs ends Overdrive, and its beat with it.
+          if (!perf.hyperspaceActive) {
+            effects.setOverdrive(false);
+          }
           onJudgement({
             type: shielded ? 'shield' : 'miss',
             key: pressedKey,
