@@ -84,6 +84,55 @@ export async function startFirstStage(page: Page) {
   );
 }
 
+// ---------------------------------------------------------------------------
+// Menus: the header's four screen buttons, and how a menu is closed.
+// ---------------------------------------------------------------------------
+
+/** The header's screen buttons, and the heading of the screen each one opens. */
+export const MENUS = {
+  'Galaxy Map': { header: 'Sectors', heading: 'Flight Sectors & Missions' },
+  Hangar: { header: 'Hangar', heading: 'Starship Hangar Upgrades' },
+  Analytics: { header: 'Analytics', heading: 'Typing Analytics & Heatmap' },
+  'Free Flight': { header: 'Free Flight', heading: 'Custom Typing Practice' },
+} as const;
+
+export type MenuName = keyof typeof MENUS;
+
+/** A header button, found by its visible text. */
+export const headerButton = (page: Page, name: string): Locator =>
+  page.getByRole('navigation').getByRole('button', { name, exact: true });
+
+/** A menu's heading: present while that screen is showing. */
+export const menuHeading = (page: Page, menu: MenuName): Locator =>
+  page.getByRole('heading', { name: MENUS[menu].heading });
+
+/** The Pause Menu's heading: present while the Run is paused behind it. */
+export const pauseMenu = (page: Page): Locator =>
+  page.getByRole('heading', { name: 'Mission Paused' });
+
+/**
+ * The button that closes a menu. The spec calls it Close. Today each menu
+ * words it after what opened it (Galaxy Map: "Close", Hangar from the Flight
+ * Deck: "Pause Menu", Hangar from the Galaxy Map: "Back to Sectors", ...), and
+ * ticket #19 makes it one thing. Every name it has had is accepted here, so
+ * this is the one place to pin it down.
+ */
+export const closeButton = (page: Page): Locator =>
+  page.getByRole('button', {
+    name: /^(Close|Back to Sectors|Back to Academy|Pause Menu|Cancel)$/,
+  });
+
+/** Open a menu from the header. */
+export async function openMenu(page: Page, menu: MenuName) {
+  await headerButton(page, MENUS[menu].header).click();
+  await expect(menuHeading(page, menu)).toBeVisible();
+}
+
+/** Close the menu that is showing. */
+export async function closeMenu(page: Page) {
+  await closeButton(page).click();
+}
+
 /** Types the first Stage to its last character; the Debrief follows. */
 export async function clearFirstStage(page: Page) {
   await typeText(page, FIRST_STAGE_TEXT);
