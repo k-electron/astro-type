@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { Sector, Stage, StageProgress } from '../types/game';
 import { CURRICULUM_SECTORS } from '../data/curriculum';
-import { isSectorUnlocked } from '../utils/storage';
+import { isSectorUnlocked } from '../game/profile';
 
 interface StageSelectModalProps {
   stagesProgress: Record<string, StageProgress>;

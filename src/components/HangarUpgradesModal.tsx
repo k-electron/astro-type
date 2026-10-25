@@ -9,7 +9,7 @@ import {
   Play,
 } from 'lucide-react';
 import { ShipUpgrades, TrailColorTheme, AudioSynthCore } from '../types/game';
-import { UPGRADE_CATALOG } from '../utils/storage';
+import { UPGRADE_CATALOG } from '../game/profile';
 
 interface HangarUpgradesModalProps {
   upgrades: ShipUpgrades;

@@ -15,6 +15,8 @@ import { AnalyticsModal } from './components/AnalyticsModal';
 import { CustomPracticeModal } from './components/CustomPracticeModal';
 import { LevelCompleteModal } from './components/LevelCompleteModal';
 import { GlobalCosmicBackground } from './components/GlobalCosmicBackground';
+import { game } from './appGame';
+import { STEP_MS } from './game/clock';
 import { useGameStore } from './store/useGameStore';
 import { Play, RotateCcw } from 'lucide-react';
 
@@ -33,8 +35,6 @@ export default function App() {
     startStage,
     processKeystroke,
     releaseKeystroke,
-    updateFallingNotesOnTick,
-    updateTelemetryOnInterval,
     launchNextStage,
     toggleGlobalMute,
     toggleSound,
@@ -98,13 +98,6 @@ export default function App() {
     setGameState(target);
   };
 
-  useEffect(() => {
-    (window as any).__astrotype = {
-      useGameStore,
-      CURRICULUM_SECTORS,
-    };
-  }, []);
-
   // Synchronize audio engine with current profile settings
   useEffect(() => {
     soundEngine.setGlobalMute(Boolean(profile.globalMuted));
@@ -147,27 +140,17 @@ export default function App() {
     setGameState,
   ]);
 
-  // Falling Notes Highway Motion & Conveyor Loop (60 FPS)
+  // Drives the game's clock while flying: Drone motion at 60 steps a second,
+  // and live WPM and accuracy every 30 steps (500ms).
   useEffect(() => {
     if (gameState !== 'PLAYING') return;
 
     const interval = setInterval(() => {
-      updateFallingNotesOnTick();
-    }, 1000 / 60);
+      game.step();
+    }, STEP_MS);
 
     return () => clearInterval(interval);
-  }, [gameState, updateFallingNotesOnTick]);
-
-  // Live WPM and accuracy calculation timer (every 500ms)
-  useEffect(() => {
-    if (gameState !== 'PLAYING') return;
-
-    const interval = setInterval(() => {
-      updateTelemetryOnInterval();
-    }, 500);
-
-    return () => clearInterval(interval);
-  }, [gameState, updateTelemetryOnInterval]);
+  }, [gameState]);
 
   // Main Keystroke Handler (Active touch-typing listener with down/up press duration tracking)
   useEffect(() => {
