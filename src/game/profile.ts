@@ -114,34 +114,34 @@ export const UPGRADE_CATALOG = {
     {
       level: 1,
       cost: 250,
-      desc: 'Absorbs 1 typing error per stage without breaking combo',
+      desc: 'Absorbs 1 typing error per stage without breaking your Streak',
     },
     {
       level: 2,
       cost: 650,
-      desc: 'Absorbs 2 typing errors per stage without breaking combo',
+      desc: 'Absorbs 2 typing errors per stage without breaking your Streak',
     },
     {
       level: 3,
       cost: 1200,
-      desc: 'Absorbs 3 typing errors per stage without breaking combo',
+      desc: 'Absorbs 3 typing errors per stage without breaking your Streak',
     },
   ],
   hyperdriveReactor: [
     {
       level: 1,
       cost: 300,
-      desc: '+20% Overdrive energy charge rate on combo streaks',
+      desc: '+20% Overdrive meter fill rate',
     },
     {
       level: 2,
       cost: 750,
-      desc: '+40% Overdrive energy charge rate on combo streaks',
+      desc: '+40% Overdrive meter fill rate',
     },
     {
       level: 3,
       cost: 1400,
-      desc: '+60% Overdrive energy charge rate on combo streaks',
+      desc: '+60% Overdrive meter fill rate',
     },
   ],
   precisionSensors: [

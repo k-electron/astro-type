@@ -285,8 +285,8 @@ export const StageSelectModal: React.FC<StageSelectModalProps> = ({
                 <div className="flex items-center gap-2 p-3 rounded-lg border border-amber-500/40 bg-amber-950/30 text-amber-300 text-xs font-medium">
                   <Lock className="w-4 h-4 shrink-0 text-amber-400" />
                   <span>
-                    Sector Locked. Earn {starsRemaining} more stars to open warp
-                    gates.
+                    Sector Locked. Earn {starsRemaining} more stars to unlock
+                    this Sector.
                   </span>
                 </div>
               )}

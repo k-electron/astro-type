@@ -267,8 +267,8 @@ export default function App() {
                   Rhythm Space Highway
                 </span>
                 <p className="text-xs text-slate-400">
-                  9-lane falling keystroke notes, PERFECT strike timing, combo
-                  multipliers, and Hyperspace warp drive.
+                  9-lane falling keystroke notes, PERFECT strike timing, Streak
+                  Multipliers, and Overdrive.
                 </p>
               </div>
 

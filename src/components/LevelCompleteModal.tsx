@@ -326,7 +326,7 @@ export const LevelCompleteModal: React.FC<LevelCompleteModalProps> = ({
         {hasUnlockedNextSector && (
           <div className="w-full mb-5 p-3 rounded-xl border border-cyan-500/50 bg-cyan-950/40 text-cyan-200 text-xs font-mono flex items-center justify-center gap-2">
             <Sparkles className="w-4 h-4 text-cyan-400 shrink-0" />
-            <span>Warp Gate Opened: New Interstellar Sector Unlocked!</span>
+            <span>New Sector Unlocked! Find it on the Galaxy Map.</span>
           </div>
         )}
 
