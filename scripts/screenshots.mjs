@@ -39,7 +39,7 @@ import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const update = process.argv.includes('--update');
-const baselines = join(root, 'tests/browser/__screenshots__');
+const baselines = join(root, 'tests/browser/screenshots.spec.ts-snapshots');
 const stamp = join(baselines, 'playwright-version.txt');
 const results = join(root, 'screenshot-results');
 
@@ -53,14 +53,16 @@ const readJson = (file) => JSON.parse(readFileSync(join(root, file), 'utf8'));
 /** The exact @playwright/test the repo installs: it names the image. */
 function playwrightVersion() {
   const installed = join(root, 'node_modules/@playwright/test/package.json');
-  if (existsSync(installed)) return JSON.parse(readFileSync(installed, 'utf8')).version;
+  if (existsSync(installed))
+    return JSON.parse(readFileSync(installed, 'utf8')).version;
   const range = readJson('package.json').devDependencies['@playwright/test'];
   return range.replace(/^[^0-9]*/, '');
 }
 
 const version = playwrightVersion();
 const nodeVersion = readFileSync(join(root, '.node-version'), 'utf8').trim();
-const pnpmVersion = readJson('package.json').packageManager.match(/^pnpm@([^+]+)/)?.[1];
+const pnpmVersion =
+  readJson('package.json').packageManager.match(/^pnpm@([^+]+)/)?.[1];
 if (!pnpmVersion) fail('package.json has no "packageManager": "pnpm@x.y.z".');
 const image = `mcr.microsoft.com/playwright:v${version}-noble`;
 
@@ -78,21 +80,27 @@ if (!update) {
 }
 
 if (spawnSync('docker', ['info'], { stdio: 'ignore' }).status !== 0) {
-  fail('Docker is not running. The screenshot checks run in the Playwright Docker image.');
+  fail(
+    'Docker is not running. The screenshot checks run in the Playwright Docker image.',
+  );
 }
 
 // What goes into the container: every tracked or untracked-but-not-ignored
 // file that exists on disk (so uncommitted edits are checked, and deleted
 // files are not).
-const listed = spawnSync('git', ['ls-files', '-z', '--cached', '--others', '--exclude-standard'], {
-  cwd: root,
-  encoding: 'buffer',
-  maxBuffer: 64 * 1024 * 1024,
-});
-if (listed.status !== 0) fail('git ls-files failed.');
-const files = [...new Set(listed.stdout.toString('utf8').split('\0').filter(Boolean))].filter((file) =>
-  existsSync(join(root, file)),
+const listed = spawnSync(
+  'git',
+  ['ls-files', '-z', '--cached', '--others', '--exclude-standard'],
+  {
+    cwd: root,
+    encoding: 'buffer',
+    maxBuffer: 64 * 1024 * 1024,
+  },
 );
+if (listed.status !== 0) fail('git ls-files failed.');
+const files = [
+  ...new Set(listed.stdout.toString('utf8').split('\0').filter(Boolean)),
+].filter((file) => existsSync(join(root, file)));
 const scratch = mkdtempSync(join(tmpdir(), 'screenshots-'));
 writeFileSync(join(scratch, 'files.txt'), `${files.join('\n')}\n`);
 
@@ -102,13 +110,16 @@ mkdirSync(results, { recursive: true });
 // Runs inside the container, as root, in /work.
 const inside = `
 set -eu
-mkdir -p /work && cd /work && tar -xf -
+mkdir -p /work && cd /work && tar -xf - --exclude='._*'
 curl -fsSL "https://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-linux-x64.tar.gz" | tar -xz -C /opt
 export PATH="/opt/node-v$NODE_VERSION-linux-x64/bin:$PATH"
 npm install --global --silent "pnpm@$PNPM_VERSION"
+echo "[$(date +%T)] installing"
 pnpm install --frozen-lockfile
 echo "in the container: node $(node -v), pnpm $(pnpm -v), $(pnpm exec playwright --version)"
+echo "[$(date +%T)] building"
 pnpm build
+echo "[$(date +%T)] running the checks"
 status=0
 if [ "$UPDATE" = 1 ]; then
   pnpm exec playwright test screenshots --update-snapshots=all || status=$?
@@ -116,15 +127,19 @@ else
   pnpm exec playwright test screenshots || status=$?
 fi
 cp -R test-results playwright-report /out/ 2>/dev/null || true
-if [ "$UPDATE" = 1 ] && [ -d tests/browser/__screenshots__ ]; then cp -R tests/browser/__screenshots__ /out/; fi
+if [ "$UPDATE" = 1 ] && [ -d tests/browser/screenshots.spec.ts-snapshots ]; then cp -R tests/browser/screenshots.spec.ts-snapshots /out/; fi
 exit $status
 `;
 
-console.log(`screenshots: ${update ? 'updating baselines' : 'comparing'} in ${image} (linux/amd64), Node ${nodeVersion}, pnpm ${pnpmVersion}`);
+console.log(
+  `screenshots: ${update ? 'updating baselines' : 'comparing'} in ${image} (linux/amd64), Node ${nodeVersion}, pnpm ${pnpmVersion}`,
+);
 
 const tar = spawn('tar', ['-cf', '-', '-T', join(scratch, 'files.txt')], {
   cwd: root,
   stdio: ['ignore', 'pipe', 'inherit'],
+  // macOS's tar would add `._name` files for extended attributes.
+  env: { ...process.env, COPYFILE_DISABLE: '1' },
 });
 const docker = spawn(
   'docker',
@@ -135,14 +150,22 @@ const docker = spawn(
     '--init',
     '--ipc=host',
     '--platform=linux/amd64',
-    '-e', 'CI=1',
-    '-e', 'PW_SCREENSHOTS=1',
-    '-e', `NODE_VERSION=${nodeVersion}`,
-    '-e', `PNPM_VERSION=${pnpmVersion}`,
-    '-e', `UPDATE=${update ? 1 : 0}`,
-    '-v', `${results}:/out`,
+    '-e',
+    'CI=1',
+    '-e',
+    'PW_SCREENSHOTS=1',
+    '-e',
+    `NODE_VERSION=${nodeVersion}`,
+    '-e',
+    `PNPM_VERSION=${pnpmVersion}`,
+    '-e',
+    `UPDATE=${update ? 1 : 0}`,
+    '-v',
+    `${results}:/out`,
     image,
-    'sh', '-c', inside,
+    'sh',
+    '-c',
+    inside,
   ],
   { stdio: ['pipe', 'inherit', 'inherit'] },
 );
@@ -152,13 +175,15 @@ docker.stdin.on('error', () => {});
 docker.on('exit', (code) => {
   rmSync(scratch, { recursive: true, force: true });
   if (update) {
-    const made = join(results, '__screenshots__');
+    const made = join(results, 'screenshots.spec.ts-snapshots');
     if (code === 0 && existsSync(made)) {
       rmSync(baselines, { recursive: true, force: true });
       cpSync(made, baselines, { recursive: true });
       writeFileSync(stamp, `${version}\n`);
       rmSync(made, { recursive: true, force: true });
-      console.log(`\nscreenshots: baselines updated in tests/browser/__screenshots__ (Playwright ${version}). Look at them, then commit.`);
+      console.log(
+        `\nscreenshots: baselines updated in tests/browser/screenshots.spec.ts-snapshots (Playwright ${version}). Look at them, then commit.`,
+      );
     } else {
       fail('The update did not finish; the baselines are unchanged.');
     }

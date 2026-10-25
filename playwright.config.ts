@@ -11,10 +11,9 @@ export default defineConfig({
   // The Action Deck is drawn with WebGL, in software on a machine with no GPU,
   // and a test that moves a stopped clock draws every frame it steps over.
   timeout: 60_000,
-  // The screenshot checks have one set of baselines, made in CI's Playwright
-  // image (see scripts/screenshots.mjs), so the path has no platform in it.
-  snapshotPathTemplate: '{testDir}/__screenshots__/{testFilePath}/{arg}{ext}',
-  // A baseline is only ever written on purpose, by `pnpm screenshots:update`.
+  // The screenshot checks' baselines (tests/browser/screenshots.spec.ts-snapshots)
+  // are made in CI's Playwright image and only ever written on purpose, by
+  // `pnpm screenshots:update` (see scripts/screenshots.mjs).
   updateSnapshots: 'none',
   forbidOnly: Boolean(process.env.CI),
   // A flaky test is a bug: fix it or delete it, never retry it.

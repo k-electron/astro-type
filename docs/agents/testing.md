@@ -24,7 +24,7 @@ Everything else is covered by browser journeys or by playing. Sound is checked b
 Playwright, in `tests/browser/*.spec.ts`, Chromium only, against the production build.
 - Find things the way a player sees them: by role and visible text. Inside the PixiJS Action Deck, use its accessibility layer (Drones and keycaps labelled at their drawn positions). Read nothing else from the app: no store, no `window` globals, no test hooks.
 - Tag a test `@smoke` and it also runs against the live URL after every deploy. Keep `@smoke` to "a Stage can start" level: quick, and safe to run on production.
-- Screenshot comparisons are limited to a few key frames, and they're compared only in CI's fixed Playwright image.
+- Screenshot comparisons are limited to a few key frames, and they're compared only in CI's fixed Playwright image. `pnpm screenshots` runs them there (CI runs the same command); `pnpm screenshots:update` redraws the baselines on purpose, in `tests/browser/screenshots.spec.ts-snapshots`. Both need Docker. A failure leaves the before, after and diff images in `screenshot-results/test-results`, which CI uploads. The baselines carry the Playwright version they were made with, so a Playwright upgrade (a Dependabot bump) fails the check until the upgrade's branch has run `pnpm screenshots:update` and committed the new pictures. Plain `pnpm test:browser` skips them.
 
 ## Clocks
 
