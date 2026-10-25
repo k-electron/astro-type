@@ -49,7 +49,7 @@ The x1 to x4 factor on each hit's score, rising as the Streak grows.
 _Avoid_: Combo multiplier
 
 **Overdrive**:
-A boosted mode that doubles the score of each hit. Correct keystrokes fill the Overdrive meter, and Overdrive starts when the meter is full.
+A boosted mode that doubles the score of each hit: during Overdrive a hit scores its base points times the Multiplier times 2, and that number is what the Overdrive badges show. Correct keystrokes fill the Overdrive meter, and Overdrive starts when the meter is full.
 _Avoid_: Hyperspace, warp, hyperdrive
 
 **Run Time**:

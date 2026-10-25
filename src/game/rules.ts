@@ -195,6 +195,14 @@ export function multiplierForStreak(streak: number): number {
   return 1;
 }
 
+/** What Overdrive multiplies each hit's base points by. */
+const OVERDRIVE_FACTOR = 2;
+
+/** The number each hit's base points are multiplied by, as the Overdrive badges show it. */
+export function overdriveScoreFactor(multiplier: number): number {
+  return multiplier * OVERDRIVE_FACTOR;
+}
+
 /** Points for one hit. Overdrive doubles them. */
 export function scoreForHit(
   rating: Rating,
@@ -202,7 +210,7 @@ export function scoreForHit(
   overdrive: boolean,
 ): number {
   const base = rating === 'PERFECT' ? 100 : rating === 'GREAT' ? 75 : 50;
-  return base * multiplier * (overdrive ? 2 : 1);
+  return base * (overdrive ? overdriveScoreFactor(multiplier) : multiplier);
 }
 
 /** Overdrive energy after a hit, and whether this hit ignites it. */

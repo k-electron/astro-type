@@ -2,6 +2,7 @@ import type React from 'react';
 import { Shield, Zap, Pause } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { game } from '../appGame';
+import { overdriveScoreFactor } from '../game/rules';
 import { useGameStore } from '../store/useGameStore';
 
 interface HUDProps {
@@ -64,7 +65,9 @@ export const HUD: React.FC<HUDProps> = ({ onPause }) => {
                   : 'border-slate-800 bg-slate-950 text-slate-400'
             }`}
           >
-            {hyperspaceActive ? 'OVERDRIVE x4' : `x${multiplier}`}
+            {hyperspaceActive
+              ? `OVERDRIVE x${overdriveScoreFactor(multiplier)}`
+              : `x${multiplier}`}
           </div>
 
           {/* Overdrive Energy Meter */}

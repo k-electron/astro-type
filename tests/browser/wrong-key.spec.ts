@@ -1,8 +1,10 @@
-import { expect, test } from '@playwright/test';
+import { expect, type Locator, type Page, test } from '@playwright/test';
 import {
+  currentCharacter,
   flightDeck,
   launchFreeFlight,
   promptProgress,
+  textPrompt,
   typeText,
 } from './helpers';
 
@@ -35,48 +37,154 @@ test('a wrong key is a Miss: Streak resets and the character stays to be typed',
   await expect(deck).toContainText(/Streak\s*1(?!\d)/i);
 });
 
-// Journey 2 of the spec says a wrong key "marks the character in the text
-// prompt". Today's game doesn't: the prompt looks the same before and after a
-// Miss, and the only signs of it are the HUD's Streak and Accuracy. Whether
-// that is a bug or a rule change is the project owner's call (ticket #17), so
-// this is parked with `fixme` until it is decided; then drop `fixme` and pin
-// the exact mark down. (It was `test.fail`, but its "settled" poll could read
-// a transition as settled under load and "pass", which CI would report red.)
-test.fixme('a wrong key marks the character in the text prompt', async ({
+// Spec story 30: a wrong character key marks the character in the text prompt
+// at once. The mark is the one the prompt has always drawn on a character that
+// was typed wrong (a strike-through), which until now showed only after the
+// right key moved the cursor on. The cursor stays where it is until then.
+//
+// Only the strike-through is pinned, not its colour: the cursor's highlight may
+// share the character with it.
+
+/** One character of the text prompt. Use texts with no repeats. */
+const promptCharacter = (page: Page, character: string): Locator =>
+  textPrompt(page).getByText(character, { exact: true });
+
+const expectStruck = (character: Locator) =>
+  expect(character).toHaveCSS('text-decoration-line', 'line-through');
+
+const expectNotStruck = (character: Locator) =>
+  expect(character).not.toHaveCSS('text-decoration-line', 'line-through');
+
+/** Only the characters listed are marked in the prompt; the rest are not. */
+async function expectOnlyMarked(page: Page, marked: string) {
+  for (const character of TEXT) {
+    const element = promptCharacter(page, character);
+    if (marked.includes(character)) await expectStruck(element);
+    else await expectNotStruck(element);
+  }
+}
+
+test('a wrong key marks the character at once, and the cursor stays on it', async ({
   page,
 }) => {
   await launchFreeFlight(page, TEXT);
   await typeText(page, 'abc');
   await expect(promptProgress(page)).toHaveText('50%');
-
-  // The character still to be typed ("d"), however the prompt draws it.
-  const current = page.getByText('d', { exact: true });
-  const appearance = () =>
-    current.evaluate((element) => {
-      const style = getComputedStyle(element);
-      return [
-        style.color,
-        style.backgroundColor,
-        style.boxShadow,
-        style.outlineColor,
-        style.textDecorationLine,
-        style.opacity,
-      ].join('|');
-    });
-
-  // Let the colour transition from the last hit settle first.
-  let previous = '';
-  await expect
-    .poll(async () => {
-      const now = await appearance();
-      const settled = now === previous;
-      previous = now;
-      return settled;
-    })
-    .toBe(true);
-  const before = await appearance();
+  await expectOnlyMarked(page, '');
 
   await page.keyboard.press('z');
 
-  await expect.poll(appearance, { timeout: 2000 }).not.toBe(before);
+  // The cursor is still on "d", and "d" is already marked.
+  await expect(currentCharacter(page)).toHaveText('d');
+  await expectStruck(currentCharacter(page));
+  await expect(promptProgress(page)).toHaveText('50%');
+  await expectOnlyMarked(page, 'd');
+
+  // The right key moves the cursor on; the mark stays behind on "d".
+  await page.keyboard.press('d');
+  await expect(promptProgress(page)).toHaveText('67%');
+  await expect(currentCharacter(page)).toHaveText('e');
+  await expectNotStruck(currentCharacter(page));
+  await expectOnlyMarked(page, 'd');
+});
+
+test('several wrong keys on one character leave one mark', async ({ page }) => {
+  await launchFreeFlight(page, TEXT);
+  await typeText(page, 'abc');
+
+  for (const key of ['z', 'x', 'q']) await page.keyboard.press(key);
+
+  // The wrong keys aren't added to the prompt: it still reads the same text.
+  await expect(textPrompt(page)).toContainText(TEXT);
+  await expect(currentCharacter(page)).toHaveText('d');
+  await expectOnlyMarked(page, 'd');
+  await expect(promptProgress(page)).toHaveText('50%');
+
+  await page.keyboard.press('d');
+  await expect(promptProgress(page)).toHaveText('67%');
+  await expectOnlyMarked(page, 'd');
+});
+
+test('a wrong key on the first character is marked too', async ({ page }) => {
+  await launchFreeFlight(page, TEXT);
+
+  await page.keyboard.press('z');
+
+  await expect(currentCharacter(page)).toHaveText('a');
+  await expectStruck(currentCharacter(page));
+  await expectOnlyMarked(page, 'a');
+});
+
+test('a Miss that a shield absorbs is marked all the same', async ({
+  page,
+}) => {
+  // The shield only spares the Streak. The player still typed the wrong key.
+  // The Profile is written the way the game saves it, before the page loads.
+  await page.addInitScript(() => {
+    localStorage.setItem(
+      'astrotype_profile_v1',
+      JSON.stringify({ version: 1, upgrades: { deflectorShields: 2 } }),
+    );
+  });
+  await launchFreeFlight(page, TEXT);
+  await typeText(page, 'abc');
+  await expect(flightDeck(page)).toContainText(/Streak\s*3(?!\d)/i);
+
+  await page.keyboard.press('z');
+
+  await expect(currentCharacter(page)).toHaveText('d');
+  await expectStruck(currentCharacter(page));
+  await page.keyboard.press('d');
+  await expect(promptProgress(page)).toHaveText('67%');
+  // The shield absorbed the Miss, so the Streak carried on.
+  await expect(flightDeck(page)).toContainText(/Streak\s*4(?!\d)/i);
+  await expectOnlyMarked(page, 'd');
+});
+
+// Keys that don't type a character mark nothing. Each test presses one where
+// "d" is to be typed, then types "d" as a barrier: the mark stays on the
+// character once it is made, so a wrongly marked "d" would show by then.
+// Escape is left out: it pauses the Run.
+const IGNORED_KEYS = [
+  'Backspace',
+  'Enter',
+  'ArrowLeft',
+  'ArrowDown',
+  'F2',
+  'Control+z',
+  'Meta+z',
+] as const;
+
+for (const key of IGNORED_KEYS) {
+  test(`${key} marks nothing in the text prompt`, async ({ page }) => {
+    await launchFreeFlight(page, TEXT);
+    await typeText(page, 'abc');
+    await expect(promptProgress(page)).toHaveText('50%');
+
+    await page.keyboard.press(key);
+    await page.keyboard.press('d');
+
+    await expect(promptProgress(page)).toHaveText('67%');
+    await expectOnlyMarked(page, '');
+  });
+}
+
+test('holding a right key marks nothing; holding a wrong key marks once', async ({
+  page,
+}) => {
+  await launchFreeFlight(page, TEXT);
+
+  // A held right key: its auto-repeat adds no Miss to the next character.
+  for (let i = 0; i < 6; i++) await page.keyboard.down('a');
+  await page.keyboard.up('a');
+  await page.keyboard.press('b');
+  await expect(promptProgress(page)).toHaveText('33%');
+  await expectOnlyMarked(page, '');
+
+  // A held wrong key marks the one character it was pressed on.
+  for (let i = 0; i < 6; i++) await page.keyboard.down('z');
+  await page.keyboard.up('z');
+  await expect(currentCharacter(page)).toHaveText('c');
+  await expectStruck(currentCharacter(page));
+  await expectOnlyMarked(page, 'c');
 });
