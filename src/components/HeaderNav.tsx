@@ -81,6 +81,23 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
 }) => {
   const [isAudioMenuOpen, setIsAudioMenuOpen] = useState(false);
   const audioMenuRef = useRef<HTMLDivElement>(null);
+  const headerRef = useRef<HTMLElement>(null);
+
+  // Screens that cover the page start below the header, so its buttons stay
+  // clickable on every screen. They read the header's height from here.
+  useEffect(() => {
+    const header = headerRef.current;
+    if (!header) return;
+    const publish = () =>
+      document.documentElement.style.setProperty(
+        '--header-height',
+        `${header.offsetHeight}px`,
+      );
+    publish();
+    const observer = new ResizeObserver(publish);
+    observer.observe(header);
+    return () => observer.disconnect();
+  }, []);
 
   // Close audio menu on outside click or escape
   useEffect(() => {
@@ -110,7 +127,10 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
   }, [isAudioMenuOpen]);
 
   return (
-    <header className="w-full flex items-center justify-between gap-3 sm:gap-6 px-3 sm:px-6 py-3 border-b border-slate-800 bg-slate-950/85 backdrop-blur-md sticky top-0 z-40">
+    <header
+      ref={headerRef}
+      className="w-full flex items-center justify-between gap-3 sm:gap-6 px-3 sm:px-6 py-3 border-b border-slate-800 bg-slate-950/85 backdrop-blur-md sticky top-0 z-40"
+    >
       {/* Zone 1: Brand Wordmark (Go Home) & Gamification Telemetry */}
       <div className="flex items-center gap-3 shrink-0">
         <button

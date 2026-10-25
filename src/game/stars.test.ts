@@ -19,7 +19,7 @@ describe('Stars from WPM, accuracy and Streak', () => {
     const game = startedGame();
     clearStage(game, { seconds: 60 });
 
-    expect(game.getScreen()).toBe('VICTORY');
+    expect(game.getScreen()).toBe('debrief');
     const debrief = debriefOf(game);
     expect(debrief.wpm).toBe(15); // 77 correct keys / 5 per word / 1 minute = 15.4
     expect(debrief.accuracy).toBe(100);

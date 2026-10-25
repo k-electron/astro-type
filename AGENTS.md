@@ -13,7 +13,7 @@ A browser typing game: React and Tailwind for the screens, a Zustand store and a
 
 This is today's layout. The [v1 map (#1)](https://github.com/k-electron/astro-type/issues/1) is migrating it, and ADR-0001 sets the target split between the store and the machine.
 - **Game rules and the live Run:** `src/store/useGameStore.ts`. This covers Judgement, scoring, Streak, Overdrive, shields, Stars and Credits.
-- **Screens and the moves between them:** `src/store/gameMachine.ts`. Today, a screen change goes through the store's `setGameState`, which runs side effects and then sends the machine an event, and the machine silently drops any event it doesn't accept.
+- **Screens and the moves between them:** `src/store/gameMachine.ts`. It is the only authority on the screen and the Run phase. Buttons send what the player did (`game.send({ type: 'PRESS_CLOSE' })`), the machine changes data only through the store's named Run actions, and a move it refuses changes nothing: it warns in dev builds and throws `RefusedMoveError` in the headless game.
 - **Action Deck:** `src/components/IntegratedLanesKeyboard.tsx`. It's drawn with the DOM today; PixiJS is planned.
 - **Curriculum:** `src/data/curriculum.ts`.
 - **Save and Backup:** `src/utils/storage.ts`, with the schemas in `src/store/schemas.ts`.

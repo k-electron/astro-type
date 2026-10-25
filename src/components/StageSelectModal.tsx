@@ -12,7 +12,8 @@ import {
   RotateCcw,
   AlertTriangle,
 } from 'lucide-react';
-import { Sector, Stage, StageProgress } from '../types/game';
+import { Sector, Screen, Stage, StageProgress } from '../types/game';
+import { flightDeckLabel } from './closeLabel';
 import { CURRICULUM_SECTORS } from '../data/curriculum';
 import { isSectorUnlocked } from '../game/profile';
 
@@ -26,7 +27,10 @@ interface StageSelectModalProps {
   onOpenHangar: () => void;
   onOpenAnalytics: () => void;
   onWipeAchievements: () => void;
-  sourceState?: 'MENU' | 'PLAYING' | 'VICTORY' | 'PAUSED' | 'STAGE_SELECT';
+  /** The screen Close returns to. */
+  opener?: Screen | null;
+  /** A paused Run is waiting, so the Flight Deck button resumes it. */
+  runPaused?: boolean;
   onReturnToDebrief?: () => void;
   onReturnToMenu?: () => void;
 }
@@ -41,7 +45,8 @@ export const StageSelectModal: React.FC<StageSelectModalProps> = ({
   onOpenHangar,
   onOpenAnalytics,
   onWipeAchievements,
-  sourceState = 'MENU',
+  opener = null,
+  runPaused = false,
   onReturnToDebrief,
   onReturnToMenu,
 }) => {
@@ -57,7 +62,7 @@ export const StageSelectModal: React.FC<StageSelectModalProps> = ({
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
+    <div className="fixed inset-x-0 bottom-0 top-[var(--header-height,0px)] z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
       <div className="w-full max-w-5xl rounded-2xl border border-slate-800 bg-slate-900 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         {/* Top Header Bar */}
         <div className="flex flex-wrap items-center justify-between gap-4 p-4 sm:p-6 border-b border-slate-800 bg-slate-950/70">
@@ -126,7 +131,7 @@ export const StageSelectModal: React.FC<StageSelectModalProps> = ({
                 Report
               </button>
 
-              {sourceState === 'VICTORY' ? (
+              {opener === 'debrief' ? (
                 <div className="flex items-center gap-1.5">
                   <button
                     onClick={onReturnToDebrief || onClose}
@@ -154,14 +159,10 @@ export const StageSelectModal: React.FC<StageSelectModalProps> = ({
                       title="Launch directly into the cockpit flight deck"
                     >
                       <Play className="w-3.5 h-3.5 fill-current" />
-                      <span>
-                        {sourceState === 'PLAYING'
-                          ? 'Resume Flight'
-                          : 'Enter Flight Deck'}
-                      </span>
+                      <span>{flightDeckLabel(runPaused)}</span>
                     </button>
                   )}
-                  {onReturnToMenu && sourceState !== 'MENU' && (
+                  {onReturnToMenu && opener !== 'academy-home' && (
                     <button
                       onClick={onReturnToMenu}
                       className="px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-700 bg-slate-800 text-slate-300 hover:text-white transition-colors flex items-center gap-1 cursor-pointer whitespace-nowrap"

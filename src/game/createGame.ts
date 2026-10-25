@@ -8,17 +8,13 @@
 import { createActor } from 'xstate';
 import type { StoreApi } from 'zustand/vanilla';
 import { getStageById } from '../data/curriculum';
-import {
-  gameMachine,
-  mapGameStateToMachineEvent,
-  mapMachineStateToGameState,
-  type GameMachineEvent,
-} from '../store/gameMachine';
+import { createGameMachine, type PlayerEvent } from '../store/gameMachine';
 import type {
   FallingNote,
-  GameState,
   LivePerformance,
   PlayerProfile,
+  RunPhase,
+  Screen,
   Stage,
 } from '../types/game';
 import { type Clock, createSteppedClock } from './clock';
@@ -35,6 +31,22 @@ export type { SaveStorage } from './save';
 export type { Clock } from './clock';
 export type { GameEffects } from './effects';
 export type { GameStoreState, VictoryResult } from './gameStore';
+export type { PlayerEvent } from '../store/gameMachine';
+export type { RunPhase, Screen } from '../types/game';
+
+/** The machine refused a move: the player event doesn't apply on this screen. A bug in whoever sent it. */
+export class RefusedMoveError extends Error {
+  constructor(
+    readonly event: PlayerEvent,
+    readonly screen: Screen,
+    readonly phase: RunPhase,
+  ) {
+    super(
+      `Refused move: ${event.type} on the ${screen} screen (Run phase: ${phase})`,
+    );
+    this.name = 'RefusedMoveError';
+  }
+}
 
 type HighwaySpeed = PlayerProfile['highwaySpeed'];
 
@@ -48,6 +60,12 @@ export interface GameOptions {
    * The app passes a real-time one and drives `step` from a timer.
    */
   clock?: Clock;
+  /**
+   * What to do with a move the machine refuses. The move changes nothing
+   * either way. The default throws `RefusedMoveError`, so a test that triggers
+   * one fails; the app passes a console warning for dev builds.
+   */
+  onRefusedMove?: (error: RefusedMoveError) => void;
 }
 
 /** The live Run: the performance numbers, plus the Drones and the Stage. */
@@ -58,18 +76,22 @@ export type Run = LivePerformance & {
 };
 
 export interface Game {
-  /** Begin a Run of a Stage (or a curriculum Stage id), at an optional speed. */
+  /** Begin a Run of a Stage (or a curriculum Stage id), at an optional speed. Sends PICK_STAGE or LAUNCH_FREE_FLIGHT. */
   startStage(stageOrId: Stage | string, speed?: HighwaySpeed): void;
-  /**
-   * Send a player event, as the app does today: navigation events run the
-   * store's side effects first. The machine drops what it doesn't accept.
-   */
-  send(event: GameMachineEvent): void;
+  /** Send what the player did. A refused move changes nothing and goes to `onRefusedMove`. */
+  send(event: PlayerEvent): void;
+  /** Would the machine accept this event now? */
+  canSend(event: PlayerEvent): boolean;
   /** Press a character key, as a keydown does. */
   pressKey(key: string): void;
   /** Advance the Run clock by `count` steps of 1/60 s. */
   step(count?: number): void;
-  getScreen(): GameState;
+  getScreen(): Screen;
+  getPhase(): RunPhase;
+  /** The screen that opened this one (what Close returns to), or null when nothing did. */
+  getOpener(): Screen | null;
+  /** Call `listener` after every move. Returns the unsubscribe function. */
+  subscribe(listener: () => void): () => void;
   getRun(): Run;
   getDebrief(): VictoryResult | null;
   getProfile(): PlayerProfile;
@@ -77,77 +99,83 @@ export interface Game {
   readonly store: StoreApi<GameStoreState>;
 }
 
-const NAVIGATION_TARGETS: GameState[] = [
-  'MENU',
-  'PLAYING',
-  'PAUSED',
-  'STAGE_SELECT',
-  'HANGAR',
-  'ANALYTICS',
-  'CUSTOM_PRACTICE',
-  'VICTORY',
-];
-
 /** The telemetry tick: every 30 steps, which is 500 ms at 60 steps a second. */
 const TELEMETRY_EVERY_STEPS = 30;
 
 export function createGame(options: GameOptions): Game {
   const clock = options.clock ?? createSteppedClock();
   const effects: GameEffects = { ...silentEffects, ...options.effects };
+  const onRefusedMove =
+    options.onRefusedMove ??
+    ((error: RefusedMoveError) => {
+      throw error;
+    });
 
-  const actor = createActor(gameMachine);
-  actor.start();
+  // The machine drives the store's named Run actions; the store reads the
+  // phase and reports "Run cleared". They meet here.
+  const machine = createGameMachine({
+    beginRun: (stage, speed) => store.getState().beginRun(stage, speed),
+    pauseRun: () => store.getState().pauseRun(),
+    resumeRun: () => store.getState().resumeRun(),
+    abandonRun: () => store.getState().abandonRun(),
+    recordResult: () => store.getState().recordResult(),
+    currentStage: () => store.getState().currentStage,
+  });
+  const actor = createActor(machine);
+
+  const getPhase = (): RunPhase => actor.getSnapshot().context.phase;
+  const getScreen = (): Screen => actor.getSnapshot().value as Screen;
 
   const store = createGameStore({
-    actor,
+    getPhase,
+    reportRunCleared: () => actor.send({ type: 'RUN_CLEARED' }),
     storage: options.storage,
     clock,
     effects,
   });
 
-  const getScreen = () =>
-    mapMachineStateToGameState(String(actor.getSnapshot().value));
-
-  // The telemetry timer starts afresh each time the Flight Deck opens.
+  // The telemetry timer starts afresh each time the Run starts running.
   let telemetrySteps = 0;
-  let lastScreen = getScreen();
+  let lastPhase = getPhase();
   actor.subscribe(() => {
-    const screen = getScreen();
-    if (screen !== lastScreen) {
-      lastScreen = screen;
+    const phase = getPhase();
+    if (phase !== lastPhase) {
+      lastPhase = phase;
       telemetrySteps = 0;
     }
   });
+  actor.start();
+
+  const canSend = (event: PlayerEvent) => actor.getSnapshot().can(event);
+
+  const send = (event: PlayerEvent) => {
+    if (!canSend(event)) {
+      onRefusedMove(new RefusedMoveError(event, getScreen(), getPhase()));
+      return;
+    }
+    actor.send(event);
+  };
 
   return {
     startStage(stageOrId, speed) {
-      const stage =
-        typeof stageOrId === 'string' ? getStageById(stageOrId) : stageOrId;
-      if (!stage) throw new Error(`Unknown Stage: ${stageOrId}`);
-      store.getState().startStage(stage, speed);
-    },
-    send(event) {
-      // Today the app never sends these events to the machine itself: it goes
-      // through setGameState, which runs the store's side effects (beat stop,
-      // Streak reset, Run reset on Home) and then sends the machine its event.
-      // Do the same, so a caller sees what a player sees. The machine rewrite
-      // (#19) replaces this.
-      const target = NAVIGATION_TARGETS.find(
-        (screen) => mapGameStateToMachineEvent(screen).type === event.type,
-      );
-      if (target) {
-        store.getState().setGameState(target);
-      } else {
-        actor.send(event);
+      if (typeof stageOrId !== 'string') {
+        send({ type: 'LAUNCH_FREE_FLIGHT', stage: stageOrId, speed });
+        return;
       }
+      const stage = getStageById(stageOrId);
+      if (!stage) throw new Error(`Unknown Stage: ${stageOrId}`);
+      if (speed) send({ type: 'LAUNCH_FREE_FLIGHT', stage, speed });
+      else send({ type: 'PICK_STAGE', stageId: stageOrId });
     },
+    send,
+    canSend,
     pressKey(key) {
       store.getState().processKeystroke(key);
     },
     step(count = 1) {
       for (let i = 0; i < count; i++) {
         clock.step(1);
-        if (getScreen() !== 'PLAYING') continue;
+        if (getPhase() !== 'running') continue;
         store.getState().updateFallingNotesOnTick();
         telemetrySteps += 1;
         if (telemetrySteps % TELEMETRY_EVERY_STEPS === 0) {
@@ -156,6 +184,15 @@ export function createGame(options: GameOptions): Game {
       }
     },
     getScreen,
+    getPhase,
+    getOpener() {
+      const { openers } = actor.getSnapshot().context;
+      return openers[openers.length - 1] ?? null;
+    },
+    subscribe(listener) {
+      const subscription = actor.subscribe(listener);
+      return () => subscription.unsubscribe();
+    },
     getRun() {
       const state = store.getState();
       return {

@@ -2,15 +2,19 @@
  * AstroType Core Data Contracts & State Types
  */
 
-export type GameState =
-  | 'MENU'
-  | 'PLAYING'
-  | 'PAUSED'
-  | 'VICTORY'
-  | 'STAGE_SELECT'
-  | 'HANGAR'
-  | 'ANALYTICS'
-  | 'CUSTOM_PRACTICE';
+/** The screens, named as in GLOSSARY.md. The machine decides which one shows. */
+export type Screen =
+  | 'academy-home'
+  | 'flight-deck'
+  | 'pause-menu'
+  | 'galaxy-map'
+  | 'hangar'
+  | 'analytics'
+  | 'free-flight'
+  | 'debrief';
+
+/** Where the Run is: none yet since load, or running, paused, cleared or abandoned. */
+export type RunPhase = 'none' | 'running' | 'paused' | 'cleared' | 'abandoned';
 
 export type FingerZone =
   | 'LEFT_PINKY'

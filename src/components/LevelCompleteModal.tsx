@@ -76,7 +76,7 @@ export const LevelCompleteModal: React.FC<LevelCompleteModalProps> = ({
   }, [starsEarned]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/85 backdrop-blur-md overflow-y-auto">
+    <div className="fixed inset-x-0 bottom-0 top-[var(--header-height,0px)] z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/85 backdrop-blur-md overflow-y-auto">
       <div className="w-full max-w-xl rounded-2xl border border-slate-800 bg-slate-900 shadow-2xl p-6 sm:p-8 flex flex-col items-center text-center my-auto">
         {/* Stage Badge & Title */}
         <span className="text-xs uppercase font-mono tracking-wider text-cyan-400 mb-1">

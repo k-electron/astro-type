@@ -1,20 +1,15 @@
 import { createStore, type StoreApi } from 'zustand/vanilla';
-import type { ActorRefFrom } from 'xstate';
 import type {
   FallingNote,
-  GameState,
   LivePerformance,
   PlayerProfile,
+  RunPhase,
   Stage,
   TrailColorTheme,
   AudioSynthCore,
   BeatTheme,
 } from '../types/game';
-import {
-  CURRICULUM_SECTORS,
-  getNextStage,
-  getNoteLaneAndFinger,
-} from '../data/curriculum';
+import { CURRICULUM_SECTORS, getNoteLaneAndFinger } from '../data/curriculum';
 import {
   DEFAULT_PROFILE,
   hydrateProfile,
@@ -40,12 +35,6 @@ import {
   seedDrones,
   telemetry,
 } from './rules';
-import {
-  type gameMachine,
-  mapGameStateToMachineEvent,
-  mapMachineStateToGameState,
-  type GameMachineEvent,
-} from '../store/gameMachine';
 
 export interface VictoryResult {
   score: number;
@@ -60,8 +49,8 @@ export interface VictoryResult {
 }
 
 export interface GameStoreState {
-  // Machine & Game State
-  gameState: GameState;
+  // The live Run, the Debrief and the Profile. The screen and the Run phase
+  // are the machine's, not copied here.
   currentStage: Stage;
   profile: PlayerProfile;
   performance: LivePerformance;
@@ -77,20 +66,22 @@ export interface GameStoreState {
   sessionKeyStats: Record<string, { hits: number; misses: number }>;
   recentKeystrokeTimes: number[];
 
-  // Actions
-  sendGameEvent: (event: GameMachineEvent) => void;
-  setGameState: (state: GameState) => void;
-  setCurrentStage: (stage: Stage) => void;
-  startStage: (
+  // Run moves: the machine calls these, once per accepted move. Each one is
+  // the data change and the sound that goes with the move.
+  beginRun: (
     stage: Stage,
     customSpeed?: 'SLOW' | 'NORMAL' | 'FAST' | 'HYPER',
   ) => void;
+  pauseRun: () => void;
+  resumeRun: () => void;
+  abandonRun: () => void;
+  recordResult: () => void;
+
+  // Player-driven actions
   processKeystroke: (key: string) => void;
   releaseKeystroke: (key?: string) => void;
   updateFallingNotesOnTick: () => void;
   updateTelemetryOnInterval: () => void;
-  handleStageComplete: () => void;
-  launchNextStage: () => void;
 
   // Settings & Upgrades
   toggleGlobalMute: () => void;
@@ -113,7 +104,10 @@ export interface GameStoreState {
 }
 
 export interface GameStoreDeps {
-  actor: ActorRefFrom<typeof gameMachine>;
+  /** The machine's Run phase. The store reads it only to gate data changes. */
+  getPhase: () => RunPhase;
+  /** Tell the machine the last character was typed. */
+  reportRunCleared: () => void;
   storage: SaveStorage;
   clock: Clock;
   effects: GameEffects;
@@ -125,25 +119,29 @@ export interface GameStoreDeps {
  * come in through `deps`.
  */
 export function createGameStore({
-  actor: gameActor,
+  getPhase,
+  reportRunCleared,
   storage,
   clock,
   effects,
 }: GameStoreDeps): StoreApi<GameStoreState> {
   const saveProfile = (profile: PlayerProfile) => storage.save(profile);
+  // Wiping or resetting sends the player back to the first Stage, unless a
+  // Run is still on show (paused, or cleared with its Debrief to come back to).
+  const backToFirstStageUnlessRun = () =>
+    getPhase() === 'none' || getPhase() === 'abandoned'
+      ? { currentStage: CURRICULUM_SECTORS[0].stages[0], victoryResult: null }
+      : {};
+  const beatAllowed = (profile: PlayerProfile) =>
+    profile.musicEnabled &&
+    !profile.globalMuted &&
+    (profile.musicVolume ?? 0.4) > 0;
 
   return createStore<GameStoreState>((set, get) => {
     // Load initial validated profile
     const savedProfile = validateProfileWithZod(hydrateProfile(storage.load()));
 
-    // Connect XState Actor to store updates
-    gameActor.subscribe((snapshot) => {
-      const nextGameState = mapMachineStateToGameState(String(snapshot.value));
-      set({ gameState: nextGameState });
-    });
-
     return {
-      gameState: 'MENU',
       currentStage: CURRICULUM_SECTORS[0].stages[0],
       profile: savedProfile,
       performance: freshPerformance(savedProfile.upgrades.deflectorShields),
@@ -157,50 +155,7 @@ export function createGameStore({
       sessionKeyStats: {},
       recentKeystrokeTimes: [],
 
-      sendGameEvent: (event: GameMachineEvent) => {
-        gameActor.send(event);
-      },
-
-      setGameState: (nextState: GameState) => {
-        if (nextState !== 'PLAYING') {
-          effects.stopBeat();
-          effects.setOverdrive(false);
-          const currentPerf = get().performance;
-          set({
-            performance: {
-              ...currentPerf,
-              hyperspaceActive: false,
-              multiplier: 1,
-              currentStreak: 0,
-              hyperspaceEnergy: 0,
-            },
-            activeLaneIndex: null,
-            lastPressedKey: null,
-          });
-        }
-        if (nextState === 'MENU') {
-          set({
-            performance: freshPerformance(
-              get().profile.upgrades.deflectorShields,
-            ),
-            activeLaneIndex: null,
-            lastPressedKey: null,
-            fallingNotes: [],
-            errorIndices: new Set(),
-            victoryResult: null,
-            stageStartTime: null,
-            sessionKeyStats: {},
-          });
-        }
-        const event = mapGameStateToMachineEvent(nextState);
-        gameActor.send(event);
-      },
-
-      setCurrentStage: (stage: Stage) => {
-        set({ currentStage: stage });
-      },
-
-      startStage: (
+      beginRun: (
         stage: Stage,
         customSpeed?: 'SLOW' | 'NORMAL' | 'FAST' | 'HYPER',
       ) => {
@@ -214,11 +169,9 @@ export function createGameStore({
           set({ profile: speedProfile });
           saveProfile(speedProfile);
         }
-        if (profile.musicEnabled) {
+        if (beatAllowed(profile)) {
           effects.startBeat();
         }
-
-        gameActor.send({ type: 'START', stageId: stage.id });
 
         const now = clock.now();
 
@@ -237,9 +190,39 @@ export function createGameStore({
         });
       },
 
+      pauseRun: () => {
+        effects.stopBeat();
+        effects.setOverdrive(false);
+        // Streak, Multiplier and Overdrive stay exactly as they were.
+        set({ activeLaneIndex: null, lastPressedKey: null });
+      },
+
+      resumeRun: () => {
+        if (beatAllowed(get().profile)) {
+          effects.startBeat();
+        }
+      },
+
+      abandonRun: () => {
+        effects.stopBeat();
+        effects.setOverdrive(false);
+        set({
+          performance: freshPerformance(
+            get().profile.upgrades.deflectorShields,
+          ),
+          activeLaneIndex: null,
+          lastPressedKey: null,
+          fallingNotes: [],
+          errorIndices: new Set(),
+          victoryResult: null,
+          stageStartTime: null,
+          sessionKeyStats: {},
+        });
+      },
+
       processKeystroke: (pressedKey: string) => {
         const state = get();
-        if (state.gameState !== 'PLAYING') return;
+        if (getPhase() !== 'running') return;
 
         if (IGNORED_KEYS.includes(pressedKey)) {
           return;
@@ -354,7 +337,7 @@ export function createGameStore({
 
           // Stage completed check
           if (nextCharIndex >= targetText.length) {
-            get().handleStageComplete();
+            reportRunCleared();
           }
         } else {
           // Keystroke Error Miss
@@ -388,7 +371,7 @@ export function createGameStore({
 
       updateFallingNotesOnTick: () => {
         const state = get();
-        if (state.gameState !== 'PLAYING') return;
+        if (getPhase() !== 'running') return;
 
         set({
           fallingNotes: moveDrones(
@@ -400,7 +383,7 @@ export function createGameStore({
 
       updateTelemetryOnInterval: () => {
         const state = get();
-        if (state.gameState !== 'PLAYING' || state.stageStartTime === null) {
+        if (getPhase() !== 'running' || state.stageStartTime === null) {
           return;
         }
 
@@ -412,9 +395,8 @@ export function createGameStore({
         set({ performance: telemetry(state.performance, elapsedSeconds) });
       },
 
-      handleStageComplete: () => {
+      recordResult: () => {
         const state = get();
-        gameActor.send({ type: 'STAGE_CLEAR' });
         effects.stopBeat();
         effects.setOverdrive(false);
         effects.playStageVictory();
@@ -485,18 +467,8 @@ export function createGameStore({
         });
       },
 
-      launchNextStage: () => {
-        const state = get();
-        const next = getNextStage(state.currentStage.id);
-        if (next) {
-          get().startStage(next);
-        } else {
-          gameActor.send({ type: 'SELECT_STAGE' });
-        }
-      },
-
       toggleGlobalMute: () => {
-        const { profile, gameState } = get();
+        const { profile } = get();
         const nextMuted = !profile.globalMuted;
         const updated = validateProfileWithZod({
           ...profile,
@@ -509,7 +481,7 @@ export function createGameStore({
           !nextMuted &&
           profile.musicEnabled &&
           (profile.musicVolume ?? 0.4) > 0 &&
-          gameState === 'PLAYING'
+          getPhase() === 'running'
         ) {
           effects.startBeat();
         }
@@ -528,7 +500,7 @@ export function createGameStore({
       },
 
       toggleMusic: () => {
-        const { profile, gameState } = get();
+        const { profile } = get();
         const next = !profile.musicEnabled;
         const updated = validateProfileWithZod({
           ...profile,
@@ -541,7 +513,7 @@ export function createGameStore({
           next &&
           !profile.globalMuted &&
           (profile.musicVolume ?? 0.4) > 0 &&
-          gameState === 'PLAYING'
+          getPhase() === 'running'
         ) {
           effects.startBeat();
         } else if (!next) {
@@ -565,7 +537,7 @@ export function createGameStore({
       },
 
       setMusicVolume: (vol: number) => {
-        const { profile, gameState } = get();
+        const { profile } = get();
         const clamped = Math.max(0, Math.min(1, vol));
         const enabled = clamped > 0;
         const updated = validateProfileWithZod({
@@ -577,7 +549,7 @@ export function createGameStore({
         saveProfile(updated);
         effects.setMusicEnabled(enabled);
         effects.setMusicVolume(clamped);
-        if (enabled && !profile.globalMuted && gameState === 'PLAYING') {
+        if (enabled && !profile.globalMuted && getPhase() === 'running') {
           effects.startBeat();
         } else if (!enabled) {
           effects.stopBeat();
@@ -766,20 +738,12 @@ export function createGameStore({
           stagesProgress: {},
         };
         const validated = validateProfileWithZod(updated);
-        set({
-          profile: validated,
-          currentStage: CURRICULUM_SECTORS[0].stages[0],
-          victoryResult: null,
-        });
+        set({ profile: validated, ...backToFirstStageUnlessRun() });
         saveProfile(validated);
       },
 
       resetProgress: () => {
-        set({
-          profile: DEFAULT_PROFILE,
-          currentStage: CURRICULUM_SECTORS[0].stages[0],
-          victoryResult: null,
-        });
+        set({ profile: DEFAULT_PROFILE, ...backToFirstStageUnlessRun() });
         saveProfile(DEFAULT_PROFILE);
       },
     };
