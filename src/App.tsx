@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { CURRICULUM_SECTORS, getNextStage } from './data/curriculum';
 import { soundEngine } from './audio/soundEngine';
 import { HeaderNav } from './components/HeaderNav';
@@ -7,6 +7,7 @@ import { TextPromptStream } from './components/TextPromptStream';
 import { StageSelectModal } from './components/StageSelectModal';
 import { HangarUpgradesModal } from './components/HangarUpgradesModal';
 import { AnalyticsModal } from './components/AnalyticsModal';
+import { PixiActionDeck } from './components/pixi-deck/PixiActionDeck';
 import { CustomPracticeModal } from './components/CustomPracticeModal';
 import { LevelCompleteModal } from './components/LevelCompleteModal';
 import { GlobalCosmicBackground } from './components/GlobalCosmicBackground';
@@ -15,15 +16,6 @@ import { useShallow } from 'zustand/react/shallow';
 import { useGameStore } from './store/useGameStore';
 import { useOpener, useRunPhase, useScreen } from './store/useGameScreen';
 import { Play, RotateCcw } from 'lucide-react';
-
-// The PixiJS Action Deck is its own chunk, so Academy Home paints without it.
-// It starts loading with the app: the first Flight Deck rarely waits for it.
-const loadPixiDeck = () =>
-  import('./components/pixi-deck/PixiActionDeck').then((module) => ({
-    default: module.PixiActionDeck,
-  }));
-const PixiActionDeck = lazy(loadPixiDeck);
-void loadPixiDeck();
 
 /**
  * The starfield behind everything. It reads the two fields that speed it up
@@ -313,9 +305,7 @@ export default function App() {
             <TextPromptStream />
 
             {/* Interactive Rhythm Keyboard Flight Deck */}
-            <Suspense fallback={null}>
-              <PixiActionDeck />
-            </Suspense>
+            <PixiActionDeck />
           </div>
         )}
       </main>
