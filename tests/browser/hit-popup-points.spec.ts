@@ -1,4 +1,4 @@
-import { expect, type Page, test } from '@playwright/test';
+import { expect as baseExpect, type Page, test } from '@playwright/test';
 import { drone, flightDeck, hud, labelled, launchFreeFlight } from './helpers';
 
 // Round 2 (#35): EVERY hit popup on the Action Deck ends with the points that
@@ -44,6 +44,12 @@ import { drone, flightDeck, hud, labelled, launchFreeFlight } from './helpers';
 // so a hit that was not the rating a test meant fails there, and not on the
 // popup.
 
+// Software-GL frames can take seconds on a loaded machine, and the deck only
+// moves on frames. So no wait here is a short wall-clock budget: each waits for
+// the condition it is about, with a generous limit that only a real failure
+// reaches (the test's own timeout is the backstop).
+const expect = baseExpect.configure({ timeout: 30_000 });
+
 test.use({ viewport: { width: 1280, height: 1100 } });
 test.setTimeout(180_000);
 
@@ -75,6 +81,61 @@ async function popupNames(page: Page): Promise<string[]> {
     (name): name is string => name !== null && ANY_POPUP.test(name),
   );
 }
+
+/**
+ * Starts a log of every hit popup name the accessibility layer gets from now
+ * on (starting again empties it). A popup is named only while it is drawn, and
+ * on a loaded machine a look taken after the key press can come after the
+ * popup is gone; the log catches it when it appears. It reads the same names
+ * `popupNames` does, from the page's elements only.
+ */
+async function startPopupLog(page: Page) {
+  await page.evaluate((source) => {
+    const popup = new RegExp(source);
+    const w = window as unknown as {
+      hitPopupLog?: string[];
+      hitPopupObserver?: MutationObserver;
+    };
+    w.hitPopupObserver?.disconnect();
+    const log: string[] = [];
+    w.hitPopupLog = log;
+    const note = (element: Element) => {
+      for (const attribute of ['aria-label', 'title']) {
+        const name = element.getAttribute(attribute);
+        if (name && popup.test(name)) log.push(name);
+      }
+    };
+    const observer = new MutationObserver((records) => {
+      for (const record of records) {
+        if (record.type === 'attributes') {
+          note(record.target as Element);
+          continue;
+        }
+        for (const node of record.addedNodes) {
+          if (node.nodeType !== Node.ELEMENT_NODE) continue;
+          note(node as Element);
+          for (const inner of (node as Element).querySelectorAll(
+            '[aria-label],[title]',
+          ))
+            note(inner);
+        }
+      }
+    });
+    observer.observe(document, {
+      attributes: true,
+      attributeFilter: ['aria-label', 'title'],
+      childList: true,
+      subtree: true,
+    });
+    w.hitPopupObserver = observer;
+  }, ANY_POPUP.source);
+}
+
+/** Every hit popup name logged since `startPopupLog`. */
+const loggedPopups = (page: Page): Promise<string[]> =>
+  page.evaluate(() => [
+    ...((window as unknown as { hitPopupLog?: string[] }).hitPopupLog ?? []),
+  ]);
 
 async function hudScore(page: Page): Promise<number> {
   const text = (await hud(page).textContent()) ?? '';
@@ -115,13 +176,22 @@ function followRun(page: Page, text: string) {
       await expect(lead, 'one lead Drone to watch').toHaveCount(1);
       let last = Number.NaN;
       let still = 0;
+      let stillSince = Date.now();
       await expect(async () => {
-        const box = await lead.boundingBox({ timeout: 500 });
+        const box = await lead.boundingBox({ timeout: 10_000 });
         const bottom = box ? box.y + box.height : -1;
-        still = bottom === last ? still + 1 : 0;
+        if (bottom === last) {
+          still += 1;
+        } else {
+          still = 0;
+          stillSince = Date.now();
+        }
         last = bottom;
+        // Still for five looks over at least a second: a loaded machine that
+        // draws a frame only now and then must not look settled mid-fall.
         expect(still).toBeGreaterThanOrEqual(5);
-      }).toPass({ timeout: 15_000, intervals: [100] });
+        expect(Date.now() - stillSince).toBeGreaterThanOrEqual(1000);
+      }).toPass({ timeout: 60_000, intervals: [100] });
     },
     get streak() {
       return streak;
@@ -150,11 +220,12 @@ async function perfectHit(
   await expect
     .poll(() => popupNames(page), {
       message: `${step}: earlier popups have gone`,
-      timeout: 10_000,
+      timeout: 60_000,
     })
     .toEqual([]);
 
   const before = await hudScore(page);
+  await startPopupLog(page);
   await run.press();
   await expect
     .poll(() => hudScore(page), { message: `${step}: the hit's score` })
@@ -164,13 +235,13 @@ async function perfectHit(
     await expect
       .poll(
         async () => {
-          for (const name of await popupNames(page)) seen.add(name);
+          for (const name of await loggedPopups(page)) seen.add(name);
           return [...seen];
         },
         {
           message: `${step}: popups named on the deck`,
-          timeout: 3000,
-          intervals: [25],
+          timeout: 30_000,
+          intervals: [50],
         },
       )
       .toContainEqual(expect.stringMatching(worth(points)));
@@ -309,6 +380,7 @@ async function launchOnStoppedClock(page: Page, text: string) {
     page.getByRole('button', { name: 'Pause', exact: true }),
   ).toBeVisible();
   await expect(flightDeck(page)).toContainText(text.replaceAll(' ', '␣'));
+  await startPopupLog(page);
 }
 
 /** Presses a key and waits for the HUD to show the Streak it makes. */
@@ -322,7 +394,7 @@ async function pressAtStreak(page: Page, key: string, streak: number) {
 /**
  * Checks the popup of the hit just typed on the stopped clock. Popups are
  * drawn on animation frames, which only come when the clock moves, so it
- * moves in small steps until the popup is named or the time is up.
+ * moves in small steps until the popup is named or it is clear it never will be.
  */
 async function expectPopupOnStoppedClock(
   page: Page,
@@ -330,20 +402,22 @@ async function expectPopupOnStoppedClock(
   step: string,
 ) {
   await expectPopup(step, points, undefined, async (seen) => {
-    await expect
-      .poll(
-        async () => {
-          await page.clock.runFor(50);
-          for (const name of await popupNames(page)) seen.add(name);
-          return [...seen];
-        },
-        {
-          message: `${step}: popups named on the deck`,
-          timeout: 8000,
-          intervals: [10],
-        },
-      )
-      .toContainEqual(expect.stringMatching(worth(points)));
+    // Steps, not a short wall-clock budget: a loaded machine draws few frames
+    // a second, which only makes this slower. It stops when the popup is named,
+    // or after 60 steps (three seconds of Run time, far longer than a popup
+    // lives) that also took at least 15 s of real time, so a machine that
+    // races through its steps without drawing a frame is not mistaken for a
+    // missing popup.
+    const started = Date.now();
+    for (let steps = 0; ; steps++) {
+      await page.clock.runFor(50);
+      for (const name of await loggedPopups(page)) seen.add(name);
+      if ([...seen].some((name) => worth(points).test(name))) break;
+      if (steps >= 60 && Date.now() - started >= 15_000) break;
+    }
+    expect([...seen], `${step}: popups named on the deck`).toContainEqual(
+      expect.stringMatching(worth(points)),
+    );
   });
 }
 
@@ -388,6 +462,7 @@ for (const [name, key, text] of [
       .poll(() => hudScore(page), { message: 'nine Goods: 9 x 50' })
       .toBe(450);
 
+    await startPopupLog(page);
     await page.keyboard.press(key);
     await expect
       .poll(() => hudScore(page), { message: 'a Good at x2: +100' })
