@@ -8,7 +8,11 @@
 import { createActor } from 'xstate';
 import type { StoreApi } from 'zustand/vanilla';
 import { getStageById } from '../data/curriculum';
-import { createGameMachine, type PlayerEvent } from '../store/gameMachine';
+import {
+  createGameMachine,
+  type GameMachineEvent,
+  type PlayerEvent,
+} from '../store/gameMachine';
 import type {
   FallingNote,
   LivePerformance,
@@ -38,10 +42,10 @@ export type { GameStoreState, UpgradeKind, VictoryResult } from './gameStore';
 export type { PlayerEvent } from '../store/gameMachine';
 export type { RunPhase, Screen } from '../types/game';
 
-/** The machine refused a move: the player event doesn't apply on this screen. A bug in whoever sent it. */
+/** The machine refused a move: the event doesn't apply on this screen. A bug in whoever sent it. */
 export class RefusedMoveError extends Error {
   constructor(
-    readonly event: PlayerEvent,
+    readonly event: GameMachineEvent,
     readonly screen: Screen,
     readonly phase: RunPhase,
   ) {
@@ -176,7 +180,7 @@ export function createGame(options: GameOptions): Game {
   const judgementListeners = new Set<(judgement: Judgement) => void>();
   const store = createGameStore({
     getPhase,
-    reportRunCleared: () => actor.send({ type: 'RUN_CLEARED' }),
+    reportRunCleared: () => deliver({ type: 'RUN_CLEARED' }),
     storage: options.storage,
     clock,
     runClock,
@@ -192,13 +196,17 @@ export function createGame(options: GameOptions): Game {
 
   const canSend = (event: PlayerEvent) => actor.getSnapshot().can(event);
 
-  const send = (event: PlayerEvent) => {
-    if (!canSend(event)) {
+  // Every event, the store's "Run cleared" included, goes through the same
+  // check: a move the machine refuses changes nothing and is reported.
+  function deliver(event: GameMachineEvent) {
+    if (!actor.getSnapshot().can(event)) {
       onRefusedMove(new RefusedMoveError(event, getScreen(), getPhase()));
       return;
     }
     actor.send(event);
-  };
+  }
+
+  const send = (event: PlayerEvent) => deliver(event);
 
   return {
     startStage(stageOrId, speed) {
