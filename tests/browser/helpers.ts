@@ -119,7 +119,7 @@ export const pauseMenu = (page: Page): Locator =>
  */
 export const closeButton = (page: Page): Locator =>
   page.getByRole('button', {
-    name: /^(Close|Back to Sectors|Back to Academy|Pause Menu|Cancel)$/,
+    name: /^(Close|Back to Sectors|Back to Academy|Back to Debriefing|Debriefing|Pause Menu|Cancel)$/,
   });
 
 /** Open a menu from the header. */
