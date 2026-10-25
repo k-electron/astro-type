@@ -325,8 +325,8 @@ astrotype/
 ## 🚀 Getting Started & Development
 
 ### Prerequisites
-- [Node.js](https://nodejs.org/) (version 18+ recommended)
-- `npm` or `bun`
+- [Node.js](https://nodejs.org/) 26 (see `.node-version`)
+- [pnpm](https://pnpm.io/) 12 (pinned in `package.json` as `packageManager`)
 
 ### Installation
 ```bash
@@ -337,28 +337,28 @@ git clone https://github.com/your-username/astrotype.git
 cd astrotype
 
 # Install dependencies
-npm install
+pnpm install
 ```
 
 ### Running Locally
 ```bash
 # Start the Vite development server (port 3000)
-npm run dev
+pnpm dev
 ```
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ### Building for Production
 ```bash
 # Typecheck and build optimized bundle
-npm run build
+pnpm build
 
 # Preview the production build locally
-npm run preview
+pnpm preview
 ```
 
 ### Type Checking & Linting
 ```bash
-npm run lint
+pnpm lint
 ```
 
 ---
