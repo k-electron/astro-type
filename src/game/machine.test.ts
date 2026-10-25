@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { CURRICULUM_SECTORS } from '../data/curriculum';
 import { RefusedMoveError } from './createGame';
 import {
   clearStage,
@@ -83,7 +84,7 @@ const OFFERED: Record<Screen, (game: Game) => PlayerEvent[]> = {
   'academy-home': () => [PLAY, pickStage(STAGE_ID), ...HEADER],
   // Pause (HUD and header); Esc pauses; the window can lose focus.
   'flight-deck': () => [PAUSE, ESC, LOST_FOCUS, ...HEADER],
-  // Resume Flight; Restart Mission; Exit to Galaxy Map; Exit to Academy Home
+  // Resume Flight; Restart Mission; View Galaxy Map; Exit to Academy Home
   // (Home is in HEADER); header Start Mission; Esc resumes.
   'pause-menu': () => [
     RESUME,
@@ -375,6 +376,108 @@ describe('every header button works on every screen', () => {
       }
     });
   }
+});
+
+// ---------------------------------------------------------------------------
+// Pressing the header button for the screen already open does nothing
+// ---------------------------------------------------------------------------
+
+describe('pressing a header button for the screen already open changes nothing, and one Close returns', () => {
+  const starts: { name: string; make: () => Game; landing: Screen }[] = [
+    { name: 'Academy Home', make: newGame, landing: 'academy-home' },
+    {
+      name: 'the Flight Deck mid-Run',
+      make: runningGame,
+      landing: 'pause-menu',
+    },
+    { name: 'the Pause Menu', make: pausedGame, landing: 'pause-menu' },
+    { name: 'the Debrief', make: clearedGame, landing: 'debrief' },
+  ];
+
+  for (const { name, make, landing } of starts) {
+    for (const screen of OPENERS) {
+      it(`${screen} opened from ${name}, pressed again twice`, () => {
+        const game = make();
+        const before = progress(game);
+        const result = game.getDebrief();
+        play(game, OPEN[screen]);
+        const phase = game.getPhase();
+
+        // A press for the screen that is showing is accepted and does nothing.
+        play(game, OPEN[screen]);
+        play(game, OPEN[screen]);
+        expect(game.getScreen()).toBe(screen);
+        expect(game.getPhase()).toBe(phase);
+
+        // So no copy of it was stacked: one Close goes back to where it was opened.
+        play(game, CLOSE);
+        expect(game.getScreen()).toBe(landing);
+        expect(progress(game)).toEqual(before);
+        expect(game.getDebrief()).toEqual(result);
+      });
+    }
+  }
+
+  it('on a menu opened over another menu, one Close returns to that menu', () => {
+    const game = newGame();
+    play(game, OPEN['galaxy-map']);
+    play(game, OPEN.hangar);
+    play(game, OPEN.hangar);
+    play(game, CLOSE);
+    expect(game.getScreen()).toBe('galaxy-map');
+    play(game, CLOSE);
+    expect(game.getScreen()).toBe('academy-home');
+  });
+
+  it('a menu pressed again after other menus were opened and closed over it still unwinds one Close at a time', () => {
+    const game = runningGame();
+    play(game, OPEN.analytics);
+    play(game, OPEN.hangar);
+    play(game, OPEN.hangar);
+    play(game, CLOSE);
+    expect(game.getScreen()).toBe('analytics');
+    play(game, OPEN.analytics);
+    play(game, CLOSE);
+    expect(game.getScreen()).toBe('pause-menu');
+    expect(game.getPhase()).toBe('paused');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Next Stage on the last Stage
+// ---------------------------------------------------------------------------
+
+describe('Next Stage on the Debrief', () => {
+  const curriculum = CURRICULUM_SECTORS.flatMap((sector) => sector.stages);
+
+  /** A game that has just cleared this Stage, so its Debrief is showing. */
+  function clearedStage(stageId: string): Game {
+    const game = newGame();
+    game.startStage(stageId);
+    finishRun(game);
+    expect(game.getScreen(), stageId).toBe('debrief');
+    return game;
+  }
+
+  it('on the last Stage takes the player to the Galaxy Map', () => {
+    const last = curriculum[curriculum.length - 1];
+    const game = clearedStage(last.id);
+    play(game, NEXT_STAGE);
+    expect(game.getScreen()).toBe('galaxy-map');
+  });
+
+  it('on every other Stage starts the next Stage in curriculum order, across Sectors too', () => {
+    // The first Stage, the last Stage of a Sector, and the one before the last.
+    const firstSectorEnd = CURRICULUM_SECTORS[0].stages.length - 1;
+    for (const i of [0, firstSectorEnd, curriculum.length - 2]) {
+      const game = clearedStage(curriculum[i].id);
+      play(game, NEXT_STAGE);
+      expect(game.getScreen(), curriculum[i].id).toBe('flight-deck');
+      expect(game.getRun().currentStage.id, curriculum[i].id).toBe(
+        curriculum[i + 1].id,
+      );
+    }
+  });
 });
 
 // ---------------------------------------------------------------------------
