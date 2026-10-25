@@ -25,6 +25,7 @@ export default function App() {
     gameState,
     currentStage,
     profile,
+    loadNotice,
     performance,
     activeLaneIndex,
     lastPressedKey,
@@ -321,6 +322,12 @@ export default function App() {
                   Wipe Achievements & Replay
                 </button>
               </div>
+            )}
+
+            {loadNotice && (
+              <p role="status" className="mb-8 text-xs text-slate-500">
+                {loadNotice}
+              </p>
             )}
 
             {/* Feature Highlights Grid */}
