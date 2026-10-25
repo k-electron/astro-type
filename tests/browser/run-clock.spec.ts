@@ -1,5 +1,11 @@
 import { expect, type Page, test } from '@playwright/test';
-import { debrief, hud, launchFreeFlight, promptProgress } from './helpers';
+import {
+  debrief,
+  hud,
+  launchFreeFlight,
+  promptProgress,
+  startFirstStage,
+} from './helpers';
 
 // Exact timing: `page.clock` takes the page's time over, so the test decides
 // how much time passes. The clock is stopped before the page loads and only
@@ -18,12 +24,41 @@ async function launchOnStoppedClock(page: Page, text: string) {
   await launchFreeFlight(page, text);
 }
 
+/** The first Stage (default speed setting) with the page clock stopped. */
+async function startFirstStageOnStoppedClock(page: Page) {
+  await page.clock.install({ time: 0 });
+  await page.clock.pauseAt(1000);
+  await startFirstStage(page);
+}
+
 /** The Speed the HUD shows right now. */
 async function hudSpeed(page: Page): Promise<number> {
   const text = (await hud(page).textContent()) ?? '';
   const match = /Speed\s*(\d+)\s*WPM/i.exec(text);
   if (!match) throw new Error(`No Speed in the HUD: ${text}`);
   return Number(match[1]);
+}
+
+/**
+ * The Speed once the HUD has shown a Speed of at least `min` (React draws a
+ * moment after the page's timers run, and the page's time is stopped while
+ * this waits), checked to be at most `max`.
+ */
+async function speedBetween(page: Page, min: number, max: number) {
+  await expect.poll(() => hudSpeed(page)).toBeGreaterThanOrEqual(min);
+  const speed = await hudSpeed(page);
+  expect(speed).toBeLessThanOrEqual(max);
+  return speed;
+}
+
+/**
+ * The Speed after the Run has gone on a little: once the HUD has dropped
+ * below `before`, as more Run Time without more keys must, it is still within
+ * `drop` of it.
+ */
+async function speedStillNear(page: Page, before: number, drop: number) {
+  await expect.poll(() => hudSpeed(page)).toBeLessThan(before);
+  expect(await hudSpeed(page)).toBeGreaterThanOrEqual(before - drop);
 }
 
 async function pause(page: Page) {
@@ -56,9 +91,7 @@ test('Run Time and the Speed in the HUD stand still during a pause', async ({
   for (const key of 'abcdefgh') await page.keyboard.press(key);
   await expect(promptProgress(page)).toHaveText('50%');
   await page.clock.runFor(5000);
-  const before = await hudSpeed(page);
-  expect(before).toBeGreaterThanOrEqual(15);
-  expect(before).toBeLessThanOrEqual(17);
+  const before = await speedBetween(page, 15, 17);
 
   await pause(page);
 
@@ -72,9 +105,7 @@ test('Run Time and the Speed in the HUD stand still during a pause', async ({
   await resume(page);
   expect(await hudSpeed(page)).toBe(before);
   await page.clock.runFor(1000);
-  const after = await hudSpeed(page);
-  expect(after).toBeGreaterThanOrEqual(before - 3);
-  expect(after).toBeLessThanOrEqual(before);
+  await speedStillNear(page, before, 3);
 });
 
 test('a pause in the middle of a Run does not drag the final Speed or the Rhythm down', async ({
@@ -101,7 +132,7 @@ test('a pause in the middle of a Run does not drag the final Speed or the Rhythm
 test('catch-up after a long stall is capped, so the Drones do not jump across the deck', async ({
   page,
 }) => {
-  await launchOnStoppedClock(page, 'abcdef');
+  await startFirstStageOnStoppedClock(page);
 
   // One frame of flight, so the Run is under way and the lead Drone has come
   // down a step from its starting height. The page then stalls for five
@@ -109,10 +140,10 @@ test('catch-up after a long stall is capped, so the Drones do not jump across th
   // all of it would be waiting on the Strike Line now and the first key would
   // be a Perfect (100 points). Capped, the Run catches up by a fraction of a
   // second: the Drone has come down a little, not all the way, and a key now
-  // is a Great (75 points).
+  // is a Great (75 points). The first Stage opens on "f", at the default speed.
   await page.clock.runFor(20);
   await page.clock.fastForward(5 * MINUTE);
-  await page.keyboard.press('a');
+  await page.keyboard.press('f');
 
   await expect(hud(page)).toContainText(/Score\s*75(?!\d)/i);
 });
@@ -125,16 +156,12 @@ test('catch-up after a long stall is capped, so Run Time and the Speed barely mo
   await page.clock.runFor(1000);
   for (const key of 'abcdefgh') await page.keyboard.press(key);
   await page.clock.runFor(5000);
-  const before = await hudSpeed(page);
-  expect(before).toBeGreaterThanOrEqual(15);
-  expect(before).toBeLessThanOrEqual(17);
+  const before = await speedBetween(page, 15, 17);
 
   // Five minutes stall in one go, with no pause. The Run has only 100 ms of
   // it to catch up on, so the Speed is what 7 seconds of typing gives (14
   // WPM), not what 5 minutes gives (0).
   await page.clock.fastForward(5 * MINUTE);
   await page.clock.runFor(1000);
-  const after = await hudSpeed(page);
-  expect(after).toBeGreaterThanOrEqual(before - 3);
-  expect(after).toBeLessThanOrEqual(before);
+  await speedStillNear(page, before, 3);
 });
