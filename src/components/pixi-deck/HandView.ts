@@ -1,10 +1,12 @@
-import { Container, Graphics, GraphicsPath, type Text } from 'pixi.js';
+import { Container, Graphics, GraphicsPath, Sprite, type Text } from 'pixi.js';
 import { FINGER_COLOR_MAP } from '../../data/curriculum';
 import type { FingerZone } from '../../types/game';
-import { dashedCubic, dashedRect, makeText } from './draw';
+import { pulseOpacity } from './animation';
+import { dashedCubic, dashedRoundRect, deckWeight, makeText } from './draw';
+import { boxGlow } from './textures';
 import { HAND_H, HAND_W } from './layout';
 
-// The hand panel beside the keyboard, ported from SmallHandVisualizer.tsx.
+// The hand panel beside the keyboard, a port of the DOM deck's SVG hand visualizer.
 // Everything in it is built once; a change of state only redraws shapes and
 // edits the few labels whose text or colour changed.
 
@@ -69,9 +71,13 @@ export interface HandState {
 
 export class HandView {
   readonly root = new Container();
+  /** The panel's drop shadow (0 8px 24px, 80 % black). */
+  private readonly shadow = new Sprite();
   private readonly panel = new Graphics();
   private readonly art = new Container();
   private readonly palm = new Graphics();
+  /** The pulsing halo rings, one under each finger. */
+  private readonly halos: Graphics[] = [];
   private readonly fingerShapes: Graphics[] = [];
   private readonly fingerLabels: Text[] = [];
   private readonly legendDots = new Graphics();
@@ -88,16 +94,24 @@ export class HandView {
     this.fingers = isLeft ? LEFT_FINGERS : RIGHT_FINGERS;
     // Nothing in a hand is read out by the accessibility layer.
     this.root.accessibleChildren = false;
-    this.root.addChild(this.panel, this.art, this.legendDots);
+    this.shadow.anchor.set(0.5);
+    const glow = boxGlow(HAND_W, HAND_H, 16, 24);
+    this.shadow.texture = glow.texture;
+    this.shadow.tint = '#000000';
+    this.shadow.alpha = 0.8;
+    this.shadow.position.set(HAND_W / 2, HAND_H / 2 + 8);
+    this.root.addChild(this.shadow, this.panel, this.art, this.legendDots);
 
+    // `tracking-wider`: 0.05 em between letters.
     this.label(
       isLeft ? 'L. HAND' : 'R. HAND',
-      12,
+      14,
       19.75,
       10,
       '#94a3b8',
       0,
       resolution,
+      0.5,
     );
     this.badge = this.label('REST', 0, 19.75, 9, '#475569', 1, resolution);
 
@@ -124,10 +138,14 @@ export class HandView {
     this.art.addChild(this.palm);
 
     for (const f of this.fingers) {
+      const halo = new Graphics();
       const shape = new Graphics();
-      shape.position.set(f.x, f.baseY);
-      if (f.isThumb) shape.rotation = isLeft ? THUMB_TILT : -THUMB_TILT;
-      this.art.addChild(shape);
+      for (const part of [halo, shape]) {
+        part.position.set(f.x, f.baseY);
+        if (f.isThumb) part.rotation = isLeft ? THUMB_TILT : -THUMB_TILT;
+        this.art.addChild(part);
+      }
+      this.halos.push(halo);
       this.fingerShapes.push(shape);
     }
 
@@ -161,8 +179,9 @@ export class HandView {
     fill: string,
     anchorX: number,
     resolution: number,
+    letterSpacing = 0,
   ): Text {
-    const t = makeText(text, size, '700', fill, resolution);
+    const t = makeText(text, size, '700', fill, resolution, { letterSpacing });
     t.anchor.set(anchorX, 0.5);
     t.position.set(x, y);
     this.root.addChild(t);
@@ -171,6 +190,12 @@ export class HandView {
 
   setPosition(x: number, y: number): void {
     this.root.position.set(x, y);
+  }
+
+  /** Move the pulsing halos to `timeMs` of effect time: `animate-pulse`, 1 to 0.5 and back every 2 s. */
+  animate(timeMs: number): void {
+    const alpha = pulseOpacity(timeMs);
+    for (const halo of this.halos) halo.alpha = alpha;
   }
 
   draw(state: HandState): void {
@@ -189,36 +214,56 @@ export class HandView {
     const primary = isThumbActive && state.thumbRole === 'primary';
     const secondary = isThumbActive && state.thumbRole === 'secondary';
 
-    // The badge in the panel's top right corner.
-    const right = HAND_W - 12;
+    // The badge in the panel's top right corner: its right edge is 14 px in
+    // (2 border, 10 padding, 2 for the header), its padding is `padX`, its
+    // border 1 px, and it is 15 px tall.
+    const right = HAND_W - 14;
     const setBadge = (
       text: string,
       fill: string,
       bg: string,
       border: string,
-      dashed = false,
+      {
+        dashed = false,
+        padX = 4,
+        size = 9,
+        bgAlpha = 0.2,
+        borderAlpha = 1,
+      } = {},
     ) => {
       this.badge.text = text;
       this.badge.style.fill = fill;
-      this.badge.style.fontSize = 9;
-      this.badge.style.fontWeight = '700';
-      const bw = this.badge.width + 10;
+      this.badge.style.fontSize = size;
+      this.badge.style.fontWeight = deckWeight('700');
+      const bw = this.badge.width + 2 * padX + 2;
+      p.roundRect(right - bw, 12.5, bw, 15, 4).fill({
+        color: bg,
+        alpha: bgAlpha,
+      });
       if (dashed) {
-        dashedRect(p, right - bw + 2, 12.5, bw, 15, 3, 2, {
+        dashedRoundRect(p, right - bw + 0.5, 13, bw - 1, 14, 3.5, 3, 2, {
           width: 1,
           color: border,
         });
       } else {
-        p.roundRect(right - bw + 2, 12.5, bw, 15, 3)
-          .fill({ color: bg, alpha: 0.3 })
-          .stroke({ width: 1, color: border, alpha: 0.7 });
+        p.roundRect(right - bw + 0.5, 13, bw - 1, 14, 3.5).stroke({
+          width: 1,
+          color: border,
+          alpha: borderAlpha,
+        });
       }
-      this.badge.x = right - 3;
+      this.badge.x = right - padX - 1;
     };
     if (primary) {
-      setBadge('SPACE', '#6ee7b7', '#10b981', '#34d399');
+      setBadge('SPACE', '#6ee7b7', '#10b981', '#34d399', {
+        borderAlpha: 0.6,
+      });
     } else if (secondary) {
-      setBadge('ALT ␣', 'rgba(52,211,153,0.7)', '#064e3b', '#10b981');
+      setBadge('ALT ␣', 'rgba(52,211,153,0.7)', '#022c22', '#10b981', {
+        size: 8,
+        bgAlpha: 0.4,
+        borderAlpha: 0.3,
+      });
     } else if (state.activeFinger) {
       const color = FINGER_COLOR_MAP[state.activeFinger];
       setBadge(
@@ -228,6 +273,7 @@ export class HandView {
         color,
         color,
         color,
+        { padX: 6, bgAlpha: 0.145, borderAlpha: 0.5 },
       );
     } else if (state.modifierFinger) {
       setBadge(
@@ -235,13 +281,14 @@ export class HandView {
         '#fcd34d',
         '#f59e0b',
         '#fbbf24',
-        true,
+        { dashed: true },
       );
     } else {
       this.badge.text = 'REST';
       this.badge.style.fill = '#475569';
+      this.badge.style.fontSize = 9;
       this.badge.style.fontWeight = '400';
-      this.badge.x = right - 3;
+      this.badge.x = right;
     }
 
     this.fingers.forEach((f, i) => {
@@ -271,8 +318,11 @@ export class HandView {
       }
       const lx = -f.w / 2;
       const ly = f.tipY - f.baseY;
+      const halo = this.halos[i];
+      halo.clear();
       if (main && !sec) {
-        fg.roundRect(lx - 2, ly - 2, f.w + 4, height + 10, rx + 2).stroke({
+        // The halo ring pulses (see `animate`); the soft glow around it does not.
+        halo.roundRect(lx - 2, ly - 2, f.w + 4, height + 10, rx + 2).stroke({
           width: 1,
           color,
           alpha: 0.5,
@@ -283,15 +333,21 @@ export class HandView {
         });
       }
       if (mod) {
-        dashedRect(fg, lx - 2.5, ly - 2.5, f.w + 5, height + 11, 3, 3, {
-          width: 1.2,
-          color: '#fbbf24',
-          alpha: 0.8,
-        });
+        dashedRoundRect(
+          halo,
+          lx - 2.5,
+          ly - 2.5,
+          f.w + 5,
+          height + 11,
+          rx + 2.5,
+          3,
+          3,
+          { width: 1.2, color: '#fbbf24', alpha: 0.8 },
+        );
       }
       fg.roundRect(lx, ly, f.w, height + 6, rx).fill(fill);
       if (mod) {
-        dashedRect(fg, lx, ly, f.w, height + 6, 4, 3, {
+        dashedRoundRect(fg, lx, ly, f.w, height + 6, rx, 4, 3, {
           width: strokeWidth,
           color: stroke,
         });
@@ -333,7 +389,9 @@ export class HandView {
 
       // The fingertip label, placed in panel space.
       const rot = f.isThumb ? (isLeft ? THUMB_TILT : -THUMB_TILT) : 0;
-      const oy = ly + rx + 3;
+      // The SVG sets the text's baseline 3 units under the fingertip's centre, which
+      // puts the middle of its capitals on the centre itself.
+      const oy = ly + rx;
       const px = f.x - oy * Math.sin(rot);
       const py = f.baseY + oy * Math.cos(rot);
       const text =
@@ -350,14 +408,14 @@ export class HandView {
         main && state.activeKeyDisplay && state.activeKeyDisplay.length > 1;
       const label = this.fingerLabels[i];
       label.text = text;
-      label.style.fontSize = (big ? 6.5 : 8) * ART_SCALE * 0.85;
+      label.style.fontSize = (big ? 6.5 : 8) * ART_SCALE;
       label.style.fill = sec ? '#6ee7b7' : main || mod ? '#020617' : color;
-      label.position.set(ART_X + px * ART_SCALE, ART_Y + py * ART_SCALE + 0.5);
+      label.position.set(ART_X + px * ART_SCALE, ART_Y + py * ART_SCALE);
     });
 
     // The footer legend.
-    p.moveTo(12, 155.9)
-      .lineTo(HAND_W - 12, 155.9)
+    p.moveTo(14, 155.9)
+      .lineTo(HAND_W - 14, 155.9)
       .stroke({ width: 1, color: '#1e293b', alpha: 0.8 });
     this.fingers
       .filter((f) => !f.isThumb)

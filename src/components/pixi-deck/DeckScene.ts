@@ -1,4 +1,4 @@
-import { Container, Graphics } from 'pixi.js';
+import { Container, Graphics, Sprite } from 'pixi.js';
 import {
   FINGER_COLOR_MAP,
   FINGER_LANES,
@@ -18,6 +18,7 @@ import { makeText } from './draw';
 import { HandView, type HandState } from './HandView';
 import { KeyView, keycapLabel } from './KeyView';
 import { ShipView } from './ShipView';
+import { boxGlow, releaseBoxGlow } from './textures';
 import {
   computeLayout,
   droneTop,
@@ -59,6 +60,9 @@ export interface DeckSceneOptions {
  */
 export class DeckScene {
   readonly root = new Container();
+  /** The keyboard's two drop shadows (0 -8px 30px at 80 %, 0 10px 30px at 90 %). */
+  private readonly chassisShadows = [new Sprite(), new Sprite()];
+  private shadowSize: { w: number; h: number } | null = null;
   private readonly chassis = new Graphics();
   private readonly keyLayer = new Container();
   private readonly trench = new Graphics();
@@ -96,8 +100,15 @@ export class DeckScene {
       resolution,
       isOverdrive: () => options.getState().performance.hyperspaceActive,
     });
+    for (const shadow of this.chassisShadows) {
+      shadow.anchor.set(0.5);
+      shadow.tint = '#000000';
+    }
+    this.chassisShadows[0].alpha = 0.8;
+    this.chassisShadows[1].alpha = 0.9;
     this.root.addChild(
       this.ship.beam,
+      ...this.chassisShadows,
       this.chassis,
       this.hands.left.root,
       this.hands.right.root,
@@ -161,6 +172,24 @@ export class DeckScene {
     c.moveTo(layout.deckX + 16, layout.deckY + 1)
       .lineTo(layout.deckX + layout.deckW - 16, layout.deckY + 1)
       .stroke({ width: 1.5, color: '#475569', alpha: 0.4 });
+
+    // The keyboard's shadows follow its size; the texture of the old size goes.
+    const previous = this.shadowSize;
+    if (
+      !previous ||
+      previous.w !== layout.deckW ||
+      previous.h !== layout.deckH
+    ) {
+      if (previous) releaseBoxGlow(previous.w, previous.h, 16, 30);
+      this.shadowSize = { w: layout.deckW, h: layout.deckH };
+    }
+    const shadowTexture = boxGlow(layout.deckW, layout.deckH, 16, 30).texture;
+    const centreX = layout.deckX + layout.deckW / 2;
+    const centreY = layout.deckY + layout.deckH / 2;
+    this.chassisShadows.forEach((shadow, i) => {
+      shadow.texture = shadowTexture;
+      shadow.position.set(centreX, centreY + (i === 0 ? -8 : 10));
+    });
 
     this.hands.left.setPosition(layout.handLeft.x, layout.handLeft.y);
     this.hands.right.setPosition(layout.handRight.x, layout.handRight.y);
@@ -231,6 +260,8 @@ export class DeckScene {
     this.timeMs += d * STEP_MS;
     this.updateKeysAndHands(state, layout);
     for (const view of this.keys.values()) view.animate(this.timeMs);
+    this.hands.left.animate(this.timeMs);
+    this.hands.right.animate(this.timeMs);
     this.trenchDot.alpha = pulseOpacity(this.timeMs);
     this.updateDrones(state, layout, motion, fraction);
     this.updateShip(state, layout, d);

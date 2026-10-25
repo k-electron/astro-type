@@ -13,7 +13,7 @@ import { resetTextures } from './textures';
 /** Give up waiting for fonts after this long, so a blocked font request can't stall the deck. */
 const FONT_WAIT_MS = 2000;
 
-/** Keys that hold no character; clicking their keycaps does nothing, as in the DOM deck. */
+/** Keys that hold no character; clicking their keycaps does nothing. */
 const MODIFIER_KEYS = new Set([
   'ShiftLeft',
   'ShiftRight',
@@ -45,7 +45,8 @@ function pressKeycap(spec: KeySpec): void {
 async function fontsReady(): Promise<void> {
   // Text is drawn with whatever font is loaded when it is created.
   const loaded = Promise.all([
-    document.fonts.load('700 16px "JetBrains Mono"'),
+    // The weights the deck's text asks for (see `deckWeight`).
+    document.fonts.load('500 16px "JetBrains Mono"'),
     document.fonts.load('400 16px "JetBrains Mono"'),
   ]).then(() => undefined);
   const timeout = new Promise<void>((resolve) =>
@@ -135,6 +136,7 @@ class DeckSession {
       antialias: true,
       resolution: window.devicePixelRatio || 1,
       autoDensity: true,
+      roundPixels: true,
       // The Run clock's frame loop draws; PixiJS's ticker stays off.
       autoStart: false,
       preference: 'webgl',

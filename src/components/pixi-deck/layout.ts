@@ -6,8 +6,8 @@ import { STRIKE_LINE_Y } from '../../game/rules';
  * size, never measured from the page, so a keycap that grows when it is the
  * target can't nudge its neighbours.
  *
- * The numbers are the desktop (Tailwind `sm:`) values of the DOM deck in
- * IntegratedLanesKeyboard.tsx. Phone and tablet layouts are out of scope for
+ * The numbers are the desktop (Tailwind `sm:`) values of the DOM deck this
+ * one replaced (the sizes its Tailwind classes gave). Phone and tablet layouts are out of scope for
  * v1. The stage is 700 px tall from 640 px wide up, which is how the DOM deck
  * sizes it.
  */

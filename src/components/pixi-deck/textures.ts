@@ -147,6 +147,32 @@ export interface BoxGlow {
   pad: number;
 }
 
+const glowKey = (w: number, h: number, radius: number, blur: number) =>
+  `glow|${w}|${h}|${radius}|${blur}`;
+
+/**
+ * Drop one box glow's texture. For a glow that follows a size that changes (the
+ * keyboard's shadow while the window is dragged), so old sizes don't pile up.
+ */
+export function releaseBoxGlow(
+  w: number,
+  h: number,
+  radius: number,
+  blur: number,
+): void {
+  const key = glowKey(
+    Math.max(1, Math.round(w)),
+    Math.max(1, Math.round(h)),
+    radius,
+    blur,
+  );
+  const texture = cache.get(key);
+  if (texture) {
+    texture.destroy(true);
+    cache.delete(key);
+  }
+}
+
 /**
  * The glow a CSS `box-shadow: 0 0 <blur>px <colour>` casts, white and ready to
  * tint. Painted by the canvas's own shadow blur, the same Gaussian the browser
@@ -161,7 +187,7 @@ export function boxGlow(
   const width = Math.max(1, Math.round(w));
   const height = Math.max(1, Math.round(h));
   const pad = Math.ceil(blur * 1.5);
-  const texture = cached(`glow|${width}|${height}|${radius}|${blur}`, () =>
+  const texture = cached(glowKey(width, height, radius, blur), () =>
     canvasTexture(width + pad * 2, height + pad * 2, (ctx) => {
       // The shape is drawn far off to one side; only its shadow lands on the canvas.
       const away = 4000;

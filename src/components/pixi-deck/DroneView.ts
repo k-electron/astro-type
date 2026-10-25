@@ -38,6 +38,91 @@ export function resetPlumeGradients(): void {
 }
 
 /**
+ * Share out a row that is too long the way CSS flex-shrink does: each item
+ * gives up length in proportion to its size, none below its floor. `basis` are
+ * the natural sizes, `floor` the smallest each can be, `room` what the row has.
+ */
+function shrinkToFit(basis: number[], floor: number[], room: number): number[] {
+  const sizes = [...basis];
+  const frozen = basis.map((size, i) => size <= floor[i]);
+  for (let pass = 0; pass < basis.length; pass++) {
+    const over = sizes.reduce((sum, size) => sum + size, 0) - room;
+    if (over <= 0) break;
+    const weight = basis.reduce(
+      (sum, size, i) => sum + (frozen[i] ? 0 : size),
+      0,
+    );
+    if (weight <= 0) break;
+    let clamped = false;
+    basis.forEach((size, i) => {
+      if (frozen[i]) return;
+      sizes[i] = sizes[i] - (over * size) / weight;
+      if (sizes[i] < floor[i]) {
+        sizes[i] = floor[i];
+        frozen[i] = true;
+        clamped = true;
+      }
+    });
+    if (!clamped) break;
+  }
+  return sizes;
+}
+
+/** `text` cut short with "…" until it is no wider than `room`, as CSS `text-overflow: ellipsis` does. */
+function fitText(label: Text, text: string, room: number): string {
+  label.text = text;
+  if (label.width <= room) return text;
+  let end = text.length;
+  while (end > 0) {
+    end -= 1;
+    label.text = `${text.slice(0, end).trimEnd()}…`;
+    if (label.width <= room) break;
+  }
+  return label.text;
+}
+
+/**
+ * A wing: a `width` by `height` box standing out from the hull, filled dark,
+ * with a 2 px border on its top, bottom and outer edge only and the outer
+ * corners rounded (Tailwind's `rounded-l-md`). `edge` is where the open side
+ * sits; `side` is -1 for the left wing and 1 for the right.
+ */
+function wingBracket(
+  g: Graphics,
+  side: -1 | 1,
+  edge: number,
+  width: number,
+  height: number,
+  color: string,
+): void {
+  const r = 6;
+  const bw = 2;
+  const outer = edge + side * width;
+  const top = -height / 2;
+  const bottom = height / 2;
+  // The fill covers the whole box, with its outer corners rounded.
+  g.moveTo(edge, top)
+    .lineTo(outer - side * r, top)
+    .arcTo(outer, top, outer, top + r, r)
+    .lineTo(outer, bottom - r)
+    .arcTo(outer, bottom, outer - side * r, bottom, r)
+    .lineTo(edge, bottom)
+    .closePath()
+    .fill('#020617');
+  // The border runs along the centre of its 2 px, inside the box.
+  const c = bw / 2;
+  const cr = r - c;
+  const o = outer - side * c;
+  g.moveTo(edge, top + c)
+    .lineTo(o - side * cr, top + c)
+    .arcTo(o, top + c, o, top + c + cr, cr)
+    .lineTo(o, bottom - c - cr)
+    .arcTo(o, bottom - c, o - side * cr, bottom - c, cr)
+    .lineTo(edge, bottom - c)
+    .stroke({ width: bw, color });
+}
+
+/**
  * One Drone: the hull, its wings, the character on it and the accent bar, with
  * its thruster plumes, wing ping lights, sensor eye and (on the lead) lock-on
  * brackets.
@@ -120,6 +205,8 @@ export class DroneView {
     if (signature === this.signature) return;
     this.signature = signature;
 
+    // Queued Drones are `opacity-90` as a whole.
+    this.visual.alpha = first ? 1 : 0.9;
     const { isSpace } = this;
     const g = this.body;
     g.clear();
@@ -145,14 +232,21 @@ export class DroneView {
     g.moveTo(-w / 2 + 6, -h / 2 + 1.5)
       .lineTo(w / 2 - 6, -h / 2 + 1.5)
       .stroke({ width: 1, color: '#ffffff', alpha: first ? 0.4 : 0.1 });
-    // The wings.
+    // The wings: brackets that open onto the hull. Their open side sits on
+    // the hull's inner edge, so the hull's own border closes each one and the
+    // wing looks tucked behind the body.
     const wingW = isSpace ? 16 : 14;
     const wingH = isSpace ? 24 : 20;
-    for (const side of [-1, 1]) {
-      const x0 = side < 0 ? -w / 2 - wingW : w / 2;
-      g.roundRect(x0, -wingH / 2, wingW, wingH, 6)
-        .fill('#020617')
-        .stroke({ width: 2, color: isSpace ? '#10b981' : laneColor });
+    const hull = first ? 2 : 1;
+    for (const side of [-1, 1] as const) {
+      wingBracket(
+        g,
+        side,
+        side * (w / 2 - hull),
+        wingW,
+        wingH,
+        isSpace ? '#10b981' : laneColor,
+      );
     }
     // The accent bar along the bottom.
     g.roundRect(
@@ -176,6 +270,8 @@ export class DroneView {
           : first
             ? 24
             : 18;
+    // The flagship's name is `tracking-wider`: 0.05 em between letters.
+    if (isSpace) this.main.style.letterSpacing = first ? 0.9 : 0.8;
     if (this.sub) {
       this.sub.style.fill = first ? laneColor : '#cbd5e1';
       this.sub.position.set(0, -12);
@@ -185,45 +281,89 @@ export class DroneView {
     }
 
     for (const child of this.tags.removeChildren()) child.destroy();
-    if (isSpace && first) {
-      // "HOSTILE FLAGSHIP  ␣ SPACE  LOCK" across the command bridge.
-      const left = makeText(
-        'HOSTILE FLAGSHIP',
-        9,
-        '700',
-        '#34d399',
-        this.resolution,
-        { letterSpacing: 1.8 },
-      );
-      const right = makeText('LOCK', 9, '700', '#34d399', this.resolution, {
-        letterSpacing: 1.8,
-      });
-      const pad = 6;
-      const gap = 8;
-      const leftW = left.width + pad * 2;
-      const rightW = right.width + pad * 2;
-      const mainW = this.main.width;
-      const x = -(leftW + gap + mainW + gap + rightW) / 2;
-      const plates = new Graphics();
-      for (const [px, pw] of [
-        [x, leftW],
-        [x + leftW + gap + mainW + gap, rightW],
-      ]) {
-        plates
-          .roundRect(px, -8, pw, 16, 3)
-          .fill({ color: '#022c22', alpha: 0.8 })
-          .stroke({ width: 1, color: '#10b981', alpha: 0.4 });
-      }
-      left.position.set(x + leftW / 2, 0);
-      this.main.position.set(x + leftW + gap + mainW / 2, 1);
-      right.position.set(x + leftW + gap + mainW + gap + rightW / 2, 0);
-      this.tags.addChild(plates, left, right);
-    }
+    if (isSpace) this.layoutBridge(w, hull, first);
 
     this.decorate(w, h, first, laneColor);
 
     // The a11y layer positions its element from this rectangle.
     this.root.hitArea = new Rectangle(-w / 2, -h / 2, w, h);
+  }
+
+  /**
+   * The flagship's command bridge: "HOSTILE FLAGSHIP", "␣ SPACE" and "LOCK" in
+   * a row, laid out the way the DOM deck's flex row does. When the hull is too
+   * narrow for all three, they shrink in proportion to their size: the tags
+   * can't go narrower than their longest word (so "HOSTILE FLAGSHIP" wraps to
+   * two lines), "LOCK" can't shrink, and the name is cut short with "…".
+   */
+  private layoutBridge(w: number, hull: number, first: boolean): void {
+    const name = '␣ SPACE';
+    const gap = 8;
+    const avail = w - 2 * hull;
+    const main = this.main;
+    main.text = name;
+    const nameW = main.width;
+    if (!first) {
+      main.text = fitText(main, name, avail);
+      main.position.set(0, 1);
+      return;
+    }
+    const tag = (text: string) =>
+      makeText(text, 9, '700', '#34d399', this.resolution, {
+        letterSpacing: 0.9,
+      });
+    // A tag has a 1 px border and 6 px of padding either side, and 2 px above and below.
+    const tagPadX = 7;
+    const lineH = 14.5;
+    const tagPadY = 3;
+    const measure = tag('HOSTILE FLAGSHIP');
+    const longestWord = Math.max(
+      ...['HOSTILE', 'FLAGSHIP'].map((word) => {
+        measure.text = word;
+        return measure.width;
+      }),
+    );
+    measure.text = 'HOSTILE FLAGSHIP';
+    const lock = tag('LOCK');
+    const basis = [
+      measure.width + 2 * tagPadX,
+      nameW,
+      lock.width + 2 * tagPadX,
+    ];
+    const floor = [longestWord + 2 * tagPadX, 0, basis[2]];
+    const sizes = shrinkToFit(basis, floor, avail - 2 * gap);
+    const wrapped = sizes[0] < basis[0] - 0.01;
+    const total = sizes[0] + sizes[1] + sizes[2] + 2 * gap;
+    const x0 = -total / 2;
+    const xs = [x0, x0 + sizes[0] + gap, x0 + sizes[0] + sizes[1] + 2 * gap];
+
+    const plates = new Graphics();
+    const plate = (x: number, width: number, height: number) =>
+      plates
+        .roundRect(x, -height / 2, width, height, 4)
+        .fill({ color: '#022c22', alpha: 0.8 })
+        .stroke({ width: 1, color: '#10b981', alpha: 0.4, alignment: 1 });
+    plate(xs[0], sizes[0], (wrapped ? 2 : 1) * lineH + tagPadY * 2);
+    plate(xs[2], sizes[2], lineH + tagPadY * 2);
+    this.tags.addChild(plates);
+
+    const place = (text: Text, x: number, y: number) => {
+      text.anchor.set(0, 0.5);
+      text.position.set(x, y);
+      this.tags.addChild(text);
+    };
+    if (wrapped) {
+      // Wrapped, the tag's words stack on two lines, left-aligned.
+      measure.text = 'HOSTILE';
+      place(measure, xs[0] + tagPadX, -lineH / 2);
+      const second = tag('FLAGSHIP');
+      place(second, xs[0] + tagPadX, lineH / 2);
+    } else {
+      place(measure, xs[0] + tagPadX, 0);
+    }
+    place(lock, xs[2] + tagPadX, 0);
+    main.text = fitText(main, name, sizes[1]);
+    main.position.set(xs[1] + main.width / 2, 1);
   }
 
   /**
@@ -278,8 +418,8 @@ export class DroneView {
     }
     this.plumeGroup.addChild(plumes);
 
-    // The wings' ping lights.
-    const lightX = w / 2 + (isSpace ? 8 : 7);
+    // The wings' ping lights, in the middle of each bracket's inside.
+    const lightX = w / 2 - border + (isSpace ? 7 : 6);
     const radius = isSpace ? 3 : 2;
     this.lights.forEach((light, i) => {
       light.clear();

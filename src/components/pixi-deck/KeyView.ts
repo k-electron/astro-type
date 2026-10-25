@@ -2,9 +2,13 @@ import { Container, Graphics, Rectangle, Sprite, type Text } from 'pixi.js';
 import { FINGER_LANES } from '../../data/curriculum';
 import type { KeySpec } from '../../data/keyboardLayout';
 import { bounceLift, pulseOpacity } from './animation';
-import { dashedRect, keycapGradient, makeText } from './draw';
+import { dashedRoundRect, keycapGradient, makeText } from './draw';
 import type { KeyRect } from './layout';
 import { boxGlow } from './textures';
+
+/** The HOLD SHIFT badge: its height, and where its centre rests (8 px above the keycap's top edge, plus half its height). */
+const HOLD_H = 12.7;
+const HOLD_REST_Y = (keyH: number) => -keyH / 2 - 8 + HOLD_H / 2;
 
 /** What a keycap looks like right now. */
 export interface KeyState {
@@ -148,16 +152,25 @@ export class KeyView {
       }
     }
     if (spec.key.startsWith('Shift')) {
-      const badge = new Graphics()
-        .roundRect(-38, -7, 76, 14, 3)
-        .fill('#fbbf24')
-        .stroke({ width: 1, color: '#fcd34d' });
-      this.hold.addChild(
-        badge,
-        makeText('·· HOLD SHIFT ··', 8, '700', '#020617', resolution),
+      // `text-[8px] tracking-tighter` in a 1 px border and 6 px padding: 12.7 px tall, 84 px wide.
+      const label = makeText(
+        '·· HOLD SHIFT ··',
+        8,
+        '700',
+        '#020617',
+        resolution,
+        {
+          letterSpacing: -0.4,
+        },
       );
+      const badgeW = label.width + 14;
+      const badge = new Graphics()
+        .roundRect(-badgeW / 2, -HOLD_H / 2, badgeW, HOLD_H, 4)
+        .fill('#fbbf24')
+        .stroke({ width: 1, color: '#fcd34d', alignment: 1 });
+      this.hold.addChild(badge, label);
       this.hold.visible = false;
-      this.hold.position.set(0, -rect.h / 2 - 7);
+      this.hold.position.set(0, HOLD_REST_Y(rect.h));
       this.visual.addChild(this.hold);
     }
     this.place(rect);
@@ -172,7 +185,7 @@ export class KeyView {
       this.thumbLeft.position.set(-rect.w / 2 + 12, 0);
       this.thumbRight.position.set(rect.w / 2 - 12, 0);
     }
-    this.hold.position.set(0, -rect.h / 2 - 7);
+    this.hold.position.set(0, HOLD_REST_Y(rect.h));
     this.signature = '';
   }
 
@@ -194,7 +207,8 @@ export class KeyView {
   /** Move the animated parts (the bouncing HOLD SHIFT badge, the blind-mode dot) to `timeMs` of effect time. */
   animate(timeMs: number): void {
     if (this.hold.visible) {
-      this.hold.position.y = -this.rect.h / 2 - 7 - 3.5 * bounceLift(timeMs);
+      this.hold.position.y =
+        HOLD_REST_Y(this.rect.h) - HOLD_H * 0.25 * bounceLift(timeMs);
     }
     if (this.pulsing) this.dot.alpha = pulseOpacity(timeMs);
   }
@@ -235,7 +249,7 @@ export class KeyView {
       });
     }
     if (modifier) {
-      dashedRect(g, -w / 2 + 1, -h / 2 + 1, w - 2, h - 2, 4, 3, {
+      dashedRoundRect(g, -w / 2 + 1, -h / 2 + 1, w - 2, h - 2, 5, 4, 3, {
         width: 2,
         color: '#fbbf24',
       });
