@@ -81,6 +81,7 @@
    positioned stage and when the page scrolls; the stage is its positioning
    context, so it needs no move. The keycap buttons also act as keycaps. */
 [data-deck-a11y] {
+  /* biome-ignore lint/complexity/noImportantStyles: PixiJS sets this transform inline, so only !important overrides it. */
   transform: none !important;
 }
 

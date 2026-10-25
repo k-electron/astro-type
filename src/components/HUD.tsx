@@ -1,4 +1,4 @@
-import React from 'react';
+import type React from 'react';
 import { Shield, Zap, Pause } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { game } from '../appGame';
@@ -176,6 +176,7 @@ export const HUD: React.FC<HUDProps> = ({ onPause }) => {
       {/* Right: Flight Deck Navigation Controls */}
       <div className="flex items-center gap-2 shrink-0">
         <button
+          type="button"
           onClick={onToggleKeyboard}
           className={`px-2.5 py-1 text-xs font-medium rounded-md border transition-colors whitespace-nowrap cursor-pointer ${
             keyboardVisible
@@ -188,6 +189,7 @@ export const HUD: React.FC<HUDProps> = ({ onPause }) => {
         </button>
 
         <button
+          type="button"
           onClick={onPause}
           className="flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-md border border-slate-800 bg-slate-950 text-slate-300 hover:bg-slate-800 transition-colors whitespace-nowrap cursor-pointer"
         >

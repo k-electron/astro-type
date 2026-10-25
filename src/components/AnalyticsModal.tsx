@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { PlayerProfile, Screen } from '../types/game';
+import type React from 'react';
+import { useState } from 'react';
+import type { PlayerProfile, Screen } from '../types/game';
 import { closeLabel, flightDeckLabel } from './closeLabel';
 import {
   KEY_FINGER_MAP,
@@ -166,6 +167,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
           <div className="flex flex-wrap items-center gap-2.5">
             {onGoToFlightDeck && (
               <button
+                type="button"
                 onClick={onGoToFlightDeck}
                 className="px-3.5 py-1.5 text-xs font-bold rounded-lg bg-cyan-400 hover:bg-cyan-300 text-slate-950 transition-all flex items-center gap-1.5 cursor-pointer shadow-md shadow-cyan-950/60"
                 title="Launch directly into the cockpit flight deck"
@@ -176,6 +178,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
             )}
 
             <button
+              type="button"
               onClick={onClose}
               className="px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer"
             >
@@ -295,8 +298,8 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
             </div>
 
             <div className="flex flex-col gap-1.5 items-center select-none overflow-x-auto py-2">
-              {keyboardHeatmapRows.map((row, rIdx) => (
-                <div key={rIdx} className="flex gap-1.5">
+              {keyboardHeatmapRows.map((row) => (
+                <div key={row.join('')} className="flex gap-1.5">
                   {row.map((k) => {
                     const stats = keyAnalytics[k] ||
                       keyAnalytics[k.toUpperCase()] || { hits: 0, misses: 0 };
@@ -441,6 +444,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
 
             <div className="flex flex-wrap items-center gap-2">
               <button
+                type="button"
                 onClick={handleExport}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-800 text-xs font-medium text-slate-300 hover:text-white transition-colors cursor-pointer"
               >
@@ -461,6 +465,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
 
               {onWipeAchievements && (
                 <button
+                  type="button"
                   onClick={() => setConfirmMode('WIPE_ACHIEVEMENTS')}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-900/60 bg-amber-950/40 text-xs font-medium text-amber-300 hover:bg-amber-900/50 hover:text-white transition-colors cursor-pointer"
                   title="Wipe curriculum stars and stage records for the new curriculum"
@@ -471,6 +476,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
               )}
 
               <button
+                type="button"
                 onClick={() => setConfirmMode('FULL_RESET')}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-rose-900/60 bg-rose-950/30 text-xs font-medium text-rose-300 hover:bg-rose-900/50 transition-colors cursor-pointer"
                 title="Completely reset all starship stats, credits, and achievements"
@@ -513,12 +519,14 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
 
               <div className="flex items-center gap-3">
                 <button
+                  type="button"
                   onClick={() => setConfirmMode('NONE')}
                   className="flex-1 py-2.5 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
+                  type="button"
                   onClick={() => {
                     if (confirmMode === 'WIPE_ACHIEVEMENTS') {
                       onWipeAchievements?.();

@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
+import type React from 'react';
+import { useState, useRef, useEffect } from 'react';
 import {
   Star,
   Sparkles,
@@ -8,12 +9,9 @@ import {
   VolumeX,
   SlidersHorizontal,
   Music,
-  ChevronDown,
   Check,
-  Disc3,
-  Waves,
 } from 'lucide-react';
-import { BeatTheme, AudioSynthCore } from '../types/game';
+import type { BeatTheme, AudioSynthCore } from '../types/game';
 
 interface HeaderNavProps {
   totalStars: number;
@@ -136,6 +134,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
       {/* Zone 1: Brand Wordmark (Go Home) & Gamification Telemetry */}
       <div className="flex items-center gap-3 shrink-0">
         <button
+          type="button"
           onClick={onGoHome}
           title="Return to Academy Home"
           className="text-lg sm:text-xl font-bold font-display tracking-tight text-white hover:text-cyan-400 transition-colors whitespace-nowrap cursor-pointer flex items-center gap-2 group"
@@ -147,6 +146,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
         {/* Gamification Telemetry: Star Counter & Credits */}
         <div className="flex items-center gap-1.5 sm:gap-2 text-xs font-mono ml-1 sm:ml-2">
           <button
+            type="button"
             onClick={onOpenStages}
             title="Total Stars Earned across Galaxy Sectors (Click to view Sectors)"
             className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-950/40 border border-amber-500/40 hover:border-amber-400 text-amber-300 transition-all cursor-pointer shadow-sm hover:shadow-[0_0_12px_rgba(245,158,11,0.25)]"
@@ -159,6 +159,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
           </button>
 
           <button
+            type="button"
             onClick={onOpenHangar}
             title="Starship Credits (Click to open Hangar)"
             className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-cyan-950/40 border border-cyan-500/40 hover:border-cyan-400 text-cyan-300 transition-all cursor-pointer shadow-sm hover:shadow-[0_0_12px_rgba(6,182,212,0.25)]"
@@ -175,30 +176,35 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
       {/* Zone 2: Navigation Links */}
       <nav className="hidden md:flex items-center gap-5 text-xs sm:text-sm font-medium text-slate-400">
         <button
+          type="button"
           onClick={onGoHome}
           className="hover:text-slate-100 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
         >
           Home
         </button>
         <button
+          type="button"
           onClick={onOpenStages}
           className="hover:text-slate-100 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
         >
           Sectors
         </button>
         <button
+          type="button"
           onClick={onOpenHangar}
           className="hover:text-slate-100 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
         >
           Hangar
         </button>
         <button
+          type="button"
           onClick={onOpenAnalytics}
           className="hover:text-slate-100 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
         >
           Analytics
         </button>
         <button
+          type="button"
           onClick={onOpenCustom}
           className="hover:text-slate-100 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
         >
@@ -213,6 +219,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
           <div className="flex items-center rounded-lg border border-slate-800 bg-slate-900/90 shadow-sm overflow-hidden">
             {/* 1-Click Fast Master Mute Button */}
             <button
+              type="button"
               onClick={onToggleGlobalMute}
               title={
                 isMuted
@@ -245,6 +252,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
 
             {/* Audio Panel Settings Flyout Button */}
             <button
+              type="button"
               onClick={() => setIsAudioMenuOpen(!isAudioMenuOpen)}
               title="Open Audio Flight Deck (Volume sliders, Music beats, Synthesizer core)"
               className={`p-1.5 border-l border-slate-800/80 transition-colors cursor-pointer ${
@@ -274,6 +282,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
 
                 {/* Master Audio Toggle Switch */}
                 <button
+                  type="button"
                   onClick={onToggleGlobalMute}
                   className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-mono font-medium border transition-all cursor-pointer ${
                     isMuted
@@ -297,6 +306,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
                     Global Mute is active. All audio output is silenced.
                   </span>
                   <button
+                    type="button"
                     onClick={onToggleGlobalMute}
                     className="underline text-xs font-bold hover:text-rose-200 cursor-pointer ml-2 shrink-0"
                   >
@@ -312,6 +322,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <button
+                      type="button"
                       disabled={isMuted}
                       onClick={onToggleSound}
                       title={
@@ -370,6 +381,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
                         const isEquipped = audioCore === c.id;
                         return (
                           <button
+                            type="button"
                             key={c.id}
                             disabled={isMuted || !soundEnabled}
                             onClick={() => onSetAudioCore(c.id)}
@@ -405,6 +417,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <button
+                      type="button"
                       disabled={isMuted}
                       onClick={onToggleMusic}
                       title={
@@ -464,6 +477,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
                       const isSelected = beatTheme === opt.id;
                       return (
                         <button
+                          type="button"
                           key={opt.id}
                           disabled={isMuted || !musicEnabled}
                           onClick={() => onSetBeatTheme(opt.id)}
@@ -496,6 +510,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
 
         {/* Primary Action Button */}
         <button
+          type="button"
           onClick={onQuickPlay}
           className="px-3.5 sm:px-4 py-2 text-xs font-bold text-slate-950 bg-cyan-400 rounded-lg hover:bg-cyan-300 shadow-md shadow-cyan-950 transition-all whitespace-nowrap shrink-0 cursor-pointer flex items-center gap-1.5"
           title={

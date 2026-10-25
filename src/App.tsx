@@ -1,4 +1,4 @@
-import React, { lazy, Suspense, useEffect, useRef } from 'react';
+import { lazy, Suspense, useEffect, useRef } from 'react';
 import { CURRICULUM_SECTORS, getNextStage } from './data/curriculum';
 import { soundEngine } from './audio/soundEngine';
 import { HeaderNav } from './components/HeaderNav';
@@ -140,7 +140,7 @@ export default function App() {
       window.removeEventListener('keyup', handleKeyUp);
       window.removeEventListener('blur', handleBlur);
     };
-  }, [phase, processKeystroke, releaseKeystroke, send]);
+  }, [phase, processKeystroke, releaseKeystroke]);
 
   // Leaving the page (another window, another tab) is a player event: the
   // machine pauses a running Run and ignores it anywhere else.
@@ -155,7 +155,7 @@ export default function App() {
       window.removeEventListener('blur', handleLostFocus);
       document.removeEventListener('visibilitychange', handleVisibility);
     };
-  }, [send]);
+  }, []);
 
   // The Pause Menu takes focus itself, not a button, so a stray Enter or
   // Space (typing on after a focus-loss pause) has nothing to activate.

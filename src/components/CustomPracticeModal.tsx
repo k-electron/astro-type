@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { Play, Sparkles, Sliders } from 'lucide-react';
+import type React from 'react';
+import { useState } from 'react';
+import { Play } from 'lucide-react';
 import { FreeFlightTextSchema } from '../store/schemas';
-import { Stage } from '../types/game';
+import type { Stage } from '../types/game';
 
 interface CustomPracticeModalProps {
   onStartCustom: (
@@ -106,6 +107,7 @@ export const CustomPracticeModal: React.FC<CustomPracticeModalProps> = ({
           </div>
 
           <button
+            type="button"
             onClick={onClose}
             className="px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer"
           >
@@ -121,6 +123,7 @@ export const CustomPracticeModal: React.FC<CustomPracticeModalProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {PRESET_TEXTS.map((preset) => (
               <button
+                type="button"
                 key={preset.name}
                 onClick={() => {
                   setCustomText(preset.text);
@@ -141,10 +144,14 @@ export const CustomPracticeModal: React.FC<CustomPracticeModalProps> = ({
 
         {/* Custom Text Area */}
         <div className="mb-5">
-          <label className="text-xs font-mono uppercase tracking-wider text-slate-400 block mb-2">
+          <label
+            htmlFor="custom-drill-text"
+            className="text-xs font-mono uppercase tracking-wider text-slate-400 block mb-2"
+          >
             Custom Drill Text
           </label>
           <textarea
+            id="custom-drill-text"
             value={customText}
             onChange={(e) => setCustomText(e.target.value)}
             rows={4}
@@ -197,6 +204,7 @@ export const CustomPracticeModal: React.FC<CustomPracticeModalProps> = ({
             <div className="grid grid-cols-4 gap-1">
               {(['SLOW', 'NORMAL', 'FAST', 'HYPER'] as const).map((s) => (
                 <button
+                  type="button"
                   key={s}
                   onClick={() => setSpeed(s)}
                   title={`${s === 'SLOW' ? 'Relaxed approach (0.9x)' : s === 'NORMAL' ? 'Standard rhythm (1.5x)' : s === 'FAST' ? 'High-speed tempo (2.2x)' : 'Hyper-velocity reflex (3.4x)'}`}
@@ -221,6 +229,7 @@ export const CustomPracticeModal: React.FC<CustomPracticeModalProps> = ({
 
         {/* Start Button */}
         <button
+          type="button"
           disabled={!checked.success}
           onClick={handleLaunch}
           className="w-full py-3 px-4 rounded-xl bg-cyan-500 hover:bg-cyan-400 disabled:bg-slate-800 disabled:text-slate-500 text-slate-950 font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-cyan-950/50 transition-all cursor-pointer"

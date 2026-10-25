@@ -1,17 +1,16 @@
-import React, { useEffect } from 'react';
+import type React from 'react';
+import { useEffect } from 'react';
 import {
   Star,
-  Trophy,
   Sparkles,
   RotateCcw,
   ArrowRight,
-  Map,
+  Map as MapIcon,
   CheckCircle2,
-  ShieldCheck,
   Home,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { Stage } from '../types/game';
+import type { Stage } from '../types/game';
 
 interface LevelCompleteModalProps {
   stage: Stage;
@@ -40,7 +39,6 @@ export const LevelCompleteModal: React.FC<LevelCompleteModalProps> = ({
   stage,
   result,
   totalStars,
-  totalCredits,
   hasUnlockedNextSector,
   hasNextStage,
   onReplay,
@@ -53,7 +51,6 @@ export const LevelCompleteModal: React.FC<LevelCompleteModalProps> = ({
     score,
     wpm,
     accuracy,
-    maxStreak,
     creditsEarned,
     isNewHighScore,
     newStarsAwarded,
@@ -333,6 +330,7 @@ export const LevelCompleteModal: React.FC<LevelCompleteModalProps> = ({
         {/* Action Buttons */}
         <div className="w-full flex flex-wrap items-center justify-center gap-2.5">
           <button
+            type="button"
             onClick={onReplay}
             className="flex-1 min-w-[120px] px-3.5 py-2.5 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs sm:text-sm font-medium flex items-center justify-center gap-2 transition-colors cursor-pointer"
           >
@@ -341,14 +339,16 @@ export const LevelCompleteModal: React.FC<LevelCompleteModalProps> = ({
           </button>
 
           <button
+            type="button"
             onClick={onReturnToMap}
             className="flex-1 min-w-[130px] px-3.5 py-2.5 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs sm:text-sm font-medium flex items-center justify-center gap-2 transition-colors cursor-pointer"
           >
-            <Map className="w-4 h-4 text-cyan-400" />
+            <MapIcon className="w-4 h-4 text-cyan-400" />
             <span>Galaxy Map</span>
           </button>
 
           <button
+            type="button"
             onClick={onReturnToMenu}
             className="flex-1 min-w-[120px] px-3.5 py-2.5 rounded-xl border border-slate-800 bg-slate-950 hover:bg-slate-800 text-slate-400 hover:text-slate-200 text-xs sm:text-sm font-medium flex items-center justify-center gap-2 transition-colors cursor-pointer"
           >
@@ -358,6 +358,7 @@ export const LevelCompleteModal: React.FC<LevelCompleteModalProps> = ({
 
           {hasNextStage && (
             <button
+              type="button"
               onClick={onNextStage}
               className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-lg shadow-cyan-950/50 transition-all cursor-pointer"
             >

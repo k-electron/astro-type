@@ -1,4 +1,5 @@
-import React, { useRef, useEffect } from 'react';
+import type React from 'react';
+import { useRef, useEffect } from 'react';
 import {
   KEY_FINGER_MAP,
   FINGER_LANES,
@@ -20,6 +21,7 @@ export const TextPromptStream: React.FC = () => {
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   // Auto-scroll so current text remains centered
+  // biome-ignore lint/correctness/useExhaustiveDependencies: currentIndex is the trigger, not an input: scroll each time the typed index moves.
   useEffect(() => {
     if (activeCharRef.current && containerRef.current) {
       const activeEl = activeCharRef.current;
@@ -147,6 +149,7 @@ export const TextPromptStream: React.FC = () => {
           if (isSpaceChar) {
             return (
               <span
+                // biome-ignore lint/suspicious/noArrayIndexKey: a character's position is its identity; the text can repeat any character.
                 key={index}
                 ref={isCurrent ? activeCharRef : null}
                 aria-current={isCurrent ? 'true' : undefined}
@@ -178,6 +181,7 @@ export const TextPromptStream: React.FC = () => {
 
           return (
             <span
+              // biome-ignore lint/suspicious/noArrayIndexKey: a character's position is its identity; the text can repeat any character.
               key={index}
               ref={isCurrent ? activeCharRef : null}
               aria-current={isCurrent ? 'true' : undefined}

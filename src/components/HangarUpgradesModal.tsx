@@ -1,4 +1,4 @@
-import React from 'react';
+import type React from 'react';
 import {
   Shield,
   Zap,
@@ -8,7 +8,7 @@ import {
   Check,
   Play,
 } from 'lucide-react';
-import {
+import type {
   ShipUpgrades,
   TrailColorTheme,
   AudioSynthCore,
@@ -80,6 +80,7 @@ export const HangarUpgradesModal: React.FC<HangarUpgradesModalProps> = ({
 
             {/* Direct Flight Deck Button (Always reliable: resumes flight or launches flight deck) */}
             <button
+              type="button"
               onClick={onGoToFlightDeck}
               className="px-3.5 py-1.5 text-xs font-bold rounded-lg bg-cyan-400 hover:bg-cyan-300 text-slate-950 transition-all flex items-center gap-1.5 cursor-pointer shadow-md shadow-cyan-950/60"
               title="Launch directly into the cockpit flight deck"
@@ -90,6 +91,7 @@ export const HangarUpgradesModal: React.FC<HangarUpgradesModalProps> = ({
 
             {/* Context-Aware Return Button */}
             <button
+              type="button"
               onClick={onClose}
               className="px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer"
             >
@@ -141,6 +143,7 @@ export const HangarUpgradesModal: React.FC<HangarUpgradesModalProps> = ({
 
                 {nextShield ? (
                   <button
+                    type="button"
                     disabled={totalCredits < nextShield.cost}
                     onClick={() => onUpgradeShields()}
                     className={`w-full py-2 px-3 rounded-lg text-xs font-medium font-mono flex items-center justify-between transition-colors ${
@@ -193,6 +196,7 @@ export const HangarUpgradesModal: React.FC<HangarUpgradesModalProps> = ({
 
                 {nextReactor ? (
                   <button
+                    type="button"
                     disabled={totalCredits < nextReactor.cost}
                     onClick={() => onUpgradeReactor()}
                     className={`w-full py-2 px-3 rounded-lg text-xs font-medium font-mono flex items-center justify-between transition-colors ${
@@ -245,6 +249,7 @@ export const HangarUpgradesModal: React.FC<HangarUpgradesModalProps> = ({
 
                 {nextSensor ? (
                   <button
+                    type="button"
                     disabled={totalCredits < nextSensor.cost}
                     onClick={() => onUpgradeSensors()}
                     className={`w-full py-2 px-3 rounded-lg text-xs font-medium font-mono flex items-center justify-between transition-colors ${
@@ -306,6 +311,7 @@ export const HangarUpgradesModal: React.FC<HangarUpgradesModalProps> = ({
                     </div>
 
                     <button
+                      type="button"
                       disabled={!isUnlocked && totalCredits < theme.cost}
                       onClick={() => onUnlockOrEquipTheme(theme.id, theme.cost)}
                       className={`w-full py-1.5 px-2 rounded-lg text-[11px] font-mono transition-colors ${
@@ -372,6 +378,7 @@ export const HangarUpgradesModal: React.FC<HangarUpgradesModalProps> = ({
                     </div>
 
                     <button
+                      type="button"
                       disabled={!isUnlocked && totalCredits < core.cost}
                       onClick={() => onUnlockOrEquipAudio(core.id, core.cost)}
                       className={`w-full py-1.5 px-2 rounded-lg text-[11px] font-mono transition-colors ${

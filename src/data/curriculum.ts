@@ -1,4 +1,4 @@
-import { FingerLaneInfo, FingerZone, Sector, Stage } from '../types/game';
+import type { FingerLaneInfo, FingerZone, Sector, Stage } from '../types/game';
 
 export const FINGER_COLOR_MAP: Record<FingerZone, string> = {
   LEFT_PINKY: '#ec4899', // Vibrant Pink
@@ -1796,6 +1796,7 @@ export const CURRICULUM_SECTORS: Sector[] = [
           '0',
         ],
         sampleText:
+          // biome-ignore lint/suspicious/noTemplateCurlyInString: the sample text is typed as written; the ${id} is meant literally.
           'import { Container } from "pixi.js"; function launch(id: number = 7) { return `Beacon#${id} launched @ 100%`; }',
         difficulty: 'Expert',
         targetWpm: 34,
