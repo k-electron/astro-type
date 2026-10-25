@@ -1,5 +1,5 @@
 import { Container, Graphics, Rectangle, Sprite, Text } from 'pixi.js';
-import { scoreForHit } from '../../game/rules';
+import { hitPopupLabel, hitPopupsToPrepare, hitPopupStems } from './hitPopups';
 import { Pool } from './pool';
 import {
   boxGlow,
@@ -98,7 +98,7 @@ interface Bolt {
   isSpace: boolean;
   /** Hit grade, or null for the red laser of a wrong key. */
   grade: 'perfect' | 'great' | 'good' | null;
-  /** What the hit scored, for its popup; Overdrive's popup names it. */
+  /** What the hit scored, for its popup, and whether Overdrive doubled it. */
   points: number;
   overdrive: boolean;
   keyName: string;
@@ -180,20 +180,6 @@ interface Popup {
 const POPUP_FONT =
   'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace';
 
-/** The popup labels a hit can show, per grade, as the DOM deck words them. */
-const HIT_LABELS = {
-  perfectSpace: '💥 FLAGSHIP OBLITERATED! +100',
-  perfect: [
-    '💥 VAPORIZED! +100',
-    '🎯 CRITICAL HIT! +100',
-    '⚡ DRONE DESTROYED! +100',
-    '🔥 DIRECT HIT! +100',
-  ],
-  greatSpace: '🚀 DREADNOUGHT DOWN! +75',
-  great: ['⚡ SHATTERED! +75', '🎯 INTERCEPTED! +75', '💥 TARGET DOWN! +75'],
-  good: ['✨ GRAZED! +50', '🛡️ DEFUSED! +50', '⚡ CONTACT! +50'],
-} as const;
-
 /** An area that Pixi sizes things by but never counts as hit. */
 class Untouchable extends Rectangle {
   override contains(): boolean {
@@ -201,21 +187,11 @@ class Untouchable extends Rectangle {
   }
 }
 
-/**
- * The popup for a Perfect hit in Overdrive names the points the hit scored. It
- * is the only popup the deck's accessibility layer names, so a player or a test
- * can read it while it is on screen.
- */
-const OVERDRIVE_LABEL = '⚡ OVERDRIVE STRIKE! +';
-const overdriveLabel = (points: number) => `${OVERDRIVE_LABEL}${points}`;
-
-/** What a Perfect hit scores in Overdrive at each Multiplier, from the rules. */
-const OVERDRIVE_PERFECT_POINTS = [1, 2, 3, 4].map((multiplier) =>
-  scoreForHit('PERFECT', multiplier, true),
-);
-
+/** One of the items at random; with only one to pick, no random number is drawn. */
 const pick = <T>(items: readonly T[]): T =>
-  items[Math.floor(Math.random() * items.length)];
+  items.length === 1
+    ? items[0]
+    : items[Math.floor(Math.random() * items.length)];
 
 export interface DeckEffectsOptions {
   resolution: number;
@@ -274,8 +250,8 @@ export class DeckEffects {
 
   constructor(options: DeckEffectsOptions) {
     this.resolution = options.resolution;
-    // Nothing in here is something a screen reader should read, but the
-    // Overdrive popup, so the walk skips every layer except the popups.
+    // Nothing in here is something a screen reader should read, but the hit
+    // popups, so the walk skips every layer except the popups.
     for (const layer of [
       this.glyphLayer,
       this.boltSprites,
@@ -303,18 +279,12 @@ export class DeckEffects {
       this.crystalLayer,
       this.popupLayer,
     );
-    // Rasterise every hit label up front, so the first hit costs no more than the rest.
-    for (const label of [
-      HIT_LABELS.perfectSpace,
-      ...OVERDRIVE_PERFECT_POINTS.map(overdriveLabel),
-      HIT_LABELS.greatSpace,
-      ...HIT_LABELS.perfect,
-      ...HIT_LABELS.great,
-      ...HIT_LABELS.good,
-    ]) {
-      for (const color of ['#38bdf8', '#34d399', '#4ade80', '#facc15']) {
-        this.giveText(`${label}|${color}`, this.makePopupText(label, color));
-      }
+    // Prepare every hit popup up front, so the first hit costs no more than the rest.
+    for (const { label, color } of hitPopupsToPrepare()) {
+      this.giveText(
+        `${label}|${color}`,
+        this.makePopupText(label, color, true),
+      );
     }
   }
 
@@ -453,7 +423,7 @@ export class DeckEffects {
     return { glow, x: 0, y: 0, w: 0, h: 0, color: '#fff', life: 0, maxLife: 0 };
   }
 
-  private makePopupText(label: string, color: string): Text {
+  private makePopupText(label: string, color: string, named: boolean): Text {
     const text = new Text({
       text: label,
       style: {
@@ -467,13 +437,13 @@ export class DeckEffects {
     });
     text.anchor.set(0.5, 0.8);
     text.visible = false;
-    if (label.startsWith(OVERDRIVE_LABEL))
-      this.nameForAccessibility(text, label);
+    if (named) this.nameForAccessibility(text, label);
     return text;
   }
 
   /**
-   * Accessibility layer: the popup's whole text, like "Drone F" for a Drone.
+   * Accessibility layer: a hit popup's whole text, like "Drone F" for a Drone,
+   * so it ends with the points the hit scored.
    * The name is there only while the popup is in the tree and visible, so it
    * goes when the popup fades. Not a tab stop and never in the way of a click.
    */
@@ -511,7 +481,12 @@ export class DeckEffects {
   fireHit(shot: HitShot): void {
     const spacing = shot.isSpace ? 14 : 7;
     const bolt = this.bolts.acquire();
-    if (!bolt) return;
+    if (!bolt) {
+      // Every laser is in flight (a burst of hits before a frame is drawn):
+      // the hit still names the points it scored.
+      this.hitPopup(shot, shot.hitColor, shot.x, shot.y);
+      return;
+    }
     const x1 = shot.x - spacing;
     const x2 = shot.x + spacing;
     bolt.sx1 = x1;
@@ -872,11 +847,14 @@ export class DeckEffects {
     y: number,
     maxLife: number,
     vy: number,
+    named: boolean,
   ): void {
     const slot = this.popups.acquire();
     if (!slot) return;
     const key = `${label}|${color}`;
-    const text = this.takeText(key, () => this.makePopupText(label, color));
+    const text = this.takeText(key, () =>
+      this.makePopupText(label, color, named),
+    );
     text.position.set(x, y);
     text.alpha = 1;
     text.visible = true;
@@ -886,6 +864,32 @@ export class DeckEffects {
     slot.vy = vy;
     slot.life = 0;
     slot.maxLife = maxLife;
+  }
+
+  /** The popup of a hit: a few words, then the points that hit scored. */
+  private hitPopup(
+    hit: Pick<HitShot, 'isSpace' | 'points' | 'overdrive'> & {
+      grade: 'perfect' | 'great' | 'good' | null;
+    },
+    color: string,
+    x: number,
+    y: number,
+  ): void {
+    if (!hit.grade) return;
+    const stems = hitPopupStems({
+      grade: hit.grade,
+      isSpace: hit.isSpace,
+      overdrive: hit.overdrive,
+    });
+    this.popup(
+      hitPopupLabel(pick(stems), hit.points),
+      color,
+      x,
+      y - 26,
+      40,
+      -2.6,
+      true,
+    );
   }
 
   private detonate(bolt: Bolt): void {
@@ -993,19 +997,7 @@ export class DeckEffects {
       this.shockwave(x, y, 12, isSpace ? w * 1.6 : w * 2.2, hitColor, 1);
       this.shockwave(x, y, 6, isSpace ? w * 2.2 : w * 2.8, '#ffffff', 0.9);
 
-      let label: string;
-      if (bolt.grade === 'perfect') {
-        label = isSpace
-          ? HIT_LABELS.perfectSpace
-          : bolt.overdrive
-            ? overdriveLabel(bolt.points)
-            : pick(HIT_LABELS.perfect);
-      } else if (bolt.grade === 'great') {
-        label = isSpace ? HIT_LABELS.greatSpace : pick(HIT_LABELS.great);
-      } else {
-        label = pick(HIT_LABELS.good);
-      }
-      this.popup(label, hitColor, x, y - 26, 40, -2.6);
+      this.hitPopup(bolt, hitColor, x, y);
     } else {
       this.shockwave(x, y, 8, w * 1.3, '#ef4444', 1);
       for (let i = 0; i < 24; i++) {
@@ -1028,6 +1020,7 @@ export class DeckEffects {
         y - 22,
         38,
         -2,
+        false,
       );
     }
   }
