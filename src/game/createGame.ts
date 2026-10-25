@@ -17,7 +17,7 @@ import type {
   Screen,
   Stage,
 } from '../types/game';
-import { type Clock, createSteppedClock } from './clock';
+import { type Clock, createRunClock, createSteppedClock } from './clock';
 import { getNoteLaneAndFinger } from '../data/curriculum';
 import { type GameEffects, silentEffects } from './effects';
 import type { Judgement } from './rules';
@@ -60,8 +60,9 @@ export interface GameOptions {
   /** Sound and other outside effects. Absent means silent. */
   effects?: Partial<GameEffects>;
   /**
-   * The Run clock. Defaults to a clock that only moves when `step` is called.
-   * The app passes a real-time one and drives `step` from a timer.
+   * The wall clock, for timestamps only (when a Stage was last played). Run
+   * Time doesn't come from it. Defaults to a hand-stepped one; the app passes
+   * the real one.
    */
   clock?: Clock;
   /**
@@ -98,8 +99,13 @@ export interface Game {
    * Returns the way to stop listening.
    */
   onJudgement(listener: (judgement: Judgement) => void): () => void;
-  /** Advance the Run clock by `count` steps of 1/60 s. */
+  /**
+   * Advance the Run clock by `count` steps of 1/60 s. Does nothing unless the
+   * Run phase is running: Run Time, the Drones and the telemetry stand still.
+   */
   step(count?: number): void;
+  /** Run Time in milliseconds: how long the Run has been running, pauses left out. */
+  getRunTime(): number;
   getScreen(): Screen;
   getPhase(): RunPhase;
   /** The screen that opened this one (what Close returns to), or null when nothing did. */
@@ -144,6 +150,7 @@ function soundFor(judgement: Judgement, effects: GameEffects): void {
 
 export function createGame(options: GameOptions): Game {
   const clock = options.clock ?? createSteppedClock();
+  const runClock = createRunClock();
   const effects: GameEffects = { ...silentEffects, ...options.effects };
   const onRefusedMove =
     options.onRefusedMove ??
@@ -172,6 +179,7 @@ export function createGame(options: GameOptions): Game {
     reportRunCleared: () => actor.send({ type: 'RUN_CLEARED' }),
     storage: options.storage,
     clock,
+    runClock,
     effects,
     onJudgement(judgement) {
       // Sound answers the Judgement first, once, then everyone else hears it.
@@ -180,16 +188,6 @@ export function createGame(options: GameOptions): Game {
     },
   });
 
-  // The telemetry timer starts afresh each time the Run starts running.
-  let telemetrySteps = 0;
-  let lastPhase = getPhase();
-  actor.subscribe(() => {
-    const phase = getPhase();
-    if (phase !== lastPhase) {
-      lastPhase = phase;
-      telemetrySteps = 0;
-    }
-  });
   actor.start();
 
   const canSend = (event: PlayerEvent) => actor.getSnapshot().can(event);
@@ -226,15 +224,19 @@ export function createGame(options: GameOptions): Game {
     },
     step(count = 1) {
       for (let i = 0; i < count; i++) {
+        // A step can end the phase (nothing in a step does today, but the
+        // phase is the machine's to say), so ask before each one.
+        if (getPhase() !== 'running') return;
         clock.step(1);
-        if (getPhase() !== 'running') continue;
+        runClock.advance(1);
         store.getState().updateFallingNotesOnTick();
-        telemetrySteps += 1;
-        if (telemetrySteps % TELEMETRY_EVERY_STEPS === 0) {
+        // Telemetry follows Run Time, so a pause doesn't shift its rhythm.
+        if (runClock.steps() % TELEMETRY_EVERY_STEPS === 0) {
           store.getState().updateTelemetryOnInterval();
         }
       }
     },
+    getRunTime: () => runClock.runTimeMs(),
     getScreen,
     getPhase,
     getOpener() {

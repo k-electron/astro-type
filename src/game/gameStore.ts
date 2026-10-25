@@ -18,7 +18,7 @@ import {
   type SaveStorage,
 } from './save';
 import { MAX_UPGRADE_LEVEL } from '../store/schemas';
-import type { Clock } from './clock';
+import type { Clock, RunClock } from './clock';
 import type { GameEffects } from './effects';
 import {
   advanceDroneQueue,
@@ -73,7 +73,6 @@ export interface GameStoreState {
   victoryResult: VictoryResult | null;
 
   // Runtime Tracking (non-persisted refs)
-  stageStartTime: number | null;
   currentCharIndex: number;
   sessionKeyStats: Record<string, { hits: number; misses: number }>;
   recentKeystrokeTimes: number[];
@@ -127,7 +126,10 @@ export interface GameStoreDeps {
   /** Tell the machine the last character was typed. */
   reportRunCleared: () => void;
   storage: SaveStorage;
+  /** Timestamps only: when a Stage was last played, a Drone's id. */
   clock: Clock;
+  /** Run Time: what WPM, Stars, cadence and keystroke intervals are measured in. */
+  runClock: RunClock;
   effects: GameEffects;
   /** Told of each Judgement as it happens, after the Run has changed. */
   onJudgement: (judgement: Judgement) => void;
@@ -143,6 +145,7 @@ export function createGameStore({
   reportRunCleared,
   storage,
   clock,
+  runClock,
   effects,
   onJudgement,
 }: GameStoreDeps): StoreApi<GameStoreState> {
@@ -173,7 +176,6 @@ export function createGameStore({
       errorIndices: new Set<number>(),
       fallingNotes: [],
       victoryResult: null,
-      stageStartTime: null,
       currentCharIndex: 0,
       sessionKeyStats: {},
       recentKeystrokeTimes: [],
@@ -198,6 +200,7 @@ export function createGameStore({
           effects.startBeat();
         }
 
+        runClock.reset();
         const now = clock.now();
 
         set({
@@ -205,7 +208,6 @@ export function createGameStore({
           errorIndices: new Set<number>(),
           sessionKeyStats: {},
           recentKeystrokeTimes: [],
-          stageStartTime: now,
           currentCharIndex: 0,
           fallingNotes: seedDrones(stage, now),
           performance: freshPerformance(profile.upgrades.deflectorShields),
@@ -233,6 +235,7 @@ export function createGameStore({
       abandonRun: () => {
         effects.stopBeat();
         effects.setOverdrive(false);
+        runClock.reset();
         set({
           performance: freshPerformance(
             get().profile.upgrades.deflectorShields,
@@ -242,7 +245,6 @@ export function createGameStore({
           fallingNotes: [],
           errorIndices: new Set(),
           victoryResult: null,
-          stageStartTime: null,
           sessionKeyStats: {},
         });
       },
@@ -305,6 +307,7 @@ export function createGameStore({
           );
           const nextCharIndex = currentCharIdx + 1;
           const now = clock.now();
+          const runTimeMs = runClock.runTimeMs();
 
           const nextFallingNotes = advanceDroneQueue(
             state.fallingNotes,
@@ -317,7 +320,7 @@ export function createGameStore({
           // Track inter-keystroke intervals for steady cadence and rhythm scoring
           const updatedKeystrokeTimes = [
             ...state.recentKeystrokeTimes,
-            now,
+            runTimeMs,
           ].slice(-10);
           const liveCadence = cadenceAfterHit(
             updatedKeystrokeTimes,
@@ -423,14 +426,9 @@ export function createGameStore({
 
       updateTelemetryOnInterval: () => {
         const state = get();
-        if (getPhase() !== 'running' || state.stageStartTime === null) {
-          return;
-        }
+        if (getPhase() !== 'running') return;
 
-        const elapsedSeconds = Math.max(
-          1,
-          (clock.now() - state.stageStartTime) / 1000,
-        );
+        const elapsedSeconds = Math.max(1, runClock.runTimeMs() / 1000);
 
         set({ performance: telemetry(state.performance, elapsedSeconds) });
       },
@@ -442,10 +440,7 @@ export function createGameStore({
         effects.playStageVictory();
 
         const now = clock.now();
-        const elapsedSeconds =
-          state.stageStartTime !== null
-            ? Math.max(1, (now - state.stageStartTime) / 1000)
-            : 30;
+        const elapsedSeconds = Math.max(1, runClock.runTimeMs() / 1000);
 
         const {
           wpm: finalNetWpm,
