@@ -155,8 +155,10 @@ export const TextPromptStream: React.FC = () => {
                 aria-current={isCurrent ? 'true' : undefined}
                 className={`inline-block select-none transition-all duration-75 ${
                   isCurrent
-                    ? `px-1.5 py-0.2 mx-0.5 rounded bg-cyan-500/25 ring-1.5 ring-cyan-400 text-cyan-200 font-bold shadow-[0_0_10px_rgba(6,182,212,0.5)] scale-105${
-                        hasError ? ' line-through decoration-rose-500' : ''
+                    ? `px-1.5 py-0.2 mx-0.5 rounded bg-cyan-500/25 ring-1.5 ring-cyan-400 font-bold shadow-[0_0_10px_rgba(6,182,212,0.5)] scale-105 ${
+                        hasError
+                          ? 'text-rose-400 line-through decoration-rose-500'
+                          : 'text-cyan-200'
                       }`
                     : isTyped
                       ? hasError
