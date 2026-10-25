@@ -3,6 +3,7 @@ import { memo, useLayoutEffect, useRef } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { game } from '../../appGame';
 import { FINGER_COLOR_MAP } from '../../data/curriculum';
+import { overdriveScoreFactor } from '../../game/rules';
 import { useGameStore } from '../../store/useGameStore';
 import { getDeckSession } from './deckSession';
 
@@ -46,7 +47,7 @@ export const PixiActionDeck = memo(function PixiActionDeck() {
           {hyperspaceActive && (
             <span className="flex items-center gap-1 text-[11px] font-mono font-extrabold text-amber-300 bg-amber-950/80 px-2 py-0.5 rounded border border-amber-500 shadow-[0_0_12px_rgba(245,158,11,0.4)] animate-pulse">
               <Flame className="w-3.5 h-3.5 text-amber-400 fill-current" />
-              OVERDRIVE x{multiplier}
+              OVERDRIVE x{overdriveScoreFactor(multiplier)}
             </span>
           )}
           {currentStreak >= 10 && (
