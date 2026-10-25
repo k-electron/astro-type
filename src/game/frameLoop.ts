@@ -17,11 +17,17 @@ export interface FrameEnvironment {
  * steps as the time calls for. It takes no time at all while the Run isn't
  * running, and the first frame after a resume only starts the count.
  *
+ * `onFrame`, when given, is called at the end of every frame, running or not,
+ * with how far the frame has got into the next step (0 up to, not including,
+ * 1). A drawing loop uses it to draw on the Run clock and to interpolate
+ * between steps. Outside a running Run the fraction is 0.
+ *
  * Returns the function that stops the loop.
  */
 export function startFrameLoop(
   game: { step(count: number): void; getPhase(): RunPhase },
   env: FrameEnvironment,
+  onFrame?: (stepFraction: number) => void,
 ): () => void {
   let lastFrame: number | null = null;
   let owed = 0;
@@ -35,11 +41,13 @@ export function startFrameLoop(
     if (game.getPhase() !== 'running') {
       lastFrame = null;
       owed = 0;
+      onFrame?.(0);
       return;
     }
     const now = env.now();
     if (lastFrame === null) {
       lastFrame = now;
+      onFrame?.(0);
       return;
     }
     owed += Math.min(Math.max(0, now - lastFrame), MAX_CATCH_UP_MS);
@@ -49,6 +57,7 @@ export function startFrameLoop(
       owed -= steps * STEP_MS;
       game.step(steps);
     }
+    onFrame?.(owed / STEP_MS);
   };
 
   handle = env.request(frame);

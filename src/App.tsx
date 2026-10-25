@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { lazy, Suspense, useEffect, useRef } from 'react';
 import {
   CURRICULUM_SECTORS,
   getNextStage,
@@ -16,9 +16,19 @@ import { CustomPracticeModal } from './components/CustomPracticeModal';
 import { LevelCompleteModal } from './components/LevelCompleteModal';
 import { GlobalCosmicBackground } from './components/GlobalCosmicBackground';
 import { game } from './appGame';
+import { PIXI_DECK } from './deckMode';
 import { useGameStore } from './store/useGameStore';
 import { useOpener, useRunPhase, useScreen } from './store/useGameScreen';
 import { Play, RotateCcw } from 'lucide-react';
+
+// The PixiJS Action Deck (?deck=pixi) is its own chunk: players of the default
+// deck never download it.
+const loadPixiDeck = () =>
+  import('./components/pixi-deck/PixiActionDeck').then((module) => ({
+    default: module.PixiActionDeck,
+  }));
+const PixiActionDeck = lazy(loadPixiDeck);
+if (PIXI_DECK) void loadPixiDeck();
 
 export default function App() {
   const screen = useScreen();
@@ -323,25 +333,37 @@ export default function App() {
             />
 
             {/* Interactive Rhythm Keyboard Flight Deck */}
-            <IntegratedLanesKeyboard
-              notes={fallingNotes}
-              hyperspaceActive={performance.hyperspaceActive}
-              multiplier={performance.multiplier}
-              currentStreak={performance.currentStreak}
-              activeLaneIndex={activeLaneIndex}
-              targetLaneIndex={targetCharInfo ? targetCharInfo.lane : null}
-              timingFeedback={performance.timingFeedback}
-              timingFeedbackKey={performance.timingFeedbackKey}
-              lastHitDrone={performance.lastHitDrone}
-              trailTheme={profile.upgrades.equippedTrailTheme}
-              activeChar={activeChar}
-              previousChar={previousChar}
-              nextChar={nextChar}
-              lastPressedKey={lastPressedKey}
-              keyboardVisible={profile.keyboardVisible}
-              handsVisible={profile.handsVisible}
-              onToggleHands={toggleHands}
-            />
+            {PIXI_DECK ? (
+              <Suspense fallback={null}>
+                <PixiActionDeck
+                  hyperspaceActive={performance.hyperspaceActive}
+                  multiplier={performance.multiplier}
+                  currentStreak={performance.currentStreak}
+                  handsVisible={profile.handsVisible}
+                  onToggleHands={toggleHands}
+                />
+              </Suspense>
+            ) : (
+              <IntegratedLanesKeyboard
+                notes={fallingNotes}
+                hyperspaceActive={performance.hyperspaceActive}
+                multiplier={performance.multiplier}
+                currentStreak={performance.currentStreak}
+                activeLaneIndex={activeLaneIndex}
+                targetLaneIndex={targetCharInfo ? targetCharInfo.lane : null}
+                timingFeedback={performance.timingFeedback}
+                timingFeedbackKey={performance.timingFeedbackKey}
+                lastHitDrone={performance.lastHitDrone}
+                trailTheme={profile.upgrades.equippedTrailTheme}
+                activeChar={activeChar}
+                previousChar={previousChar}
+                nextChar={nextChar}
+                lastPressedKey={lastPressedKey}
+                keyboardVisible={profile.keyboardVisible}
+                handsVisible={profile.handsVisible}
+                onToggleHands={toggleHands}
+              />
+            )}
           </div>
         )}
       </main>
