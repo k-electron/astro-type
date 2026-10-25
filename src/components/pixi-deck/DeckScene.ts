@@ -1,12 +1,22 @@
 import { Container, Graphics } from 'pixi.js';
-import { FINGER_LANES, KEY_FINGER_MAP } from '../../data/curriculum';
+import {
+  FINGER_COLOR_MAP,
+  FINGER_LANES,
+  getNoteLaneAndFinger,
+  KEY_FINGER_MAP,
+} from '../../data/curriculum';
 import type { KeySpec } from '../../data/keyboardLayout';
+import { STEP_MS } from '../../game/clock';
+import type { Judgement } from '../../game/createGame';
 import type { GameStoreState } from '../../game/gameStore';
+import type { TrailColorTheme } from '../../types/game';
+import { DeckEffects } from './DeckEffects';
 import { DroneView } from './DroneView';
 import type { DroneMotion } from './droneMotion';
 import { makeText } from './draw';
 import { HandView, type HandState } from './HandView';
 import { KeyView, keycapLabel } from './KeyView';
+import { ShipView } from './ShipView';
 import {
   computeLayout,
   droneTop,
@@ -15,6 +25,15 @@ import {
   STAGE_HEIGHT,
   TRENCH_H,
 } from './layout';
+
+/** The beam's colour when the next character has no lane of its own: the equipped trail. */
+const THEME_ACCENTS: Record<TrailColorTheme, string> = {
+  CYAN: '#06b6d4',
+  AMBER: '#f59e0b',
+  EMERALD: '#10b981',
+  VIOLET: '#8b5cf6',
+  SUPERNOVA: '#f43f5e',
+};
 
 export interface DeckSceneOptions {
   resolution: number;
@@ -29,9 +48,13 @@ export interface DeckSceneOptions {
  * Drones. A plain object outside React, drawn into the PixiJS stage it is
  * given. It reads the store each time it is drawn and keeps no copy of the game.
  *
- * Layers, bottom to top: chassis, hands, keycaps, trench, Drones. The Action
- * Deck effects (guidance beam, ship, lasers, explosions, popups) go in as
- * their own layers.
+ * Layers, bottom to top, as the DOM deck stacks them: the guidance beam,
+ * chassis, hands, keycaps, trench, Drones, the ship, and the effects (lasers,
+ * explosions, popups) over everything.
+ *
+ * Everything that moves on its own (the ship, the explosions, the thrusters
+ * and lights) runs on effect time: `update` is told how much of it passed
+ * since the last frame, and none passes while the Run is paused.
  */
 export class DeckScene {
   readonly root = new Container();
@@ -43,7 +66,11 @@ export class DeckScene {
   private readonly hands: { left: HandView; right: HandView };
   private readonly keys = new Map<string, KeyView>();
   private readonly drones = new Map<string, DroneView>();
+  private readonly ship = new ShipView();
+  private readonly effects: DeckEffects;
   private layout: Layout | null = null;
+  /** Effect time, in milliseconds: what the looping decoration is a function of. */
+  private timeMs = 0;
   private stateKey = '';
   private stage: GameStoreState['currentStage'] | null = null;
   private size = { width: 0, height: STAGE_HEIGHT };
@@ -61,7 +88,12 @@ export class DeckScene {
     this.chassis.accessibleChildren = false;
     this.trench.accessibleChildren = false;
     this.trenchLabels.accessibleChildren = false;
+    this.effects = new DeckEffects({
+      resolution,
+      isOverdrive: () => options.getState().performance.hyperspaceActive,
+    });
     this.root.addChild(
+      this.ship.beam,
       this.chassis,
       this.hands.left.root,
       this.hands.right.root,
@@ -69,7 +101,20 @@ export class DeckScene {
       this.trench,
       this.trenchLabels,
       this.droneLayer,
+      this.ship.ship,
+      this.effects.root,
     );
+  }
+
+  /** Is an effect still playing? */
+  get effectsActive(): boolean {
+    return this.effects.active;
+  }
+
+  /** Stop every effect at once (a new Run, or the Run abandoned). */
+  clearEffects(): void {
+    this.effects.clear();
+    this.ship.reset();
   }
 
   /** The stage changed size. */
@@ -85,6 +130,7 @@ export class DeckScene {
     const layout = computeLayout(width, height, hands);
     this.layout = layout;
     this.stateKey = '';
+    this.ship.snap();
 
     for (const [id, rect] of layout.keys) {
       const existing = this.keys.get(id);
@@ -151,17 +197,135 @@ export class DeckScene {
 
   /**
    * Bring the scene up to date with the store, with Drones drawn `fraction` of
-   * the way through the Run clock's current step. Call before rendering.
+   * the way through the Run clock's current step and the effects `d` steps of
+   * 1/60 s on (zero while paused, which redraws the same picture). Call
+   * before rendering.
    */
-  update(motion: DroneMotion, fraction: number): void {
+  update(motion: DroneMotion, fraction: number, d: number): void {
     const state = this.options.getState();
     const hands = state.profile.handsVisible;
     if (!this.layout || this.layout.hands !== hands) this.applyLayout(hands);
     const layout = this.layout;
     if (!layout) return;
 
+    this.timeMs += d * STEP_MS;
     this.updateKeysAndHands(state, layout);
+    for (const view of this.keys.values()) view.animate(this.timeMs);
     this.updateDrones(state, layout, motion, fraction);
+    this.updateShip(state, layout, d);
+    if (d > 0) this.effects.advance(d);
+    this.effects.draw();
+  }
+
+  private updateShip(state: GameStoreState, layout: Layout, d: number): void {
+    const text = state.currentStage.sampleText;
+    const activeChar = text[state.performance.currentCharIndex] || null;
+    const rect = activeChar ? layout.keys.get(keyId(activeChar)) : undefined;
+    const lane = activeChar ? getNoteLaneAndFinger(activeChar).lane : null;
+    const color =
+      (lane !== null && FINGER_LANES[lane]?.color) ||
+      THEME_ACCENTS[state.profile.upgrades.equippedTrailTheme] ||
+      '#06b6d4';
+    this.ship.update({
+      targetX: rect ? rect.cx : null,
+      color,
+      shipY: layout.shipY,
+      d,
+    });
+  }
+
+  /**
+   * A Judgement happened: fire the ship. A hit sends twin lasers up the lane to
+   * the Drone that was just typed; a Miss, or a shield absorbing one, sends a
+   * red laser to the wrong keycap. Called from the event, so the Drone's view
+   * is still on the deck, exactly where the player last saw it.
+   */
+  judge(judgement: Judgement): void {
+    const layout = this.layout;
+    if (!layout) return;
+    const state = this.options.getState();
+    const originY = layout.shipY - 14;
+
+    if (judgement.type === 'hit') {
+      const char = judgement.key;
+      const rect = layout.keys.get(keyId(char));
+      if (!rect) return;
+      const isSpace = char === ' ';
+      const lastHit = state.performance.lastHitDrone;
+      let view = lastHit?.id ? this.drones.get(lastHit.id) : undefined;
+      if (!view) {
+        for (const candidate of this.drones.values()) {
+          if (candidate.char === char) {
+            view = candidate;
+            break;
+          }
+        }
+      }
+      // The laser flies to the Drone's top edge; with no Drone in view, to the Strike Line.
+      const topY = view
+        ? view.root.y - rect.h / 2
+        : droneTop(0, lastHit?.yPercent ?? 84, layout.deckY);
+      const info = KEY_FINGER_MAP[char] || KEY_FINGER_MAP[char.toLowerCase()];
+      const laneColor = info ? FINGER_COLOR_MAP[info.finger] : '#38bdf8';
+      const grade = judgement.grade;
+      const hitColor =
+        grade === 'perfect'
+          ? isSpace
+            ? '#34d399'
+            : '#38bdf8'
+          : grade === 'great'
+            ? '#4ade80'
+            : '#facc15';
+      this.ship.fire(false, 0);
+      this.effects.fireHit({
+        x: rect.cx,
+        y: topY,
+        w: rect.w,
+        h: rect.h,
+        originY,
+        isSpace,
+        grade,
+        display: rect.spec.display,
+        laneColor,
+        hitColor,
+      });
+      return;
+    }
+
+    // A Miss, or a shield that took it: the ship fires at the key that was struck.
+    const pressed = judgement.key;
+    const pressedRect = layout.keys.get(keyId(pressed));
+    const text = state.currentStage.sampleText;
+    const activeChar = text[state.performance.currentCharIndex] || null;
+    const expected = activeChar
+      ? layout.keys.get(keyId(activeChar))
+      : undefined;
+    const shipX = expected ? expected.cx : this.ship.x;
+    const x = pressedRect
+      ? pressedRect.cx
+      : shipX + (Math.random() > 0.5 ? 90 : -90);
+    const y = pressedRect ? pressedRect.cy : layout.deckY + 30;
+    const dx = x - shipX;
+    const dy = y - originY;
+    const distance = Math.max(1, Math.hypot(dx, dy));
+    this.ship.fire(true, Math.atan2(dx, -dy) * (180 / Math.PI));
+    this.effects.fireMiss({
+      fromX: shipX,
+      fromY: originY,
+      x,
+      y,
+      w: pressedRect ? pressedRect.w : 40,
+      h: pressedRect ? pressedRect.h : 36,
+      normalX: -dy / distance,
+      normalY: dx / distance,
+      distance,
+      keyName:
+        pressed === ' '
+          ? 'SPACE'
+          : pressed
+            ? pressed.toUpperCase()
+            : 'WRONG KEY',
+    });
   }
 
   private updateKeysAndHands(state: GameStoreState, layout: Layout): void {
@@ -266,6 +430,7 @@ export class DeckScene {
         index,
         FINGER_LANES[note.lane]?.color || '#06b6d4',
       );
+      view.animate(this.timeMs);
     });
     for (const [id, view] of this.drones) {
       if (!seen.has(id)) {
