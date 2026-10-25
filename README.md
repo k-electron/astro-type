@@ -370,6 +370,19 @@ pnpm preview
 pnpm typecheck   # tsc --noEmit
 pnpm check       # Biome lint + format check
 pnpm fix         # apply Biome's safe fixes and formatting
+pnpm verify      # typecheck + Biome + build: the same checks CI runs
+```
+
+### Deploying
+
+Every push to `main` runs the checks in GitHub Actions. If they pass, the build is deployed to Cloudflare Workers and a smoke check confirms the live URL serves the app. Pull requests run the checks without deploying.
+
+```bash
+# Check a change against the production build locally
+pnpm build && pnpm preview
+
+# Smoke-check any URL (the page and its script bundle respond)
+pnpm smoke http://localhost:4173/
 ```
 
 ---

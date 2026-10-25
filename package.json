@@ -16,7 +16,9 @@
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit",
     "check": "biome check",
-    "fix": "biome check --write"
+    "fix": "biome check --write",
+    "verify": "pnpm typecheck && pnpm check && pnpm build",
+    "smoke": "node scripts/smoke.mjs"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",
@@ -38,6 +40,7 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "tailwindcss": "^4.3.3",
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "wrangler": "4.152.0"
   }
 }
