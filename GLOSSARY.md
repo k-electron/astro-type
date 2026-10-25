@@ -32,6 +32,18 @@ _Avoid_: Highway, keyboard area, lanes keyboard
 A falling target in the Action Deck that carries one character for the player to type.
 _Avoid_: Tile, note, target
 
+**Strike Line**:
+The line just above the keyboard where the lead Drone comes to rest and waits to be typed.
+_Avoid_: Receptor, hit line, target line
+
+**Judgement**:
+The verdict on one keystroke: Perfect, Great or Good by how close the Drone was to the Strike Line, or Miss for a wrong key.
+_Avoid_: Timing, timing feedback, rating
+
+**Run Time**:
+The time a Run has spent running, with pauses left out. WPM and stars are measured against it.
+_Avoid_: Elapsed time, stage time
+
 ### Screens
 
 **Academy Home**:
