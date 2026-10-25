@@ -96,10 +96,7 @@ export class DeckScene {
     this.trench.accessibleChildren = false;
     this.trenchLabels.accessibleChildren = false;
     this.trenchDot.accessibleChildren = false;
-    this.effects = new DeckEffects({
-      resolution,
-      isOverdrive: () => options.getState().performance.hyperspaceActive,
-    });
+    this.effects = new DeckEffects({ resolution });
     for (const shadow of this.chassisShadows) {
       shadow.anchor.set(0.5);
       shadow.tint = '#000000';
@@ -337,6 +334,8 @@ export class DeckScene {
         originY,
         isSpace,
         grade,
+        points: judgement.points,
+        overdrive: judgement.overdrive,
         display: rect.spec.display,
         laneColor,
         hitColor,

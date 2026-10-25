@@ -18,7 +18,13 @@ import {
  */
 
 type Judgement =
-  | { type: 'hit'; grade: 'perfect' | 'great' | 'good'; key: string }
+  | {
+      type: 'hit';
+      grade: 'perfect' | 'great' | 'good';
+      key: string;
+      points: number;
+      overdrive: boolean;
+    }
   | { type: 'miss'; key: string }
   | { type: 'shield'; key: string };
 
@@ -31,24 +37,26 @@ function listen(game: Game): Judgement[] {
 
 describe('a hit', () => {
   it.each([
-    // [Sensors level, steps before pressing, distance, grade]
-    [0, 0, 22, 'good'],
-    [0, 4, 16, 'great'], // the Great window's edge is inclusive
-    [0, 10, 7, 'perfect'],
-    [0, 40, 0, 'perfect'], // the Drone waits on the Strike Line
-    [1, 0, 22, 'good'],
-    [2, 0, 22, 'great'], // Sensors widen the windows
-    [3, 3, 17.5, 'perfect'],
+    // [Sensors level, steps before pressing, distance, grade, points at x1]
+    [0, 0, 22, 'good', 50],
+    [0, 4, 16, 'great', 75], // the Great window's edge is inclusive
+    [0, 10, 7, 'perfect', 100],
+    [0, 40, 0, 'perfect', 100], // the Drone waits on the Strike Line
+    [1, 0, 22, 'good', 50],
+    [2, 0, 22, 'great', 75], // Sensors widen the windows
+    [3, 3, 17.5, 'perfect', 100],
   ] as const)(
     'with Sensors level %i, %i steps in (%s from the line) is %s',
-    (sensors, steps, _distance, grade) => {
+    (sensors, steps, _distance, grade, points) => {
       const game = startedGame({ precisionSensors: sensors });
       const events = listen(game);
 
       game.step(steps);
       game.pressKey(targetKey(game));
 
-      expect(events).toEqual([{ type: 'hit', grade, key: 'f' }]);
+      expect(events).toEqual([
+        { type: 'hit', grade, key: 'f', points, overdrive: false },
+      ]);
     },
   );
 
@@ -60,7 +68,51 @@ describe('a hit', () => {
     game.step(30);
     game.pressKey(' ');
 
-    expect(events).toEqual([{ type: 'hit', grade: 'perfect', key: ' ' }]);
+    expect(events).toEqual([
+      {
+        type: 'hit',
+        grade: 'perfect',
+        key: ' ',
+        points: 100,
+        overdrive: false,
+      },
+    ]);
+  });
+});
+
+describe('a hit says the points it scored', () => {
+  /** Plays one Perfect hit and returns its event with the score it added. */
+  function strike(game: Game) {
+    const events = listen(game);
+    const before = game.getRun().score;
+    hitPerfect(game, 1);
+    const [event] = events;
+    if (event?.type !== 'hit') throw new Error('Expected a hit');
+    return { event, added: game.getRun().score - before };
+  }
+
+  it('under a Multiplier, counting the Streak the hit makes', () => {
+    const game = startedGame();
+    hitPerfect(game, 8);
+    const ninth = strike(game);
+    const tenth = strike(game); // Streak 10 is already x2
+    expect(ninth.event.points).toBe(ninth.added);
+    expect(tenth.event.points).toBe(tenth.added);
+    expect(tenth.event.points).toBe(200);
+    expect(tenth.event.overdrive).toBe(false);
+  });
+
+  it('doubled in Overdrive, but not on the hit that starts it', () => {
+    const game = startedGame();
+    hitPerfect(game, 28);
+    const igniting = strike(game);
+    expect(game.getRun().hyperspaceActive).toBe(true);
+    expect(igniting.event).toMatchObject({ points: 300, overdrive: false });
+    expect(igniting.event.points).toBe(igniting.added);
+
+    const doubled = strike(game); // Streak 30: x4, doubled
+    expect(doubled.event).toMatchObject({ points: 800, overdrive: true });
+    expect(doubled.event.points).toBe(doubled.added);
   });
 });
 
@@ -258,7 +310,15 @@ describe('an auto-repeat keydown', () => {
     game.pressKey('f'); // the keydown
     for (let i = 0; i < 5; i++) game.pressKey('f', { repeat: true });
 
-    expect(events).toEqual([{ type: 'hit', grade: 'perfect', key: 'f' }]);
+    expect(events).toEqual([
+      {
+        type: 'hit',
+        grade: 'perfect',
+        key: 'f',
+        points: 100,
+        overdrive: false,
+      },
+    ]);
     expect(game.getRun().currentCharIndex).toBe(9);
     expect(game.getRun().incorrectKeystrokes).toBe(0);
 
