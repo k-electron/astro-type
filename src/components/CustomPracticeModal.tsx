@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Play, Sparkles, Sliders } from 'lucide-react';
+import { FreeFlightTextSchema } from '../store/schemas';
 import { Stage } from '../types/game';
 
 interface CustomPracticeModalProps {
@@ -45,8 +46,17 @@ export const CustomPracticeModal: React.FC<CustomPracticeModalProps> = ({
     initialSpeed,
   );
 
+  // Free Flight text is checked as it is typed, so Launch is disabled (with
+  // the reason) before the player can start a Run that would get stuck.
+  const checked = FreeFlightTextSchema.safeParse(customText);
+  const untypeableMessage =
+    !checked.success && customText.trim() !== ''
+      ? checked.error.issues[0].message
+      : null;
+
   const handleLaunch = () => {
-    if (!customText.trim()) return;
+    if (!checked.success) return;
+    const cleanText = checked.data;
 
     const customStage: Stage = {
       id: `custom-${Date.now()}`,
@@ -55,8 +65,8 @@ export const CustomPracticeModal: React.FC<CustomPracticeModalProps> = ({
       title: 'Free Flight Drill',
       subtitle: 'Custom Practice Mission',
       description: 'Player tailored free-form typing session.',
-      targetKeys: Array.from(new Set(customText.toLowerCase().split(''))),
-      sampleText: customText.trim(),
+      targetKeys: Array.from(new Set(cleanText.toLowerCase().split(''))),
+      sampleText: cleanText,
       difficulty:
         targetWpm > 50
           ? 'Expert'
@@ -203,9 +213,15 @@ export const CustomPracticeModal: React.FC<CustomPracticeModalProps> = ({
           </div>
         </div>
 
+        {untypeableMessage && (
+          <p role="alert" className="mb-3 text-xs font-mono text-rose-400">
+            {untypeableMessage}
+          </p>
+        )}
+
         {/* Start Button */}
         <button
-          disabled={!customText.trim()}
+          disabled={!checked.success}
           onClick={handleLaunch}
           className="w-full py-3 px-4 rounded-xl bg-cyan-500 hover:bg-cyan-400 disabled:bg-slate-800 disabled:text-slate-500 text-slate-950 font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-cyan-950/50 transition-all cursor-pointer"
         >
