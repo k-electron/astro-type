@@ -37,45 +37,46 @@ test('a wrong key is a Miss: Streak resets and the character stays to be typed',
 
 // Journey 2 of the spec says a wrong key "marks the character in the text
 // prompt". Today's game doesn't: the prompt looks the same before and after a
-// Miss, and the only signs of it are the HUD's Streak and Accuracy. This stays
-// expected-to-fail until the game marks the character; it then goes red,
-// which is the cue to drop `fail` and pin the exact mark down.
-test.fail(
-  'a wrong key marks the character in the text prompt',
-  async ({ page }) => {
-    await launchFreeFlight(page, TEXT);
-    await typeText(page, 'abc');
-    await expect(promptProgress(page)).toHaveText('50%');
+// Miss, and the only signs of it are the HUD's Streak and Accuracy. Whether
+// that is a bug or a rule change is the project owner's call (ticket #17), so
+// this is parked with `fixme` until it is decided; then drop `fixme` and pin
+// the exact mark down. (It was `test.fail`, but its "settled" poll could read
+// a transition as settled under load and "pass", which CI would report red.)
+test.fixme('a wrong key marks the character in the text prompt', async ({
+  page,
+}) => {
+  await launchFreeFlight(page, TEXT);
+  await typeText(page, 'abc');
+  await expect(promptProgress(page)).toHaveText('50%');
 
-    // The character still to be typed ("d"), however the prompt draws it.
-    const current = page.getByText('d', { exact: true });
-    const appearance = () =>
-      current.evaluate((element) => {
-        const style = getComputedStyle(element);
-        return [
-          style.color,
-          style.backgroundColor,
-          style.boxShadow,
-          style.outlineColor,
-          style.textDecorationLine,
-          style.opacity,
-        ].join('|');
-      });
+  // The character still to be typed ("d"), however the prompt draws it.
+  const current = page.getByText('d', { exact: true });
+  const appearance = () =>
+    current.evaluate((element) => {
+      const style = getComputedStyle(element);
+      return [
+        style.color,
+        style.backgroundColor,
+        style.boxShadow,
+        style.outlineColor,
+        style.textDecorationLine,
+        style.opacity,
+      ].join('|');
+    });
 
-    // Let the colour transition from the last hit settle first.
-    let previous = '';
-    await expect
-      .poll(async () => {
-        const now = await appearance();
-        const settled = now === previous;
-        previous = now;
-        return settled;
-      })
-      .toBe(true);
-    const before = await appearance();
+  // Let the colour transition from the last hit settle first.
+  let previous = '';
+  await expect
+    .poll(async () => {
+      const now = await appearance();
+      const settled = now === previous;
+      previous = now;
+      return settled;
+    })
+    .toBe(true);
+  const before = await appearance();
 
-    await page.keyboard.press('z');
+  await page.keyboard.press('z');
 
-    await expect.poll(appearance, { timeout: 2000 }).not.toBe(before);
-  },
-);
+  await expect.poll(appearance, { timeout: 2000 }).not.toBe(before);
+});
