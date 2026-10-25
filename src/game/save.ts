@@ -1,4 +1,8 @@
-import { PlayerProfileSchema, type PlayerProfile } from '../store/schemas';
+import {
+  PlayerProfileSchema,
+  SaveFieldsSchema,
+  type PlayerProfile,
+} from '../store/schemas';
 import { DEFAULT_PROFILE } from './profile';
 
 /**
@@ -51,16 +55,40 @@ export function exportBackup(profile: PlayerProfile): string {
 }
 
 /**
+ * The names of the Profile's own fields. A Backup exported before versions
+ * existed is the whole Profile as JSON, so it carries these (`totalStars`
+ * included, which the Save computes but old exports wrote out).
+ */
+const PROFILE_FIELDS: ReadonlySet<string> = new Set([
+  ...Object.keys(SaveFieldsSchema.shape).filter((field) => field !== 'version'),
+  'totalStars',
+]);
+
+/** Whether an unversioned object holds at least one field of a Profile. */
+const hasProfileContent = (value: unknown): boolean =>
+  typeof value === 'object' &&
+  value !== null &&
+  Object.keys(value).some((field) => PROFILE_FIELDS.has(field));
+
+/**
  * Checks a Backup file's text with the Save's schema. Text that isn't JSON, an
  * unknown version or a wrong field is refused. A Backup exported before
- * versions existed, but passing the schema, is read as version 1. Nothing is
- * stored or changed here: the caller replaces the Profile only on `ok`.
+ * versions existed is read as version 1, but only when it holds real Profile
+ * content: `{}` or unrelated JSON is refused instead of becoming a fresh
+ * Profile. A Backup that says `version: 1` is accepted even when sparse, since
+ * a missing field takes its default. Nothing is stored or changed here: the
+ * caller replaces the Profile only on `ok`.
  */
 export function parseBackup(text: string): BackupImport {
   let value: unknown;
   try {
     value = JSON.parse(text);
   } catch {
+    return { ok: false, message: REFUSED_BACKUP_MESSAGE };
+  }
+  const versioned =
+    typeof value === 'object' && value !== null && 'version' in value;
+  if (!versioned && !hasProfileContent(value)) {
     return { ok: false, message: REFUSED_BACKUP_MESSAGE };
   }
   const result = PlayerProfileSchema.safeParse(value);
