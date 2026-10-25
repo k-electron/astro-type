@@ -6,6 +6,11 @@ import {
   FINGER_COLOR_MAP,
   FINGER_DISPLAY_NAMES,
 } from '../data/curriculum';
+import {
+  exportBackup,
+  REFUSED_BACKUP_MESSAGE,
+  type BackupImport,
+} from '../game/save';
 import { Download, Upload, RotateCcw, AlertTriangle, Play } from 'lucide-react';
 
 interface AnalyticsModalProps {
@@ -16,7 +21,7 @@ interface AnalyticsModalProps {
   opener?: Screen | null;
   /** A paused Run is waiting, so the Flight Deck button resumes it. */
   runPaused?: boolean;
-  onImportProfile: (json: string) => void;
+  onImportProfile: (text: string) => BackupImport;
   onWipeAchievements?: () => void;
   onResetProgress: () => void;
 }
@@ -34,6 +39,9 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
   const [confirmMode, setConfirmMode] = useState<
     'NONE' | 'WIPE_ACHIEVEMENTS' | 'FULL_RESET'
   >('NONE');
+  // Why the last import was refused, shown beside the import control. A good
+  // import clears it: the header's Stars and Credits are the player's proof.
+  const [refusal, setRefusal] = useState<string | null>(null);
 
   const {
     totalPracticeSeconds,
@@ -114,7 +122,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
   const handleExport = () => {
     const dataStr =
       'data:text/json;charset=utf-8,' +
-      encodeURIComponent(JSON.stringify(profile, null, 2));
+      encodeURIComponent(exportBackup(profile));
     const downloadAnchor = document.createElement('a');
     downloadAnchor.setAttribute('href', dataStr);
     downloadAnchor.setAttribute(
@@ -127,15 +135,18 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
   };
 
   const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const text = event.target?.result as string;
-        if (text) onImportProfile(text);
-      };
-      reader.readAsText(file);
-    }
+    const input = e.target;
+    const file = input.files?.[0];
+    // Clear the pick, so choosing the same file again still counts as a change.
+    input.value = '';
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const outcome = onImportProfile(String(reader.result ?? ''));
+      setRefusal(outcome.ok ? null : outcome.message);
+    };
+    reader.onerror = () => setRefusal(REFUSED_BACKUP_MESSAGE);
+    reader.readAsText(file);
   };
 
   return (
@@ -468,6 +479,15 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                 <span>Factory Reset</span>
               </button>
             </div>
+
+            {refusal && (
+              <p
+                role="alert"
+                className="basis-full text-xs font-medium text-rose-300"
+              >
+                {refusal}
+              </p>
+            )}
           </div>
         </div>
 

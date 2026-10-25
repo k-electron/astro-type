@@ -10,13 +10,14 @@ import type {
   BeatTheme,
 } from '../types/game';
 import { CURRICULUM_SECTORS, getNoteLaneAndFinger } from '../data/curriculum';
+import { DEFAULT_PROFILE, recordStageResult, UPGRADE_CATALOG } from './profile';
 import {
-  DEFAULT_PROFILE,
-  hydrateProfile,
-  recordStageResult,
-  validateProfileWithZod,
-} from './profile';
-import type { SaveStorage } from './save';
+  type BackupImport,
+  createSave,
+  parseBackup,
+  type SaveStorage,
+} from './save';
+import { MAX_UPGRADE_LEVEL } from '../store/schemas';
 import type { Clock } from './clock';
 import type { GameEffects } from './effects';
 import {
@@ -26,7 +27,8 @@ import {
   cadenceAfterMiss,
   chargeOverdrive,
   freshPerformance,
-  IGNORED_KEYS,
+  countsAsKeystroke,
+  type Judgement,
   judge,
   moveDrones,
   multiplierForStreak,
@@ -48,11 +50,21 @@ export interface VictoryResult {
   cadenceConsistency?: number;
 }
 
+export type UpgradeKind = 'shields' | 'reactor' | 'sensors';
+
+const UPGRADE_FIELDS = {
+  shields: 'deflectorShields',
+  reactor: 'hyperdriveReactor',
+  sensors: 'precisionSensors',
+} as const;
+
 export interface GameStoreState {
   // The live Run, the Debrief and the Profile. The screen and the Run phase
   // are the machine's, not copied here.
   currentStage: Stage;
   profile: PlayerProfile;
+  /** Set when the Save couldn't be read and the player started fresh. */
+  loadNotice: string | null;
   performance: LivePerformance;
   activeLaneIndex: number | null;
   lastPressedKey: string | null;
@@ -78,7 +90,7 @@ export interface GameStoreState {
   recordResult: () => void;
 
   // Player-driven actions
-  processKeystroke: (key: string) => void;
+  processKeystroke: (key: string, options?: { repeat?: boolean }) => void;
   releaseKeystroke: (key?: string) => void;
   updateFallingNotesOnTick: () => void;
   updateTelemetryOnInterval: () => void;
@@ -93,12 +105,18 @@ export interface GameStoreState {
   cycleBeatTheme: () => void;
   toggleKeyboard: () => void;
   toggleHands: () => void;
-  upgradeShields: (cost: number) => void;
-  upgradeReactor: (cost: number) => void;
-  upgradeSensors: (cost: number) => void;
+  /** Buys the next level of an Upgrade. False, and nothing changes, when it is maxed or unaffordable. */
+  buyUpgrade: (kind: UpgradeKind) => boolean;
+  upgradeShields: () => void;
+  upgradeReactor: () => void;
+  upgradeSensors: () => void;
   unlockOrEquipTheme: (theme: TrailColorTheme, cost: number) => void;
   unlockOrEquipAudio: (coreId: AudioSynthCore, cost: number) => void;
-  importProfile: (json: string) => boolean;
+  /**
+   * Replaces the Profile with a Backup's, and saves it. A Backup that fails
+   * the Save's checks is refused: the Profile and the Save are left as they were.
+   */
+  importProfile: (text: string) => BackupImport;
   wipeCurriculumAchievements: () => void;
   resetProgress: () => void;
 }
@@ -111,6 +129,8 @@ export interface GameStoreDeps {
   storage: SaveStorage;
   clock: Clock;
   effects: GameEffects;
+  /** Told of each Judgement as it happens, after the Run has changed. */
+  onJudgement: (judgement: Judgement) => void;
 }
 
 /**
@@ -124,8 +144,10 @@ export function createGameStore({
   storage,
   clock,
   effects,
+  onJudgement,
 }: GameStoreDeps): StoreApi<GameStoreState> {
-  const saveProfile = (profile: PlayerProfile) => storage.save(profile);
+  const save = createSave(storage);
+  const saveProfile = (profile: PlayerProfile) => save.write(profile);
   // Wiping or resetting sends the player back to the first Stage, unless a
   // Run is still on show (paused, or cleared with its Debrief to come back to).
   const backToFirstStageUnlessRun = () =>
@@ -139,11 +161,12 @@ export function createGameStore({
 
   return createStore<GameStoreState>((set, get) => {
     // Load initial validated profile
-    const savedProfile = validateProfileWithZod(hydrateProfile(storage.load()));
+    const { profile: savedProfile, notice: loadNotice } = save.load();
 
     return {
       currentStage: CURRICULUM_SECTORS[0].stages[0],
       profile: savedProfile,
+      loadNotice,
       performance: freshPerformance(savedProfile.upgrades.deflectorShields),
       activeLaneIndex: null,
       lastPressedKey: null,
@@ -162,10 +185,10 @@ export function createGameStore({
         effects.init();
         const { profile } = get();
         if (customSpeed && customSpeed !== profile.highwaySpeed) {
-          const speedProfile = validateProfileWithZod({
+          const speedProfile = {
             ...profile,
             highwaySpeed: customSpeed,
-          });
+          };
           set({ profile: speedProfile });
           saveProfile(speedProfile);
         }
@@ -220,11 +243,11 @@ export function createGameStore({
         });
       },
 
-      processKeystroke: (pressedKey: string) => {
+      processKeystroke: (pressedKey: string, options) => {
         const state = get();
         if (getPhase() !== 'running') return;
 
-        if (IGNORED_KEYS.includes(pressedKey)) {
+        if (!countsAsKeystroke(pressedKey, options?.repeat)) {
           return;
         }
 
@@ -259,8 +282,6 @@ export function createGameStore({
             state.profile.upgrades.precisionSensors,
           );
 
-          effects.playLaneHit(targetInfo.lane, rating, targetChar === ' ');
-
           const nextStreak = state.performance.currentStreak + 1;
           const newMaxStreak = Math.max(
             state.performance.maxStreak,
@@ -278,10 +299,6 @@ export function createGameStore({
             state.performance.hyperspaceActive,
             state.profile.upgrades.hyperdriveReactor,
           );
-          if (charge.ignites) {
-            effects.playHyperspaceIgnition();
-          }
-
           const nextCharIndex = currentCharIdx + 1;
           const now = clock.now();
 
@@ -335,6 +352,21 @@ export function createGameStore({
             recentKeystrokeTimes: updatedKeystrokeTimes,
           });
 
+          onJudgement({
+            type: 'hit',
+            grade:
+              rating === 'PERFECT'
+                ? 'perfect'
+                : rating === 'GREAT'
+                  ? 'great'
+                  : 'good',
+            key: pressedKey,
+          });
+          // Overdrive catching fire is its own sound, after the hit's.
+          if (charge.ignites) {
+            effects.playHyperspaceIgnition();
+          }
+
           // Stage completed check
           if (nextCharIndex >= targetText.length) {
             reportRunCleared();
@@ -349,15 +381,14 @@ export function createGameStore({
             cadenceAfterMiss(state.performance.cadenceConsistency ?? 100),
           );
 
-          if (shielded) {
-            effects.playShieldAbsorb();
-          } else {
-            effects.playMiss();
-          }
           set({
             errorIndices: newErrorIndices,
             sessionKeyStats: updatedKeyStats,
             performance: perf,
+          });
+          onJudgement({
+            type: shielded ? 'shield' : 'miss',
+            key: pressedKey,
           });
         }
       },
@@ -439,8 +470,7 @@ export function createGameStore({
             now,
           );
 
-        const validatedProfile = validateProfileWithZod(updatedProfile);
-        saveProfile(validatedProfile);
+        saveProfile(updatedProfile);
 
         const peacefulPerf: LivePerformance = {
           ...state.performance,
@@ -452,7 +482,7 @@ export function createGameStore({
 
         set({
           performance: peacefulPerf,
-          profile: validatedProfile,
+          profile: updatedProfile,
           victoryResult: {
             score: state.performance.score,
             wpm: finalNetWpm,
@@ -470,10 +500,10 @@ export function createGameStore({
       toggleGlobalMute: () => {
         const { profile } = get();
         const nextMuted = !profile.globalMuted;
-        const updated = validateProfileWithZod({
+        const updated = {
           ...profile,
           globalMuted: nextMuted,
-        });
+        };
         set({ profile: updated });
         saveProfile(updated);
         effects.setGlobalMute(nextMuted);
@@ -490,10 +520,10 @@ export function createGameStore({
       toggleSound: () => {
         const { profile } = get();
         const next = !profile.soundEnabled;
-        const updated = validateProfileWithZod({
+        const updated = {
           ...profile,
           soundEnabled: next,
-        });
+        };
         set({ profile: updated });
         saveProfile(updated);
         effects.setSoundEnabled(next);
@@ -502,10 +532,10 @@ export function createGameStore({
       toggleMusic: () => {
         const { profile } = get();
         const next = !profile.musicEnabled;
-        const updated = validateProfileWithZod({
+        const updated = {
           ...profile,
           musicEnabled: next,
-        });
+        };
         set({ profile: updated });
         saveProfile(updated);
         effects.setMusicEnabled(next);
@@ -525,11 +555,11 @@ export function createGameStore({
         const { profile } = get();
         const clamped = Math.max(0, Math.min(1, vol));
         const enabled = clamped > 0;
-        const updated = validateProfileWithZod({
+        const updated = {
           ...profile,
           soundVolume: clamped,
           soundEnabled: enabled,
-        });
+        };
         set({ profile: updated });
         saveProfile(updated);
         effects.setSoundEnabled(enabled);
@@ -540,11 +570,11 @@ export function createGameStore({
         const { profile } = get();
         const clamped = Math.max(0, Math.min(1, vol));
         const enabled = clamped > 0;
-        const updated = validateProfileWithZod({
+        const updated = {
           ...profile,
           musicVolume: clamped,
           musicEnabled: enabled,
-        });
+        };
         set({ profile: updated });
         saveProfile(updated);
         effects.setMusicEnabled(enabled);
@@ -558,10 +588,10 @@ export function createGameStore({
 
       setBeatTheme: (theme: BeatTheme) => {
         const { profile } = get();
-        const updated = validateProfileWithZod({
+        const updated = {
           ...profile,
           beatTheme: theme,
-        });
+        };
         set({ profile: updated });
         saveProfile(updated);
         effects.setBeatTheme(theme);
@@ -577,88 +607,63 @@ export function createGameStore({
         const nextTheme =
           themes[(themes.indexOf(profile.beatTheme) + 1) % themes.length];
         effects.setBeatTheme(nextTheme);
-        const updated = validateProfileWithZod({
+        const updated = {
           ...profile,
           beatTheme: nextTheme,
-        });
+        };
         set({ profile: updated });
         saveProfile(updated);
       },
 
       toggleKeyboard: () => {
         const { profile } = get();
-        const updated = validateProfileWithZod({
+        const updated = {
           ...profile,
           keyboardVisible: !profile.keyboardVisible,
-        });
+        };
         set({ profile: updated });
         saveProfile(updated);
       },
 
       toggleHands: () => {
         const { profile } = get();
-        const updated = validateProfileWithZod({
+        const updated = {
           ...profile,
           handsVisible: !profile.handsVisible,
-        });
+        };
         set({ profile: updated });
         saveProfile(updated);
       },
 
-      upgradeShields: (cost: number) => {
+      buyUpgrade: (kind: UpgradeKind): boolean => {
         const { profile } = get();
-        if (profile.totalCredits < cost) return;
-        const updated = validateProfileWithZod({
+        const field = UPGRADE_FIELDS[kind];
+        const level = profile.upgrades[field];
+        // The catalog has one entry per level still to buy.
+        const next =
+          level < MAX_UPGRADE_LEVEL ? UPGRADE_CATALOG[field][level] : null;
+        if (!next || profile.totalCredits < next.cost) return false;
+        const updated = {
           ...profile,
-          totalCredits: profile.totalCredits - cost,
-          upgrades: {
-            ...profile.upgrades,
-            deflectorShields: profile.upgrades.deflectorShields + 1,
-          },
-        });
+          totalCredits: profile.totalCredits - next.cost,
+          upgrades: { ...profile.upgrades, [field]: level + 1 },
+        };
         set({ profile: updated });
         saveProfile(updated);
         effects.playShieldUpgrade();
+        return true;
       },
 
-      upgradeReactor: (cost: number) => {
-        const { profile } = get();
-        if (profile.totalCredits < cost) return;
-        const updated = validateProfileWithZod({
-          ...profile,
-          totalCredits: profile.totalCredits - cost,
-          upgrades: {
-            ...profile.upgrades,
-            hyperdriveReactor: profile.upgrades.hyperdriveReactor + 1,
-          },
-        });
-        set({ profile: updated });
-        saveProfile(updated);
-        effects.playShieldUpgrade();
-      },
-
-      upgradeSensors: (cost: number) => {
-        const { profile } = get();
-        if (profile.totalCredits < cost) return;
-        const updated = validateProfileWithZod({
-          ...profile,
-          totalCredits: profile.totalCredits - cost,
-          upgrades: {
-            ...profile.upgrades,
-            precisionSensors: profile.upgrades.precisionSensors + 1,
-          },
-        });
-        set({ profile: updated });
-        saveProfile(updated);
-        effects.playShieldUpgrade();
-      },
+      upgradeShields: () => void get().buyUpgrade('shields'),
+      upgradeReactor: () => void get().buyUpgrade('reactor'),
+      upgradeSensors: () => void get().buyUpgrade('sensors'),
 
       unlockOrEquipTheme: (theme: TrailColorTheme, cost: number) => {
         const { profile } = get();
         const isUnlocked = profile.upgrades.unlockedThemes.includes(theme);
         if (!isUnlocked) {
           if (profile.totalCredits < cost) return;
-          const updated = validateProfileWithZod({
+          const updated = {
             ...profile,
             totalCredits: profile.totalCredits - cost,
             upgrades: {
@@ -666,18 +671,18 @@ export function createGameStore({
               unlockedThemes: [...profile.upgrades.unlockedThemes, theme],
               equippedTrailTheme: theme,
             },
-          });
+          };
           set({ profile: updated });
           saveProfile(updated);
           effects.playEquipCosmetic();
         } else {
-          const updated = validateProfileWithZod({
+          const updated = {
             ...profile,
             upgrades: {
               ...profile.upgrades,
               equippedTrailTheme: theme,
             },
-          });
+          };
           set({ profile: updated });
           saveProfile(updated);
           effects.playEquipCosmetic();
@@ -689,7 +694,7 @@ export function createGameStore({
         const isUnlocked = profile.upgrades.unlockedAudioCores.includes(coreId);
         if (!isUnlocked) {
           if (profile.totalCredits < cost) return;
-          const updated = validateProfileWithZod({
+          const updated = {
             ...profile,
             totalCredits: profile.totalCredits - cost,
             upgrades: {
@@ -700,34 +705,31 @@ export function createGameStore({
               ],
               equippedAudioCore: coreId,
             },
-          });
+          };
           set({ profile: updated });
           saveProfile(updated);
           effects.setCore(coreId);
         } else {
-          const updated = validateProfileWithZod({
+          const updated = {
             ...profile,
             upgrades: {
               ...profile.upgrades,
               equippedAudioCore: coreId,
             },
-          });
+          };
           set({ profile: updated });
           saveProfile(updated);
           effects.setCore(coreId);
         }
       },
 
-      importProfile: (json: string): boolean => {
-        try {
-          const parsed = JSON.parse(json);
-          const validated = validateProfileWithZod(parsed);
-          set({ profile: validated });
-          saveProfile(validated);
-          return true;
-        } catch {
-          return false;
+      importProfile: (text: string): BackupImport => {
+        const backup = parseBackup(text);
+        if (backup.ok) {
+          set({ profile: backup.profile });
+          saveProfile(backup.profile);
         }
+        return backup;
       },
 
       wipeCurriculumAchievements: () => {
@@ -737,9 +739,8 @@ export function createGameStore({
           totalStars: 0,
           stagesProgress: {},
         };
-        const validated = validateProfileWithZod(updated);
-        set({ profile: validated, ...backToFirstStageUnlessRun() });
-        saveProfile(validated);
+        set({ profile: updated, ...backToFirstStageUnlessRun() });
+        saveProfile(updated);
       },
 
       resetProgress: () => {

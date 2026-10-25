@@ -2,6 +2,17 @@
  * AstroType Core Data Contracts & State Types
  */
 
+// The Save and its parts are defined once, by the schema.
+export type {
+  AudioSynthCore,
+  BeatTheme,
+  KeyAnalytics,
+  PlayerProfile,
+  ShipUpgrades,
+  StageProgress,
+  TrailColorTheme,
+} from '../store/schemas';
+
 /** The screens, named as in GLOSSARY.md. The machine decides which one shows. */
 export type Screen =
   | 'academy-home'
@@ -35,8 +46,6 @@ export interface FingerLaneInfo {
   color: string;
   glowColor: string;
 }
-
-export type BeatTheme = 'NEON_SYNTHWAVE' | 'CYBER_PULSE' | 'COSMIC_LOFI';
 
 export interface FallingNote {
   id: string;
@@ -95,68 +104,6 @@ export interface Sector {
   stages: Stage[];
   accentColor: string;
   themeSymbol: string;
-}
-
-export interface StageProgress {
-  stageId: string;
-  completed: boolean;
-  starsEarned: number; // 0 to 3
-  highScore: number;
-  bestWpm: number;
-  bestAccuracy: number;
-  bestStreak: number;
-  timesPlayed: number;
-  lastPlayedAt?: number;
-}
-
-export interface KeyAnalytics {
-  hits: number;
-  misses: number;
-}
-
-export type TrailColorTheme =
-  | 'CYAN'
-  | 'AMBER'
-  | 'EMERALD'
-  | 'VIOLET'
-  | 'SUPERNOVA';
-export type AudioSynthCore =
-  | 'CYBER_SYNTH'
-  | 'RETRO_8BIT'
-  | 'DEEP_SPACE'
-  | 'NEO_ACOUSTIC';
-
-export interface ShipUpgrades {
-  deflectorShields: number; // 0 to 3 (absorbs mistakes without breaking combo)
-  hyperdriveReactor: number; // 0 to 3 (fills hyperspace meter faster)
-  precisionSensors: number; // 0 to 3 (widens PERFECT timing window)
-  equippedTrailTheme: TrailColorTheme;
-  equippedAudioCore: AudioSynthCore;
-  unlockedThemes: TrailColorTheme[];
-  unlockedAudioCores: AudioSynthCore[];
-}
-
-export interface PlayerProfile {
-  totalCredits: number;
-  totalStars: number;
-  totalKeystrokes: number;
-  totalErrors: number;
-  totalWordsTyped: number;
-  totalPracticeSeconds: number;
-  highestWpmAllTime: number;
-  stagesProgress: Record<string, StageProgress>;
-  keyAnalytics: Record<string, KeyAnalytics>;
-  upgrades: ShipUpgrades;
-  soundEnabled: boolean;
-  soundVolume: number; // 0 to 1
-  ambientMusicVolume: number; // 0 to 1
-  highwaySpeed: 'SLOW' | 'NORMAL' | 'FAST' | 'HYPER';
-  keyboardVisible: boolean;
-  handsVisible: boolean;
-  musicEnabled: boolean;
-  musicVolume: number; // 0 to 1
-  beatTheme: BeatTheme;
-  globalMuted?: boolean;
 }
 
 export interface LivePerformance {

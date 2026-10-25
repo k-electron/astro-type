@@ -31,6 +31,7 @@ export default function App() {
   const {
     currentStage,
     profile,
+    loadNotice,
     performance,
     activeLaneIndex,
     lastPressedKey,
@@ -94,19 +95,17 @@ export default function App() {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (phase !== 'running') return;
 
-      // Ignore functional modifier keystrokes alone
-      if (
-        ['Shift', 'Control', 'Alt', 'Meta', 'CapsLock', 'Tab'].includes(e.key)
-      ) {
-        return;
-      }
-
       // Prevent Spacebar from scrolling the page
       if (e.key === ' ') {
         e.preventDefault();
       }
 
-      processKeystroke(e.key);
+      // A shortcut such as Cmd+R types nothing. (Ctrl with Alt is how some
+      // layouts type AltGr characters, so that pair still counts.)
+      if (e.metaKey || (e.ctrlKey && !e.altKey)) return;
+
+      // Which keys count, and dropping auto-repeat, is the game's call.
+      processKeystroke(e.key, { repeat: e.repeat });
     };
 
     const handleKeyUp = (e: KeyboardEvent) => {
@@ -243,6 +242,12 @@ export default function App() {
                   Wipe Achievements & Replay
                 </button>
               </div>
+            )}
+
+            {loadNotice && (
+              <p role="status" className="mb-8 text-xs text-slate-500">
+                {loadNotice}
+              </p>
             )}
 
             {/* Feature Highlights Grid */}

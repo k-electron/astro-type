@@ -18,19 +18,23 @@ import type {
   Stage,
 } from '../types/game';
 import { type Clock, createSteppedClock } from './clock';
+import { getNoteLaneAndFinger } from '../data/curriculum';
 import { type GameEffects, silentEffects } from './effects';
+import type { Judgement } from './rules';
 import {
   createGameStore,
   type GameStoreState,
+  type UpgradeKind,
   type VictoryResult,
 } from './gameStore';
 import type { SaveStorage } from './save';
 
 export { createMemoryStorage } from './save';
-export type { SaveStorage } from './save';
+export type { MemorySaveStorage, SaveStorage } from './save';
 export type { Clock } from './clock';
 export type { GameEffects } from './effects';
-export type { GameStoreState, VictoryResult } from './gameStore';
+export type { Judgement } from './rules';
+export type { GameStoreState, UpgradeKind, VictoryResult } from './gameStore';
 export type { PlayerEvent } from '../store/gameMachine';
 export type { RunPhase, Screen } from '../types/game';
 
@@ -82,8 +86,18 @@ export interface Game {
   send(event: PlayerEvent): void;
   /** Would the machine accept this event now? */
   canSend(event: PlayerEvent): boolean;
-  /** Press a character key, as a keydown does. */
-  pressKey(key: string): void;
+  /**
+   * Press a key, as a keydown does; `key` is a `KeyboardEvent.key` value.
+   * Only a key that types one character is judged. Everything else (Escape,
+   * Backspace, Enter, arrows, function keys, Tab, modifiers) and every
+   * auto-repeat keydown (`repeat: true`) is ignored and changes nothing.
+   */
+  pressKey(key: string, options?: { repeat?: boolean }): void;
+  /**
+   * Hear each Judgement as it happens: exactly one per keystroke that counts.
+   * Returns the way to stop listening.
+   */
+  onJudgement(listener: (judgement: Judgement) => void): () => void;
   /** Advance the Run clock by `count` steps of 1/60 s. */
   step(count?: number): void;
   getScreen(): Screen;
@@ -95,12 +109,38 @@ export interface Game {
   getRun(): Run;
   getDebrief(): VictoryResult | null;
   getProfile(): PlayerProfile;
+  /**
+   * Buy the next level of an Upgrade at its catalog cost. False, with the
+   * Credits unchanged, when the Upgrade is at level 3 or the Credits fall short.
+   */
+  buyUpgrade(kind: UpgradeKind): boolean;
+  /** Why the Save was set aside and the player started fresh, or null. */
+  getLoadNotice(): string | null;
   /** The vanilla store, for the app's React hook. */
   readonly store: StoreApi<GameStoreState>;
 }
 
 /** The telemetry tick: every 30 steps, which is 500 ms at 60 steps a second. */
 const TELEMETRY_EVERY_STEPS = 30;
+
+/** Each Judgement plays exactly one sound. */
+function soundFor(judgement: Judgement, effects: GameEffects): void {
+  if (judgement.type === 'hit') {
+    effects.playLaneHit(
+      getNoteLaneAndFinger(judgement.key).lane,
+      judgement.grade === 'perfect'
+        ? 'PERFECT'
+        : judgement.grade === 'great'
+          ? 'GREAT'
+          : 'GOOD',
+      judgement.key === ' ',
+    );
+  } else if (judgement.type === 'shield') {
+    effects.playShieldAbsorb();
+  } else {
+    effects.playMiss();
+  }
+}
 
 export function createGame(options: GameOptions): Game {
   const clock = options.clock ?? createSteppedClock();
@@ -126,12 +166,18 @@ export function createGame(options: GameOptions): Game {
   const getPhase = (): RunPhase => actor.getSnapshot().context.phase;
   const getScreen = (): Screen => actor.getSnapshot().value as Screen;
 
+  const judgementListeners = new Set<(judgement: Judgement) => void>();
   const store = createGameStore({
     getPhase,
     reportRunCleared: () => actor.send({ type: 'RUN_CLEARED' }),
     storage: options.storage,
     clock,
     effects,
+    onJudgement(judgement) {
+      // Sound answers the Judgement first, once, then everyone else hears it.
+      soundFor(judgement, effects);
+      for (const listener of [...judgementListeners]) listener(judgement);
+    },
   });
 
   // The telemetry timer starts afresh each time the Run starts running.
@@ -169,8 +215,14 @@ export function createGame(options: GameOptions): Game {
     },
     send,
     canSend,
-    pressKey(key) {
-      store.getState().processKeystroke(key);
+    pressKey(key, pressOptions) {
+      store.getState().processKeystroke(key, pressOptions);
+    },
+    onJudgement(listener) {
+      judgementListeners.add(listener);
+      return () => {
+        judgementListeners.delete(listener);
+      };
     },
     step(count = 1) {
       for (let i = 0; i < count; i++) {
@@ -203,6 +255,8 @@ export function createGame(options: GameOptions): Game {
     },
     getDebrief: () => store.getState().victoryResult,
     getProfile: () => store.getState().profile,
+    buyUpgrade: (kind) => store.getState().buyUpgrade(kind),
+    getLoadNotice: () => store.getState().loadNotice,
     store,
   };
 }
