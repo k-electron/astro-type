@@ -12,7 +12,7 @@ test('Free Flight: pasted curly quotes, a long dash and line breaks play through
   const pasted = 'Don’t stop — “go”\nnow\tfast';
   const typed = 'Don\'t stop - "go" now fast';
 
-  await launchFreeFlight(page, pasted);
+  await launchFreeFlight(page, pasted, typed);
 
   // The prompt shows the plain keys the player will actually press.
   await expect(page.getByRole('main')).toContainText(

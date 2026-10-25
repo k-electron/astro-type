@@ -52,7 +52,11 @@ export async function typeText(page: Page, text: string): Promise<void> {
 }
 
 /** Academy Home -> Free Flight -> Launch with the given text. */
-export async function launchFreeFlight(page: Page, text: string) {
+export async function launchFreeFlight(
+  page: Page,
+  text: string,
+  shown: string = text,
+) {
   await page.goto('/');
   await page.getByRole('button', { name: 'Free Flight', exact: true }).click();
   await page.getByRole('textbox').fill(text);
@@ -62,7 +66,7 @@ export async function launchFreeFlight(page: Page, text: string) {
   ).toBeVisible();
   // The prompt shows the player's text, so the Run is ready for its first key.
   await expect(page.getByRole('main')).toContainText(
-    text.replaceAll(/\s/g, '␣'),
+    shown.replaceAll(/\s/g, '␣'),
   );
 }
 
