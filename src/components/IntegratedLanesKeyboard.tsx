@@ -1,6 +1,16 @@
-import React, { useEffect, useRef, useMemo, useState, useCallback } from 'react';
+import React, {
+  useEffect,
+  useRef,
+  useMemo,
+  useState,
+  useCallback,
+} from 'react';
 import { FallingNote, TrailColorTheme, FingerZone } from '../types/game';
-import { FINGER_LANES, KEY_FINGER_MAP, FINGER_COLOR_MAP } from '../data/curriculum';
+import {
+  FINGER_LANES,
+  KEY_FINGER_MAP,
+  FINGER_COLOR_MAP,
+} from '../data/curriculum';
 import { Sparkles, Flame, Award, Hand } from 'lucide-react';
 import { SmallHandVisualizer } from './SmallHandVisualizer';
 
@@ -44,20 +54,117 @@ interface KeySpec {
 const KEYBOARD_ROWS: KeySpec[][] = [
   // Row 0: Numbers & Symbols (Total = 15.0 units)
   [
-    { key: '`', display: '`', subDisplay: '~', finger: 'LEFT_PINKY', lane: 0, units: 1.0 },
-    { key: '1', display: '1', subDisplay: '!', finger: 'LEFT_PINKY', lane: 0, units: 1.0 },
-    { key: '2', display: '2', subDisplay: '@', finger: 'LEFT_RING', lane: 1, units: 1.0 },
-    { key: '3', display: '3', subDisplay: '#', finger: 'LEFT_MIDDLE', lane: 2, units: 1.0 },
-    { key: '4', display: '4', subDisplay: '$', finger: 'LEFT_INDEX', lane: 3, units: 1.0 },
-    { key: '5', display: '5', subDisplay: '%', finger: 'LEFT_INDEX', lane: 3, units: 1.0 },
-    { key: '6', display: '6', subDisplay: '^', finger: 'RIGHT_INDEX', lane: 5, units: 1.0 },
-    { key: '7', display: '7', subDisplay: '&', finger: 'RIGHT_INDEX', lane: 5, units: 1.0 },
-    { key: '8', display: '8', subDisplay: '*', finger: 'RIGHT_MIDDLE', lane: 6, units: 1.0 },
-    { key: '9', display: '9', subDisplay: '(', finger: 'RIGHT_RING', lane: 7, units: 1.0 },
-    { key: '0', display: '0', subDisplay: ')', finger: 'RIGHT_PINKY', lane: 8, units: 1.0 },
-    { key: '-', display: '-', subDisplay: '_', finger: 'RIGHT_PINKY', lane: 8, units: 1.0 },
-    { key: '=', display: '=', subDisplay: '+', finger: 'RIGHT_PINKY', lane: 8, units: 1.0 },
-    { key: 'Backspace', display: '⌫ BACK', finger: 'RIGHT_PINKY', lane: 8, units: 2.0 },
+    {
+      key: '`',
+      display: '`',
+      subDisplay: '~',
+      finger: 'LEFT_PINKY',
+      lane: 0,
+      units: 1.0,
+    },
+    {
+      key: '1',
+      display: '1',
+      subDisplay: '!',
+      finger: 'LEFT_PINKY',
+      lane: 0,
+      units: 1.0,
+    },
+    {
+      key: '2',
+      display: '2',
+      subDisplay: '@',
+      finger: 'LEFT_RING',
+      lane: 1,
+      units: 1.0,
+    },
+    {
+      key: '3',
+      display: '3',
+      subDisplay: '#',
+      finger: 'LEFT_MIDDLE',
+      lane: 2,
+      units: 1.0,
+    },
+    {
+      key: '4',
+      display: '4',
+      subDisplay: '$',
+      finger: 'LEFT_INDEX',
+      lane: 3,
+      units: 1.0,
+    },
+    {
+      key: '5',
+      display: '5',
+      subDisplay: '%',
+      finger: 'LEFT_INDEX',
+      lane: 3,
+      units: 1.0,
+    },
+    {
+      key: '6',
+      display: '6',
+      subDisplay: '^',
+      finger: 'RIGHT_INDEX',
+      lane: 5,
+      units: 1.0,
+    },
+    {
+      key: '7',
+      display: '7',
+      subDisplay: '&',
+      finger: 'RIGHT_INDEX',
+      lane: 5,
+      units: 1.0,
+    },
+    {
+      key: '8',
+      display: '8',
+      subDisplay: '*',
+      finger: 'RIGHT_MIDDLE',
+      lane: 6,
+      units: 1.0,
+    },
+    {
+      key: '9',
+      display: '9',
+      subDisplay: '(',
+      finger: 'RIGHT_RING',
+      lane: 7,
+      units: 1.0,
+    },
+    {
+      key: '0',
+      display: '0',
+      subDisplay: ')',
+      finger: 'RIGHT_PINKY',
+      lane: 8,
+      units: 1.0,
+    },
+    {
+      key: '-',
+      display: '-',
+      subDisplay: '_',
+      finger: 'RIGHT_PINKY',
+      lane: 8,
+      units: 1.0,
+    },
+    {
+      key: '=',
+      display: '=',
+      subDisplay: '+',
+      finger: 'RIGHT_PINKY',
+      lane: 8,
+      units: 1.0,
+    },
+    {
+      key: 'Backspace',
+      display: '⌫ BACK',
+      finger: 'RIGHT_PINKY',
+      lane: 8,
+      units: 2.0,
+    },
   ],
   // Row 1: Top Row (Total = 15.0 units)
   [
@@ -72,29 +179,96 @@ const KEYBOARD_ROWS: KeySpec[][] = [
     { key: 'i', display: 'I', finger: 'RIGHT_MIDDLE', lane: 6, units: 1.0 },
     { key: 'o', display: 'O', finger: 'RIGHT_RING', lane: 7, units: 1.0 },
     { key: 'p', display: 'P', finger: 'RIGHT_PINKY', lane: 8, units: 1.0 },
-    { key: '[', display: '[', subDisplay: '{', finger: 'RIGHT_PINKY', lane: 8, units: 1.0 },
-    { key: ']', display: ']', subDisplay: '}', finger: 'RIGHT_PINKY', lane: 8, units: 1.0 },
-    { key: '\\', display: '\\', subDisplay: '|', finger: 'RIGHT_PINKY', lane: 8, units: 1.5 },
+    {
+      key: '[',
+      display: '[',
+      subDisplay: '{',
+      finger: 'RIGHT_PINKY',
+      lane: 8,
+      units: 1.0,
+    },
+    {
+      key: ']',
+      display: ']',
+      subDisplay: '}',
+      finger: 'RIGHT_PINKY',
+      lane: 8,
+      units: 1.0,
+    },
+    {
+      key: '\\',
+      display: '\\',
+      subDisplay: '|',
+      finger: 'RIGHT_PINKY',
+      lane: 8,
+      units: 1.5,
+    },
   ],
   // Row 2: Home Row (Total = 15.0 units)
   [
-    { key: 'CapsLock', display: 'CAPS ⇪', finger: 'LEFT_PINKY', lane: 0, units: 1.75 },
+    {
+      key: 'CapsLock',
+      display: 'CAPS ⇪',
+      finger: 'LEFT_PINKY',
+      lane: 0,
+      units: 1.75,
+    },
     { key: 'a', display: 'A', finger: 'LEFT_PINKY', lane: 0, units: 1.0 },
     { key: 's', display: 'S', finger: 'LEFT_RING', lane: 1, units: 1.0 },
     { key: 'd', display: 'D', finger: 'LEFT_MIDDLE', lane: 2, units: 1.0 },
-    { key: 'f', display: 'F', finger: 'LEFT_INDEX', lane: 3, units: 1.0, isBump: true },
+    {
+      key: 'f',
+      display: 'F',
+      finger: 'LEFT_INDEX',
+      lane: 3,
+      units: 1.0,
+      isBump: true,
+    },
     { key: 'g', display: 'G', finger: 'LEFT_INDEX', lane: 3, units: 1.0 },
     { key: 'h', display: 'H', finger: 'RIGHT_INDEX', lane: 5, units: 1.0 },
-    { key: 'j', display: 'J', finger: 'RIGHT_INDEX', lane: 5, units: 1.0, isBump: true },
+    {
+      key: 'j',
+      display: 'J',
+      finger: 'RIGHT_INDEX',
+      lane: 5,
+      units: 1.0,
+      isBump: true,
+    },
     { key: 'k', display: 'K', finger: 'RIGHT_MIDDLE', lane: 6, units: 1.0 },
     { key: 'l', display: 'L', finger: 'RIGHT_RING', lane: 7, units: 1.0 },
-    { key: ';', display: ';', subDisplay: ':', finger: 'RIGHT_PINKY', lane: 8, units: 1.0 },
-    { key: "'", display: "'", subDisplay: '"', finger: 'RIGHT_PINKY', lane: 8, units: 1.0 },
-    { key: 'Enter', display: 'ENTER ⏎', finger: 'RIGHT_PINKY', lane: 8, units: 2.25 },
+    {
+      key: ';',
+      display: ';',
+      subDisplay: ':',
+      finger: 'RIGHT_PINKY',
+      lane: 8,
+      units: 1.0,
+    },
+    {
+      key: "'",
+      display: "'",
+      subDisplay: '"',
+      finger: 'RIGHT_PINKY',
+      lane: 8,
+      units: 1.0,
+    },
+    {
+      key: 'Enter',
+      display: 'ENTER ⏎',
+      finger: 'RIGHT_PINKY',
+      lane: 8,
+      units: 2.25,
+    },
   ],
   // Row 3: Bottom Row (Total = 15.0 units)
   [
-    { key: 'ShiftLeft', display: '⇧ SHIFT', finger: 'LEFT_PINKY', lane: 0, units: 2.25 },
+    {
+      key: 'ShiftLeft',
+      display: '⇧ SHIFT',
+      finger: 'LEFT_PINKY',
+      lane: 0,
+      units: 2.25,
+    },
     { key: 'z', display: 'Z', finger: 'LEFT_PINKY', lane: 0, units: 1.0 },
     { key: 'x', display: 'X', finger: 'LEFT_RING', lane: 1, units: 1.0 },
     { key: 'c', display: 'C', finger: 'LEFT_MIDDLE', lane: 2, units: 1.0 },
@@ -102,20 +276,71 @@ const KEYBOARD_ROWS: KeySpec[][] = [
     { key: 'b', display: 'B', finger: 'LEFT_INDEX', lane: 3, units: 1.0 },
     { key: 'n', display: 'N', finger: 'RIGHT_INDEX', lane: 5, units: 1.0 },
     { key: 'm', display: 'M', finger: 'RIGHT_INDEX', lane: 5, units: 1.0 },
-    { key: ',', display: ',', subDisplay: '<', finger: 'RIGHT_MIDDLE', lane: 6, units: 1.0 },
-    { key: '.', display: '.', subDisplay: '>', finger: 'RIGHT_RING', lane: 7, units: 1.0 },
-    { key: '/', display: '/', subDisplay: '?', finger: 'RIGHT_PINKY', lane: 8, units: 1.0 },
-    { key: 'ShiftRight', display: 'SHIFT ⇧', finger: 'RIGHT_PINKY', lane: 8, units: 2.75 },
+    {
+      key: ',',
+      display: ',',
+      subDisplay: '<',
+      finger: 'RIGHT_MIDDLE',
+      lane: 6,
+      units: 1.0,
+    },
+    {
+      key: '.',
+      display: '.',
+      subDisplay: '>',
+      finger: 'RIGHT_RING',
+      lane: 7,
+      units: 1.0,
+    },
+    {
+      key: '/',
+      display: '/',
+      subDisplay: '?',
+      finger: 'RIGHT_PINKY',
+      lane: 8,
+      units: 1.0,
+    },
+    {
+      key: 'ShiftRight',
+      display: 'SHIFT ⇧',
+      finger: 'RIGHT_PINKY',
+      lane: 8,
+      units: 2.75,
+    },
   ],
   // Row 4: Space Bar Row (Total = 15.0 units)
   [
-    { key: 'ControlLeft', display: 'CTRL', finger: 'LEFT_PINKY', lane: 0, units: 1.5 },
-    { key: 'AltLeft', display: 'ALT', finger: 'LEFT_RING', lane: 1, units: 1.25 },
+    {
+      key: 'ControlLeft',
+      display: 'CTRL',
+      finger: 'LEFT_PINKY',
+      lane: 0,
+      units: 1.5,
+    },
+    {
+      key: 'AltLeft',
+      display: 'ALT',
+      finger: 'LEFT_RING',
+      lane: 1,
+      units: 1.25,
+    },
     { key: 'MetaLeft', display: 'CMD', finger: 'THUMB', lane: 4, units: 1.25 },
     { key: ' ', display: 'SPACE', finger: 'THUMB', lane: 4, units: 6.25 },
     { key: 'MetaRight', display: 'CMD', finger: 'THUMB', lane: 4, units: 1.25 },
-    { key: 'AltRight', display: 'ALT', finger: 'RIGHT_RING', lane: 7, units: 1.25 },
-    { key: 'ControlRight', display: 'CTRL', finger: 'RIGHT_PINKY', lane: 8, units: 2.25 },
+    {
+      key: 'AltRight',
+      display: 'ALT',
+      finger: 'RIGHT_RING',
+      lane: 7,
+      units: 1.25,
+    },
+    {
+      key: 'ControlRight',
+      display: 'CTRL',
+      finger: 'RIGHT_PINKY',
+      lane: 8,
+      units: 2.25,
+    },
   ],
 ];
 
@@ -264,7 +489,9 @@ interface ExplodingDrone {
   maxLife: number;
 }
 
-export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = ({
+export const IntegratedLanesKeyboard: React.FC<
+  IntegratedLanesKeyboardProps
+> = ({
   notes,
   hyperspaceActive,
   multiplier,
@@ -290,25 +517,43 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
   const keyRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   // Hand visualizer guides mode (controlled or fallback local state)
-  const [localHandsVisible, setLocalHandsVisible] = useState<boolean>(initialHandEnabled);
-  const handsVisible = controlledHandsVisible !== undefined ? controlledHandsVisible : localHandsVisible;
-  const toggleHandsGuide = onToggleHands || (() => setLocalHandsVisible((prev) => !prev));
+  const [localHandsVisible, setLocalHandsVisible] =
+    useState<boolean>(initialHandEnabled);
+  const handsVisible =
+    controlledHandsVisible !== undefined
+      ? controlledHandsVisible
+      : localHandsVisible;
+  const toggleHandsGuide =
+    onToggleHands || (() => setLocalHandsVisible((prev) => !prev));
 
   // Active target character info
   const activeCharInfo = useMemo(() => {
     if (!activeChar) return null;
-    return KEY_FINGER_MAP[activeChar] || KEY_FINGER_MAP[activeChar.toLowerCase()] || null;
+    return (
+      KEY_FINGER_MAP[activeChar] ||
+      KEY_FINGER_MAP[activeChar.toLowerCase()] ||
+      null
+    );
   }, [activeChar]);
 
-  const targetKeyLower = activeChar ? (activeChar === ' ' ? ' ' : activeChar.toLowerCase()) : null;
+  const targetKeyLower = activeChar
+    ? activeChar === ' '
+      ? ' '
+      : activeChar.toLowerCase()
+    : null;
   const isShiftNeeded = activeCharInfo?.shiftRequired || false;
   const recommendedShift = activeCharInfo?.recommendedShiftHand || null;
   const isSpaceActive = activeChar === ' ';
 
   // Main key target finger, hand, and key display
   const mainKeyFinger: FingerZone | null = activeCharInfo?.finger || null;
-  const mainKeyHand: 'left' | 'right' | 'thumb' | null = activeCharInfo?.hand || null;
-  const targetKeyDisplay = activeChar ? (activeChar === ' ' ? '␣' : activeChar) : null;
+  const mainKeyHand: 'left' | 'right' | 'thumb' | null =
+    activeCharInfo?.hand || null;
+  const targetKeyDisplay = activeChar
+    ? activeChar === ' '
+      ? '␣'
+      : activeChar
+    : null;
 
   // Smart ergonomic thumb allocation based on cognitive and motor load:
   // If the preceding keystroke was struck with the LEFT hand -> Left hand muscles are contracted/loaded,
@@ -316,9 +561,12 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
   // If the preceding keystroke was struck with the RIGHT hand -> Left thumb is completely free with lesser cognitive load!
   const smartThumbHand: 'left' | 'right' = useMemo(() => {
     // 1. Evaluate preceding key in the typing stream
-    const prev = previousChar || (lastPressedKey && lastPressedKey.length === 1 ? lastPressedKey : null);
+    const prev =
+      previousChar ||
+      (lastPressedKey && lastPressedKey.length === 1 ? lastPressedKey : null);
     if (prev && prev !== ' ') {
-      const prevInfo = KEY_FINGER_MAP[prev] || KEY_FINGER_MAP[prev.toLowerCase()];
+      const prevInfo =
+        KEY_FINGER_MAP[prev] || KEY_FINGER_MAP[prev.toLowerCase()];
       if (prevInfo) {
         if (prevInfo.hand === 'left') return 'right';
         if (prevInfo.hand === 'right') return 'left';
@@ -327,7 +575,8 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
 
     // 2. If previous character was space or unavailable, evaluate upcoming next character
     if (nextChar && nextChar !== ' ') {
-      const nextInfo = KEY_FINGER_MAP[nextChar] || KEY_FINGER_MAP[nextChar.toLowerCase()];
+      const nextInfo =
+        KEY_FINGER_MAP[nextChar] || KEY_FINGER_MAP[nextChar.toLowerCase()];
       if (nextInfo) {
         if (nextInfo.hand === 'left') return 'right';
         if (nextInfo.hand === 'right') return 'left';
@@ -339,7 +588,9 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
   }, [previousChar, nextChar, lastPressedKey]);
 
   // Modifier combo resolution (Shift, Ctrl, etc.)
-  const modifierHand: 'left' | 'right' | null = isShiftNeeded ? recommendedShift : null;
+  const modifierHand: 'left' | 'right' | null = isShiftNeeded
+    ? recommendedShift
+    : null;
   const modifierFinger: FingerZone | null = isShiftNeeded
     ? recommendedShift === 'left'
       ? 'LEFT_PINKY'
@@ -348,7 +599,9 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
   const modifierLabel: string | null = isShiftNeeded ? 'SHIFT' : null;
 
   // Track key positions and keyboard deck position in real-time
-  const [keyPositions, setKeyPositions] = useState<Record<string, { x: number; y: number; width: number; height: number }>>({});
+  const [keyPositions, setKeyPositions] = useState<
+    Record<string, { x: number; y: number; width: number; height: number }>
+  >({});
   const [keyboardTopY, setKeyboardTopY] = useState<number>(180);
   const [keyboardBottomY, setKeyboardBottomY] = useState<number>(440);
   const [containerHeight, setContainerHeight] = useState<number>(500);
@@ -366,7 +619,10 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
       setKeyboardBottomY(deckRect.bottom - cRect.top);
     }
 
-    const newPositions: Record<string, { x: number; y: number; width: number; height: number }> = {};
+    const newPositions: Record<
+      string,
+      { x: number; y: number; width: number; height: number }
+    > = {};
     Object.entries(keyRefs.current).forEach(([k, el]) => {
       if (el) {
         const kRect = el.getBoundingClientRect();
@@ -404,7 +660,9 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
   // Active target key position and lane color
   const activeKeyPos = targetKeyLower ? keyPositions[targetKeyLower] : null;
   const activeLaneColor =
-    (targetLaneIndex !== null && FINGER_LANES[targetLaneIndex]?.color) || THEME_ACCENTS[trailTheme] || '#06b6d4';
+    (targetLaneIndex !== null && FINGER_LANES[targetLaneIndex]?.color) ||
+    THEME_ACCENTS[trailTheme] ||
+    '#06b6d4';
   const shipY = Math.max(keyboardBottomY + 6, containerHeight - 34);
 
   // Particle & FX systems on 2D Canvas (Laser Cannons, Debris Shatter, Sparks, Shockwaves, Crystals, Combat Popups)
@@ -417,9 +675,49 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
   const debrisRef = useRef<DebrisFragment[]>([]);
   const crystalsRef = useRef<CrystalScrap[]>([]);
   const lastHitKeyRef = useRef<number>(timingFeedbackKey);
-  const activeDronePosRef = useRef<{ x: number; y: number; width: number; height: number; char: string; display?: string; subDisplay?: string } | null>(null);
-  const liveDronesMapRef = useRef<Map<string, { id: string; char: string; x: number; y: number; width: number; height: number; isSpace: boolean; laneColor: string; display: string; subDisplay?: string }>>(new Map());
-  const liveDronesByCharRef = useRef<Map<string, { id: string; char: string; x: number; y: number; width: number; height: number; isSpace: boolean; laneColor: string; display: string; subDisplay?: string }>>(new Map());
+  const activeDronePosRef = useRef<{
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    char: string;
+    display?: string;
+    subDisplay?: string;
+  } | null>(null);
+  const liveDronesMapRef = useRef<
+    Map<
+      string,
+      {
+        id: string;
+        char: string;
+        x: number;
+        y: number;
+        width: number;
+        height: number;
+        isSpace: boolean;
+        laneColor: string;
+        display: string;
+        subDisplay?: string;
+      }
+    >
+  >(new Map());
+  const liveDronesByCharRef = useRef<
+    Map<
+      string,
+      {
+        id: string;
+        char: string;
+        x: number;
+        y: number;
+        width: number;
+        height: number;
+        isSpace: boolean;
+        laneColor: string;
+        display: string;
+        subDisplay?: string;
+      }
+    >
+  >(new Map());
   const [muzzleFlashActive, setMuzzleFlashActive] = useState<number>(0);
   const [shotAimAngle, setShotAimAngle] = useState<number>(0);
 
@@ -432,12 +730,21 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
 
       // 1. Expected active key position (where the ship is currently mounted underneath)
       const expectedChar = activeChar;
-      const expectedLookup = expectedChar === ' ' ? ' ' : (expectedChar ? expectedChar.toLowerCase() : null);
+      const expectedLookup =
+        expectedChar === ' '
+          ? ' '
+          : expectedChar
+            ? expectedChar.toLowerCase()
+            : null;
       const expectedPos = expectedLookup ? keyPositions[expectedLookup] : null;
 
       const currentShipY = Math.max(keyboardBottomY + 6, containerHeight - 34);
       const cannonOriginY = currentShipY - 14;
-      const shipX = activeKeyPos ? activeKeyPos.x : (expectedPos ? expectedPos.x : 0);
+      const shipX = activeKeyPos
+        ? activeKeyPos.x
+        : expectedPos
+          ? expectedPos.x
+          : 0;
 
       if (!isMiss) {
         // SUCCESSFUL HIT: Destroy the incoming enemy drone straight up the corridor!
@@ -448,26 +755,38 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
         if (!pos) return;
 
         const isSpace = hitChar === ' ';
-        const fingerInfo = KEY_FINGER_MAP[hitChar] || KEY_FINGER_MAP[hitChar.toLowerCase()];
-        const laneColor = fingerInfo ? FINGER_COLOR_MAP[fingerInfo.finger] : '#38bdf8';
+        const fingerInfo =
+          KEY_FINGER_MAP[hitChar] || KEY_FINGER_MAP[hitChar.toLowerCase()];
+        const laneColor = fingerInfo
+          ? FINGER_COLOR_MAP[fingerInfo.finger]
+          : '#38bdf8';
 
         const hitColor =
           timingFeedback === 'PERFECT'
-            ? (isSpace ? '#34d399' : '#38bdf8')
+            ? isSpace
+              ? '#34d399'
+              : '#38bdf8'
             : timingFeedback === 'GREAT'
-            ? '#4ade80'
-            : '#facc15';
+              ? '#4ade80'
+              : '#facc15';
 
         // Retrieve the exact live drone record
         const skyCeilingY = 18;
         const defensePerimeterY = Math.max(skyCeilingY + 36, keyboardTopY - 38);
         const calculatedAltitudeY = lastHitDrone
-          ? skyCeilingY + (defensePerimeterY - skyCeilingY) * Math.min(1.0, Math.max(0, lastHitDrone.yPercent / 84))
+          ? skyCeilingY +
+            (defensePerimeterY - skyCeilingY) *
+              Math.min(1.0, Math.max(0, lastHitDrone.yPercent / 84))
           : defensePerimeterY;
 
-        const liveDrone = (lastHitDrone?.id ? liveDronesMapRef.current.get(lastHitDrone.id) : null)
-          || liveDronesByCharRef.current.get(lookupKey)
-          || (activeDronePosRef.current?.char.toLowerCase() === lookupKey ? activeDronePosRef.current : null);
+        const liveDrone =
+          (lastHitDrone?.id
+            ? liveDronesMapRef.current.get(lastHitDrone.id)
+            : null) ||
+          liveDronesByCharRef.current.get(lookupKey) ||
+          (activeDronePosRef.current?.char.toLowerCase() === lookupKey
+            ? activeDronePosRef.current
+            : null);
 
         const targetX = liveDrone ? liveDrone.x : pos.x;
         // The laser MUST fly directly to that specific drone's actual live Y height!
@@ -510,7 +829,9 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
           feedback: timingFeedback || 'PERFECT',
           targetDrone: {
             char: hitChar,
-            display: liveDrone?.display || (hitChar === ' ' ? 'SPACE' : hitChar.toUpperCase()),
+            display:
+              liveDrone?.display ||
+              (hitChar === ' ' ? 'SPACE' : hitChar.toUpperCase()),
             subDisplay: liveDrone?.subDisplay,
             isSpace,
             color: laneColor,
@@ -526,20 +847,35 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
         // The user clicked/typed the wrong key!
         // The ship visibly fires an angled laser directly to the key that was pressed, making the mistake unmistakable!
         const pressedChar = lastPressedKey;
-        const pressedLookup = pressedChar === ' ' ? ' ' : (pressedChar ? pressedChar.toLowerCase() : null);
+        const pressedLookup =
+          pressedChar === ' '
+            ? ' '
+            : pressedChar
+              ? pressedChar.toLowerCase()
+              : null;
         const pressedPos = pressedLookup ? keyPositions[pressedLookup] : null;
 
-        const targetX = pressedPos ? pressedPos.x : (shipX + (Math.random() > 0.5 ? 90 : -90));
-        const targetY = pressedPos ? pressedPos.y : (keyboardTopY + 30);
+        const targetX = pressedPos
+          ? pressedPos.x
+          : shipX + (Math.random() > 0.5 ? 90 : -90);
+        const targetY = pressedPos ? pressedPos.y : keyboardTopY + 30;
         const targetWidth = pressedPos ? pressedPos.width : 40;
         const targetHeight = pressedPos ? pressedPos.height : 36;
-        const missedKeyDisplay = pressedLookup === ' ' ? 'SPACE' : (pressedChar ? pressedChar.toUpperCase() : 'WRONG KEY');
+        const missedKeyDisplay =
+          pressedLookup === ' '
+            ? 'SPACE'
+            : pressedChar
+              ? pressedChar.toUpperCase()
+              : 'WRONG KEY';
 
         // Calculate aim angle from ship to the pressed key
         const dx = targetX - shipX;
         const dy = targetY - cannonOriginY;
         const dist = Math.max(1, Math.hypot(dx, dy));
-        const angleDeg = Math.max(-48, Math.min(48, Math.atan2(dx, -dy) * (180 / Math.PI)));
+        const angleDeg = Math.max(
+          -48,
+          Math.min(48, Math.atan2(dx, -dy) * (180 / Math.PI)),
+        );
 
         setShotAimAngle(angleDeg);
         setMuzzleFlashActive(Date.now() + 180);
@@ -591,7 +927,19 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
         });
       }
     }
-  }, [timingFeedbackKey, timingFeedback, activeChar, previousChar, lastPressedKey, keyPositions, hyperspaceActive, keyboardTopY, keyboardBottomY, containerHeight, activeKeyPos]);
+  }, [
+    timingFeedbackKey,
+    timingFeedback,
+    activeChar,
+    previousChar,
+    lastPressedKey,
+    keyPositions,
+    hyperspaceActive,
+    keyboardTopY,
+    keyboardBottomY,
+    containerHeight,
+    activeKeyPos,
+  ]);
 
   // Canvas VFX Loop for Laser Cannons, Debris Shatter, Sparks, Shockwaves, and Rating Popups
   useEffect(() => {
@@ -631,7 +979,11 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
         bolt.currentY2 = bolt.startY2 + (bolt.targetY2 - bolt.startY2) * t;
 
         // While the laser bolt is traveling towards the target drone, keep the target drone locked and rendered at (bolt.targetX, bolt.targetY)!
-        if (bolt.feedback !== 'MISS' && bolt.targetDrone && !bolt.hasDetonated) {
+        if (
+          bolt.feedback !== 'MISS' &&
+          bolt.targetDrone &&
+          !bolt.hasDetonated
+        ) {
           const td = bolt.targetDrone;
           ctx.save();
           ctx.translate(bolt.targetX, bolt.targetY);
@@ -725,7 +1077,14 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
           { x: bolt.currentX1, y: bolt.currentY1 },
           { x: bolt.currentX2, y: bolt.currentY2 },
         ].forEach((pt) => {
-          const grad = ctx.createRadialGradient(pt.x, pt.y, 1, pt.x, pt.y, boltWidth * 3.5);
+          const grad = ctx.createRadialGradient(
+            pt.x,
+            pt.y,
+            1,
+            pt.x,
+            pt.y,
+            boltWidth * 3.5,
+          );
           grad.addColorStop(0, '#ffffff');
           grad.addColorStop(0.4, bolt.color);
           grad.addColorStop(1, 'transparent');
@@ -790,7 +1149,8 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
             });
 
             // B. SHATTERING DRONE DEBRIS: 16 to 30 spinning hull armor shards
-            const debrisCount = bolt.feedback === 'PERFECT' ? (isSpace ? 30 : 22) : 15;
+            const debrisCount =
+              bolt.feedback === 'PERFECT' ? (isSpace ? 30 : 22) : 15;
             for (let i = 0; i < debrisCount; i++) {
               const angle = Math.random() * Math.PI * 2;
               const speed = 4.0 + Math.random() * 9.0;
@@ -802,7 +1162,8 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
                 rotation: Math.random() * Math.PI * 2,
                 vRot: (Math.random() - 0.5) * 0.5,
                 size: 4.5 + Math.random() * 6.5,
-                color: i % 2 === 0 ? laneColor : (i % 3 === 0 ? '#ffffff' : '#334155'),
+                color:
+                  i % 2 === 0 ? laneColor : i % 3 === 0 ? '#ffffff' : '#334155',
                 alpha: 1.0,
                 life: 0,
                 maxLife: 32 + Math.random() * 18,
@@ -810,7 +1171,8 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
             }
 
             // C. COMBUSTION FIREBALL SPARKS: 28 to 55 plasma embers
-            const sparkCount = bolt.feedback === 'PERFECT' ? (isSpace ? 55 : 40) : 26;
+            const sparkCount =
+              bolt.feedback === 'PERFECT' ? (isSpace ? 55 : 40) : 26;
             for (let i = 0; i < sparkCount; i++) {
               const angle = Math.random() * Math.PI * 2;
               const speed = 4.5 + Math.random() * 9.5;
@@ -819,7 +1181,8 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
                 y: impactY,
                 vx: Math.cos(angle) * speed,
                 vy: Math.sin(angle) * speed - 1.5,
-                color: i % 3 === 0 ? '#ffffff' : (i % 2 === 0 ? hitColor : '#f97316'),
+                color:
+                  i % 3 === 0 ? '#ffffff' : i % 2 === 0 ? hitColor : '#f97316',
                 size: 3.0 + Math.random() * 4.5,
                 alpha: 1.0,
                 life: 0,
@@ -828,14 +1191,15 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
             }
 
             // D. ARCADE ENERGY CRYSTALS: 2 to 4 glittering diamonds
-            const crystalCount = bolt.feedback === 'PERFECT' ? (isSpace ? 4 : 3) : 2;
+            const crystalCount =
+              bolt.feedback === 'PERFECT' ? (isSpace ? 4 : 3) : 2;
             for (let i = 0; i < crystalCount; i++) {
               crystalsRef.current.push({
                 x: impactX + (Math.random() - 0.5) * 24,
                 y: impactY,
                 vx: (Math.random() - 0.5) * 5.5,
                 vy: -(5.0 + Math.random() * 4.0),
-                color: isSpace ? '#34d399' : (i === 0 ? '#38bdf8' : '#fbbf24'),
+                color: isSpace ? '#34d399' : i === 0 ? '#38bdf8' : '#fbbf24',
                 size: 6.0 + Math.random() * 3.5,
                 alpha: 1.0,
                 life: 0,
@@ -848,7 +1212,9 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
               x: impactX,
               y: impactY,
               radius: 12,
-              maxRadius: isSpace ? bolt.targetWidth * 1.6 : bolt.targetWidth * 2.2,
+              maxRadius: isSpace
+                ? bolt.targetWidth * 1.6
+                : bolt.targetWidth * 2.2,
               color: hitColor,
               alpha: 1.0,
             });
@@ -856,7 +1222,9 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
               x: impactX,
               y: impactY,
               radius: 6,
-              maxRadius: isSpace ? bolt.targetWidth * 2.2 : bolt.targetWidth * 2.8,
+              maxRadius: isSpace
+                ? bolt.targetWidth * 2.2
+                : bolt.targetWidth * 2.8,
               color: '#ffffff',
               alpha: 0.9,
             });
@@ -869,18 +1237,31 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
               } else if (hyperspaceActive) {
                 textLabel = '⚡ WARP STRIKE! +400';
               } else {
-                const labels = ['💥 VAPORIZED! +100', '🎯 CRITICAL HIT! +100', '⚡ DRONE DESTROYED! +100', '🔥 DIRECT HIT! +100'];
+                const labels = [
+                  '💥 VAPORIZED! +100',
+                  '🎯 CRITICAL HIT! +100',
+                  '⚡ DRONE DESTROYED! +100',
+                  '🔥 DIRECT HIT! +100',
+                ];
                 textLabel = labels[Math.floor(Math.random() * labels.length)];
               }
             } else if (bolt.feedback === 'GREAT') {
               if (isSpace) {
                 textLabel = '🚀 DREADNOUGHT DOWN! +75';
               } else {
-                const labels = ['⚡ SHATTERED! +75', '🎯 INTERCEPTED! +75', '💥 TARGET DOWN! +75'];
+                const labels = [
+                  '⚡ SHATTERED! +75',
+                  '🎯 INTERCEPTED! +75',
+                  '💥 TARGET DOWN! +75',
+                ];
                 textLabel = labels[Math.floor(Math.random() * labels.length)];
               }
             } else {
-              const labels = ['✨ GRAZED! +50', '🛡️ DEFUSED! +50', '⚡ CONTACT! +50'];
+              const labels = [
+                '✨ GRAZED! +50',
+                '🛡️ DEFUSED! +50',
+                '⚡ CONTACT! +50',
+              ];
               textLabel = labels[Math.floor(Math.random() * labels.length)];
             }
 
@@ -945,7 +1326,14 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
         nf.alpha -= 0.12;
         if (nf.alpha > 0) {
           ctx.save();
-          const grad = ctx.createRadialGradient(nf.x, nf.y, 0, nf.x, nf.y, nf.radius);
+          const grad = ctx.createRadialGradient(
+            nf.x,
+            nf.y,
+            0,
+            nf.x,
+            nf.y,
+            nf.radius,
+          );
           grad.addColorStop(0, `rgba(255, 255, 255, ${nf.alpha})`);
           grad.addColorStop(0.4, `rgba(255, 240, 180, ${nf.alpha * 0.75})`);
           grad.addColorStop(1, 'transparent');
@@ -1096,7 +1484,8 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
 
         if (fb.alpha > 0) {
           ctx.save();
-          ctx.font = '900 16px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace';
+          ctx.font =
+            '900 16px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace';
           ctx.textAlign = 'center';
           ctx.fillStyle = fb.color;
           ctx.globalAlpha = fb.alpha;
@@ -1125,13 +1514,22 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
     else if (k.key === 'Enter') charToSend = 'Enter';
     else if (k.key === 'Tab') charToSend = 'Tab';
     else if (k.key === 'ShiftLeft' || k.key === 'ShiftRight') return;
-    else if (k.key === 'CapsLock' || k.key === 'ControlLeft' || k.key === 'ControlRight' || k.key === 'AltLeft' || k.key === 'AltRight' || k.key === 'MetaLeft' || k.key === 'MetaRight') return;
+    else if (
+      k.key === 'CapsLock' ||
+      k.key === 'ControlLeft' ||
+      k.key === 'ControlRight' ||
+      k.key === 'AltLeft' ||
+      k.key === 'AltRight' ||
+      k.key === 'MetaLeft' ||
+      k.key === 'MetaRight'
+    )
+      return;
 
     window.dispatchEvent(
       new KeyboardEvent('keydown', {
         key: charToSend,
         bubbles: true,
-      })
+      }),
     );
 
     setTimeout(() => {
@@ -1139,7 +1537,7 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
         new KeyboardEvent('keyup', {
           key: charToSend,
           bubbles: true,
-        })
+        }),
       );
     }, 100);
   };
@@ -1186,14 +1584,20 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
           <span className="hidden sm:inline text-slate-500">Home:</span>
           <span
             className="hidden sm:inline-block px-1.5 py-0.5 rounded bg-slate-800 font-bold border"
-            style={{ color: FINGER_COLOR_MAP.LEFT_INDEX, borderColor: `${FINGER_COLOR_MAP.LEFT_INDEX}60` }}
+            style={{
+              color: FINGER_COLOR_MAP.LEFT_INDEX,
+              borderColor: `${FINGER_COLOR_MAP.LEFT_INDEX}60`,
+            }}
             title="Left Index Finger Home Anchor [F]"
           >
             [F]
           </span>
           <span
             className="hidden sm:inline-block px-1.5 py-0.5 rounded bg-slate-800 font-bold border"
-            style={{ color: FINGER_COLOR_MAP.RIGHT_INDEX, borderColor: `${FINGER_COLOR_MAP.RIGHT_INDEX}60` }}
+            style={{
+              color: FINGER_COLOR_MAP.RIGHT_INDEX,
+              borderColor: `${FINGER_COLOR_MAP.RIGHT_INDEX}60`,
+            }}
             title="Right Index Finger Home Anchor [J]"
           >
             [J]
@@ -1208,7 +1612,10 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
         className="relative w-full h-[620px] sm:h-[700px] bg-transparent overflow-hidden flex flex-col justify-between select-none"
       >
         {/* Canvas for Hit Sparks, Shockwaves, and Combat Rating Popups (Layer z-40: IN FRONT OF EVERYTHING for un-occluded VFX) */}
-        <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none z-40 block" />
+        <canvas
+          ref={canvasRef}
+          className="absolute inset-0 w-full h-full pointer-events-none z-40 block"
+        />
 
         {/* 1. LASER GUIDANCE MARKER (Layer z-5: Single diffused center line with ramp up and down glow, spanning from top to ship) */}
         {activeKeyPos && (
@@ -1252,11 +1659,15 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
             }}
           >
             {/* Starfighter Craft with visceral recoil and twin muzzle flares */}
-            <div className={`relative transition-transform duration-75 ${muzzleFlashActive > Date.now() ? 'translate-y-1.5 scale-90' : ''}`}>
+            <div
+              className={`relative transition-transform duration-75 ${muzzleFlashActive > Date.now() ? 'translate-y-1.5 scale-90' : ''}`}
+            >
               {/* Twin High-Intensity Muzzle Flash Flares when firing */}
               <span
                 className={`absolute -top-3.5 left-0.5 w-2.5 h-5 rounded-full pointer-events-none transition-all duration-75 ${
-                  muzzleFlashActive > Date.now() ? 'opacity-100 scale-125' : 'opacity-0 scale-50'
+                  muzzleFlashActive > Date.now()
+                    ? 'opacity-100 scale-125'
+                    : 'opacity-0 scale-50'
                 }`}
                 style={{
                   background:
@@ -1271,7 +1682,9 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
               />
               <span
                 className={`absolute -top-3.5 right-0.5 w-2.5 h-5 rounded-full pointer-events-none transition-all duration-75 ${
-                  muzzleFlashActive > Date.now() ? 'opacity-100 scale-125' : 'opacity-0 scale-50'
+                  muzzleFlashActive > Date.now()
+                    ? 'opacity-100 scale-125'
+                    : 'opacity-0 scale-50'
                 }`}
                 style={{
                   background:
@@ -1286,17 +1699,58 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
               />
 
               {/* Starfighter Craft Silhouette (Cannons pointing UP) */}
-              <svg width="42" height="28" viewBox="0 0 42 28" fill="none" className="drop-shadow-[0_4px_14px_rgba(0,0,0,0.95)]">
+              <svg
+                width="42"
+                height="28"
+                viewBox="0 0 42 28"
+                fill="none"
+                className="drop-shadow-[0_4px_14px_rgba(0,0,0,0.95)]"
+              >
                 {/* Rear ion engine glow pointing downward */}
-                <ellipse cx="21" cy="24" rx="5.5" ry="3" fill={activeLaneColor} opacity="0.9" className="animate-pulse" />
+                <ellipse
+                  cx="21"
+                  cy="24"
+                  rx="5.5"
+                  ry="3"
+                  fill={activeLaneColor}
+                  opacity="0.9"
+                  className="animate-pulse"
+                />
                 <ellipse cx="21" cy="25" rx="3" ry="1.5" fill="#ffffff" />
                 {/* Starfighter Armor Hull & Swept Cannons */}
-                <polygon points="21,2 25,11 38,17 41,23 30,21 24,24 21,21 18,24 12,21 1,23 4,17 17,11" fill="#090d16" stroke={activeLaneColor} strokeWidth="1.6" />
+                <polygon
+                  points="21,2 25,11 38,17 41,23 30,21 24,24 21,21 18,24 12,21 1,23 4,17 17,11"
+                  fill="#090d16"
+                  stroke={activeLaneColor}
+                  strokeWidth="1.6"
+                />
                 {/* Cockpit Canopy Glass */}
-                <polygon points="21,6 23.5,14 21,17 18.5,14" fill="#38bdf8" opacity="0.95" />
+                <polygon
+                  points="21,6 23.5,14 21,17 18.5,14"
+                  fill="#38bdf8"
+                  opacity="0.95"
+                />
                 {/* Twin Heavy Blaster Cannons pointing UP */}
-                <rect x="13" y="2" width="2.5" height="9" rx="1" fill="#f8fafc" stroke="#334155" strokeWidth="0.5" />
-                <rect x="26.5" y="2" width="2.5" height="9" rx="1" fill="#f8fafc" stroke="#334155" strokeWidth="0.5" />
+                <rect
+                  x="13"
+                  y="2"
+                  width="2.5"
+                  height="9"
+                  rx="1"
+                  fill="#f8fafc"
+                  stroke="#334155"
+                  strokeWidth="0.5"
+                />
+                <rect
+                  x="26.5"
+                  y="2"
+                  width="2.5"
+                  height="9"
+                  rx="1"
+                  fill="#f8fafc"
+                  stroke="#334155"
+                  strokeWidth="0.5"
+                />
               </svg>
             </div>
           </div>
@@ -1316,18 +1770,26 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
             const isSpace = note.char === ' ';
             // Sky ceiling and defense perimeter line strictly above keyboard deck
             const skyCeilingY = 20;
-            const defensePerimeterY = Math.max(skyCeilingY + 48, keyboardTopY - 42);
+            const defensePerimeterY = Math.max(
+              skyCeilingY + 48,
+              keyboardTopY - 42,
+            );
 
             let topPx = 0;
             if (noteIdx === 0) {
               // The NEXT TARGET DRONE: Smoothly flies down the flight corridor
               const progress = Math.min(1.0, Math.max(0, note.yPercent / 84));
-              topPx = skyCeilingY + (defensePerimeterY - skyCeilingY) * progress;
+              topPx =
+                skyCeilingY + (defensePerimeterY - skyCeilingY) * progress;
             } else {
               // QUEUED SQUADRON: Stationed in echelon formation in orbit (Expanded spacing for taller roadmap view)
-              const echelonSlotY = Math.max(skyCeilingY, defensePerimeterY - noteIdx * 62);
+              const echelonSlotY = Math.max(
+                skyCeilingY,
+                defensePerimeterY - noteIdx * 62,
+              );
               const travelProgress = Math.min(1.0, note.yPercent / 35);
-              topPx = skyCeilingY + (echelonSlotY - skyCeilingY) * travelProgress;
+              topPx =
+                skyCeilingY + (echelonSlotY - skyCeilingY) * travelProgress;
             }
 
             const noteWidth = pos.width;
@@ -1362,8 +1824,8 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
                       ? 'bg-slate-950/90 border-2 text-white z-30'
                       : 'bg-slate-950/95 border-2 text-white z-30'
                     : isSpace
-                    ? 'bg-slate-900/80 border text-slate-300 opacity-90 z-20'
-                    : 'bg-slate-900/90 border text-slate-300 opacity-90 z-20'
+                      ? 'bg-slate-900/80 border text-slate-300 opacity-90 z-20'
+                      : 'bg-slate-900/90 border text-slate-300 opacity-90 z-20'
                 }`}
                 style={{
                   left: `${pos.x}px`,
@@ -1388,7 +1850,8 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
                           key={i}
                           className="w-2.5 h-3.5 rounded-full animate-pulse shadow-lg"
                           style={{
-                            background: 'linear-gradient(to top, #ffffff, #10b981, transparent)',
+                            background:
+                              'linear-gradient(to top, #ffffff, #10b981, transparent)',
                             boxShadow: '0 0 10px #10b981',
                           }}
                         />
@@ -1485,7 +1948,9 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
                           className={`text-[10px] sm:text-xs leading-none mb-0.5 font-black ${
                             noteIdx === 0 ? 'text-white' : 'text-slate-300'
                           }`}
-                          style={{ color: noteIdx === 0 ? laneColor : undefined }}
+                          style={{
+                            color: noteIdx === 0 ? laneColor : undefined,
+                          }}
                         >
                           {kSpec.subDisplay}
                         </span>
@@ -1499,8 +1964,8 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
                           (kSpec?.display || note.displayChar).length > 2
                             ? 'text-xs sm:text-sm font-bold'
                             : noteIdx === 0
-                            ? 'text-xl sm:text-2xl font-black'
-                            : 'text-base sm:text-lg font-bold'
+                              ? 'text-xl sm:text-2xl font-black'
+                              : 'text-base sm:text-lg font-bold'
                         }`}
                       >
                         {kSpec?.display || note.displayChar}
@@ -1512,7 +1977,9 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
                 {/* Finger color accent bar at bottom of drone chassis */}
                 <span
                   className={`absolute bottom-0 inset-x-1 rounded-full ${
-                    noteIdx === 0 ? 'h-1 opacity-100 shadow-[0_0_8px_currentColor]' : 'h-[2px] opacity-75'
+                    noteIdx === 0
+                      ? 'h-1 opacity-100 shadow-[0_0_8px_currentColor]'
+                      : 'h-[2px] opacity-75'
                   }`}
                   style={{ backgroundColor: laneColor, color: laneColor }}
                 />
@@ -1553,12 +2020,30 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
             {handsVisible && (
               <SmallHandVisualizer
                 hand="left"
-                activeFinger={mainKeyHand === 'left' ? mainKeyFinger : (isSpaceActive ? 'THUMB' : null)}
-                activeKeyDisplay={mainKeyHand === 'left' ? targetKeyDisplay : (isSpaceActive ? ' ' : null)}
+                activeFinger={
+                  mainKeyHand === 'left'
+                    ? mainKeyFinger
+                    : isSpaceActive
+                      ? 'THUMB'
+                      : null
+                }
+                activeKeyDisplay={
+                  mainKeyHand === 'left'
+                    ? targetKeyDisplay
+                    : isSpaceActive
+                      ? ' '
+                      : null
+                }
                 modifierFinger={modifierHand === 'left' ? modifierFinger : null}
                 modifierLabel={modifierHand === 'left' ? modifierLabel : null}
                 lastPressedKey={lastPressedKey}
-                thumbRole={isSpaceActive ? (smartThumbHand === 'left' ? 'primary' : 'secondary') : null}
+                thumbRole={
+                  isSpaceActive
+                    ? smartThumbHand === 'left'
+                      ? 'primary'
+                      : 'secondary'
+                    : null
+                }
               />
             )}
 
@@ -1575,10 +2060,14 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
                     const isTargetShift =
                       isShiftNeeded &&
                       ((recommendedShift === 'left' && k.key === 'ShiftLeft') ||
-                        (recommendedShift === 'right' && k.key === 'ShiftRight'));
+                        (recommendedShift === 'right' &&
+                          k.key === 'ShiftRight'));
 
                     const isTargetModifier = isTargetShift;
-                    const isCurrentlyPressed = Boolean(lastPressedKey && lastPressedKey.toLowerCase() === k.key.toLowerCase());
+                    const isCurrentlyPressed = Boolean(
+                      lastPressedKey &&
+                        lastPressedKey.toLowerCase() === k.key.toLowerCase(),
+                    );
                     const laneColor = laneMatch?.color || '#06b6d4';
 
                     return (
@@ -1593,27 +2082,27 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
                           borderColor: isTargetKey
                             ? laneColor
                             : isTargetModifier
-                            ? '#fbbf24'
-                            : isCurrentlyPressed
-                            ? laneColor
-                            : undefined,
+                              ? '#fbbf24'
+                              : isCurrentlyPressed
+                                ? laneColor
+                                : undefined,
                           borderStyle: isTargetModifier ? 'dashed' : 'solid',
                           boxShadow: isTargetKey
                             ? `0 3px 0 #020617, 0 0 24px ${laneColor}85, inset 0 1px 1px rgba(255,255,255,0.4)`
                             : isTargetModifier
-                            ? `0 3px 0 #020617, 0 0 20px rgba(251,191,36,0.65), inset 0 1px 1px rgba(255,255,255,0.4)`
-                            : isCurrentlyPressed
-                            ? `0 1px 0 #020617, 0 0 20px ${laneColor}90, inset 0 1px 1px rgba(255,255,255,0.4)`
-                            : `0 3px 0 #020617, 0 4px 8px rgba(0,0,0,0.6), inset 0 -3px 0 ${laneColor}45, inset 0 1px 1px rgba(255,255,255,0.1)`,
+                              ? `0 3px 0 #020617, 0 0 20px rgba(251,191,36,0.65), inset 0 1px 1px rgba(255,255,255,0.4)`
+                              : isCurrentlyPressed
+                                ? `0 1px 0 #020617, 0 0 20px ${laneColor}90, inset 0 1px 1px rgba(255,255,255,0.4)`
+                                : `0 3px 0 #020617, 0 4px 8px rgba(0,0,0,0.6), inset 0 -3px 0 ${laneColor}45, inset 0 1px 1px rgba(255,255,255,0.1)`,
                         }}
                         className={`relative flex flex-col items-center justify-center h-8 sm:h-9 rounded-md text-[11px] sm:text-xs font-mono transition-all duration-75 select-none cursor-pointer group ${
                           isTargetKey
                             ? 'bg-gradient-to-b from-slate-800 to-slate-900 border-2 border-solid font-black z-20 scale-[1.02] text-white ring-2 ring-offset-1 ring-offset-slate-950'
                             : isTargetModifier
-                            ? 'bg-gradient-to-b from-amber-950/80 to-slate-900 border-2 border-dashed border-amber-400 text-amber-200 font-bold z-10 scale-[1.02] ring-2 ring-amber-400/50 ring-offset-1 ring-offset-slate-950'
-                            : isCurrentlyPressed
-                            ? 'bg-gradient-to-b from-slate-700 to-slate-800 border-2 font-bold translate-y-[2px] text-white scale-[0.98]'
-                            : 'bg-gradient-to-b from-slate-800/90 to-slate-900 border border-slate-700/80 text-slate-300 hover:border-slate-500 active:translate-y-[2px]'
+                              ? 'bg-gradient-to-b from-amber-950/80 to-slate-900 border-2 border-dashed border-amber-400 text-amber-200 font-bold z-10 scale-[1.02] ring-2 ring-amber-400/50 ring-offset-1 ring-offset-slate-950'
+                              : isCurrentlyPressed
+                                ? 'bg-gradient-to-b from-slate-700 to-slate-800 border-2 font-bold translate-y-[2px] text-white scale-[0.98]'
+                                : 'bg-gradient-to-b from-slate-800/90 to-slate-900 border border-slate-700/80 text-slate-300 hover:border-slate-500 active:translate-y-[2px]'
                         }`}
                       >
                         {/* Finger lane accent stripe at bottom of keycap */}
@@ -1622,11 +2111,13 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
                             isTargetKey
                               ? 'h-1 opacity-100 shadow-[0_0_8px_currentColor]'
                               : isTargetModifier
-                              ? 'h-1 opacity-100 bg-amber-400'
-                              : 'h-[2.5px] opacity-75 group-hover:opacity-100'
+                                ? 'h-1 opacity-100 bg-amber-400'
+                                : 'h-[2.5px] opacity-75 group-hover:opacity-100'
                           }`}
                           style={{
-                            backgroundColor: isTargetModifier ? '#fbbf24' : laneColor,
+                            backgroundColor: isTargetModifier
+                              ? '#fbbf24'
+                              : laneColor,
                             color: laneColor,
                           }}
                         />
@@ -1635,14 +2126,19 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
                         {k.isBump && (
                           <span
                             className="absolute bottom-1 w-2.5 h-0.5 rounded-full"
-                            style={{ backgroundColor: isTargetKey ? '#ffffff' : laneColor }}
+                            style={{
+                              backgroundColor: isTargetKey
+                                ? '#ffffff'
+                                : laneColor,
+                            }}
                           />
                         )}
 
                         {/* Modifier Dotted Highlight Badge */}
                         {isTargetModifier && (
                           <span className="absolute -top-2.5 px-1.5 py-0.2 rounded text-[8px] font-black bg-amber-400 text-slate-950 tracking-tighter shadow-md animate-bounce border border-dashed border-amber-300">
-                            ·· HOLD {k.key.includes('Control') ? 'CTRL' : 'SHIFT'} ··
+                            ·· HOLD{' '}
+                            {k.key.includes('Control') ? 'CTRL' : 'SHIFT'} ··
                           </span>
                         )}
 
@@ -1650,9 +2146,15 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
                         {k.subDisplay && keyboardVisible && (
                           <span
                             className={`text-[10px] sm:text-xs leading-none mb-0.5 font-black ${
-                              isTargetKey ? 'text-white' : isTargetModifier ? 'text-amber-300' : 'text-slate-300'
+                              isTargetKey
+                                ? 'text-white'
+                                : isTargetModifier
+                                  ? 'text-amber-300'
+                                  : 'text-slate-300'
                             }`}
-                            style={{ color: isTargetKey ? laneColor : undefined }}
+                            style={{
+                              color: isTargetKey ? laneColor : undefined,
+                            }}
                           >
                             {k.subDisplay}
                           </span>
@@ -1668,7 +2170,9 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
                                   : 'text-emerald-500/50 font-semibold text-[9px]'
                               }`}
                             >
-                              {smartThumbHand === 'left' ? '◀ L. THUMB [REC]' : 'L. Thumb (Alt)'}
+                              {smartThumbHand === 'left'
+                                ? '◀ L. THUMB [REC]'
+                                : 'L. Thumb (Alt)'}
                             </span>
                             <span className="truncate font-mono font-black text-sm sm:text-base text-white drop-shadow-[0_1px_2px_rgba(0,0,0,1)] flex items-center gap-1.5">
                               <span>␣</span>
@@ -1681,7 +2185,9 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
                                   : 'text-emerald-500/50 font-semibold text-[9px]'
                               }`}
                             >
-                              {smartThumbHand === 'right' ? 'R. THUMB [REC] ▶' : 'R. Thumb (Alt)'}
+                              {smartThumbHand === 'right'
+                                ? 'R. THUMB [REC] ▶'
+                                : 'R. Thumb (Alt)'}
                             </span>
                           </div>
                         ) : !keyboardVisible ? (
@@ -1690,7 +2196,10 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
                             {isTargetKey ? (
                               <span
                                 className="w-2.5 h-2.5 rounded-full shadow-[0_0_10px_currentColor] animate-pulse"
-                                style={{ backgroundColor: laneColor, color: laneColor }}
+                                style={{
+                                  backgroundColor: laneColor,
+                                  color: laneColor,
+                                }}
                               />
                             ) : isTargetModifier ? (
                               <span className="w-2 h-2 rounded-full border border-dashed border-amber-400 bg-amber-400/40" />
@@ -1712,20 +2221,22 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
                               isTargetKey
                                 ? 'text-white font-black drop-shadow-[0_1px_2px_rgba(0,0,0,1)]'
                                 : isTargetModifier
-                                ? 'text-amber-200 font-bold'
-                                : isCurrentlyPressed
-                                ? 'text-white font-black drop-shadow-[0_0_8px_currentColor]'
-                                : 'text-slate-100 font-extrabold'
+                                  ? 'text-amber-200 font-bold'
+                                  : isCurrentlyPressed
+                                    ? 'text-white font-black drop-shadow-[0_0_8px_currentColor]'
+                                    : 'text-slate-100 font-extrabold'
                             } ${
                               k.display.length > 3
                                 ? 'text-[10px] sm:text-xs font-bold'
                                 : k.display.length > 1
-                                ? 'text-xs sm:text-sm font-bold'
-                                : isTargetKey
-                                ? 'text-base sm:text-lg font-black'
-                                : 'text-base sm:text-lg font-extrabold'
+                                  ? 'text-xs sm:text-sm font-bold'
+                                  : isTargetKey
+                                    ? 'text-base sm:text-lg font-black'
+                                    : 'text-base sm:text-lg font-extrabold'
                             }`}
-                            style={{ color: isCurrentlyPressed ? '#ffffff' : undefined }}
+                            style={{
+                              color: isCurrentlyPressed ? '#ffffff' : undefined,
+                            }}
                           >
                             {k.display}
                           </span>
@@ -1741,12 +2252,32 @@ export const IntegratedLanesKeyboard: React.FC<IntegratedLanesKeyboardProps> = (
             {handsVisible && (
               <SmallHandVisualizer
                 hand="right"
-                activeFinger={mainKeyHand === 'right' ? mainKeyFinger : (isSpaceActive ? 'THUMB' : null)}
-                activeKeyDisplay={mainKeyHand === 'right' ? targetKeyDisplay : (isSpaceActive ? ' ' : null)}
-                modifierFinger={modifierHand === 'right' ? modifierFinger : null}
+                activeFinger={
+                  mainKeyHand === 'right'
+                    ? mainKeyFinger
+                    : isSpaceActive
+                      ? 'THUMB'
+                      : null
+                }
+                activeKeyDisplay={
+                  mainKeyHand === 'right'
+                    ? targetKeyDisplay
+                    : isSpaceActive
+                      ? ' '
+                      : null
+                }
+                modifierFinger={
+                  modifierHand === 'right' ? modifierFinger : null
+                }
                 modifierLabel={modifierHand === 'right' ? modifierLabel : null}
                 lastPressedKey={lastPressedKey}
-                thumbRole={isSpaceActive ? (smartThumbHand === 'right' ? 'primary' : 'secondary') : null}
+                thumbRole={
+                  isSpaceActive
+                    ? smartThumbHand === 'right'
+                      ? 'primary'
+                      : 'secondary'
+                    : null
+                }
               />
             )}
           </div>

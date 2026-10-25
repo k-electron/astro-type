@@ -85,13 +85,14 @@ export const GlobalCosmicBackground: React.FC<GlobalCosmicBackgroundProps> = ({
       const targetWarpSpeed = targetHyperspace
         ? 6.0
         : targetMultiplier > 1
-        ? 1.0 + (targetMultiplier - 1) * 0.5
-        : 1.0;
+          ? 1.0 + (targetMultiplier - 1) * 0.5
+          : 1.0;
 
       // Smooth acceleration / deceleration
       currentSpeed += (targetWarpSpeed - currentSpeed) * 0.08;
 
-      const isWarping = targetHyperspace || targetMultiplier >= 3 || currentSpeed > 2.0;
+      const isWarping =
+        targetHyperspace || targetMultiplier >= 3 || currentSpeed > 2.0;
 
       // Draw all stars across the whole viewport
       starsRef.current.forEach((star) => {
@@ -104,7 +105,8 @@ export const GlobalCosmicBackground: React.FC<GlobalCosmicBackgroundProps> = ({
 
         // Twinkle effect when not in hyperspace
         if (!isWarping) {
-          star.alpha = star.baseAlpha + Math.sin(frame * star.twinkleSpeed) * 0.15;
+          star.alpha =
+            star.baseAlpha + Math.sin(frame * star.twinkleSpeed) * 0.15;
         }
 
         const sx = star.x * width;

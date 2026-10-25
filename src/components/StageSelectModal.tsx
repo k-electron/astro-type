@@ -1,5 +1,17 @@
 import React, { useState } from 'react';
-import { Star, Lock, Play, Trophy, Sparkles, ChevronRight, CheckCircle2, ArrowLeft, Home, RotateCcw, AlertTriangle } from 'lucide-react';
+import {
+  Star,
+  Lock,
+  Play,
+  Trophy,
+  Sparkles,
+  ChevronRight,
+  CheckCircle2,
+  ArrowLeft,
+  Home,
+  RotateCcw,
+  AlertTriangle,
+} from 'lucide-react';
 import { Sector, Stage, StageProgress } from '../types/game';
 import { CURRICULUM_SECTORS } from '../data/curriculum';
 import { isSectorUnlocked } from '../utils/storage';
@@ -36,8 +48,13 @@ export const StageSelectModal: React.FC<StageSelectModalProps> = ({
   const [selectedSectorId, setSelectedSectorId] = useState<string>('sector-1');
   const [showWipeConfirm, setShowWipeConfirm] = useState<boolean>(false);
 
-  const activeSector = CURRICULUM_SECTORS.find((s) => s.id === selectedSectorId) || CURRICULUM_SECTORS[0];
-  const { unlocked: isCurrentUnlocked, starsRemaining } = isSectorUnlocked(selectedSectorId, totalStars);
+  const activeSector =
+    CURRICULUM_SECTORS.find((s) => s.id === selectedSectorId) ||
+    CURRICULUM_SECTORS[0];
+  const { unlocked: isCurrentUnlocked, starsRemaining } = isSectorUnlocked(
+    selectedSectorId,
+    totalStars,
+  );
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
@@ -46,7 +63,9 @@ export const StageSelectModal: React.FC<StageSelectModalProps> = ({
         <div className="flex flex-wrap items-center justify-between gap-4 p-4 sm:p-6 border-b border-slate-800 bg-slate-950/70">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs uppercase font-mono text-cyan-400">Interstellar Academy</span>
+              <span className="text-xs uppercase font-mono text-cyan-400">
+                Interstellar Academy
+              </span>
               <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-950/60 border border-emerald-500/30 text-emerald-300 text-[10px] font-mono">
                 <CheckCircle2 className="w-3 h-3 text-emerald-400" />
                 <span>Progress Saved</span>
@@ -63,7 +82,9 @@ export const StageSelectModal: React.FC<StageSelectModalProps> = ({
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-amber-500/30 bg-amber-950/30">
                 <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
                 <div className="flex items-baseline gap-1 font-mono">
-                  <span className="text-lg font-bold text-amber-300 tabular-nums">{totalStars}</span>
+                  <span className="text-lg font-bold text-amber-300 tabular-nums">
+                    {totalStars}
+                  </span>
                   <span className="text-xs text-amber-500">/ 84 Stars</span>
                 </div>
               </div>
@@ -84,7 +105,9 @@ export const StageSelectModal: React.FC<StageSelectModalProps> = ({
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-cyan-500/30 bg-cyan-950/30">
               <Sparkles className="w-4 h-4 text-cyan-400" />
               <div className="flex items-baseline gap-1 font-mono">
-                <span className="text-lg font-bold text-cyan-300 tabular-nums">{(totalCredits ?? 0).toLocaleString()}</span>
+                <span className="text-lg font-bold text-cyan-300 tabular-nums">
+                  {(totalCredits ?? 0).toLocaleString()}
+                </span>
                 <span className="text-xs text-cyan-500">Credits</span>
               </div>
             </div>
@@ -131,7 +154,11 @@ export const StageSelectModal: React.FC<StageSelectModalProps> = ({
                       title="Launch directly into the cockpit flight deck"
                     >
                       <Play className="w-3.5 h-3.5 fill-current" />
-                      <span>{sourceState === 'PLAYING' ? 'Resume Flight' : 'Enter Flight Deck'}</span>
+                      <span>
+                        {sourceState === 'PLAYING'
+                          ? 'Resume Flight'
+                          : 'Enter Flight Deck'}
+                      </span>
                     </button>
                   )}
                   {onReturnToMenu && sourceState !== 'MENU' && (
@@ -164,7 +191,10 @@ export const StageSelectModal: React.FC<StageSelectModalProps> = ({
             </span>
 
             {CURRICULUM_SECTORS.map((sector) => {
-              const { unlocked, starsRemaining: remaining } = isSectorUnlocked(sector.id, totalStars);
+              const { unlocked, starsRemaining: remaining } = isSectorUnlocked(
+                sector.id,
+                totalStars,
+              );
               const isSelected = sector.id === selectedSectorId;
 
               // Calculate stars earned in this sector
@@ -189,11 +219,15 @@ export const StageSelectModal: React.FC<StageSelectModalProps> = ({
                         !unlocked
                           ? 'bg-slate-800 text-slate-500'
                           : isSelected
-                          ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40'
-                          : 'bg-slate-800 text-slate-300'
+                            ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40'
+                            : 'bg-slate-800 text-slate-300'
                       }`}
                     >
-                      {!unlocked ? <Lock className="w-4 h-4" /> : sector.themeSymbol}
+                      {!unlocked ? (
+                        <Lock className="w-4 h-4" />
+                      ) : (
+                        sector.themeSymbol
+                      )}
                     </div>
 
                     <div className="truncate">
@@ -219,7 +253,9 @@ export const StageSelectModal: React.FC<StageSelectModalProps> = ({
                       <Star className="w-3 h-3 fill-amber-400" />
                       <span>{sectorStars}/12</span>
                     </div>
-                    <ChevronRight className={`w-3.5 h-3.5 ${isSelected ? 'text-cyan-400' : 'text-slate-600'}`} />
+                    <ChevronRight
+                      className={`w-3.5 h-3.5 ${isSelected ? 'text-cyan-400' : 'text-slate-600'}`}
+                    />
                   </div>
                 </button>
               );
@@ -236,7 +272,9 @@ export const StageSelectModal: React.FC<StageSelectModalProps> = ({
                   <span aria-hidden="true">·</span>
                   <span>{activeSector.curriculumCategory}</span>
                 </div>
-                <h3 className="text-xl font-bold text-white mt-0.5">{activeSector.name}</h3>
+                <h3 className="text-xl font-bold text-white mt-0.5">
+                  {activeSector.name}
+                </h3>
                 <p className="text-xs sm:text-sm text-slate-400 mt-1 max-w-xl">
                   {activeSector.description}
                 </p>
@@ -245,7 +283,10 @@ export const StageSelectModal: React.FC<StageSelectModalProps> = ({
               {!isCurrentUnlocked && (
                 <div className="flex items-center gap-2 p-3 rounded-lg border border-amber-500/40 bg-amber-950/30 text-amber-300 text-xs font-medium">
                   <Lock className="w-4 h-4 shrink-0 text-amber-400" />
-                  <span>Sector Locked. Earn {starsRemaining} more stars to open warp gates.</span>
+                  <span>
+                    Sector Locked. Earn {starsRemaining} more stars to open warp
+                    gates.
+                  </span>
                 </div>
               )}
             </div>
@@ -264,15 +305,17 @@ export const StageSelectModal: React.FC<StageSelectModalProps> = ({
                       !isCurrentUnlocked
                         ? 'border-slate-800/40 bg-slate-950/30 opacity-60'
                         : isCompleted
-                        ? 'border-slate-800 bg-slate-950/70 hover:border-cyan-500/50'
-                        : 'border-slate-800 bg-slate-950/80 hover:border-slate-700'
+                          ? 'border-slate-800 bg-slate-950/70 hover:border-cyan-500/50'
+                          : 'border-slate-800 bg-slate-950/80 hover:border-slate-700'
                     }`}
                   >
                     <div>
                       {/* Top status: Stage #, Difficulty & Stars */}
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2 text-xs font-mono text-slate-400">
-                          <span className="text-cyan-400 font-semibold">STAGE 0{stage.stageNumber}</span>
+                          <span className="text-cyan-400 font-semibold">
+                            STAGE 0{stage.stageNumber}
+                          </span>
                           <span aria-hidden="true">·</span>
                           <span>{stage.difficulty}</span>
                         </div>
@@ -342,7 +385,8 @@ export const StageSelectModal: React.FC<StageSelectModalProps> = ({
                           ))}
                         </div>
                         <span className="text-cyan-400/90 font-semibold bg-cyan-950/40 px-2 py-0.5 rounded border border-cyan-800/40">
-                          Cadence: {stage.targetWpm} WPM (Acc &ge; {stage.starThresholds.threeStarAccuracy}%)
+                          Cadence: {stage.targetWpm} WPM (Acc &ge;{' '}
+                          {stage.starThresholds.threeStarAccuracy}%)
                         </span>
                       </div>
 
@@ -351,15 +395,27 @@ export const StageSelectModal: React.FC<StageSelectModalProps> = ({
                         <div className="flex items-center gap-4 py-2 px-3 rounded-lg bg-slate-900/80 border border-slate-800/80 text-xs font-mono mb-4 text-slate-400">
                           <div className="flex items-center gap-1">
                             <Trophy className="w-3.5 h-3.5 text-amber-400" />
-                            <span>{(progress.highScore ?? 0).toLocaleString()}</span>
+                            <span>
+                              {(progress.highScore ?? 0).toLocaleString()}
+                            </span>
                           </div>
                           <span aria-hidden="true">·</span>
                           <div>
-                            <span>Best: <strong className="text-slate-200">{progress.bestWpm} WPM</strong></span>
+                            <span>
+                              Best:{' '}
+                              <strong className="text-slate-200">
+                                {progress.bestWpm} WPM
+                              </strong>
+                            </span>
                           </div>
                           <span aria-hidden="true">·</span>
                           <div>
-                            <span>Acc: <strong className="text-slate-200">{progress.bestAccuracy}%</strong></span>
+                            <span>
+                              Acc:{' '}
+                              <strong className="text-slate-200">
+                                {progress.bestAccuracy}%
+                              </strong>
+                            </span>
                           </div>
                         </div>
                       )}
@@ -373,12 +429,14 @@ export const StageSelectModal: React.FC<StageSelectModalProps> = ({
                         !isCurrentUnlocked
                           ? 'bg-slate-800/50 text-slate-500 cursor-not-allowed'
                           : isCompleted
-                          ? 'bg-cyan-600 hover:bg-cyan-500 text-white shadow-lg shadow-cyan-950/50'
-                          : 'bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold shadow-lg shadow-cyan-900/40'
+                            ? 'bg-cyan-600 hover:bg-cyan-500 text-white shadow-lg shadow-cyan-950/50'
+                            : 'bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold shadow-lg shadow-cyan-900/40'
                       }`}
                     >
                       <Play className="w-3.5 h-3.5 fill-current" />
-                      <span>{isCompleted ? 'Replay Mission' : 'Launch Mission'}</span>
+                      <span>
+                        {isCompleted ? 'Replay Mission' : 'Launch Mission'}
+                      </span>
                     </button>
                   </div>
                 );
@@ -401,8 +459,14 @@ export const StageSelectModal: React.FC<StageSelectModalProps> = ({
             </h3>
 
             <p className="text-xs text-slate-300 leading-relaxed mb-4">
-              The touch-typing curriculum has been upgraded with structured classical finger-building methodology. 
-              Wiping achievements will clear all <span className="text-amber-400 font-bold font-mono">{totalStars} ★ stars earned</span> and stage records, relocking sectors so you can master the progressive inside-out curriculum from Sector 1.
+              The touch-typing curriculum has been upgraded with structured
+              classical finger-building methodology. Wiping achievements will
+              clear all{' '}
+              <span className="text-amber-400 font-bold font-mono">
+                {totalStars} ★ stars earned
+              </span>{' '}
+              and stage records, relocking sectors so you can master the
+              progressive inside-out curriculum from Sector 1.
             </p>
 
             <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800 text-[11px] font-mono text-left mb-6 space-y-1.5">
@@ -413,7 +477,9 @@ export const StageSelectModal: React.FC<StageSelectModalProps> = ({
                 <span>•</span> Interstellar Sectors relocked to Gate 0
               </div>
               <div className="text-emerald-400 flex items-center gap-1.5">
-                <span>•</span> Starship Credits ({(totalCredits ?? 0).toLocaleString()} Cr) & Upgrades are preserved
+                <span>•</span> Starship Credits (
+                {(totalCredits ?? 0).toLocaleString()} Cr) & Upgrades are
+                preserved
               </div>
             </div>
 

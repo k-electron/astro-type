@@ -1,9 +1,12 @@
 @import "tailwindcss";
 
 @theme {
-  --font-display: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
+  --font-display:
+    "Outfit", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-sans:
+    "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
 }
 
 @layer base {
@@ -35,7 +38,8 @@
 
 /* Glowing text and keyframe effects */
 @keyframes pulseGlow {
-  0%, 100% {
+  0%,
+  100% {
     filter: drop-shadow(0 0 8px rgba(6, 182, 212, 0.4));
   }
   50% {
@@ -44,8 +48,12 @@
 }
 
 @keyframes warpSpeed {
-  0% { transform: translateY(0); }
-  100% { transform: translateY(100%); }
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(100%);
+  }
 }
 
 .glow-cyan {

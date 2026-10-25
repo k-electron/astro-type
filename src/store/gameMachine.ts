@@ -128,7 +128,9 @@ export function mapMachineStateToGameState(stateValue: string): GameState {
   }
 }
 
-export function mapGameStateToMachineEvent(gameState: GameState): GameMachineEvent {
+export function mapGameStateToMachineEvent(
+  gameState: GameState,
+): GameMachineEvent {
   switch (gameState) {
     case 'MENU':
       return { type: 'RETURN_MENU' };

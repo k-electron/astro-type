@@ -2,17 +2,25 @@
  * AstroType Core Data Contracts & State Types
  */
 
-export type GameState = 'MENU' | 'PLAYING' | 'PAUSED' | 'VICTORY' | 'STAGE_SELECT' | 'HANGAR' | 'ANALYTICS' | 'CUSTOM_PRACTICE';
+export type GameState =
+  | 'MENU'
+  | 'PLAYING'
+  | 'PAUSED'
+  | 'VICTORY'
+  | 'STAGE_SELECT'
+  | 'HANGAR'
+  | 'ANALYTICS'
+  | 'CUSTOM_PRACTICE';
 
-export type FingerZone = 
-  | 'LEFT_PINKY' 
-  | 'LEFT_RING' 
-  | 'LEFT_MIDDLE' 
-  | 'LEFT_INDEX' 
-  | 'THUMB' 
-  | 'RIGHT_INDEX' 
-  | 'RIGHT_MIDDLE' 
-  | 'RIGHT_RING' 
+export type FingerZone =
+  | 'LEFT_PINKY'
+  | 'LEFT_RING'
+  | 'LEFT_MIDDLE'
+  | 'LEFT_INDEX'
+  | 'THUMB'
+  | 'RIGHT_INDEX'
+  | 'RIGHT_MIDDLE'
+  | 'RIGHT_RING'
   | 'RIGHT_PINKY';
 
 export interface FingerLaneInfo {
@@ -41,9 +49,9 @@ export interface FallingNote {
 
 export interface StarRatingThresholds {
   oneStarAccuracy: number; // e.g. 75
-  twoStarWpm: number;      // e.g. 25
+  twoStarWpm: number; // e.g. 25
   twoStarAccuracy: number; // e.g. 90
-  threeStarWpm: number;    // e.g. 40
+  threeStarWpm: number; // e.g. 40
   threeStarAccuracy: number; // e.g. 95
   threeStarMinStreak: number; // e.g. 25
 }
@@ -63,7 +71,14 @@ export interface Stage {
   timeLimitSeconds?: number;
   focusFingers?: string; // e.g. "Left Index (F) & Right Index (J)"
   techniqueTip?: string; // e.g. "Rest index fingers on F and J bumps. Keep palms level."
-  drillPatternType?: 'ANCHOR_CALIBRATION' | 'FINGER_EXPANSION' | 'ANCHOR_REACH_RETURN' | 'HAND_ALTERNATION' | 'VOWEL_REACH' | 'CADENCE_FLOW' | 'SHIFT_DISCIPLINE';
+  drillPatternType?:
+    | 'ANCHOR_CALIBRATION'
+    | 'FINGER_EXPANSION'
+    | 'ANCHOR_REACH_RETURN'
+    | 'HAND_ALTERNATION'
+    | 'VOWEL_REACH'
+    | 'CADENCE_FLOW'
+    | 'SHIFT_DISCIPLINE';
 }
 
 export interface Sector {
@@ -95,8 +110,17 @@ export interface KeyAnalytics {
   misses: number;
 }
 
-export type TrailColorTheme = 'CYAN' | 'AMBER' | 'EMERALD' | 'VIOLET' | 'SUPERNOVA';
-export type AudioSynthCore = 'CYBER_SYNTH' | 'RETRO_8BIT' | 'DEEP_SPACE' | 'NEO_ACOUSTIC';
+export type TrailColorTheme =
+  | 'CYAN'
+  | 'AMBER'
+  | 'EMERALD'
+  | 'VIOLET'
+  | 'SUPERNOVA';
+export type AudioSynthCore =
+  | 'CYBER_SYNTH'
+  | 'RETRO_8BIT'
+  | 'DEEP_SPACE'
+  | 'NEO_ACOUSTIC';
 
 export interface ShipUpgrades {
   deflectorShields: number; // 0 to 3 (absorbs mistakes without breaking combo)

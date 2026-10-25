@@ -3,7 +3,10 @@ import { Play, Sparkles, Sliders } from 'lucide-react';
 import { Stage } from '../types/game';
 
 interface CustomPracticeModalProps {
-  onStartCustom: (customStage: Stage, speed: 'SLOW' | 'NORMAL' | 'FAST' | 'HYPER') => void;
+  onStartCustom: (
+    customStage: Stage,
+    speed: 'SLOW' | 'NORMAL' | 'FAST' | 'HYPER',
+  ) => void;
   onClose: () => void;
   initialSpeed: 'SLOW' | 'NORMAL' | 'FAST' | 'HYPER';
 }
@@ -38,7 +41,9 @@ export const CustomPracticeModal: React.FC<CustomPracticeModalProps> = ({
 }) => {
   const [customText, setCustomText] = useState<string>(PRESET_TEXTS[0].text);
   const [targetWpm, setTargetWpm] = useState<number>(40);
-  const [speed, setSpeed] = useState<'SLOW' | 'NORMAL' | 'FAST' | 'HYPER'>(initialSpeed);
+  const [speed, setSpeed] = useState<'SLOW' | 'NORMAL' | 'FAST' | 'HYPER'>(
+    initialSpeed,
+  );
 
   const handleLaunch = () => {
     if (!customText.trim()) return;
@@ -52,10 +57,16 @@ export const CustomPracticeModal: React.FC<CustomPracticeModalProps> = ({
       description: 'Player tailored free-form typing session.',
       targetKeys: Array.from(new Set(customText.toLowerCase().split(''))),
       sampleText: customText.trim(),
-      difficulty: targetWpm > 50 ? 'Expert' : targetWpm > 35 ? 'Advanced' : 'Intermediate',
+      difficulty:
+        targetWpm > 50
+          ? 'Expert'
+          : targetWpm > 35
+            ? 'Advanced'
+            : 'Intermediate',
       targetWpm,
       focusFingers: 'Free Flight Custom Selection',
-      techniqueTip: 'Maintain relaxed posture and steady keystroke cadence across your custom text.',
+      techniqueTip:
+        'Maintain relaxed posture and steady keystroke cadence across your custom text.',
       drillPatternType: 'CADENCE_FLOW',
       starThresholds: {
         oneStarAccuracy: 75,
@@ -107,8 +118,12 @@ export const CustomPracticeModal: React.FC<CustomPracticeModalProps> = ({
                 }}
                 className="text-left p-2.5 rounded-lg border border-slate-800 bg-slate-950/60 hover:border-cyan-500/50 hover:bg-slate-800/60 transition-all text-xs"
               >
-                <div className="font-semibold text-slate-200">{preset.name}</div>
-                <div className="text-[11px] text-slate-500 truncate mt-0.5">{preset.text}</div>
+                <div className="font-semibold text-slate-200">
+                  {preset.name}
+                </div>
+                <div className="text-[11px] text-slate-500 truncate mt-0.5">
+                  {preset.text}
+                </div>
               </button>
             ))}
           </div>
@@ -128,7 +143,9 @@ export const CustomPracticeModal: React.FC<CustomPracticeModalProps> = ({
           />
           <div className="flex justify-between text-[11px] text-slate-500 font-mono mt-1">
             <span>{customText.length} characters</span>
-            <span>Approx. {Math.round(customText.trim().split(/\s+/).length)} words</span>
+            <span>
+              Approx. {Math.round(customText.trim().split(/\s+/).length)} words
+            </span>
           </div>
         </div>
 
@@ -136,8 +153,12 @@ export const CustomPracticeModal: React.FC<CustomPracticeModalProps> = ({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
           <div className="p-3.5 rounded-xl border border-slate-800 bg-slate-950/60">
             <div className="flex justify-between items-center mb-2">
-              <span className="text-xs font-mono uppercase text-slate-400">Target Cadence</span>
-              <span className="text-sm font-bold font-mono text-cyan-400">{targetWpm} WPM</span>
+              <span className="text-xs font-mono uppercase text-slate-400">
+                Target Cadence
+              </span>
+              <span className="text-sm font-bold font-mono text-cyan-400">
+                {targetWpm} WPM
+              </span>
             </div>
             <input
               type="range"
@@ -152,11 +173,16 @@ export const CustomPracticeModal: React.FC<CustomPracticeModalProps> = ({
 
           <div className="p-3.5 rounded-xl border border-slate-800 bg-slate-950/60">
             <div className="flex justify-between items-center mb-1">
-              <span className="text-xs font-mono uppercase text-slate-400">Highway Note Speed</span>
-              <span className="text-[10px] font-mono text-cyan-400/80">{speed}</span>
+              <span className="text-xs font-mono uppercase text-slate-400">
+                Highway Note Speed
+              </span>
+              <span className="text-[10px] font-mono text-cyan-400/80">
+                {speed}
+              </span>
             </div>
             <p className="text-[10px] text-slate-500 mb-2">
-              Visual scroll & descent velocity of approaching notes (does not alter target WPM).
+              Visual scroll & descent velocity of approaching notes (does not
+              alter target WPM).
             </p>
             <div className="grid grid-cols-4 gap-1">
               {(['SLOW', 'NORMAL', 'FAST', 'HYPER'] as const).map((s) => (

@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
 import { PlayerProfile } from '../types/game';
-import { KEY_FINGER_MAP, FINGER_COLOR_MAP, FINGER_DISPLAY_NAMES } from '../data/curriculum';
+import {
+  KEY_FINGER_MAP,
+  FINGER_COLOR_MAP,
+  FINGER_DISPLAY_NAMES,
+} from '../data/curriculum';
 import { Download, Upload, RotateCcw, AlertTriangle, Play } from 'lucide-react';
 
 interface AnalyticsModalProps {
@@ -22,7 +26,9 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
   onWipeAchievements,
   onResetProgress,
 }) => {
-  const [confirmMode, setConfirmMode] = useState<'NONE' | 'WIPE_ACHIEVEMENTS' | 'FULL_RESET'>('NONE');
+  const [confirmMode, setConfirmMode] = useState<
+    'NONE' | 'WIPE_ACHIEVEMENTS' | 'FULL_RESET'
+  >('NONE');
 
   const {
     totalPracticeSeconds,
@@ -40,7 +46,15 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
 
   const overallAccuracy =
     totalKeystrokes > 0
-      ? Math.max(0, Math.min(100, Math.round(((totalKeystrokes - totalErrors) / totalKeystrokes) * 100)))
+      ? Math.max(
+          0,
+          Math.min(
+            100,
+            Math.round(
+              ((totalKeystrokes - totalErrors) / totalKeystrokes) * 100,
+            ),
+          ),
+        )
       : 100;
 
   // Calculate Left vs Right hand accuracy
@@ -63,9 +77,13 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
   });
 
   const leftAcc =
-    leftHits + leftMisses > 0 ? Math.round((leftHits / (leftHits + leftMisses)) * 100) : 100;
+    leftHits + leftMisses > 0
+      ? Math.round((leftHits / (leftHits + leftMisses)) * 100)
+      : 100;
   const rightAcc =
-    rightHits + rightMisses > 0 ? Math.round((rightHits / (rightHits + rightMisses)) * 100) : 100;
+    rightHits + rightMisses > 0
+      ? Math.round((rightHits / (rightHits + rightMisses)) * 100)
+      : 100;
 
   // Identify trouble keys (misses > 2 and accuracy < 85%)
   const troubleKeys = Object.entries(keyAnalytics)
@@ -73,7 +91,11 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
       const total = stats.hits + stats.misses;
       return total >= 3 && stats.misses / total > 0.12;
     })
-    .sort((a, b) => b[1].misses / (b[1].hits + b[1].misses) - a[1].misses / (a[1].hits + a[1].misses))
+    .sort(
+      (a, b) =>
+        b[1].misses / (b[1].hits + b[1].misses) -
+        a[1].misses / (a[1].hits + a[1].misses),
+    )
     .slice(0, 6);
 
   // Common keyboard keys for heatmap
@@ -85,10 +107,15 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
   ];
 
   const handleExport = () => {
-    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(profile, null, 2));
+    const dataStr =
+      'data:text/json;charset=utf-8,' +
+      encodeURIComponent(JSON.stringify(profile, null, 2));
     const downloadAnchor = document.createElement('a');
     downloadAnchor.setAttribute('href', dataStr);
-    downloadAnchor.setAttribute('download', `astrotype_backup_${new Date().toISOString().slice(0, 10)}.json`);
+    downloadAnchor.setAttribute(
+      'download',
+      `astrotype_backup_${new Date().toISOString().slice(0, 10)}.json`,
+    );
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
@@ -128,7 +155,11 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                 title="Launch directly into the cockpit flight deck"
               >
                 <Play className="w-3.5 h-3.5 fill-current" />
-                <span>{sourceState === 'PLAYING' ? 'Resume Flight' : 'Enter Flight Deck'}</span>
+                <span>
+                  {sourceState === 'PLAYING'
+                    ? 'Resume Flight'
+                    : 'Enter Flight Deck'}
+                </span>
               </button>
             )}
 
@@ -139,10 +170,10 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
               {sourceState === 'STAGE_SELECT'
                 ? 'Back to Sectors'
                 : sourceState === 'VICTORY'
-                ? 'Back to Debriefing'
-                : sourceState === 'PLAYING'
-                ? 'Pause Menu'
-                : 'Back to Academy'}
+                  ? 'Back to Debriefing'
+                  : sourceState === 'PLAYING'
+                    ? 'Pause Menu'
+                    : 'Back to Academy'}
             </button>
           </div>
         </div>
@@ -209,7 +240,10 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                   <span className="text-cyan-400 font-bold">{leftAcc}%</span>
                 </div>
                 <div className="h-2 rounded bg-slate-800 overflow-hidden">
-                  <div className="h-full bg-cyan-500" style={{ width: `${leftAcc}%` }} />
+                  <div
+                    className="h-full bg-cyan-500"
+                    style={{ width: `${leftAcc}%` }}
+                  />
                 </div>
               </div>
 
@@ -219,7 +253,10 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                   <span className="text-amber-400 font-bold">{rightAcc}%</span>
                 </div>
                 <div className="h-2 rounded bg-slate-800 overflow-hidden">
-                  <div className="h-full bg-amber-500" style={{ width: `${rightAcc}%` }} />
+                  <div
+                    className="h-full bg-amber-500"
+                    style={{ width: `${rightAcc}%` }}
+                  />
                 </div>
               </div>
             </div>
@@ -233,16 +270,20 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
               </h3>
               <div className="flex items-center gap-3 text-[11px] font-mono text-slate-400">
                 <span className="flex items-center gap-1">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> &gt;95%
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />{' '}
+                  &gt;95%
                 </span>
                 <span className="flex items-center gap-1">
-                  <span className="w-2.5 h-2.5 rounded-full bg-cyan-500" /> 88-95%
+                  <span className="w-2.5 h-2.5 rounded-full bg-cyan-500" />{' '}
+                  88-95%
                 </span>
                 <span className="flex items-center gap-1">
-                  <span className="w-2.5 h-2.5 rounded-full bg-amber-500" /> 80-88%
+                  <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />{' '}
+                  80-88%
                 </span>
                 <span className="flex items-center gap-1">
-                  <span className="w-2.5 h-2.5 rounded-full bg-rose-500" /> &lt;80%
+                  <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />{' '}
+                  &lt;80%
                 </span>
               </div>
             </div>
@@ -251,25 +292,42 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
               {keyboardHeatmapRows.map((row, rIdx) => (
                 <div key={rIdx} className="flex gap-1.5">
                   {row.map((k) => {
-                    const stats = keyAnalytics[k] || keyAnalytics[k.toUpperCase()] || { hits: 0, misses: 0 };
+                    const stats = keyAnalytics[k] ||
+                      keyAnalytics[k.toUpperCase()] || { hits: 0, misses: 0 };
                     const total = stats.hits + stats.misses;
-                    const acc = total > 0 ? Math.round((stats.hits / total) * 100) : null;
+                    const acc =
+                      total > 0 ? Math.round((stats.hits / total) * 100) : null;
 
-                    let bgClass = 'bg-slate-900 border-slate-800 text-slate-500';
+                    let bgClass =
+                      'bg-slate-900 border-slate-800 text-slate-500';
                     if (acc !== null) {
-                      if (acc >= 95) bgClass = 'bg-emerald-950/40 border-emerald-500/50 text-emerald-300';
-                      else if (acc >= 88) bgClass = 'bg-cyan-950/40 border-cyan-500/50 text-cyan-300';
-                      else if (acc >= 80) bgClass = 'bg-amber-950/40 border-amber-500/50 text-amber-300';
-                      else bgClass = 'bg-rose-950/50 border-rose-500/60 text-rose-300 font-bold';
+                      if (acc >= 95)
+                        bgClass =
+                          'bg-emerald-950/40 border-emerald-500/50 text-emerald-300';
+                      else if (acc >= 88)
+                        bgClass =
+                          'bg-cyan-950/40 border-cyan-500/50 text-cyan-300';
+                      else if (acc >= 80)
+                        bgClass =
+                          'bg-amber-950/40 border-amber-500/50 text-amber-300';
+                      else
+                        bgClass =
+                          'bg-rose-950/50 border-rose-500/60 text-rose-300 font-bold';
                     }
 
                     return (
                       <div
                         key={k}
-                        title={acc !== null ? `${k.toUpperCase()}: ${acc}% (${stats.hits} hit / ${stats.misses} miss)` : `${k.toUpperCase()}: Not tested yet`}
+                        title={
+                          acc !== null
+                            ? `${k.toUpperCase()}: ${acc}% (${stats.hits} hit / ${stats.misses} miss)`
+                            : `${k.toUpperCase()}: Not tested yet`
+                        }
                         className={`w-8 h-8 sm:w-9 sm:h-9 rounded-md border flex flex-col items-center justify-center font-mono text-xs transition-colors ${bgClass}`}
                       >
-                        <span className="font-bold uppercase text-[11px]">{k}</span>
+                        <span className="font-bold uppercase text-[11px]">
+                          {k}
+                        </span>
                         <span className="text-[9px] tabular-nums leading-none">
                           {acc !== null ? `${acc}%` : '-'}
                         </span>
@@ -292,7 +350,9 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                   {troubleKeys.map(([char, stats]) => {
                     const total = stats.hits + stats.misses;
                     const missRate = Math.round((stats.misses / total) * 100);
-                    const info = KEY_FINGER_MAP[char] || KEY_FINGER_MAP[char.toLowerCase()];
+                    const info =
+                      KEY_FINGER_MAP[char] ||
+                      KEY_FINGER_MAP[char.toLowerCase()];
 
                     return (
                       <div
@@ -307,20 +367,29 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                             <span className="flex items-center gap-1.5 text-slate-400">
                               <span
                                 className="w-2 h-2 rounded-full inline-block shadow-sm"
-                                style={{ backgroundColor: FINGER_COLOR_MAP[info.finger] }}
+                                style={{
+                                  backgroundColor:
+                                    FINGER_COLOR_MAP[info.finger],
+                                }}
                               />
-                              <span>{FINGER_DISPLAY_NAMES[info.finger] || info.finger}</span>
+                              <span>
+                                {FINGER_DISPLAY_NAMES[info.finger] ||
+                                  info.finger}
+                              </span>
                             </span>
                           )}
                         </div>
-                        <span className="text-rose-400 font-bold">{missRate}% errors</span>
+                        <span className="text-rose-400 font-bold">
+                          {missRate}% errors
+                        </span>
                       </div>
                     );
                   })}
                 </div>
               ) : (
                 <p className="text-xs text-slate-400 py-3">
-                  No critical error trends detected. Your finger reaches have high consistency!
+                  No critical error trends detected. Your finger reaches have
+                  high consistency!
                 </p>
               )}
             </div>
@@ -332,13 +401,21 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
               </h3>
               <ul className="text-xs text-slate-400 space-y-2 list-disc list-inside">
                 <li>
-                  <strong className="text-slate-200">Anchor to F and J:</strong> Feel the physical tactile nubs with index fingers to re-center without looking at keys.
+                  <strong className="text-slate-200">Anchor to F and J:</strong>{' '}
+                  Feel the physical tactile nubs with index fingers to re-center
+                  without looking at keys.
                 </li>
                 <li>
-                  <strong className="text-slate-200">Opposite Shift Rule:</strong> When capitalizing with the left hand, press Right Shift with your right pinky, and vice versa.
+                  <strong className="text-slate-200">
+                    Opposite Shift Rule:
+                  </strong>{' '}
+                  When capitalizing with the left hand, press Right Shift with
+                  your right pinky, and vice versa.
                 </li>
                 <li>
-                  <strong className="text-slate-200">Smooth Cadence:</strong> Consistency is faster than erratic speed bursts. Strive for a steady metronome rhythm.
+                  <strong className="text-slate-200">Smooth Cadence:</strong>{' '}
+                  Consistency is faster than erratic speed bursts. Strive for a
+                  steady metronome rhythm.
                 </li>
               </ul>
             </div>
@@ -347,8 +424,13 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
           {/* Data Backup & Offline Management */}
           <div className="p-4 rounded-xl border border-slate-800 bg-slate-950/60 flex flex-wrap items-center justify-between gap-3">
             <div className="text-xs text-slate-400">
-              <span className="font-semibold text-slate-200 block">Offline LocalStorage Storage</span>
-              <span>All progress, star ratings, and records are safely cached in your browser.</span>
+              <span className="font-semibold text-slate-200 block">
+                Offline LocalStorage Storage
+              </span>
+              <span>
+                All progress, star ratings, and records are safely cached in
+                your browser.
+              </span>
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
@@ -433,7 +515,11 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                   className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold font-mono transition-colors shadow-lg shadow-rose-950/50 cursor-pointer flex items-center justify-center gap-1.5"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
-                  <span>{confirmMode === 'WIPE_ACHIEVEMENTS' ? 'Confirm Wipe' : 'Confirm Reset'}</span>
+                  <span>
+                    {confirmMode === 'WIPE_ACHIEVEMENTS'
+                      ? 'Confirm Wipe'
+                      : 'Confirm Reset'}
+                  </span>
                 </button>
               </div>
             </div>

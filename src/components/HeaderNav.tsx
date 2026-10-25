@@ -85,7 +85,10 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
   // Close audio menu on outside click or escape
   useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
-      if (audioMenuRef.current && !audioMenuRef.current.contains(e.target as Node)) {
+      if (
+        audioMenuRef.current &&
+        !audioMenuRef.current.contains(e.target as Node)
+      ) {
         setIsAudioMenuOpen(false);
       }
     };
@@ -127,7 +130,9 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
             className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-950/40 border border-amber-500/40 hover:border-amber-400 text-amber-300 transition-all cursor-pointer shadow-sm hover:shadow-[0_0_12px_rgba(245,158,11,0.25)]"
           >
             <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400 shrink-0" />
-            <span className="font-bold tabular-nums text-sm text-amber-200">{totalStars}</span>
+            <span className="font-bold tabular-nums text-sm text-amber-200">
+              {totalStars}
+            </span>
             <span className="text-[10px] text-amber-400/80 font-medium">★</span>
           </button>
 
@@ -137,7 +142,9 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
             className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-cyan-950/40 border border-cyan-500/40 hover:border-cyan-400 text-cyan-300 transition-all cursor-pointer shadow-sm hover:shadow-[0_0_12px_rgba(6,182,212,0.25)]"
           >
             <Sparkles className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-            <span className="font-bold tabular-nums text-sm text-cyan-200">{(totalCredits ?? 0).toLocaleString()}</span>
+            <span className="font-bold tabular-nums text-sm text-cyan-200">
+              {(totalCredits ?? 0).toLocaleString()}
+            </span>
             <span className="text-[10px] text-cyan-400/80 font-medium">Cr</span>
           </button>
         </div>
@@ -185,7 +192,11 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
             {/* 1-Click Fast Master Mute Button */}
             <button
               onClick={onToggleGlobalMute}
-              title={isMuted ? 'All Audio is MUTED (Click to unmute)' : 'Click to mute all audio instantly'}
+              title={
+                isMuted
+                  ? 'All Audio is MUTED (Click to unmute)'
+                  : 'Click to mute all audio instantly'
+              }
               className={`flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-mono font-medium transition-colors cursor-pointer ${
                 isMuted
                   ? 'bg-rose-950/70 text-rose-300 hover:bg-rose-900/70'
@@ -196,12 +207,16 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
               {isMuted ? (
                 <>
                   <VolumeX className="w-4 h-4 text-rose-400 shrink-0" />
-                  <span className="font-bold text-[11px] text-rose-300 tracking-wide">MUTED</span>
+                  <span className="font-bold text-[11px] text-rose-300 tracking-wide">
+                    MUTED
+                  </span>
                 </>
               ) : (
                 <>
                   <Volume2 className="w-4 h-4 text-cyan-400 shrink-0" />
-                  <span className="text-[11px] text-slate-300 hidden lg:inline">Audio</span>
+                  <span className="text-[11px] text-slate-300 hidden lg:inline">
+                    Audio
+                  </span>
                 </>
               )}
             </button>
@@ -230,7 +245,9 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
                   <span className="text-[10px] uppercase font-mono tracking-wider text-cyan-400 block font-semibold">
                     Flight Audio Station
                   </span>
-                  <h4 className="text-sm font-bold font-display text-white">Master Sound & Music</h4>
+                  <h4 className="text-sm font-bold font-display text-white">
+                    Master Sound & Music
+                  </h4>
                 </div>
 
                 {/* Master Audio Toggle Switch */}
@@ -242,7 +259,11 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
                       : 'border-cyan-500/50 bg-cyan-950/50 text-cyan-300 hover:border-cyan-400'
                   }`}
                 >
-                  {isMuted ? <VolumeX className="w-3.5 h-3.5 text-rose-400" /> : <Volume2 className="w-3.5 h-3.5 text-cyan-400" />}
+                  {isMuted ? (
+                    <VolumeX className="w-3.5 h-3.5 text-rose-400" />
+                  ) : (
+                    <Volume2 className="w-3.5 h-3.5 text-cyan-400" />
+                  )}
                   <span>{isMuted ? 'Muted' : 'Active'}</span>
                 </button>
               </div>
@@ -250,7 +271,9 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
               {/* Master Mute Active Notice */}
               {isMuted && (
                 <div className="p-2.5 rounded-lg bg-rose-950/40 border border-rose-500/30 text-rose-300 text-xs flex items-center justify-between">
-                  <span>Global Mute is active. All audio output is silenced.</span>
+                  <span>
+                    Global Mute is active. All audio output is silenced.
+                  </span>
                   <button
                     onClick={onToggleGlobalMute}
                     className="underline text-xs font-bold hover:text-rose-200 cursor-pointer ml-2 shrink-0"
@@ -261,25 +284,40 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
               )}
 
               {/* Channel 1: Interactive Keystroke & Laser SFX */}
-              <div className={`flex flex-col gap-2 p-3 rounded-xl border border-slate-800 bg-slate-950/60 transition-opacity ${isMuted ? 'opacity-40' : 'opacity-100'}`}>
+              <div
+                className={`flex flex-col gap-2 p-3 rounded-xl border border-slate-800 bg-slate-950/60 transition-opacity ${isMuted ? 'opacity-40' : 'opacity-100'}`}
+              >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <button
                       disabled={isMuted}
                       onClick={onToggleSound}
-                      title={soundEnabled ? 'Mute Laser SFX' : 'Enable Laser SFX'}
+                      title={
+                        soundEnabled ? 'Mute Laser SFX' : 'Enable Laser SFX'
+                      }
                       className="p-1 rounded hover:bg-slate-800 text-cyan-400 cursor-pointer disabled:cursor-not-allowed"
                     >
-                      {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4 text-slate-500" />}
+                      {soundEnabled ? (
+                        <Volume2 className="w-4 h-4" />
+                      ) : (
+                        <VolumeX className="w-4 h-4 text-slate-500" />
+                      )}
                     </button>
                     <div>
-                      <span className="text-xs font-bold text-white block">Keystroke Laser SFX</span>
-                      <span className="text-[10px] text-slate-400">Tactile hits, combo alarms & shield absorbs</span>
+                      <span className="text-xs font-bold text-white block">
+                        Keystroke Laser SFX
+                      </span>
+                      <span className="text-[10px] text-slate-400">
+                        Tactile hits, combo alarms & shield absorbs
+                      </span>
                     </div>
                   </div>
 
                   <span className="text-xs font-mono font-bold text-cyan-300 tabular-nums">
-                    {soundEnabled && !isMuted ? Math.round(soundVolume * 100) : 0}%
+                    {soundEnabled && !isMuted
+                      ? Math.round(soundVolume * 100)
+                      : 0}
+                    %
                   </span>
                 </div>
 
@@ -292,7 +330,9 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
                     step="0.05"
                     disabled={isMuted}
                     value={soundEnabled && !isMuted ? soundVolume : 0}
-                    onChange={(e) => onSetSoundVolume(parseFloat(e.target.value))}
+                    onChange={(e) =>
+                      onSetSoundVolume(parseFloat(e.target.value))
+                    }
                     className="flex-1 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-400 disabled:cursor-not-allowed"
                   />
                 </div>
@@ -318,10 +358,16 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
                             }`}
                           >
                             <div className="flex items-center justify-between">
-                              <span className="text-[11px] font-bold block truncate">{c.name}</span>
-                              {isEquipped && <Check className="w-3 h-3 text-cyan-400 shrink-0" />}
+                              <span className="text-[11px] font-bold block truncate">
+                                {c.name}
+                              </span>
+                              {isEquipped && (
+                                <Check className="w-3 h-3 text-cyan-400 shrink-0" />
+                              )}
                             </div>
-                            <span className="text-[9px] font-mono text-slate-500 block truncate">{c.desc}</span>
+                            <span className="text-[9px] font-mono text-slate-500 block truncate">
+                              {c.desc}
+                            </span>
                           </button>
                         );
                       })}
@@ -331,25 +377,42 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
               </div>
 
               {/* Channel 2: Background Rhythm Beats */}
-              <div className={`flex flex-col gap-2.5 p-3 rounded-xl border border-slate-800 bg-slate-950/60 transition-opacity ${isMuted ? 'opacity-40' : 'opacity-100'}`}>
+              <div
+                className={`flex flex-col gap-2.5 p-3 rounded-xl border border-slate-800 bg-slate-950/60 transition-opacity ${isMuted ? 'opacity-40' : 'opacity-100'}`}
+              >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <button
                       disabled={isMuted}
                       onClick={onToggleMusic}
-                      title={musicEnabled ? 'Mute Rhythm Beats' : 'Enable Rhythm Beats'}
+                      title={
+                        musicEnabled
+                          ? 'Mute Rhythm Beats'
+                          : 'Enable Rhythm Beats'
+                      }
                       className="p-1 rounded hover:bg-slate-800 text-fuchsia-400 cursor-pointer disabled:cursor-not-allowed"
                     >
-                      {musicEnabled ? <Music className="w-4 h-4" /> : <VolumeX className="w-4 h-4 text-slate-500" />}
+                      {musicEnabled ? (
+                        <Music className="w-4 h-4" />
+                      ) : (
+                        <VolumeX className="w-4 h-4 text-slate-500" />
+                      )}
                     </button>
                     <div>
-                      <span className="text-xs font-bold text-white block">Cosmic Rhythm Beats</span>
-                      <span className="text-[10px] text-slate-400">Tempo drum machine, synth arpeggios & bass</span>
+                      <span className="text-xs font-bold text-white block">
+                        Cosmic Rhythm Beats
+                      </span>
+                      <span className="text-[10px] text-slate-400">
+                        Tempo drum machine, synth arpeggios & bass
+                      </span>
                     </div>
                   </div>
 
                   <span className="text-xs font-mono font-bold text-fuchsia-300 tabular-nums">
-                    {musicEnabled && !isMuted ? Math.round(musicVolume * 100) : 0}%
+                    {musicEnabled && !isMuted
+                      ? Math.round(musicVolume * 100)
+                      : 0}
+                    %
                   </span>
                 </div>
 
@@ -362,7 +425,9 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
                     step="0.05"
                     disabled={isMuted}
                     value={musicEnabled && !isMuted ? musicVolume : 0}
-                    onChange={(e) => onSetMusicVolume(parseFloat(e.target.value))}
+                    onChange={(e) =>
+                      onSetMusicVolume(parseFloat(e.target.value))
+                    }
                     className="flex-1 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-fuchsia-400 disabled:cursor-not-allowed"
                   />
                 </div>
@@ -387,10 +452,16 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
                           }`}
                         >
                           <div className="flex items-center justify-between">
-                            <span className="text-[11px] font-bold block truncate">{opt.name}</span>
-                            {isSelected && <Check className="w-3 h-3 text-fuchsia-400 shrink-0" />}
+                            <span className="text-[11px] font-bold block truncate">
+                              {opt.name}
+                            </span>
+                            {isSelected && (
+                              <Check className="w-3 h-3 text-fuchsia-400 shrink-0" />
+                            )}
                           </div>
-                          <span className="text-[9px] font-mono text-slate-500 block">{opt.bpm} BPM</span>
+                          <span className="text-[9px] font-mono text-slate-500 block">
+                            {opt.bpm} BPM
+                          </span>
                         </button>
                       );
                     })}
@@ -405,7 +476,11 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
         <button
           onClick={onQuickPlay}
           className="px-3.5 sm:px-4 py-2 text-xs font-bold text-slate-950 bg-cyan-400 rounded-lg hover:bg-cyan-300 shadow-md shadow-cyan-950 transition-all whitespace-nowrap shrink-0 cursor-pointer flex items-center gap-1.5"
-          title={isPlaying ? 'Pause active flight session' : 'Launch cockpit flight deck'}
+          title={
+            isPlaying
+              ? 'Pause active flight session'
+              : 'Launch cockpit flight deck'
+          }
         >
           {isPlaying ? (
             <>

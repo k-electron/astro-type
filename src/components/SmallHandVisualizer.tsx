@@ -26,19 +26,113 @@ interface FingerConfig {
 }
 
 const LEFT_FINGERS: FingerConfig[] = [
-  { id: 'LEFT_PINKY', name: 'Pinky', home: 'A', x: 18, tipY: 44, baseY: 80, w: 12, color: FINGER_COLOR_MAP.LEFT_PINKY },
-  { id: 'LEFT_RING', name: 'Ring', home: 'S', x: 35, tipY: 28, baseY: 76, w: 13, color: FINGER_COLOR_MAP.LEFT_RING },
-  { id: 'LEFT_MIDDLE', name: 'Middle', home: 'D', x: 53, tipY: 18, baseY: 74, w: 13.5, color: FINGER_COLOR_MAP.LEFT_MIDDLE },
-  { id: 'LEFT_INDEX', name: 'Index', home: 'F', x: 71, tipY: 30, baseY: 77, w: 13.5, color: FINGER_COLOR_MAP.LEFT_INDEX, isBump: true },
-  { id: 'THUMB', name: 'Thumb', home: '␣', x: 91, tipY: 66, baseY: 100, w: 14, color: FINGER_COLOR_MAP.THUMB, isThumb: true },
+  {
+    id: 'LEFT_PINKY',
+    name: 'Pinky',
+    home: 'A',
+    x: 18,
+    tipY: 44,
+    baseY: 80,
+    w: 12,
+    color: FINGER_COLOR_MAP.LEFT_PINKY,
+  },
+  {
+    id: 'LEFT_RING',
+    name: 'Ring',
+    home: 'S',
+    x: 35,
+    tipY: 28,
+    baseY: 76,
+    w: 13,
+    color: FINGER_COLOR_MAP.LEFT_RING,
+  },
+  {
+    id: 'LEFT_MIDDLE',
+    name: 'Middle',
+    home: 'D',
+    x: 53,
+    tipY: 18,
+    baseY: 74,
+    w: 13.5,
+    color: FINGER_COLOR_MAP.LEFT_MIDDLE,
+  },
+  {
+    id: 'LEFT_INDEX',
+    name: 'Index',
+    home: 'F',
+    x: 71,
+    tipY: 30,
+    baseY: 77,
+    w: 13.5,
+    color: FINGER_COLOR_MAP.LEFT_INDEX,
+    isBump: true,
+  },
+  {
+    id: 'THUMB',
+    name: 'Thumb',
+    home: '␣',
+    x: 91,
+    tipY: 66,
+    baseY: 100,
+    w: 14,
+    color: FINGER_COLOR_MAP.THUMB,
+    isThumb: true,
+  },
 ];
 
 const RIGHT_FINGERS: FingerConfig[] = [
-  { id: 'THUMB', name: 'Thumb', home: '␣', x: 25, tipY: 66, baseY: 100, w: 14, color: FINGER_COLOR_MAP.THUMB, isThumb: true },
-  { id: 'RIGHT_INDEX', name: 'Index', home: 'J', x: 45, tipY: 30, baseY: 77, w: 13.5, color: FINGER_COLOR_MAP.RIGHT_INDEX, isBump: true },
-  { id: 'RIGHT_MIDDLE', name: 'Middle', home: 'K', x: 63, tipY: 18, baseY: 74, w: 13.5, color: FINGER_COLOR_MAP.RIGHT_MIDDLE },
-  { id: 'RIGHT_RING', name: 'Ring', home: 'L', x: 81, tipY: 28, baseY: 76, w: 13, color: FINGER_COLOR_MAP.RIGHT_RING },
-  { id: 'RIGHT_PINKY', name: 'Pinky', home: ';', x: 98, tipY: 44, baseY: 80, w: 12, color: FINGER_COLOR_MAP.RIGHT_PINKY },
+  {
+    id: 'THUMB',
+    name: 'Thumb',
+    home: '␣',
+    x: 25,
+    tipY: 66,
+    baseY: 100,
+    w: 14,
+    color: FINGER_COLOR_MAP.THUMB,
+    isThumb: true,
+  },
+  {
+    id: 'RIGHT_INDEX',
+    name: 'Index',
+    home: 'J',
+    x: 45,
+    tipY: 30,
+    baseY: 77,
+    w: 13.5,
+    color: FINGER_COLOR_MAP.RIGHT_INDEX,
+    isBump: true,
+  },
+  {
+    id: 'RIGHT_MIDDLE',
+    name: 'Middle',
+    home: 'K',
+    x: 63,
+    tipY: 18,
+    baseY: 74,
+    w: 13.5,
+    color: FINGER_COLOR_MAP.RIGHT_MIDDLE,
+  },
+  {
+    id: 'RIGHT_RING',
+    name: 'Ring',
+    home: 'L',
+    x: 81,
+    tipY: 28,
+    baseY: 76,
+    w: 13,
+    color: FINGER_COLOR_MAP.RIGHT_RING,
+  },
+  {
+    id: 'RIGHT_PINKY',
+    name: 'Pinky',
+    home: ';',
+    x: 98,
+    tipY: 44,
+    baseY: 80,
+    w: 12,
+    color: FINGER_COLOR_MAP.RIGHT_PINKY,
+  },
 ];
 
 export const SmallHandVisualizer: React.FC<SmallHandVisualizerProps> = ({
@@ -107,7 +201,11 @@ export const SmallHandVisualizer: React.FC<SmallHandVisualizerProps> = ({
               borderWidth: '1px',
             }}
           >
-            {activeKeyDisplay ? (activeKeyDisplay === ' ' ? 'SPACE' : activeKeyDisplay.toUpperCase()) : 'ACTIVE'}
+            {activeKeyDisplay
+              ? activeKeyDisplay === ' '
+                ? 'SPACE'
+                : activeKeyDisplay.toUpperCase()
+              : 'ACTIVE'}
           </span>
         ) : isModActiveOnThisHand ? (
           <span className="text-[9px] font-mono font-bold px-1 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-dashed border-amber-400">
@@ -125,25 +223,32 @@ export const SmallHandVisualizer: React.FC<SmallHandVisualizerProps> = ({
       >
         <defs>
           {/* Solid glow filter for regular main key highlight */}
-          <filter id={`glow-main-${hand}`} x="-40%" y="-40%" width="180%" height="180%">
+          <filter
+            id={`glow-main-${hand}`}
+            x="-40%"
+            y="-40%"
+            width="180%"
+            height="180%"
+          >
             <feGaussianBlur stdDeviation="3" result="blur" />
             <feComposite in="SourceGraphic" in2="blur" operator="over" />
           </filter>
 
           {/* Dotted glow filter for modifier highlight */}
-          <filter id={`glow-mod-${hand}`} x="-40%" y="-40%" width="180%" height="180%">
+          <filter
+            id={`glow-mod-${hand}`}
+            x="-40%"
+            y="-40%"
+            width="180%"
+            height="180%"
+          >
             <feGaussianBlur stdDeviation="2.5" result="blur" />
             <feComposite in="SourceGraphic" in2="blur" operator="over" />
           </filter>
         </defs>
 
         {/* Subtle Palm Silhouette */}
-        <path
-          d={palmPath}
-          fill="#0b1120"
-          stroke="#1e293b"
-          strokeWidth="1.5"
-        />
+        <path d={palmPath} fill="#0b1120" stroke="#1e293b" strokeWidth="1.5" />
 
         {/* Subtle Palm Crease / Alignment guideline */}
         <path
@@ -284,19 +389,19 @@ export const SmallHandVisualizer: React.FC<SmallHandVisualizerProps> = ({
                   isSecondary
                     ? 'rgba(16, 185, 129, 0.25)'
                     : isMainTarget
-                    ? f.color
-                    : isModTarget
-                    ? '#fbbf24'
-                    : `${f.color}22`
+                      ? f.color
+                      : isModTarget
+                        ? '#fbbf24'
+                        : `${f.color}22`
                 }
                 stroke={
                   isSecondary
                     ? 'rgba(16, 185, 129, 0.6)'
                     : isMainTarget
-                    ? '#ffffff'
-                    : isModTarget
-                    ? '#fbbf24'
-                    : f.color
+                      ? '#ffffff'
+                      : isModTarget
+                        ? '#fbbf24'
+                        : f.color
                 }
                 strokeWidth={isMainTarget ? '1.5' : '1.2'}
                 strokeDasharray={isModTarget ? '2 2' : undefined}
@@ -309,21 +414,31 @@ export const SmallHandVisualizer: React.FC<SmallHandVisualizerProps> = ({
                 y={f.tipY + rx + 3}
                 textAnchor="middle"
                 fontFamily="ui-monospace, monospace"
-                fontSize={isMainTarget && activeKeyDisplay && activeKeyDisplay.length > 1 ? '6.5' : '8'}
+                fontSize={
+                  isMainTarget &&
+                  activeKeyDisplay &&
+                  activeKeyDisplay.length > 1
+                    ? '6.5'
+                    : '8'
+                }
                 fontWeight="900"
                 fill={
                   isSecondary
                     ? '#6ee7b7'
                     : isMainTarget || isModTarget
-                    ? '#020617'
-                    : f.color
+                      ? '#020617'
+                      : f.color
                 }
               >
                 {isMainTarget && activeKeyDisplay
-                  ? (activeKeyDisplay === ' ' ? '␣' : activeKeyDisplay.toUpperCase())
+                  ? activeKeyDisplay === ' '
+                    ? '␣'
+                    : activeKeyDisplay.toUpperCase()
                   : isModTarget
-                  ? (modifierLabel === 'SHIFT' ? '⇧' : modifierLabel || 'MOD')
-                  : f.home}
+                    ? modifierLabel === 'SHIFT'
+                      ? '⇧'
+                      : modifierLabel || 'MOD'
+                    : f.home}
               </text>
 
               {/* Tactile bump marker on index fingers (F & J) */}

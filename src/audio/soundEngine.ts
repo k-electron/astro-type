@@ -25,9 +25,9 @@ class SoundEngine {
     261.63, // Lane 0: C4 (L.Pinky)
     293.66, // Lane 1: D4 (L.Ring)
     329.63, // Lane 2: E4 (L.Mid)
-    392.00, // Lane 3: G4 (L.Index)
-    196.00, // Lane 4: G3 (Space/Thumb - punchy bass)
-    440.00, // Lane 5: A4 (R.Index)
+    392.0, // Lane 3: G4 (L.Index)
+    196.0, // Lane 4: G3 (Space/Thumb - punchy bass)
+    440.0, // Lane 5: A4 (R.Index)
     523.25, // Lane 6: C5 (R.Mid)
     587.33, // Lane 7: D5 (R.Ring)
     659.25, // Lane 8: E5 (R.Pinky)
@@ -44,12 +44,16 @@ class SoundEngine {
     try {
       const AudioCtxClass =
         window.AudioContext ||
-        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+        (window as unknown as { webkitAudioContext: typeof AudioContext })
+          .webkitAudioContext;
       this.ctx = new AudioCtxClass();
 
       // Master overall gain -> destination (0 when muted, 1 when unmuted)
       this.masterGain = this.ctx.createGain();
-      this.masterGain.gain.setValueAtTime(this.globalMuted ? 0 : 1, this.ctx.currentTime);
+      this.masterGain.gain.setValueAtTime(
+        this.globalMuted ? 0 : 1,
+        this.ctx.currentTime,
+      );
       this.masterGain.connect(this.ctx.destination);
 
       // Dedicated SFX Gain -> masterGain
@@ -84,7 +88,11 @@ class SoundEngine {
   }
 
   public cycleBeatTheme(): BeatTheme {
-    const themes: BeatTheme[] = ['NEON_SYNTHWAVE', 'CYBER_PULSE', 'COSMIC_LOFI'];
+    const themes: BeatTheme[] = [
+      'NEON_SYNTHWAVE',
+      'CYBER_PULSE',
+      'COSMIC_LOFI',
+    ];
     const curIdx = themes.indexOf(this.beatTheme);
     const next = themes[(curIdx + 1) % themes.length];
     this.setBeatTheme(next);
@@ -183,9 +191,13 @@ class SoundEngine {
 
     this.beatIntervalId = window.setInterval(() => {
       if (!this.ctx) return;
-      const secondsPerStep = (60 / this.tempoBpm) / 4; // 16th notes
+      const secondsPerStep = 60 / this.tempoBpm / 4; // 16th notes
       while (this.nextBeatTime < this.ctx.currentTime + lookahead) {
-        this.scheduleBeatStep(this.currentStep, this.measureCount, this.nextBeatTime);
+        this.scheduleBeatStep(
+          this.currentStep,
+          this.measureCount,
+          this.nextBeatTime,
+        );
         this.nextBeatTime += secondsPerStep;
         this.currentStep = (this.currentStep + 1) % 16;
         if (this.currentStep === 0) {
@@ -203,7 +215,8 @@ class SoundEngine {
   }
 
   private scheduleBeatStep(step: number, measure: number, time: number) {
-    if (!this.ctx || !this.musicGain || !this.musicEnabled || this.globalMuted) return;
+    if (!this.ctx || !this.musicGain || !this.musicEnabled || this.globalMuted)
+      return;
 
     if (this.beatTheme === 'NEON_SYNTHWAVE') {
       this.scheduleSynthwaveStep(step, measure, time);
@@ -217,7 +230,11 @@ class SoundEngine {
   // 1. NEON SYNTHWAVE PATTERN (106 BPM)
   private scheduleSynthwaveStep(step: number, measure: number, time: number) {
     // KICK on beat 0, beat 8, and syncopated beat 10
-    const isKick = step === 0 || step === 8 || step === 10 || (this.isOverdrive && (step === 4 || step === 14));
+    const isKick =
+      step === 0 ||
+      step === 8 ||
+      step === 10 ||
+      (this.isOverdrive && (step === 4 || step === 14));
     // SNARE / CLAP on beat 4 and beat 12
     const isSnare = step === 4 || step === 12;
     // HI-HAT on 16th notes with open hat on upbeat (steps 2, 6, 10, 14)
@@ -233,7 +250,7 @@ class SoundEngine {
     const chordRoots = [110.0, 87.31, 98.0, 82.41];
     const root = chordRoots[measure] || 110;
     // Octave jumping on odd 16ths
-    const octave = (step % 2 === 1) ? 2 : 1;
+    const octave = step % 2 === 1 ? 2 : 1;
     if (step % 2 === 0 || this.isOverdrive) {
       this.playSynthwaveBass(time, root * octave, 0.12);
     }
@@ -265,7 +282,14 @@ class SoundEngine {
     if (isHihat) this.playHihat(time, isOpenHat, true);
 
     // Punchy syncopated electro bass stabs
-    if (step === 0 || step === 3 || step === 6 || step === 8 || step === 11 || step === 14) {
+    if (
+      step === 0 ||
+      step === 3 ||
+      step === 6 ||
+      step === 8 ||
+      step === 11 ||
+      step === 14
+    ) {
       const roots = [146.83, 146.83, 174.61, 196]; // D3, D3, F3, G3
       const freq = roots[measure] || 146.83;
       this.playElectroBass(time, freq);
@@ -274,7 +298,8 @@ class SoundEngine {
     // High energetic synth hook
     if (step === 2 || step === 6 || step === 10 || step === 14) {
       const synthNotes = [587.33, 659.25, 783.99, 880]; // D5, E5, G5, A5
-      const note = synthNotes[(measure + Math.floor(step / 4)) % synthNotes.length];
+      const note =
+        synthNotes[(measure + Math.floor(step / 4)) % synthNotes.length];
       this.playArpPluck(time, note, true);
     }
   }
@@ -360,7 +385,7 @@ class SoundEngine {
       osc.frequency.setValueAtTime(110, time);
       osc.frequency.exponentialRampToValueAtTime(45, time + 0.14);
 
-      gain.gain.setValueAtTime(0.30, time);
+      gain.gain.setValueAtTime(0.3, time);
       gain.gain.exponentialRampToValueAtTime(0.001, time + 0.28);
 
       osc.connect(gain);
@@ -441,7 +466,12 @@ class SoundEngine {
     } catch {}
   }
 
-  private playHihat(time: number, isOpen: boolean, isAccent: boolean, volMultiplier = 1) {
+  private playHihat(
+    time: number,
+    isOpen: boolean,
+    isAccent: boolean,
+    volMultiplier = 1,
+  ) {
     if (!this.ctx || !this.musicGain) return;
     try {
       const dur = isOpen ? 0.18 : 0.04;
@@ -486,7 +516,7 @@ class SoundEngine {
       filter.frequency.setValueAtTime(480, time);
       filter.frequency.exponentialRampToValueAtTime(160, time + dur);
 
-      gain.gain.setValueAtTime(0.20, time);
+      gain.gain.setValueAtTime(0.2, time);
       gain.gain.exponentialRampToValueAtTime(0.001, time + dur);
 
       osc.connect(filter);
@@ -587,7 +617,11 @@ class SoundEngine {
   // INTERACTIVE KEYSTROKE SFX
   // ==========================================
 
-  public playLaneHit(laneIndex: number, rating: 'PERFECT' | 'GREAT' | 'GOOD', isSpace: boolean = laneIndex === 4) {
+  public playLaneHit(
+    laneIndex: number,
+    rating: 'PERFECT' | 'GREAT' | 'GOOD',
+    isSpace: boolean = laneIndex === 4,
+  ) {
     if (this.globalMuted || !this.soundEnabled) return;
     this.init();
     if (!this.ctx || !this.sfxGain) return;
@@ -602,7 +636,8 @@ class SoundEngine {
       const baseFreq = this.laneFrequencies[laneIndex] || 440;
 
       // Melodic chime volume
-      const targetGain = rating === 'PERFECT' ? 0.14 : rating === 'GREAT' ? 0.11 : 0.085;
+      const targetGain =
+        rating === 'PERFECT' ? 0.14 : rating === 'GREAT' ? 0.11 : 0.085;
       const decayDuration = rating === 'PERFECT' ? 0.22 : 0.16;
 
       if (this.currentCore === 'RETRO_8BIT') {
@@ -706,7 +741,11 @@ class SoundEngine {
   }
 
   // Snappy photon cannon bolt or heavy torpedo discharge
-  private playPhotonBlast(now: number, rating: 'PERFECT' | 'GREAT' | 'GOOD', isSpace: boolean) {
+  private playPhotonBlast(
+    now: number,
+    rating: 'PERFECT' | 'GREAT' | 'GOOD',
+    isSpace: boolean,
+  ) {
     if (!this.ctx || !this.sfxGain) return;
     try {
       const osc = this.ctx.createOscillator();
@@ -738,7 +777,10 @@ class SoundEngine {
         filter.frequency.exponentialRampToValueAtTime(500, now + 0.06);
 
         gain.gain.setValueAtTime(0, now);
-        gain.gain.linearRampToValueAtTime(rating === 'PERFECT' ? 0.16 : 0.12, now + 0.003);
+        gain.gain.linearRampToValueAtTime(
+          rating === 'PERFECT' ? 0.16 : 0.12,
+          now + 0.003,
+        );
         gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.08);
       }
 
@@ -751,7 +793,11 @@ class SoundEngine {
   }
 
   // Target shatter / asteroid mine detonation crunch
-  private playTargetDetonation(now: number, rating: 'PERFECT' | 'GREAT' | 'GOOD', isSpace: boolean) {
+  private playTargetDetonation(
+    now: number,
+    rating: 'PERFECT' | 'GREAT' | 'GOOD',
+    isSpace: boolean,
+  ) {
     if (!this.ctx || !this.sfxGain) return;
     try {
       const dur = isSpace ? 0.18 : 0.11;
@@ -766,12 +812,21 @@ class SoundEngine {
 
       const filter = this.ctx.createBiquadFilter();
       filter.type = 'bandpass';
-      filter.frequency.setValueAtTime(isSpace ? 380 : (rating === 'PERFECT' ? 1600 : 1200), now);
-      filter.frequency.exponentialRampToValueAtTime(isSpace ? 90 : 260, now + dur);
+      filter.frequency.setValueAtTime(
+        isSpace ? 380 : rating === 'PERFECT' ? 1600 : 1200,
+        now,
+      );
+      filter.frequency.exponentialRampToValueAtTime(
+        isSpace ? 90 : 260,
+        now + dur,
+      );
 
       const gain = this.ctx.createGain();
       gain.gain.setValueAtTime(0, now);
-      gain.gain.linearRampToValueAtTime(isSpace ? 0.22 : (rating === 'PERFECT' ? 0.15 : 0.11), now + 0.004);
+      gain.gain.linearRampToValueAtTime(
+        isSpace ? 0.22 : rating === 'PERFECT' ? 0.15 : 0.11,
+        now + 0.004,
+      );
       gain.gain.exponentialRampToValueAtTime(0.0001, now + dur);
 
       noise.connect(filter);
@@ -900,8 +955,8 @@ class SoundEngine {
         starNumber === 1
           ? [523.25, 659.25]
           : starNumber === 2
-          ? [659.25, 783.99]
-          : [783.99, 1046.5];
+            ? [659.25, 783.99]
+            : [783.99, 1046.5];
 
       notes.forEach((freq, idx) => {
         if (!this.ctx || !this.sfxGain) return;

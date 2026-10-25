@@ -17,6 +17,7 @@
 ---
 
 ## 🌟 Table of Contents
+
 1. [Overview & Philosophy](#-overview--philosophy)
 2. [Real In-Game Visual Showcase](#-real-in-game-visual-showcase)
 3. [Key Features](#-key-features)
@@ -38,7 +39,6 @@
 ## 🌌 Overview & Philosophy
 
 Most typing tutors feel like sterile word processors; rhythm games often lack structured educational progression. **AstroType bridges both worlds**:
-
 - **Real Muscle-Memory Pedagogy**: Grounded in classic touch-typing fundamentals—anchor keys `F` & `J`, strict finger-to-column isolation, and the opposite-hand shift pinky rule.
 - **Physical Keycap Alignment**: Falling notes match the exact shape and unit width (`1u`, `1.5u`, `2.25u`, `6.25u`) of your physical keys and land directly on the keyboard receptor deck.
 - **Dynamic Altitude Targeting**: When typing a character, your ship's plasma blaster calculates the exact live vertical altitude and horizontal coordinate of the targeted enemy drone, firing a frame-accurate bolt that detonates on impact.
@@ -54,6 +54,7 @@ Most typing tutors feel like sterile word processors; rhythm games often lack st
 All screenshots below are captured directly from the live running application:
 
 ### 1. Active Combat Highway & Upward Laser Salvo
+
 Descending enemy drones drop down continuous laser conduits toward your mechanical flight deck. Correct keystrokes fire plasma blaster cannons straight up from the ship directly into the targeted drone, detonating hazards with circular shockwaves, shattered voxel debris, floating arcade energy crystals, and combat score ratings (`CONTACT! +50`, `DEFUSED! +50`, `TARGET DOWN! +75`).
 
 <p align="center">
@@ -61,6 +62,7 @@ Descending enemy drones drop down continuous laser conduits toward your mechanic
 </p>
 
 ### 2. Misfire Angle Guidance System
+
 Striking an incorrect key fires an angled plasma tracer line directly from your starship underneath the keyboard to the exact keycap you mistakenly pressed. A visual warning reticle and impact flash immediately illustrate the physical reach error.
 
 <p align="center">
@@ -68,6 +70,7 @@ Striking an incorrect key fires an angled plasma tracer line directly from your 
 </p>
 
 ### 3. Touch Typing Diagnostic Center & Key Accuracy Heatmap
+
 Access the real-time Diagnostic Center from the flight deck to view per-key lifetime hit accuracy percentages (>95% emerald, 88–95% cyan, 80–88% amber, <80% rose), bilateral left-hand vs. right-hand accuracy balance, words typed, and touch-typing master technique reminders.
 
 <p align="center">
@@ -75,6 +78,7 @@ Access the real-time Diagnostic Center from the flight deck to view per-key life
 </p>
 
 ### 4. 7-Sector Galaxy Mission Progression Map
+
 Progress through 28 curated pedagogical stages across 7 star-gated galaxy sectors (Orion Belt, Andromeda Nebula, Kepler Expanse, Cygnus Corridor, Pulsar Core, Quantum Void, and Event Horizon). Each stage features target cadences, finger focus badges, and 3-star ratings.
 
 <p align="center">
@@ -82,6 +86,7 @@ Progress through 28 curated pedagogical stages across 7 star-gated galaxy sector
 </p>
 
 ### 5. Starship Hangar Upgrades & Audio Cores
+
 Spend cosmic credits earned from high-precision flights to install Deflector Shields (absorbing mistake keystrokes), Hyperdrive Reactors (charging Overdrive warp mode faster), Precision Sensors (expanding timing windows), and procedural Web Audio synthesizer cores (Cyber Synth, 8-Bit Retro Arcade, Deep Space Drone, Neo Acoustic Harp).
 
 <p align="center">
@@ -92,25 +97,25 @@ Spend cosmic credits earned from high-precision flights to install Deflector Shi
 
 ## 🎮 Key Features
 
-| Feature | Description |
-| :--- | :--- |
-| **Subtle Space Indicators** | Elegant, non-boxed `␣` glyphs in the target stream that cleanly distinguish space characters without visual clutter, elevating to focused cyan glow when actively targeted. |
-| **Highway Note Speed** | Adjustable visual scroll rate (`SLOW` 0.9x, `NORMAL` 1.5x, `FAST` 2.2x, `HYPER` 3.4x) controlling how quickly approaching notes descend down the flight lanes for tailored reflex challenge without altering target WPM. |
-| **Vertically Taller Highway** | Expanded vertical corridor with elevated orbital ceiling, providing extended flight time and a clearer incoming roadmap. |
-| **Enlarged Vector Key Legends** | Scaled-up, bold typeface on both physical keycaps and falling enemy drone hulls for effortless high-speed peripheral legibility. |
-| **Tactile Flight Deck** | 1:1 ANSI layout with tactile homing nubs (`F` & `J`), reactive duration-of-press glow, and dynamic keycap labels. |
-| **Live Altitude Blaster Tracking** | Plasma bolts calculate the exact frame coordinate of falling drones, producing realistic detonations at any height. |
-| **Misfire Error Tracers** | Striking an incorrect key fires an angled laser line directly to the pressed keycap, reinforcing visual error correction. |
-| **Laser Guidance Marker** | Single center line with vertical ramp up and down glow; constant width regardless of whether targeting letter keys or the spacebar. |
-| **Dual SVG Hand Visualizers** | Ergonomic left and right palms indicating finger positions, tactile bumps, and intelligent spacebar hand recommendations. |
-| **Blind Touch-Typing Mode** | Toggle deck legends off to replace key characters with tactile muscle-memory dots for true sightless mastery. |
-| **Overdrive Warp Mode** | Maintain combos to fill your warp reactor. Activates a `x4` score overdrive with hyperspace starfield trails. |
-| **Direct Flight Deck Launchers** | Dedicated, 100% reliable "Enter Flight Deck" and "Resume Flight" buttons across Hangar, Analytics, and Sectors ensure instant cockpit entry from any screen. |
-| **Context-Aware Navigation** | Modals dynamically route back to their exact origin (Academy Home, Sectors, Debriefing, or Pause Menu) without broken redirects or dead ends. |
-| **Top Flight Deck Controls** | Persistent header action button dynamically toggles `Pause Flight` during active missions and `Resume Flight` / `Start Mission` when in menus. |
-| **Interactive Heatmap** | Color-coded keyboard diagnostic matrix revealing hit rates, bilateral hand balance, and struggling finger reaches. |
-| **Hangar Progression** | Earn cosmic credits to purchase Deflector Shields, Hyperdrive Reactors, Precision Sensors, and Synth Cores. |
-| **Offline Data Portability** | Full profile progress, stars, and key statistics are stored locally with JSON export and import capabilities. |
+| Feature                            | Description                                                                                                                                                                                                              |
+| :--------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Subtle Space Indicators**        | Elegant, non-boxed `␣` glyphs in the target stream that cleanly distinguish space characters without visual clutter, elevating to focused cyan glow when actively targeted.                                              |
+| **Highway Note Speed**             | Adjustable visual scroll rate (`SLOW` 0.9x, `NORMAL` 1.5x, `FAST` 2.2x, `HYPER` 3.4x) controlling how quickly approaching notes descend down the flight lanes for tailored reflex challenge without altering target WPM. |
+| **Vertically Taller Highway**      | Expanded vertical corridor with elevated orbital ceiling, providing extended flight time and a clearer incoming roadmap.                                                                                                 |
+| **Enlarged Vector Key Legends**    | Scaled-up, bold typeface on both physical keycaps and falling enemy drone hulls for effortless high-speed peripheral legibility.                                                                                         |
+| **Tactile Flight Deck**            | 1:1 ANSI layout with tactile homing nubs (`F` & `J`), reactive duration-of-press glow, and dynamic keycap labels.                                                                                                        |
+| **Live Altitude Blaster Tracking** | Plasma bolts calculate the exact frame coordinate of falling drones, producing realistic detonations at any height.                                                                                                      |
+| **Misfire Error Tracers**          | Striking an incorrect key fires an angled laser line directly to the pressed keycap, reinforcing visual error correction.                                                                                                |
+| **Laser Guidance Marker**          | Single center line with vertical ramp up and down glow; constant width regardless of whether targeting letter keys or the spacebar.                                                                                      |
+| **Dual SVG Hand Visualizers**      | Ergonomic left and right palms indicating finger positions, tactile bumps, and intelligent spacebar hand recommendations.                                                                                                |
+| **Blind Touch-Typing Mode**        | Toggle deck legends off to replace key characters with tactile muscle-memory dots for true sightless mastery.                                                                                                            |
+| **Overdrive Warp Mode**            | Maintain combos to fill your warp reactor. Activates a `x4` score overdrive with hyperspace starfield trails.                                                                                                            |
+| **Direct Flight Deck Launchers**   | Dedicated, 100% reliable "Enter Flight Deck" and "Resume Flight" buttons across Hangar, Analytics, and Sectors ensure instant cockpit entry from any screen.                                                             |
+| **Context-Aware Navigation**       | Modals dynamically route back to their exact origin (Academy Home, Sectors, Debriefing, or Pause Menu) without broken redirects or dead ends.                                                                            |
+| **Top Flight Deck Controls**       | Persistent header action button dynamically toggles `Pause Flight` during active missions and `Resume Flight` / `Start Mission` when in menus.                                                                           |
+| **Interactive Heatmap**            | Color-coded keyboard diagnostic matrix revealing hit rates, bilateral hand balance, and struggling finger reaches.                                                                                                       |
+| **Hangar Progression**             | Earn cosmic credits to purchase Deflector Shields, Hyperdrive Reactors, Precision Sensors, and Synth Cores.                                                                                                              |
+| **Offline Data Portability**       | Full profile progress, stars, and key statistics are stored locally with JSON export and import capabilities.                                                                                                            |
 
 ---
 
@@ -124,17 +129,17 @@ Every single finger (except thumbs, which share emerald green) has a unique, hig
 5. **The live target guidance pill in the prompt stream**
 6. **The analytics diagnostic reach report**
 
-| Hand | Finger | Color Code | Hex Code | Assigned Keys (ANSI) |
-| :--- | :--- | :---: | :---: | :--- |
-| **Left Hand** | Pinky | 🌸 Vibrant Pink | `#ec4899` | `` ` 1 Q A Z Tab Caps Shift Left Ctrl `` |
-| **Left Hand** | Ring | 🔮 Deep Violet | `#8b5cf6` | `2 W S X Alt Left` |
-| **Left Hand** | Middle | ⚡ Electric Blue | `#3b82f6` | `3 E D C` |
-| **Left Hand** | Index | 💎 Bright Cyan | `#06b6d4` | `4 5 R T F G V B` *(Home Anchor: [F])* |
-| **Thumbs** | Thumbs | 🌲 Emerald Green | `#10b981` | `Spacebar (6.25u)` + `Cmd / Meta` |
-| **Right Hand** | Index | 🍋 Neon Lime | `#84cc16` | `6 7 Y U H J N M` *(Home Anchor: [J])* |
-| **Right Hand** | Middle | ☀️ Golden Yellow | `#eab308` | `8 I K , <` |
-| **Right Hand** | Ring | 🍊 Sunset Orange | `#f97316` | `9 O L . > Alt Right` |
-| **Right Hand** | Pinky | 🔴 Crimson Red | `#ef4444` | `0 - = P [ ] \ ; ' / Enter Backspace Shift Right` |
+| Hand           | Finger |    Color Code    | Hex Code  | Assigned Keys (ANSI)                              |
+| :------------- | :----- | :--------------: | :-------: | :------------------------------------------------ |
+| **Left Hand**  | Pinky  | 🌸 Vibrant Pink  | `#ec4899` | `` ` 1 Q A Z Tab Caps Shift Left Ctrl ``          |
+| **Left Hand**  | Ring   |  🔮 Deep Violet  | `#8b5cf6` | `2 W S X Alt Left`                                |
+| **Left Hand**  | Middle | ⚡ Electric Blue | `#3b82f6` | `3 E D C`                                         |
+| **Left Hand**  | Index  |  💎 Bright Cyan  | `#06b6d4` | `4 5 R T F G V B` _(Home Anchor: [F])_            |
+| **Thumbs**     | Thumbs | 🌲 Emerald Green | `#10b981` | `Spacebar (6.25u)` + `Cmd / Meta`                 |
+| **Right Hand** | Index  |   🍋 Neon Lime   | `#84cc16` | `6 7 Y U H J N M` _(Home Anchor: [J])_            |
+| **Right Hand** | Middle | ☀️ Golden Yellow | `#eab308` | `8 I K , <`                                       |
+| **Right Hand** | Ring   | 🍊 Sunset Orange | `#f97316` | `9 O L . > Alt Right`                             |
+| **Right Hand** | Pinky  |  🔴 Crimson Red  | `#ef4444` | `0 - = P [ ] \ ; ' / Enter Backspace Shift Right` |
 
 ---
 
@@ -154,6 +159,7 @@ Progress through **28 stages across 7 galaxy sectors**, earning up to **84 Stars
 ```
 
 ### Pedagogical Touch-Typing Rules Enforced:
+
 1. **The Anchor Law**: Never lift index fingers without maintaining tactile awareness of the `F` and `J` homing bumps.
 2. **Opposite-Shift Rule**: When typing a capital letter with the left hand, press `Right Shift` with the right pinky (and vice versa).
 3. **Smart Thumb Alternation**: Recommends pressing Space with the thumb opposite to the hand that typed the preceding letter, preserving hand balance and momentum.
@@ -164,7 +170,6 @@ Progress through **28 stages across 7 galaxy sectors**, earning up to **84 Stars
 ## ⚡ Rhythm Highway & Combat Mechanics
 
 AstroType features a falling-highway mechanic designed specifically for typing accuracy and instant micro-gratification:
-
 - **Orbital Interceptor Position**: Your starship sits directly underneath the keyboard flight deck, aligning intuitively with the upward flight path of the lasers into the descending hazards above.
 - **Dynamic Altitude Blaster Bolts**: Plasma projectiles calculate the exact altitude of targeted drones at the moment of key press. High drones are struck near the top of the screen; low drones detonate just above the keycaps.
 - **Misfire Angle Guidance**: Pressing the wrong key fires an angled tracer straight toward the keycap you pressed, immediately illustrating which key was erroneously struck.
@@ -190,12 +195,14 @@ AstroType features a falling-highway mechanic designed specifically for typing a
 Built entirely on the browser's native **Web Audio API** with zero external audio assets:
 
 ### 4 Audio Synth Cores:
+
 1. **Cyber Synth (Default)**: Dual-oscillator harmonic space chime with shimmering overtone decay.
 2. **Retro 8-Bit Arcade**: Authentic square-wave chiptune blasters with pitch-bend attack.
 3. **Deep Space Drone**: Resonant sub-bass and warm sine-wave chimes.
 4. **Neo Acoustic Harp**: Warm triangular bell harmonics and organic kalimba tones.
 
 ### Real-Time Procedural Rhythm Beat Tracks:
+
 - **Neon Synthwave**: 106 BPM retro-futuristic bassline and snare pocket.
 - **Cyber Pulse**: 122 BPM high-tempo energetic electro groove.
 - **Cosmic Lo-Fi**: 84 BPM relaxed chillout beat for focused training.
@@ -205,7 +212,6 @@ Built entirely on the browser's native **Web Audio API** with zero external audi
 ## 📊 Diagnostics, Analytics & Heatmap
 
 Access the **Touch Typing Diagnostic Center** anytime from the flight deck:
-
 - **Interactive Key Accuracy Heatmap**: Every keycap is dynamically styled based on lifetime accuracy:
   - 🟢 **>95%**: Flawless mastery
   - 🔵 **88%–95%**: Proficient touch reach
@@ -221,7 +227,6 @@ Access the **Touch Typing Diagnostic Center** anytime from the flight deck:
 ## 🛠️ Starship Hangar Upgrades
 
 Earn credits on every completed mission to unlock starship enhancements:
-
 - 🛡️ **Deflector Shields (Levels 1–3)**: Absorbs 1–3 typing mistakes per mission without breaking your combo streak.
 - ⚡ **Hyperdrive Reactor (Levels 1–3)**: Accelerates Overdrive warp energy charging by +20% to +60%.
 - 🎯 **Precision Sensors (Levels 1–3)**: Widens the hit timing window for PERFECT ratings by +15% to +45%.
@@ -324,10 +329,12 @@ astrotype/
 ## 🚀 Getting Started & Development
 
 ### Prerequisites
+
 - [Node.js](https://nodejs.org/) 26 (see `.node-version`)
 - [pnpm](https://pnpm.io/) 12 (pinned in `package.json` as `packageManager`)
 
 ### Installation
+
 ```bash
 # Clone the repository
 git clone https://github.com/your-username/astrotype.git
@@ -340,6 +347,7 @@ pnpm install
 ```
 
 ### Running Locally
+
 ```bash
 # Start the Vite development server (port 3000)
 pnpm dev
@@ -347,6 +355,7 @@ pnpm dev
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ### Building for Production
+
 ```bash
 # Typecheck and build optimized bundle
 pnpm build
@@ -356,6 +365,7 @@ pnpm preview
 ```
 
 ### Type Checking & Linting
+
 ```bash
 pnpm lint
 ```
@@ -364,18 +374,18 @@ pnpm lint
 
 ## ⌨️ Controls & Shortcuts
 
-| Action | Shortcut / Control |
-| :--- | :--- |
-| **Type Falling Keys** | Physical keyboard keys |
-| **Virtual Keystroke** | Click or tap any key on the visual keyboard |
-| **Pause Mission** | `Esc` key or click the **Pause** button in the HUD |
-| **Resume Flight** | Click **Resume Flight** or press `Enter` / `Space` in the pause modal |
-| **Toggle Deck View** | Click **Hide Deck / Show Deck** in the top HUD |
-| **Toggle Hands Guide** | Click **Hands: ON/OFF** in the keyboard deck header |
-| **Audio Controls** | Click the Volume icon in the navigation bar to mix music and sound effects |
-| **Open Hangar Upgrades** | Click **Hangar** in navigation or press `[H]` |
-| **Open Analytics Heatmap** | Click **Diagnostics** in navigation or press `[D]` |
-| **Custom Text Practice** | Click **Custom Drill** in navigation or press `[P]` |
+| Action                     | Shortcut / Control                                                         |
+| :------------------------- | :------------------------------------------------------------------------- |
+| **Type Falling Keys**      | Physical keyboard keys                                                     |
+| **Virtual Keystroke**      | Click or tap any key on the visual keyboard                                |
+| **Pause Mission**          | `Esc` key or click the **Pause** button in the HUD                         |
+| **Resume Flight**          | Click **Resume Flight** or press `Enter` / `Space` in the pause modal      |
+| **Toggle Deck View**       | Click **Hide Deck / Show Deck** in the top HUD                             |
+| **Toggle Hands Guide**     | Click **Hands: ON/OFF** in the keyboard deck header                        |
+| **Audio Controls**         | Click the Volume icon in the navigation bar to mix music and sound effects |
+| **Open Hangar Upgrades**   | Click **Hangar** in navigation or press `[H]`                              |
+| **Open Analytics Heatmap** | Click **Diagnostics** in navigation or press `[D]`                         |
+| **Custom Text Practice**   | Click **Custom Drill** in navigation or press `[P]`                        |
 
 ---
 

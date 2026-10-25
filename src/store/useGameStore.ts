@@ -74,7 +74,10 @@ export interface GameStoreState {
   sendGameEvent: (event: GameMachineEvent) => void;
   setGameState: (state: GameState) => void;
   setCurrentStage: (stage: Stage) => void;
-  startStage: (stage: Stage, customSpeed?: 'SLOW' | 'NORMAL' | 'FAST' | 'HYPER') => void;
+  startStage: (
+    stage: Stage,
+    customSpeed?: 'SLOW' | 'NORMAL' | 'FAST' | 'HYPER',
+  ) => void;
   processKeystroke: (key: string) => void;
   releaseKeystroke: (key?: string) => void;
   updateFallingNotesOnTick: () => void;
@@ -263,11 +266,17 @@ export const useGameStore = create<GameStoreState>((set, get) => {
       set({ currentStage: stage });
     },
 
-    startStage: (stage: Stage, customSpeed?: 'SLOW' | 'NORMAL' | 'FAST' | 'HYPER') => {
+    startStage: (
+      stage: Stage,
+      customSpeed?: 'SLOW' | 'NORMAL' | 'FAST' | 'HYPER',
+    ) => {
       soundEngine.init();
       const { profile } = get();
       if (customSpeed && customSpeed !== profile.highwaySpeed) {
-        const speedProfile = validateProfileWithZod({ ...profile, highwaySpeed: customSpeed });
+        const speedProfile = validateProfileWithZod({
+          ...profile,
+          highwaySpeed: customSpeed,
+        });
         set({ profile: speedProfile });
         saveProfile(speedProfile);
       }
@@ -341,7 +350,11 @@ export const useGameStore = create<GameStoreState>((set, get) => {
       const state = get();
       if (state.gameState !== 'PLAYING') return;
 
-      if (['Shift', 'Control', 'Alt', 'Meta', 'CapsLock', 'Tab'].includes(pressedKey)) {
+      if (
+        ['Shift', 'Control', 'Alt', 'Meta', 'CapsLock', 'Tab'].includes(
+          pressedKey,
+        )
+      ) {
         return;
       }
 
@@ -369,7 +382,7 @@ export const useGameStore = create<GameStoreState>((set, get) => {
 
         // Evaluate Falling Note Strike Timing
         const matchingNote = state.fallingNotes.find(
-          (n) => n.char === targetChar && n.status === 'PENDING'
+          (n) => n.char === targetChar && n.status === 'PENDING',
         );
 
         let rating: 'PERFECT' | 'GREAT' | 'GOOD' = 'GREAT';
@@ -395,12 +408,20 @@ export const useGameStore = create<GameStoreState>((set, get) => {
         else if (nextStreak >= 20) nextMultiplier = 3;
         else if (nextStreak >= 10) nextMultiplier = 2;
 
-        const baseScore = rating === 'PERFECT' ? 100 : rating === 'GREAT' ? 75 : 50;
-        const earnedScore = baseScore * nextMultiplier * (state.performance.hyperspaceActive ? 2 : 1);
+        const baseScore =
+          rating === 'PERFECT' ? 100 : rating === 'GREAT' ? 75 : 50;
+        const earnedScore =
+          baseScore *
+          nextMultiplier *
+          (state.performance.hyperspaceActive ? 2 : 1);
 
         const reactorBonus = 1 + state.profile.upgrades.hyperdriveReactor * 0.2;
-        const nextEnergy = Math.min(100, state.performance.hyperspaceEnergy + 3.5 * reactorBonus);
-        const shouldTriggerHyperspace = nextEnergy >= 100 && !state.performance.hyperspaceActive;
+        const nextEnergy = Math.min(
+          100,
+          state.performance.hyperspaceEnergy + 3.5 * reactorBonus,
+        );
+        const shouldTriggerHyperspace =
+          nextEnergy >= 100 && !state.performance.hyperspaceActive;
 
         if (shouldTriggerHyperspace) {
           soundEngine.playHyperspaceIgnition();
@@ -410,7 +431,7 @@ export const useGameStore = create<GameStoreState>((set, get) => {
 
         // Advance note conveyor
         const remainingNotes = state.fallingNotes.filter(
-          (n) => n.id !== matchingNote?.id && n.status !== 'PROCESSED'
+          (n) => n.id !== matchingNote?.id && n.status !== 'PROCESSED',
         );
 
         const upcomingIdx = nextCharIndex + 6;
@@ -439,19 +460,29 @@ export const useGameStore = create<GameStoreState>((set, get) => {
 
         // Track inter-keystroke intervals for steady cadence and rhythm scoring
         const now = Date.now();
-        const updatedKeystrokeTimes = [...state.recentKeystrokeTimes, now].slice(-10);
+        const updatedKeystrokeTimes = [
+          ...state.recentKeystrokeTimes,
+          now,
+        ].slice(-10);
         let liveCadence = state.performance.cadenceConsistency ?? 100;
         if (updatedKeystrokeTimes.length >= 4) {
           const intervals: number[] = [];
           for (let i = 1; i < updatedKeystrokeTimes.length; i++) {
-            intervals.push(updatedKeystrokeTimes[i] - updatedKeystrokeTimes[i - 1]);
+            intervals.push(
+              updatedKeystrokeTimes[i] - updatedKeystrokeTimes[i - 1],
+            );
           }
           const mean = intervals.reduce((a, b) => a + b, 0) / intervals.length;
           if (mean > 0) {
-            const variance = intervals.reduce((sum, v) => sum + Math.pow(v - mean, 2), 0) / intervals.length;
+            const variance =
+              intervals.reduce((sum, v) => sum + Math.pow(v - mean, 2), 0) /
+              intervals.length;
             const stdDev = Math.sqrt(variance);
             const cv = stdDev / mean;
-            liveCadence = Math.max(30, Math.min(100, Math.round(100 - cv * 65)));
+            liveCadence = Math.max(
+              30,
+              Math.min(100, Math.round(100 - cv * 65)),
+            );
           }
         }
 
@@ -461,7 +492,9 @@ export const useGameStore = create<GameStoreState>((set, get) => {
           currentStreak: nextStreak,
           maxStreak: newMaxStreak,
           multiplier: nextMultiplier,
-          hyperspaceActive: shouldTriggerHyperspace ? true : state.performance.hyperspaceActive,
+          hyperspaceActive: shouldTriggerHyperspace
+            ? true
+            : state.performance.hyperspaceActive,
           hyperspaceEnergy: shouldTriggerHyperspace ? 100 : nextEnergy,
           correctKeystrokes: state.performance.correctKeystrokes + 1,
           totalKeystrokes: state.performance.totalKeystrokes + 1,
@@ -494,7 +527,10 @@ export const useGameStore = create<GameStoreState>((set, get) => {
         updatedKeyStats[targetChar].misses += 1;
         const newErrorIndices = new Set(state.errorIndices);
         newErrorIndices.add(currentCharIdx);
-        const disruptedCadence = Math.max(25, (state.performance.cadenceConsistency ?? 100) - 15);
+        const disruptedCadence = Math.max(
+          25,
+          (state.performance.cadenceConsistency ?? 100) - 15,
+        );
 
         if (state.performance.shieldsRemaining > 0) {
           soundEngine.playShieldAbsorb();
@@ -519,7 +555,10 @@ export const useGameStore = create<GameStoreState>((set, get) => {
             currentStreak: 0,
             multiplier: 1,
             hyperspaceActive: false,
-            hyperspaceEnergy: Math.max(0, state.performance.hyperspaceEnergy - 25),
+            hyperspaceEnergy: Math.max(
+              0,
+              state.performance.hyperspaceEnergy - 25,
+            ),
             incorrectKeystrokes: state.performance.incorrectKeystrokes + 1,
             totalKeystrokes: state.performance.totalKeystrokes + 1,
             timingFeedback: 'MISS',
@@ -547,9 +586,13 @@ export const useGameStore = create<GameStoreState>((set, get) => {
       if (state.gameState !== 'PLAYING') return;
 
       const speedStep =
-        state.profile.highwaySpeed === 'SLOW' ? 0.9 :
-        state.profile.highwaySpeed === 'FAST' ? 2.2 :
-        state.profile.highwaySpeed === 'HYPER' ? 3.4 : 1.5;
+        state.profile.highwaySpeed === 'SLOW'
+          ? 0.9
+          : state.profile.highwaySpeed === 'FAST'
+            ? 2.2
+            : state.profile.highwaySpeed === 'HYPER'
+              ? 3.4
+              : 1.5;
 
       const updated = state.fallingNotes.map((note, idx) => {
         if (note.status === 'PROCESSED') return note;
@@ -568,9 +611,13 @@ export const useGameStore = create<GameStoreState>((set, get) => {
 
         const slotY = Math.max(6, 84 - idx * 16);
         const speedFactor =
-          state.profile.highwaySpeed === 'SLOW' ? 0.10 :
-          state.profile.highwaySpeed === 'FAST' ? 0.22 :
-          state.profile.highwaySpeed === 'HYPER' ? 0.32 : 0.16;
+          state.profile.highwaySpeed === 'SLOW'
+            ? 0.1
+            : state.profile.highwaySpeed === 'FAST'
+              ? 0.22
+              : state.profile.highwaySpeed === 'HYPER'
+                ? 0.32
+                : 0.16;
         const nextY = note.yPercent + (slotY - note.yPercent) * speedFactor;
         return {
           ...note,
@@ -586,18 +633,33 @@ export const useGameStore = create<GameStoreState>((set, get) => {
       const state = get();
       if (state.gameState !== 'PLAYING' || !state.stageStartTime) return;
 
-      const elapsedSeconds = Math.max(1, (Date.now() - state.stageStartTime) / 1000);
+      const elapsedSeconds = Math.max(
+        1,
+        (Date.now() - state.stageStartTime) / 1000,
+      );
       const minutes = elapsedSeconds / 60;
       const prev = state.performance;
 
-      const grossWpm = Math.round((prev.totalKeystrokes / 5) / minutes) || 0;
-      const netWpm = Math.max(
-        0,
-        Math.round(((prev.correctKeystrokes - prev.incorrectKeystrokes) / 5) / minutes)
-      ) || 0;
-      const accuracy = prev.totalKeystrokes > 0
-        ? Math.max(0, Math.min(100, Math.round((prev.correctKeystrokes / prev.totalKeystrokes) * 100)))
-        : 100;
+      const grossWpm = Math.round(prev.totalKeystrokes / 5 / minutes) || 0;
+      const netWpm =
+        Math.max(
+          0,
+          Math.round(
+            (prev.correctKeystrokes - prev.incorrectKeystrokes) / 5 / minutes,
+          ),
+        ) || 0;
+      const accuracy =
+        prev.totalKeystrokes > 0
+          ? Math.max(
+              0,
+              Math.min(
+                100,
+                Math.round(
+                  (prev.correctKeystrokes / prev.totalKeystrokes) * 100,
+                ),
+              ),
+            )
+          : 100;
 
       const patchPerf: LivePerformance = {
         ...prev,
@@ -624,17 +686,36 @@ export const useGameStore = create<GameStoreState>((set, get) => {
 
       const finalNetWpm = Math.max(
         0,
-        Math.round(((state.performance.correctKeystrokes - state.performance.incorrectKeystrokes) / 5) / minutes)
+        Math.round(
+          (state.performance.correctKeystrokes -
+            state.performance.incorrectKeystrokes) /
+            5 /
+            minutes,
+        ),
       );
       const finalAccuracy =
         state.performance.totalKeystrokes > 0
-          ? Math.max(0, Math.min(100, Math.round((state.performance.correctKeystrokes / state.performance.totalKeystrokes) * 100)))
+          ? Math.max(
+              0,
+              Math.min(
+                100,
+                Math.round(
+                  (state.performance.correctKeystrokes /
+                    state.performance.totalKeystrokes) *
+                    100,
+                ),
+              ),
+            )
           : 100;
 
       const thresh = state.currentStage.starThresholds;
       let starsEarned = 0;
       if (finalAccuracy >= thresh.oneStarAccuracy) starsEarned = 1;
-      if (starsEarned >= 1 && finalNetWpm >= thresh.twoStarWpm && finalAccuracy >= thresh.twoStarAccuracy) {
+      if (
+        starsEarned >= 1 &&
+        finalNetWpm >= thresh.twoStarWpm &&
+        finalAccuracy >= thresh.twoStarAccuracy
+      ) {
         starsEarned = 2;
       }
       if (
@@ -648,14 +729,14 @@ export const useGameStore = create<GameStoreState>((set, get) => {
 
       if (starsEarned >= 1) setTimeout(() => soundEngine.playStarChime(1), 300);
       if (starsEarned >= 2) setTimeout(() => soundEngine.playStarChime(2), 700);
-      if (starsEarned >= 3) setTimeout(() => soundEngine.playStarChime(3), 1100);
+      if (starsEarned >= 3)
+        setTimeout(() => soundEngine.playStarChime(3), 1100);
 
-      const creditsEarned = 100 + starsEarned * 75 + Math.round(state.performance.score / 200);
+      const creditsEarned =
+        100 + starsEarned * 75 + Math.round(state.performance.score / 200);
 
-      const { updatedProfile, newStarsAwarded, isNewHighScore } = recordStageResult(
-        state.profile,
-        state.currentStage.id,
-        {
+      const { updatedProfile, newStarsAwarded, isNewHighScore } =
+        recordStageResult(state.profile, state.currentStage.id, {
           score: state.performance.score,
           wpm: finalNetWpm,
           accuracy: finalAccuracy,
@@ -666,8 +747,7 @@ export const useGameStore = create<GameStoreState>((set, get) => {
           errorsCount: state.performance.incorrectKeystrokes,
           practiceSeconds: Math.round(elapsedSeconds),
           keyStats: state.sessionKeyStats,
-        }
-      );
+        });
 
       const validatedProfile = validateProfileWithZod(updatedProfile);
       saveProfile(validatedProfile);
@@ -710,11 +790,19 @@ export const useGameStore = create<GameStoreState>((set, get) => {
     toggleGlobalMute: () => {
       const { profile, gameState } = get();
       const nextMuted = !profile.globalMuted;
-      const updated = validateProfileWithZod({ ...profile, globalMuted: nextMuted });
+      const updated = validateProfileWithZod({
+        ...profile,
+        globalMuted: nextMuted,
+      });
       set({ profile: updated });
       saveProfile(updated);
       soundEngine.setGlobalMute(nextMuted);
-      if (!nextMuted && profile.musicEnabled && (profile.musicVolume ?? 0.4) > 0 && gameState === 'PLAYING') {
+      if (
+        !nextMuted &&
+        profile.musicEnabled &&
+        (profile.musicVolume ?? 0.4) > 0 &&
+        gameState === 'PLAYING'
+      ) {
         soundEngine.startBeat();
       }
     },
@@ -722,7 +810,10 @@ export const useGameStore = create<GameStoreState>((set, get) => {
     toggleSound: () => {
       const { profile } = get();
       const next = !profile.soundEnabled;
-      const updated = validateProfileWithZod({ ...profile, soundEnabled: next });
+      const updated = validateProfileWithZod({
+        ...profile,
+        soundEnabled: next,
+      });
       set({ profile: updated });
       saveProfile(updated);
       soundEngine.setSoundEnabled(next);
@@ -731,11 +822,19 @@ export const useGameStore = create<GameStoreState>((set, get) => {
     toggleMusic: () => {
       const { profile, gameState } = get();
       const next = !profile.musicEnabled;
-      const updated = validateProfileWithZod({ ...profile, musicEnabled: next });
+      const updated = validateProfileWithZod({
+        ...profile,
+        musicEnabled: next,
+      });
       set({ profile: updated });
       saveProfile(updated);
       soundEngine.setMusicEnabled(next);
-      if (next && !profile.globalMuted && (profile.musicVolume ?? 0.4) > 0 && gameState === 'PLAYING') {
+      if (
+        next &&
+        !profile.globalMuted &&
+        (profile.musicVolume ?? 0.4) > 0 &&
+        gameState === 'PLAYING'
+      ) {
         soundEngine.startBeat();
       } else if (!next) {
         soundEngine.stopBeat();
@@ -746,7 +845,11 @@ export const useGameStore = create<GameStoreState>((set, get) => {
       const { profile } = get();
       const clamped = Math.max(0, Math.min(1, vol));
       const enabled = clamped > 0;
-      const updated = validateProfileWithZod({ ...profile, soundVolume: clamped, soundEnabled: enabled });
+      const updated = validateProfileWithZod({
+        ...profile,
+        soundVolume: clamped,
+        soundEnabled: enabled,
+      });
       set({ profile: updated });
       saveProfile(updated);
       soundEngine.setSoundEnabled(enabled);
@@ -757,7 +860,11 @@ export const useGameStore = create<GameStoreState>((set, get) => {
       const { profile, gameState } = get();
       const clamped = Math.max(0, Math.min(1, vol));
       const enabled = clamped > 0;
-      const updated = validateProfileWithZod({ ...profile, musicVolume: clamped, musicEnabled: enabled });
+      const updated = validateProfileWithZod({
+        ...profile,
+        musicVolume: clamped,
+        musicEnabled: enabled,
+      });
       set({ profile: updated });
       saveProfile(updated);
       soundEngine.setMusicEnabled(enabled);
@@ -780,21 +887,30 @@ export const useGameStore = create<GameStoreState>((set, get) => {
     cycleBeatTheme: () => {
       const { profile } = get();
       const nextTheme = soundEngine.cycleBeatTheme();
-      const updated = validateProfileWithZod({ ...profile, beatTheme: nextTheme });
+      const updated = validateProfileWithZod({
+        ...profile,
+        beatTheme: nextTheme,
+      });
       set({ profile: updated });
       saveProfile(updated);
     },
 
     toggleKeyboard: () => {
       const { profile } = get();
-      const updated = validateProfileWithZod({ ...profile, keyboardVisible: !profile.keyboardVisible });
+      const updated = validateProfileWithZod({
+        ...profile,
+        keyboardVisible: !profile.keyboardVisible,
+      });
       set({ profile: updated });
       saveProfile(updated);
     },
 
     toggleHands: () => {
       const { profile } = get();
-      const updated = validateProfileWithZod({ ...profile, handsVisible: !profile.handsVisible });
+      const updated = validateProfileWithZod({
+        ...profile,
+        handsVisible: !profile.handsVisible,
+      });
       set({ profile: updated });
       saveProfile(updated);
     },
@@ -888,7 +1004,10 @@ export const useGameStore = create<GameStoreState>((set, get) => {
           totalCredits: profile.totalCredits - cost,
           upgrades: {
             ...profile.upgrades,
-            unlockedAudioCores: [...profile.upgrades.unlockedAudioCores, coreId],
+            unlockedAudioCores: [
+              ...profile.upgrades.unlockedAudioCores,
+              coreId,
+            ],
             equippedAudioCore: coreId,
           },
         });

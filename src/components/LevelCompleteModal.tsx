@@ -1,5 +1,15 @@
 import React, { useEffect } from 'react';
-import { Star, Trophy, Sparkles, RotateCcw, ArrowRight, Map, CheckCircle2, ShieldCheck, Home } from 'lucide-react';
+import {
+  Star,
+  Trophy,
+  Sparkles,
+  RotateCcw,
+  ArrowRight,
+  Map,
+  CheckCircle2,
+  ShieldCheck,
+  Home,
+} from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Stage } from '../types/game';
 
@@ -38,7 +48,16 @@ export const LevelCompleteModal: React.FC<LevelCompleteModalProps> = ({
   onReturnToMap,
   onReturnToMenu,
 }) => {
-  const { starsEarned, score, wpm, accuracy, maxStreak, creditsEarned, isNewHighScore, newStarsAwarded } = result;
+  const {
+    starsEarned,
+    score,
+    wpm,
+    accuracy,
+    maxStreak,
+    creditsEarned,
+    isNewHighScore,
+    newStarsAwarded,
+  } = result;
   const thresholds = stage.starThresholds;
 
   useEffect(() => {
@@ -66,7 +85,9 @@ export const LevelCompleteModal: React.FC<LevelCompleteModalProps> = ({
         <h2 className="text-2xl sm:text-3xl font-bold font-display text-white mb-1">
           {stage.title}
         </h2>
-        <p className="text-xs font-mono text-slate-400 mb-5">{stage.subtitle}</p>
+        <p className="text-xs font-mono text-slate-400 mb-5">
+          {stage.subtitle}
+        </p>
 
         {/* 3-Star Rating Animation Display */}
         <div className="flex items-center justify-center gap-3 mb-5">
@@ -83,7 +104,9 @@ export const LevelCompleteModal: React.FC<LevelCompleteModalProps> = ({
               >
                 <Star
                   className={`w-8 h-8 sm:w-10 sm:h-10 ${
-                    isEarned ? 'fill-amber-400 text-amber-400' : 'text-slate-600 fill-slate-800'
+                    isEarned
+                      ? 'fill-amber-400 text-amber-400'
+                      : 'text-slate-600 fill-slate-800'
                   }`}
                 />
               </div>
@@ -107,14 +130,17 @@ export const LevelCompleteModal: React.FC<LevelCompleteModalProps> = ({
                 </span>
               </div>
               <p className="text-[11px] text-slate-300 mt-0.5">
-                All stars, credits, and unlocked sectors are securely recorded in your starship log.
+                All stars, credits, and unlocked sectors are securely recorded
+                in your starship log.
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-3 sm:border-l sm:border-emerald-500/30 sm:pl-4 shrink-0">
             <div className="text-left font-mono">
-              <span className="text-[10px] text-slate-400 uppercase block">Total Fleet Stars</span>
+              <span className="text-[10px] text-slate-400 uppercase block">
+                Total Fleet Stars
+              </span>
               <div className="flex items-center gap-1.5 text-amber-300 font-bold text-sm">
                 <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
                 <span>{totalStars} ★</span>
@@ -132,30 +158,85 @@ export const LevelCompleteModal: React.FC<LevelCompleteModalProps> = ({
         <div className="w-full bg-slate-950/60 border border-slate-800 rounded-xl p-3 mb-5 text-xs font-mono text-left space-y-1.5">
           <div className="flex items-center justify-between text-slate-300">
             <span className="flex items-center gap-2">
-              <span className={starsEarned >= 1 ? 'text-amber-400 font-bold' : 'text-slate-600'}>★ 1</span>
-              <span>Baseline Touch Form (Acc &ge; {thresholds.oneStarAccuracy}%)</span>
+              <span
+                className={
+                  starsEarned >= 1
+                    ? 'text-amber-400 font-bold'
+                    : 'text-slate-600'
+                }
+              >
+                ★ 1
+              </span>
+              <span>
+                Baseline Touch Form (Acc &ge; {thresholds.oneStarAccuracy}%)
+              </span>
             </span>
-            <span className={accuracy >= thresholds.oneStarAccuracy ? 'text-emerald-400 font-bold' : 'text-rose-400'}>
+            <span
+              className={
+                accuracy >= thresholds.oneStarAccuracy
+                  ? 'text-emerald-400 font-bold'
+                  : 'text-rose-400'
+              }
+            >
               {accuracy >= thresholds.oneStarAccuracy ? 'ACHIEVED' : 'MISSED'}
             </span>
           </div>
 
           <div className="flex items-center justify-between text-slate-300">
             <span className="flex items-center gap-2">
-              <span className={starsEarned >= 2 ? 'text-amber-400 font-bold' : 'text-slate-600'}>★ 2</span>
-              <span>Steady Cadence & Flow (Speed &ge; {thresholds.twoStarWpm} WPM & Acc &ge; {thresholds.twoStarAccuracy}%)</span>
+              <span
+                className={
+                  starsEarned >= 2
+                    ? 'text-amber-400 font-bold'
+                    : 'text-slate-600'
+                }
+              >
+                ★ 2
+              </span>
+              <span>
+                Steady Cadence & Flow (Speed &ge; {thresholds.twoStarWpm} WPM &
+                Acc &ge; {thresholds.twoStarAccuracy}%)
+              </span>
             </span>
-            <span className={wpm >= thresholds.twoStarWpm && accuracy >= thresholds.twoStarAccuracy ? 'text-emerald-400 font-bold' : 'text-slate-500'}>
-              {wpm >= thresholds.twoStarWpm && accuracy >= thresholds.twoStarAccuracy ? 'ACHIEVED' : 'INCOMPLETE'}
+            <span
+              className={
+                wpm >= thresholds.twoStarWpm &&
+                accuracy >= thresholds.twoStarAccuracy
+                  ? 'text-emerald-400 font-bold'
+                  : 'text-slate-500'
+              }
+            >
+              {wpm >= thresholds.twoStarWpm &&
+              accuracy >= thresholds.twoStarAccuracy
+                ? 'ACHIEVED'
+                : 'INCOMPLETE'}
             </span>
           </div>
 
           <div className="flex items-center justify-between text-slate-300">
             <span className="flex items-center gap-2">
-              <span className={starsEarned >= 3 ? 'text-amber-400 font-bold' : 'text-slate-600'}>★ 3</span>
-              <span>Finger Form Mastery (Speed &ge; {thresholds.threeStarWpm} WPM, Acc &ge; {thresholds.threeStarAccuracy}%, Streak &ge; {thresholds.threeStarMinStreak})</span>
+              <span
+                className={
+                  starsEarned >= 3
+                    ? 'text-amber-400 font-bold'
+                    : 'text-slate-600'
+                }
+              >
+                ★ 3
+              </span>
+              <span>
+                Finger Form Mastery (Speed &ge; {thresholds.threeStarWpm} WPM,
+                Acc &ge; {thresholds.threeStarAccuracy}%, Streak &ge;{' '}
+                {thresholds.threeStarMinStreak})
+              </span>
             </span>
-            <span className={starsEarned >= 3 ? 'text-emerald-400 font-bold' : 'text-slate-500'}>
+            <span
+              className={
+                starsEarned >= 3
+                  ? 'text-emerald-400 font-bold'
+                  : 'text-slate-500'
+              }
+            >
               {starsEarned >= 3 ? 'ACHIEVED' : 'INCOMPLETE'}
             </span>
           </div>
@@ -164,31 +245,41 @@ export const LevelCompleteModal: React.FC<LevelCompleteModalProps> = ({
         {/* Performance Metrics Grid */}
         <div className="w-full grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
           <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800">
-            <span className="text-[10px] uppercase font-mono text-slate-500 block">Score</span>
+            <span className="text-[10px] uppercase font-mono text-slate-500 block">
+              Score
+            </span>
             <div className="flex items-center justify-center gap-1 font-mono font-bold text-white text-lg">
               {(score ?? 0).toLocaleString()}
             </div>
             {isNewHighScore && (
-              <span className="text-[9px] font-mono text-amber-400 uppercase font-semibold">New Best!</span>
+              <span className="text-[9px] font-mono text-amber-400 uppercase font-semibold">
+                New Best!
+              </span>
             )}
           </div>
 
           <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800">
-            <span className="text-[10px] uppercase font-mono text-slate-500 block">Speed</span>
+            <span className="text-[10px] uppercase font-mono text-slate-500 block">
+              Speed
+            </span>
             <span className="font-mono font-bold text-cyan-400 text-lg">
               {wpm} <span className="text-xs text-slate-500">WPM</span>
             </span>
           </div>
 
           <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800">
-            <span className="text-[10px] uppercase font-mono text-slate-500 block">Accuracy</span>
+            <span className="text-[10px] uppercase font-mono text-slate-500 block">
+              Accuracy
+            </span>
             <span className="font-mono font-bold text-emerald-400 text-lg">
               {accuracy}%
             </span>
           </div>
 
           <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800">
-            <span className="text-[10px] uppercase font-mono text-slate-500 block">Credits</span>
+            <span className="text-[10px] uppercase font-mono text-slate-500 block">
+              Credits
+            </span>
             <div className="flex items-center justify-center gap-1 font-mono font-bold text-amber-400 text-lg">
               <Sparkles className="w-3.5 h-3.5" />
               <span>+{creditsEarned}</span>
@@ -203,14 +294,22 @@ export const LevelCompleteModal: React.FC<LevelCompleteModalProps> = ({
               Touch-Typing Technique Assessment
             </span>
             {result.cadenceConsistency !== undefined && (
-              <span className={`text-[10px] font-mono px-2 py-0.5 rounded border ${
-                result.cadenceConsistency >= 85
-                  ? 'bg-emerald-950/60 border-emerald-500/40 text-emerald-300'
+              <span
+                className={`text-[10px] font-mono px-2 py-0.5 rounded border ${
+                  result.cadenceConsistency >= 85
+                    ? 'bg-emerald-950/60 border-emerald-500/40 text-emerald-300'
+                    : result.cadenceConsistency >= 70
+                      ? 'bg-cyan-950/60 border-cyan-500/40 text-cyan-300'
+                      : 'bg-amber-950/60 border-amber-500/40 text-amber-300'
+                }`}
+              >
+                Cadence Rhythm: {result.cadenceConsistency}% (
+                {result.cadenceConsistency >= 85
+                  ? 'Steady'
                   : result.cadenceConsistency >= 70
-                  ? 'bg-cyan-950/60 border-cyan-500/40 text-cyan-300'
-                  : 'bg-amber-950/60 border-amber-500/40 text-amber-300'
-              }`}>
-                Cadence Rhythm: {result.cadenceConsistency}% ({result.cadenceConsistency >= 85 ? 'Steady' : result.cadenceConsistency >= 70 ? 'Paced' : 'Uneven'})
+                    ? 'Paced'
+                    : 'Uneven'}
+                )
               </span>
             )}
           </div>
@@ -218,8 +317,8 @@ export const LevelCompleteModal: React.FC<LevelCompleteModalProps> = ({
             {accuracy >= 97
               ? 'Flawless finger discipline! You struck each key with accurate finger placement without rushing. This deliberate muscle memory is the true foundation of touch typing.'
               : accuracy >= 92
-              ? 'Solid rhythm and finger control. Keep your hands relaxed and resting lightly on the home anchor bumps (F and J). Speed will naturally follow.'
-              : 'Pacing advice: Slow down your stroke tempo! Touch typing is built on accurate finger selection, not raw speed. Practicing slowly with correct fingers prevents bad habits.'}
+                ? 'Solid rhythm and finger control. Keep your hands relaxed and resting lightly on the home anchor bumps (F and J). Speed will naturally follow.'
+                : 'Pacing advice: Slow down your stroke tempo! Touch typing is built on accurate finger selection, not raw speed. Practicing slowly with correct fingers prevents bad habits.'}
           </p>
         </div>
 

@@ -1,5 +1,13 @@
 import React from 'react';
-import { Shield, Zap, Sparkles, Volume2, Palette, Check, Play } from 'lucide-react';
+import {
+  Shield,
+  Zap,
+  Sparkles,
+  Volume2,
+  Palette,
+  Check,
+  Play,
+} from 'lucide-react';
 import { ShipUpgrades, TrailColorTheme, AudioSynthCore } from '../types/game';
 import { UPGRADE_CATALOG } from '../utils/storage';
 
@@ -28,9 +36,12 @@ export const HangarUpgradesModal: React.FC<HangarUpgradesModalProps> = ({
   onGoToFlightDeck,
   sourceState = 'MENU',
 }) => {
-  const nextShield = UPGRADE_CATALOG.deflectorShields[upgrades.deflectorShields];
-  const nextReactor = UPGRADE_CATALOG.hyperdriveReactor[upgrades.hyperdriveReactor];
-  const nextSensor = UPGRADE_CATALOG.precisionSensors[upgrades.precisionSensors];
+  const nextShield =
+    UPGRADE_CATALOG.deflectorShields[upgrades.deflectorShields];
+  const nextReactor =
+    UPGRADE_CATALOG.hyperdriveReactor[upgrades.hyperdriveReactor];
+  const nextSensor =
+    UPGRADE_CATALOG.precisionSensors[upgrades.precisionSensors];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
@@ -38,7 +49,9 @@ export const HangarUpgradesModal: React.FC<HangarUpgradesModalProps> = ({
         {/* Header */}
         <div className="flex flex-wrap items-center justify-between gap-3 p-4 sm:p-6 border-b border-slate-800 bg-slate-950/70">
           <div>
-            <span className="block text-xs uppercase font-mono text-cyan-400">Starship Engineering Bay</span>
+            <span className="block text-xs uppercase font-mono text-cyan-400">
+              Starship Engineering Bay
+            </span>
             <h2 className="text-xl sm:text-2xl font-bold font-display text-white">
               Starship Hangar Upgrades
             </h2>
@@ -62,7 +75,11 @@ export const HangarUpgradesModal: React.FC<HangarUpgradesModalProps> = ({
               title="Launch directly into the cockpit flight deck"
             >
               <Play className="w-3.5 h-3.5 fill-current" />
-              <span>{sourceState === 'PLAYING' ? 'Resume Flight' : 'Enter Flight Deck'}</span>
+              <span>
+                {sourceState === 'PLAYING'
+                  ? 'Resume Flight'
+                  : 'Enter Flight Deck'}
+              </span>
             </button>
 
             {/* Context-Aware Return Button */}
@@ -73,10 +90,10 @@ export const HangarUpgradesModal: React.FC<HangarUpgradesModalProps> = ({
               {sourceState === 'STAGE_SELECT'
                 ? 'Back to Sectors'
                 : sourceState === 'VICTORY'
-                ? 'Back to Debriefing'
-                : sourceState === 'PLAYING'
-                ? 'Pause Menu'
-                : 'Back to Academy'}
+                  ? 'Back to Debriefing'
+                  : sourceState === 'PLAYING'
+                    ? 'Pause Menu'
+                    : 'Back to Academy'}
             </button>
           </div>
         </div>
@@ -96,21 +113,26 @@ export const HangarUpgradesModal: React.FC<HangarUpgradesModalProps> = ({
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2 text-cyan-400">
                       <Shield className="w-4 h-4" />
-                      <span className="font-bold text-sm text-white">Deflector Shields</span>
+                      <span className="font-bold text-sm text-white">
+                        Deflector Shields
+                      </span>
                     </div>
                     <span className="text-xs font-mono text-cyan-400">
                       Tier {upgrades.deflectorShields}/3
                     </span>
                   </div>
                   <p className="text-xs text-slate-400 mb-3">
-                    Absorbs typing error keystrokes without breaking combo streak or multiplier.
+                    Absorbs typing error keystrokes without breaking combo
+                    streak or multiplier.
                   </p>
                   <div className="flex items-center gap-1.5 mb-4">
                     {[1, 2, 3].map((lvl) => (
                       <div
                         key={lvl}
                         className={`h-2 flex-1 rounded ${
-                          lvl <= upgrades.deflectorShields ? 'bg-cyan-500' : 'bg-slate-800'
+                          lvl <= upgrades.deflectorShields
+                            ? 'bg-cyan-500'
+                            : 'bg-slate-800'
                         }`}
                       />
                     ))}
@@ -143,21 +165,26 @@ export const HangarUpgradesModal: React.FC<HangarUpgradesModalProps> = ({
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2 text-amber-400">
                       <Zap className="w-4 h-4" />
-                      <span className="font-bold text-sm text-white">Hyperdrive Reactor</span>
+                      <span className="font-bold text-sm text-white">
+                        Hyperdrive Reactor
+                      </span>
                     </div>
                     <span className="text-xs font-mono text-amber-400">
                       Tier {upgrades.hyperdriveReactor}/3
                     </span>
                   </div>
                   <p className="text-xs text-slate-400 mb-3">
-                    Accelerates Overdrive energy charging rate so you trigger Hyperspace 4x mode faster.
+                    Accelerates Overdrive energy charging rate so you trigger
+                    Hyperspace 4x mode faster.
                   </p>
                   <div className="flex items-center gap-1.5 mb-4">
                     {[1, 2, 3].map((lvl) => (
                       <div
                         key={lvl}
                         className={`h-2 flex-1 rounded ${
-                          lvl <= upgrades.hyperdriveReactor ? 'bg-amber-500' : 'bg-slate-800'
+                          lvl <= upgrades.hyperdriveReactor
+                            ? 'bg-amber-500'
+                            : 'bg-slate-800'
                         }`}
                       />
                     ))}
@@ -190,21 +217,26 @@ export const HangarUpgradesModal: React.FC<HangarUpgradesModalProps> = ({
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2 text-emerald-400">
                       <Sparkles className="w-4 h-4" />
-                      <span className="font-bold text-sm text-white">Precision Sensors</span>
+                      <span className="font-bold text-sm text-white">
+                        Precision Sensors
+                      </span>
                     </div>
                     <span className="text-xs font-mono text-emerald-400">
                       Tier {upgrades.precisionSensors}/3
                     </span>
                   </div>
                   <p className="text-xs text-slate-400 mb-3">
-                    Expands the rhythm highway strike timing window for PERFECT score multipliers.
+                    Expands the rhythm highway strike timing window for PERFECT
+                    score multipliers.
                   </p>
                   <div className="flex items-center gap-1.5 mb-4">
                     {[1, 2, 3].map((lvl) => (
                       <div
                         key={lvl}
                         className={`h-2 flex-1 rounded ${
-                          lvl <= upgrades.precisionSensors ? 'bg-emerald-500' : 'bg-slate-800'
+                          lvl <= upgrades.precisionSensors
+                            ? 'bg-emerald-500'
+                            : 'bg-slate-800'
                         }`}
                       />
                     ))}
@@ -280,17 +312,17 @@ export const HangarUpgradesModal: React.FC<HangarUpgradesModalProps> = ({
                         isEquipped
                           ? 'bg-cyan-950/60 text-cyan-300 border border-cyan-800 cursor-default'
                           : isUnlocked
-                          ? 'bg-slate-800 hover:bg-slate-700 text-slate-200'
-                          : totalCredits >= theme.cost
-                          ? 'bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold'
-                          : 'bg-slate-800/40 text-slate-600 cursor-not-allowed'
+                            ? 'bg-slate-800 hover:bg-slate-700 text-slate-200'
+                            : totalCredits >= theme.cost
+                              ? 'bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold'
+                              : 'bg-slate-800/40 text-slate-600 cursor-not-allowed'
                       }`}
                     >
                       {isEquipped
                         ? 'Active'
                         : isUnlocked
-                        ? 'Equip'
-                        : `${theme.cost} Cr`}
+                          ? 'Equip'
+                          : `${theme.cost} Cr`}
                     </button>
                   </div>
                 );
@@ -309,7 +341,9 @@ export const HangarUpgradesModal: React.FC<HangarUpgradesModalProps> = ({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               {UPGRADE_CATALOG.audioCores.map((core) => {
-                const isUnlocked = upgrades.unlockedAudioCores.includes(core.id);
+                const isUnlocked = upgrades.unlockedAudioCores.includes(
+                  core.id,
+                );
                 const isEquipped = upgrades.equippedAudioCore === core.id;
 
                 return (
@@ -344,13 +378,17 @@ export const HangarUpgradesModal: React.FC<HangarUpgradesModalProps> = ({
                         isEquipped
                           ? 'bg-cyan-950/60 text-cyan-300 border border-cyan-800 cursor-default'
                           : isUnlocked
-                          ? 'bg-slate-800 hover:bg-slate-700 text-slate-200'
-                          : totalCredits >= core.cost
-                          ? 'bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold'
-                          : 'bg-slate-800/40 text-slate-600 cursor-not-allowed'
+                            ? 'bg-slate-800 hover:bg-slate-700 text-slate-200'
+                            : totalCredits >= core.cost
+                              ? 'bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold'
+                              : 'bg-slate-800/40 text-slate-600 cursor-not-allowed'
                       }`}
                     >
-                      {isEquipped ? 'Active' : isUnlocked ? 'Equip' : `${core.cost} Cr`}
+                      {isEquipped
+                        ? 'Active'
+                        : isUnlocked
+                          ? 'Equip'
+                          : `${core.cost} Cr`}
                     </button>
                   </div>
                 );

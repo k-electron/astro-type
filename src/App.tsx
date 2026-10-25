@@ -56,7 +56,9 @@ export default function App() {
   } = useGameStore();
 
   // Track the source screen before opening modal to guarantee clean return navigation
-  const [modalSourceState, setModalSourceState] = useState<'MENU' | 'PLAYING' | 'VICTORY' | 'STAGE_SELECT'>('MENU');
+  const [modalSourceState, setModalSourceState] = useState<
+    'MENU' | 'PLAYING' | 'VICTORY' | 'STAGE_SELECT'
+  >('MENU');
 
   const goToFlightDeck = () => {
     // If a mission was in progress and incomplete, resume it!
@@ -67,7 +69,11 @@ export default function App() {
       victoryResult === null
     ) {
       setGameState('PLAYING');
-      if (profile.musicEnabled && !profile.globalMuted && (profile.musicVolume ?? 0.4) > 0) {
+      if (
+        profile.musicEnabled &&
+        !profile.globalMuted &&
+        (profile.musicVolume ?? 0.4) > 0
+      ) {
         soundEngine.startBeat();
       }
     } else {
@@ -76,7 +82,9 @@ export default function App() {
     }
   };
 
-  const openModal = (target: 'STAGE_SELECT' | 'HANGAR' | 'ANALYTICS' | 'CUSTOM_PRACTICE') => {
+  const openModal = (
+    target: 'STAGE_SELECT' | 'HANGAR' | 'ANALYTICS' | 'CUSTOM_PRACTICE',
+  ) => {
     if (gameState === 'VICTORY') {
       setModalSourceState('VICTORY');
     } else if (gameState === 'PLAYING') {
@@ -131,7 +139,13 @@ export default function App() {
         setGameState('MENU');
       }
     }
-  }, [gameState, performance.currentCharIndex, currentStage.sampleText.length, victoryResult, setGameState]);
+  }, [
+    gameState,
+    performance.currentCharIndex,
+    currentStage.sampleText.length,
+    victoryResult,
+    setGameState,
+  ]);
 
   // Falling Notes Highway Motion & Conveyor Loop (60 FPS)
   useEffect(() => {
@@ -161,7 +175,9 @@ export default function App() {
       if (gameState !== 'PLAYING') return;
 
       // Ignore functional modifier keystrokes alone
-      if (['Shift', 'Control', 'Alt', 'Meta', 'CapsLock', 'Tab'].includes(e.key)) {
+      if (
+        ['Shift', 'Control', 'Alt', 'Meta', 'CapsLock', 'Tab'].includes(e.key)
+      ) {
         return;
       }
 
@@ -192,16 +208,25 @@ export default function App() {
     };
   }, [gameState, processKeystroke, releaseKeystroke]);
 
-  const activeChar = currentStage.sampleText[performance.currentCharIndex] || null;
-  const previousChar = performance.currentCharIndex > 0 ? currentStage.sampleText[performance.currentCharIndex - 1] : null;
-  const nextChar = performance.currentCharIndex + 1 < currentStage.sampleText.length ? currentStage.sampleText[performance.currentCharIndex + 1] : null;
+  const activeChar =
+    currentStage.sampleText[performance.currentCharIndex] || null;
+  const previousChar =
+    performance.currentCharIndex > 0
+      ? currentStage.sampleText[performance.currentCharIndex - 1]
+      : null;
+  const nextChar =
+    performance.currentCharIndex + 1 < currentStage.sampleText.length
+      ? currentStage.sampleText[performance.currentCharIndex + 1]
+      : null;
   const targetCharInfo = activeChar ? getNoteLaneAndFinger(activeChar) : null;
 
   return (
     <div className="relative min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-cyan-500/30 selection:text-cyan-200 overflow-x-hidden">
       {/* Global Cosmic Starfield Background: tranquil on home & modals; hyperwarp ONLY during active flight */}
       <GlobalCosmicBackground
-        hyperspaceActive={gameState === 'PLAYING' && performance.hyperspaceActive}
+        hyperspaceActive={
+          gameState === 'PLAYING' && performance.hyperspaceActive
+        }
         multiplier={gameState === 'PLAYING' ? performance.multiplier : 1}
       />
 
@@ -258,26 +283,32 @@ export default function App() {
               AstroType: Cosmic Touch Typing
             </h1>
             <p className="text-sm sm:text-base text-slate-400 leading-relaxed mb-8 max-w-xl">
-              Master touch typing with a comprehensive structured curriculum. Guide falling laser notes
-              down the cosmic rhythm highway, unlock interstellar sectors with 3-star ratings, and upgrade
-              your starship shields.
+              Master touch typing with a comprehensive structured curriculum.
+              Guide falling laser notes down the cosmic rhythm highway, unlock
+              interstellar sectors with 3-star ratings, and upgrade your
+              starship shields.
             </p>
 
             <div className="flex flex-wrap items-center justify-center gap-4 mb-10">
-              {performance.currentCharIndex > 0 && performance.currentCharIndex < currentStage.sampleText.length && !victoryResult && (
-                <button
-                  onClick={goToFlightDeck}
-                  className="px-6 py-3.5 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-bold text-sm sm:text-base flex items-center gap-2 shadow-xl shadow-cyan-950 transition-all cursor-pointer"
-                >
-                  <Play className="w-4 h-4 fill-current" />
-                  <span>Resume Flight Deck</span>
-                </button>
-              )}
+              {performance.currentCharIndex > 0 &&
+                performance.currentCharIndex < currentStage.sampleText.length &&
+                !victoryResult && (
+                  <button
+                    onClick={goToFlightDeck}
+                    className="px-6 py-3.5 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-bold text-sm sm:text-base flex items-center gap-2 shadow-xl shadow-cyan-950 transition-all cursor-pointer"
+                  >
+                    <Play className="w-4 h-4 fill-current" />
+                    <span>Resume Flight Deck</span>
+                  </button>
+                )}
 
               <button
                 onClick={() => startStage(CURRICULUM_SECTORS[0].stages[0])}
                 className={`px-6 py-3.5 rounded-xl text-sm sm:text-base flex items-center gap-2 font-bold transition-all cursor-pointer ${
-                  performance.currentCharIndex > 0 && performance.currentCharIndex < currentStage.sampleText.length && !victoryResult
+                  performance.currentCharIndex > 0 &&
+                  performance.currentCharIndex <
+                    currentStage.sampleText.length &&
+                  !victoryResult
                     ? 'border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-200'
                     : 'bg-cyan-400 hover:bg-cyan-300 text-slate-950 shadow-xl shadow-cyan-950'
                 }`}
@@ -294,9 +325,12 @@ export default function App() {
               </button>
             </div>
 
-            {(profile.totalStars > 0 || Object.keys(profile.stagesProgress).length > 0) && (
+            {(profile.totalStars > 0 ||
+              Object.keys(profile.stagesProgress).length > 0) && (
               <div className="flex flex-wrap items-center justify-center gap-2 mb-8 px-4 py-2 rounded-xl bg-slate-900/80 border border-slate-800 text-xs font-mono text-slate-400">
-                <span className="text-amber-400 font-bold">★ {profile.totalStars} Stars Earned</span>
+                <span className="text-amber-400 font-bold">
+                  ★ {profile.totalStars} Stars Earned
+                </span>
                 <span>·</span>
                 <span className="text-slate-400">Curriculum updated?</span>
                 <button
@@ -315,7 +349,8 @@ export default function App() {
                   Structured Curriculum
                 </span>
                 <p className="text-xs text-slate-400">
-                  Home row anchor tactile alignment, top & bottom reaches, 100 common words, numbers, and code syntax.
+                  Home row anchor tactile alignment, top & bottom reaches, 100
+                  common words, numbers, and code syntax.
                 </p>
               </div>
 
@@ -324,7 +359,8 @@ export default function App() {
                   Rhythm Space Highway
                 </span>
                 <p className="text-xs text-slate-400">
-                  9-lane falling keystroke notes, PERFECT strike timing, combo multipliers, and Hyperspace warp drive.
+                  9-lane falling keystroke notes, PERFECT strike timing, combo
+                  multipliers, and Hyperspace warp drive.
                 </p>
               </div>
 
@@ -333,7 +369,8 @@ export default function App() {
                   Sector Fleet Progression
                 </span>
                 <p className="text-xs text-slate-400">
-                  Earn 3 stars per stage, unlock gated sectors, install Deflector Shields, and equip custom audio synths.
+                  Earn 3 stars per stage, unlock gated sectors, install
+                  Deflector Shields, and equip custom audio synths.
                 </p>
               </div>
             </div>
@@ -391,14 +428,22 @@ export default function App() {
       {gameState === 'PAUSED' && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
           <div className="w-full max-w-sm rounded-2xl border border-slate-800 bg-slate-900 shadow-2xl p-6 text-center">
-            <h3 className="text-xl font-bold font-display text-white mb-1">Mission Paused</h3>
-            <p className="text-xs text-slate-400 mb-6">Rest your wrists and maintain posture.</p>
+            <h3 className="text-xl font-bold font-display text-white mb-1">
+              Mission Paused
+            </h3>
+            <p className="text-xs text-slate-400 mb-6">
+              Rest your wrists and maintain posture.
+            </p>
 
             <div className="flex flex-col gap-2.5">
               <button
                 onClick={() => {
                   setGameState('PLAYING');
-                  if (profile.musicEnabled && !profile.globalMuted && (profile.musicVolume ?? 0.4) > 0) {
+                  if (
+                    profile.musicEnabled &&
+                    !profile.globalMuted &&
+                    (profile.musicVolume ?? 0.4) > 0
+                  ) {
                     soundEngine.startBeat();
                   }
                 }}
@@ -470,7 +515,11 @@ export default function App() {
               setGameState('VICTORY');
             } else {
               setGameState('PLAYING');
-              if (profile.musicEnabled && !profile.globalMuted && (profile.musicVolume ?? 0.4) > 0) {
+              if (
+                profile.musicEnabled &&
+                !profile.globalMuted &&
+                (profile.musicVolume ?? 0.4) > 0
+              ) {
                 soundEngine.startBeat();
               }
             }
@@ -502,10 +551,15 @@ export default function App() {
           onClose={() => {
             if (modalSourceState === 'MENU') setGameState('MENU');
             else if (modalSourceState === 'VICTORY') setGameState('VICTORY');
-            else if (modalSourceState === 'STAGE_SELECT') setGameState('STAGE_SELECT');
+            else if (modalSourceState === 'STAGE_SELECT')
+              setGameState('STAGE_SELECT');
             else if (modalSourceState === 'PLAYING') {
               setGameState('PLAYING');
-              if (profile.musicEnabled && !profile.globalMuted && (profile.musicVolume ?? 0.4) > 0) {
+              if (
+                profile.musicEnabled &&
+                !profile.globalMuted &&
+                (profile.musicVolume ?? 0.4) > 0
+              ) {
                 soundEngine.startBeat();
               }
             } else setGameState('MENU');
@@ -522,10 +576,15 @@ export default function App() {
           onClose={() => {
             if (modalSourceState === 'MENU') setGameState('MENU');
             else if (modalSourceState === 'VICTORY') setGameState('VICTORY');
-            else if (modalSourceState === 'STAGE_SELECT') setGameState('STAGE_SELECT');
+            else if (modalSourceState === 'STAGE_SELECT')
+              setGameState('STAGE_SELECT');
             else if (modalSourceState === 'PLAYING') {
               setGameState('PLAYING');
-              if (profile.musicEnabled && !profile.globalMuted && (profile.musicVolume ?? 0.4) > 0) {
+              if (
+                profile.musicEnabled &&
+                !profile.globalMuted &&
+                (profile.musicVolume ?? 0.4) > 0
+              ) {
                 soundEngine.startBeat();
               }
             } else setGameState('MENU');
@@ -546,7 +605,11 @@ export default function App() {
           onClose={() => {
             if (modalSourceState === 'PLAYING') {
               setGameState('PLAYING');
-              if (profile.musicEnabled && !profile.globalMuted && (profile.musicVolume ?? 0.4) > 0) {
+              if (
+                profile.musicEnabled &&
+                !profile.globalMuted &&
+                (profile.musicVolume ?? 0.4) > 0
+              ) {
                 soundEngine.startBeat();
               }
             } else if (modalSourceState === 'STAGE_SELECT') {

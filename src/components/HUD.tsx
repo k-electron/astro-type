@@ -31,7 +31,9 @@ export const HUD: React.FC<HUDProps> = ({
       {/* Left: Score & Multiplier */}
       <div className="flex items-center gap-3 sm:gap-5 shrink-0">
         <div>
-          <span className="block text-[9px] uppercase font-mono tracking-wider text-slate-500 leading-none mb-0.5">Score</span>
+          <span className="block text-[9px] uppercase font-mono tracking-wider text-slate-500 leading-none mb-0.5">
+            Score
+          </span>
           <span className="text-lg sm:text-xl font-bold font-mono tabular-nums text-white leading-none">
             {(score ?? 0).toLocaleString()}
           </span>
@@ -44,8 +46,8 @@ export const HUD: React.FC<HUDProps> = ({
               hyperspaceActive
                 ? 'border-amber-400 bg-amber-500/20 text-amber-300 shadow-[0_0_12px_rgba(245,158,11,0.5)]'
                 : multiplier > 1
-                ? 'border-cyan-500 bg-cyan-950/50 text-cyan-300'
-                : 'border-slate-800 bg-slate-950 text-slate-400'
+                  ? 'border-cyan-500 bg-cyan-950/50 text-cyan-300'
+                  : 'border-slate-800 bg-slate-950 text-slate-400'
             }`}
           >
             {hyperspaceActive ? 'OVERDRIVE x4' : `x${multiplier}`}
@@ -53,11 +55,15 @@ export const HUD: React.FC<HUDProps> = ({
 
           {/* Overdrive Energy Meter */}
           <div className="hidden sm:flex flex-col gap-0.5">
-            <span className="text-[8px] uppercase font-mono text-slate-500 leading-none">Warp Energy</span>
+            <span className="text-[8px] uppercase font-mono text-slate-500 leading-none">
+              Warp Energy
+            </span>
             <div className="w-16 sm:w-20 h-1.5 rounded bg-slate-800 overflow-hidden border border-slate-700/60">
               <div
                 className={`h-full transition-all duration-150 ${
-                  hyperspaceActive ? 'bg-amber-400 shadow-[0_0_6px_#fbbf24]' : 'bg-cyan-500'
+                  hyperspaceActive
+                    ? 'bg-amber-400 shadow-[0_0_6px_#fbbf24]'
+                    : 'bg-cyan-500'
                 }`}
                 style={{ width: `${hyperspaceEnergy}%` }}
               />
@@ -69,7 +75,9 @@ export const HUD: React.FC<HUDProps> = ({
       {/* Center: Live Typing Metrics (WPM & Accuracy) */}
       <div className="flex items-center gap-3 sm:gap-6 shrink-0">
         <div className="text-center min-w-[56px]">
-          <span className="block text-[9px] uppercase font-mono tracking-wider text-slate-500 leading-none mb-0.5">Speed</span>
+          <span className="block text-[9px] uppercase font-mono tracking-wider text-slate-500 leading-none mb-0.5">
+            Speed
+          </span>
           <div className="flex items-baseline justify-center gap-0.5">
             <span className="text-lg sm:text-xl font-bold font-mono tabular-nums text-cyan-300 leading-none">
               {netWpm}
@@ -79,10 +87,16 @@ export const HUD: React.FC<HUDProps> = ({
         </div>
 
         <div className="text-center min-w-[60px]">
-          <span className="block text-[9px] uppercase font-mono tracking-wider text-slate-500 leading-none mb-0.5">Accuracy</span>
+          <span className="block text-[9px] uppercase font-mono tracking-wider text-slate-500 leading-none mb-0.5">
+            Accuracy
+          </span>
           <span
             className={`text-lg sm:text-xl font-bold font-mono tabular-nums leading-none block ${
-              accuracy >= 95 ? 'text-emerald-400' : accuracy >= 88 ? 'text-cyan-300' : 'text-amber-400'
+              accuracy >= 95
+                ? 'text-emerald-400'
+                : accuracy >= 88
+                  ? 'text-cyan-300'
+                  : 'text-amber-400'
             }`}
           >
             {accuracy}%
@@ -90,9 +104,13 @@ export const HUD: React.FC<HUDProps> = ({
         </div>
 
         <div className="text-center min-w-[52px]">
-          <span className="block text-[9px] uppercase font-mono tracking-wider text-slate-500 leading-none mb-0.5">Streak</span>
+          <span className="block text-[9px] uppercase font-mono tracking-wider text-slate-500 leading-none mb-0.5">
+            Streak
+          </span>
           <div className="flex items-center justify-center gap-1 text-slate-200">
-            <Zap className={`w-3 h-3 ${currentStreak >= 20 ? 'text-amber-400 fill-amber-400' : 'text-slate-500'}`} />
+            <Zap
+              className={`w-3 h-3 ${currentStreak >= 20 ? 'text-amber-400 fill-amber-400' : 'text-slate-500'}`}
+            />
             <span className="text-lg sm:text-xl font-bold font-mono tabular-nums leading-none">
               {currentStreak}
             </span>
@@ -101,15 +119,17 @@ export const HUD: React.FC<HUDProps> = ({
 
         {/* Steady Cadence & Rhythm Gauge */}
         <div className="hidden md:flex flex-col items-center min-w-[68px]">
-          <span className="block text-[9px] uppercase font-mono tracking-wider text-slate-500 leading-none mb-0.5">Rhythm</span>
+          <span className="block text-[9px] uppercase font-mono tracking-wider text-slate-500 leading-none mb-0.5">
+            Rhythm
+          </span>
           <div className="flex items-center gap-1.5 mt-0.5">
             <span
               className={`w-2 h-2 rounded-full ${
                 (performance.cadenceConsistency ?? 100) >= 85
                   ? 'bg-emerald-400 shadow-[0_0_8px_#34d399] animate-pulse'
                   : (performance.cadenceConsistency ?? 100) >= 70
-                  ? 'bg-cyan-400 shadow-[0_0_8px_#38bdf8]'
-                  : 'bg-amber-400'
+                    ? 'bg-cyan-400 shadow-[0_0_8px_#38bdf8]'
+                    : 'bg-amber-400'
               }`}
             />
             <span
@@ -117,15 +137,15 @@ export const HUD: React.FC<HUDProps> = ({
                 (performance.cadenceConsistency ?? 100) >= 85
                   ? 'text-emerald-300'
                   : (performance.cadenceConsistency ?? 100) >= 70
-                  ? 'text-cyan-300'
-                  : 'text-amber-300'
+                    ? 'text-cyan-300'
+                    : 'text-amber-300'
               }`}
             >
               {(performance.cadenceConsistency ?? 100) >= 85
                 ? 'Steady'
                 : (performance.cadenceConsistency ?? 100) >= 70
-                ? 'Paced'
-                : 'Uneven'}
+                  ? 'Paced'
+                  : 'Uneven'}
             </span>
           </div>
         </div>

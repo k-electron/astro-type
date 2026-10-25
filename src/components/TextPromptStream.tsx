@@ -1,5 +1,9 @@
 import React, { useRef, useEffect } from 'react';
-import { KEY_FINGER_MAP, FINGER_LANES, FINGER_DISPLAY_NAMES } from '../data/curriculum';
+import {
+  KEY_FINGER_MAP,
+  FINGER_LANES,
+  FINGER_DISPLAY_NAMES,
+} from '../data/curriculum';
 
 interface TextPromptStreamProps {
   fullText: string;
@@ -29,7 +33,10 @@ export const TextPromptStream: React.FC<TextPromptStreamProps> = ({
       const activeEl = activeCharRef.current;
       const container = containerRef.current;
       const offsetTop = activeEl.offsetTop - container.offsetTop;
-      if (offsetTop > container.clientHeight * 0.5 || offsetTop < container.scrollTop) {
+      if (
+        offsetTop > container.clientHeight * 0.5 ||
+        offsetTop < container.scrollTop
+      ) {
         container.scrollTo({
           top: Math.max(0, offsetTop - 50),
           behavior: 'smooth',
@@ -38,7 +45,10 @@ export const TextPromptStream: React.FC<TextPromptStreamProps> = ({
     }
   }, [currentIndex]);
 
-  const progressPercent = Math.min(100, Math.round((currentIndex / fullText.length) * 100));
+  const progressPercent = Math.min(
+    100,
+    Math.round((currentIndex / fullText.length) * 100),
+  );
   const currentChar = fullText[currentIndex] || '';
   const charInfo = currentChar
     ? KEY_FINGER_MAP[currentChar] || KEY_FINGER_MAP[currentChar.toLowerCase()]
@@ -50,10 +60,15 @@ export const TextPromptStream: React.FC<TextPromptStreamProps> = ({
       {/* Top Header bar with live target finger indicator (Fixed Height: h-11) */}
       <div className="h-11 flex items-center justify-between gap-3 px-4 border-b border-slate-800/80 bg-slate-950/70 text-xs shrink-0">
         <div className="flex items-center gap-3 truncate">
-          <span className="font-semibold text-slate-200 truncate">{stageTitle}</span>
-          <span className="text-slate-500 hidden sm:inline" aria-hidden="true">·</span>
+          <span className="font-semibold text-slate-200 truncate">
+            {stageTitle}
+          </span>
+          <span className="text-slate-500 hidden sm:inline" aria-hidden="true">
+            ·
+          </span>
           <span className="text-slate-400 hidden sm:inline whitespace-nowrap">
-            Cadence: <strong className="text-cyan-400 font-mono">{targetWpm} WPM</strong>
+            Cadence:{' '}
+            <strong className="text-cyan-400 font-mono">{targetWpm} WPM</strong>
           </span>
         </div>
 
@@ -63,7 +78,10 @@ export const TextPromptStream: React.FC<TextPromptStreamProps> = ({
             <div className="flex items-center gap-2 px-2.5 py-1 rounded-md bg-slate-900 border border-slate-700/80">
               <span
                 className="w-2.5 h-2.5 rounded-full shrink-0 shadow-[0_0_8px_currentColor]"
-                style={{ backgroundColor: laneInfo.color, color: laneInfo.color }}
+                style={{
+                  backgroundColor: laneInfo.color,
+                  color: laneInfo.color,
+                }}
               />
               <span className="text-slate-300 font-mono text-[11px] whitespace-nowrap">
                 {FINGER_DISPLAY_NAMES[charInfo.finger] || charInfo.finger}
@@ -87,7 +105,9 @@ export const TextPromptStream: React.FC<TextPromptStreamProps> = ({
               style={{ width: `${progressPercent}%` }}
             />
           </div>
-          <span className="font-mono tabular-nums text-slate-300 text-xs">{progressPercent}%</span>
+          <span className="font-mono tabular-nums text-slate-300 text-xs">
+            {progressPercent}%
+          </span>
         </div>
       </div>
 
@@ -98,7 +118,9 @@ export const TextPromptStream: React.FC<TextPromptStreamProps> = ({
             <span className="px-1.5 py-0.5 rounded bg-cyan-950/80 border border-cyan-800/60 text-cyan-300 font-mono text-[10px] uppercase font-bold tracking-wider shrink-0">
               Form Focus
             </span>
-            <span className="truncate text-slate-300 text-[11px]">{techniqueTip}</span>
+            <span className="truncate text-slate-300 text-[11px]">
+              {techniqueTip}
+            </span>
           </div>
           {focusFingers && (
             <span className="shrink-0 font-mono text-[10px] text-amber-300 bg-amber-950/50 border border-amber-800/50 px-2 py-0.5 rounded whitespace-nowrap">
@@ -128,10 +150,10 @@ export const TextPromptStream: React.FC<TextPromptStreamProps> = ({
                   isCurrent
                     ? 'px-1.5 py-0.2 mx-0.5 rounded bg-cyan-500/25 ring-1.5 ring-cyan-400 text-cyan-200 font-bold shadow-[0_0_10px_rgba(6,182,212,0.5)] scale-105'
                     : isTyped
-                    ? hasError
-                      ? 'px-1 text-rose-400 line-through decoration-rose-500 font-bold'
-                      : 'px-1 text-emerald-500/60 font-medium'
-                    : 'px-1 text-slate-600/70 hover:text-slate-400 font-normal'
+                      ? hasError
+                        ? 'px-1 text-rose-400 line-through decoration-rose-500 font-bold'
+                        : 'px-1 text-emerald-500/60 font-medium'
+                      : 'px-1 text-slate-600/70 hover:text-slate-400 font-normal'
                 }`}
                 title="Space (␣)"
               >
@@ -146,7 +168,8 @@ export const TextPromptStream: React.FC<TextPromptStreamProps> = ({
               ? 'text-rose-400 line-through decoration-rose-500 bg-rose-950/30'
               : 'text-emerald-400 font-medium';
           } else if (isCurrent) {
-            charClass = 'text-white bg-cyan-500/30 ring-2 ring-cyan-400 rounded-sm font-bold shadow-[0_0_12px_rgba(6,182,212,0.6)]';
+            charClass =
+              'text-white bg-cyan-500/30 ring-2 ring-cyan-400 rounded-sm font-bold shadow-[0_0_12px_rgba(6,182,212,0.6)]';
           }
 
           return (
