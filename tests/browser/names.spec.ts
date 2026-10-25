@@ -7,6 +7,8 @@ import {
   launchFreeFlight,
   openMenu,
   pauseMenu,
+  sectorUnlockedBanner,
+  seedStageStars,
   startFirstStage,
   typeText,
 } from './helpers';
@@ -171,12 +173,16 @@ test('the audio settings use the glossary names', async ({ page }) => {
 test('the Debrief of a 3-star Stage, with its Sector unlock, uses the glossary names', async ({
   page,
 }) => {
+  // 3 Stars already: clearing Stage 1 for 3 more takes the fleet to 6, which
+  // opens Sector 02, so the Debrief's unlock notice is on screen to be read.
+  await seedStageStars(page, { 's1-l2': 3 });
   await startFirstStage(page);
   await clearFirstStage(page);
   await expect(page.getByRole('button', { name: 'Replay' })).toBeVisible();
   await expect(
-    page.getByRole('button', { name: '3 ★', exact: true }),
+    page.getByRole('button', { name: '6 ★', exact: true }),
   ).toBeVisible();
+  await expect(sectorUnlockedBanner(page)).toBeVisible();
 
   await expectNoBannedNames(page);
 });

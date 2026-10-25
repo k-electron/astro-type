@@ -137,16 +137,78 @@ export const pauseMenu = (page: Page): Locator =>
   page.getByRole('heading', { name: 'Mission Paused' });
 
 /**
- * The button that closes a menu. The spec calls it Close. Today each menu
- * words it after what opened it (Galaxy Map: "Close", Hangar from the Flight
- * Deck: "Pause Menu", Hangar from the Galaxy Map: "Back to Sectors", ...), and
- * ticket #19 makes it one thing. Every name it has had is accepted here, so
- * this is the one place to pin it down.
+ * What each way of leaving a menu is called: "Back to" and the name of the
+ * screen it returns to, as the player reads that screen's name today.
+ */
+export const BACK_TO = {
+  academy: 'Back to Academy',
+  pauseMenu: 'Back to Pause Menu',
+  debriefing: 'Back to Debriefing',
+  galaxyMap: 'Back to Sectors',
+  hangar: 'Back to Hangar',
+  analytics: 'Back to Analytics',
+  freeFlight: 'Back to Free Flight',
+} as const;
+
+/**
+ * The button that closes a menu. The spec calls it Close; the player sees it
+ * read "Back to <the screen it returns to>" (decided in #35). This accepts
+ * every one of those, so the journeys that only need to get out of a menu do
+ * not depend on which opener they came from. `back-labels.spec.ts` is where
+ * each label is pinned to its opener.
  */
 export const closeButton = (page: Page): Locator =>
   page.getByRole('button', {
-    name: /^(Close|Back to Sectors|Back to Academy|Back to Debriefing|Debriefing|Pause Menu|Cancel)$/,
+    name: new RegExp(`^(${Object.values(BACK_TO).join('|')})$`),
   });
+
+/** The Debrief's heading line, present while a cleared Run is being shown. */
+export const debriefHeading = (page: Page): Locator =>
+  page.getByText(/Mission Debriefing/);
+
+/** The notice a Debrief shows when the Run just cleared opened a new Sector. */
+export const sectorUnlockedBanner = (page: Page): Locator =>
+  page.getByText(/New Sector Unlocked/);
+
+/**
+ * Starts the game with a Profile the player already has: each Stage id in
+ * `stars` is cleared with that many Stars (so the fleet's Stars are their
+ * sum). It is stored once, before the page loads; fields left out take their
+ * defaults. Call it before `page.goto`.
+ */
+export async function seedStageStars(
+  page: Page,
+  stars: Record<string, number>,
+  otherFields: Record<string, unknown> = {},
+): Promise<void> {
+  const stagesProgress = Object.fromEntries(
+    Object.entries(stars).map(([stageId, starsEarned]) => [
+      stageId,
+      {
+        stageId,
+        completed: true,
+        starsEarned,
+        highScore: 22150,
+        bestWpm: 31,
+        bestAccuracy: 100,
+        bestStreak: 40,
+        timesPlayed: 2,
+        lastPlayedAt: 1792904921385,
+      },
+    ]),
+  );
+  await page.addInitScript(
+    ({ key, value }) => {
+      if (sessionStorage.getItem('seeded')) return;
+      sessionStorage.setItem('seeded', 'yes');
+      localStorage.setItem(key, value);
+    },
+    {
+      key: 'astrotype_profile_v1',
+      value: JSON.stringify({ ...otherFields, stagesProgress }),
+    },
+  );
+}
 
 /** Open a menu from the header. */
 export async function openMenu(page: Page, menu: MenuName) {

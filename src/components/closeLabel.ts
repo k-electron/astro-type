@@ -1,6 +1,13 @@
 import type { Screen } from '../types/game';
 
-/** What a menu's back button says, by the screen Close returns to. */
+/**
+ * What a menu's back button says, by the screen Close returns to.
+ *
+ * The rule: every back button reads "Back to <the screen it returns to>",
+ * with that screen's name as the player sees it. This covers the Galaxy
+ * Map's Close and Free Flight's Cancel too. The Cancel on a confirm dialog is
+ * not a back button and keeps its name.
+ */
 export function closeLabel(opener: Screen | null): string {
   switch (opener) {
     case 'galaxy-map':
@@ -9,7 +16,7 @@ export function closeLabel(opener: Screen | null): string {
       return 'Back to Debriefing';
     case 'pause-menu':
     case 'flight-deck':
-      return 'Pause Menu';
+      return 'Back to Pause Menu';
     case 'hangar':
       return 'Back to Hangar';
     case 'analytics':

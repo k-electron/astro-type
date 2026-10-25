@@ -29,6 +29,8 @@ interface LevelCompleteModalProps {
   totalCredits: number;
   hasUnlockedNextSector: boolean;
   hasNextStage: boolean;
+  /** The Stage is the last one in the curriculum (a Free Flight is none). */
+  isLastStage: boolean;
   onReplay: () => void;
   onNextStage: () => void;
   onReturnToMap: () => void;
@@ -41,6 +43,7 @@ export const LevelCompleteModal: React.FC<LevelCompleteModalProps> = ({
   totalStars,
   hasUnlockedNextSector,
   hasNextStage,
+  isLastStage,
   onReplay,
   onNextStage,
   onReturnToMap,
@@ -356,13 +359,16 @@ export const LevelCompleteModal: React.FC<LevelCompleteModalProps> = ({
             <span>Main Menu</span>
           </button>
 
-          {hasNextStage && (
+          {/* On the last Stage, Next Stage opens the Galaxy Map instead. */}
+          {(hasNextStage || isLastStage) && (
             <button
               type="button"
               onClick={onNextStage}
               className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-lg shadow-cyan-950/50 transition-all cursor-pointer"
             >
-              <span>Next Mission</span>
+              <span>
+                {hasNextStage ? 'Next Mission' : 'Back to Galaxy Map'}
+              </span>
               <ArrowRight className="w-4 h-4" />
             </button>
           )}
