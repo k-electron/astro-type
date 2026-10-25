@@ -14,9 +14,9 @@ import { UPGRADE_CATALOG } from '../game/profile';
 interface HangarUpgradesModalProps {
   upgrades: ShipUpgrades;
   totalCredits: number;
-  onUpgradeShields: (cost: number) => void;
-  onUpgradeReactor: (cost: number) => void;
-  onUpgradeSensors: (cost: number) => void;
+  onUpgradeShields: () => void;
+  onUpgradeReactor: () => void;
+  onUpgradeSensors: () => void;
   onUnlockOrEquipTheme: (themeId: TrailColorTheme, cost: number) => void;
   onUnlockOrEquipAudio: (coreId: AudioSynthCore, cost: number) => void;
   onClose: () => void;
@@ -142,7 +142,7 @@ export const HangarUpgradesModal: React.FC<HangarUpgradesModalProps> = ({
                 {nextShield ? (
                   <button
                     disabled={totalCredits < nextShield.cost}
-                    onClick={() => onUpgradeShields(nextShield.cost)}
+                    onClick={() => onUpgradeShields()}
                     className={`w-full py-2 px-3 rounded-lg text-xs font-medium font-mono flex items-center justify-between transition-colors ${
                       totalCredits >= nextShield.cost
                         ? 'bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold'
@@ -194,7 +194,7 @@ export const HangarUpgradesModal: React.FC<HangarUpgradesModalProps> = ({
                 {nextReactor ? (
                   <button
                     disabled={totalCredits < nextReactor.cost}
-                    onClick={() => onUpgradeReactor(nextReactor.cost)}
+                    onClick={() => onUpgradeReactor()}
                     className={`w-full py-2 px-3 rounded-lg text-xs font-medium font-mono flex items-center justify-between transition-colors ${
                       totalCredits >= nextReactor.cost
                         ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold'
@@ -246,7 +246,7 @@ export const HangarUpgradesModal: React.FC<HangarUpgradesModalProps> = ({
                 {nextSensor ? (
                   <button
                     disabled={totalCredits < nextSensor.cost}
-                    onClick={() => onUpgradeSensors(nextSensor.cost)}
+                    onClick={() => onUpgradeSensors()}
                     className={`w-full py-2 px-3 rounded-lg text-xs font-medium font-mono flex items-center justify-between transition-colors ${
                       totalCredits >= nextSensor.cost
                         ? 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold'

@@ -6,107 +6,10 @@ import type {
   AudioSynthCore,
 } from '../types/game';
 import { CURRICULUM_SECTORS } from '../data/curriculum';
-import { PlayerProfileSchema } from '../store/schemas';
+import { PlayerProfileSchema, totalStarsOf } from '../store/schemas';
 
-export const DEFAULT_PROFILE: PlayerProfile = {
-  totalCredits: 0,
-  totalStars: 0,
-  totalKeystrokes: 0,
-  totalErrors: 0,
-  totalWordsTyped: 0,
-  totalPracticeSeconds: 0,
-  highestWpmAllTime: 0,
-  stagesProgress: {},
-  keyAnalytics: {},
-  upgrades: {
-    deflectorShields: 0,
-    hyperdriveReactor: 0,
-    precisionSensors: 0,
-    equippedTrailTheme: 'CYAN',
-    equippedAudioCore: 'CYBER_SYNTH',
-    unlockedThemes: ['CYAN'],
-    unlockedAudioCores: ['CYBER_SYNTH'],
-  },
-  soundEnabled: true,
-  soundVolume: 0.7,
-  ambientMusicVolume: 0.25,
-  highwaySpeed: 'NORMAL',
-  keyboardVisible: true,
-  handsVisible: true,
-  musicEnabled: true,
-  musicVolume: 0.4,
-  beatTheme: 'NEON_SYNTHWAVE',
-  globalMuted: false,
-};
-
-/**
- * Builds a Profile from what Save storage returned (a parsed Save, or null
- * when there is none). Anything unreadable gives the default Profile.
- */
-export function hydrateProfile(saved: unknown): PlayerProfile {
-  try {
-    if (!saved) {
-      return DEFAULT_PROFILE;
-    }
-    const parsed = saved as Partial<PlayerProfile>;
-    const stagesProgress = (parsed.stagesProgress || {}) as Record<
-      string,
-      StageProgress
-    >;
-    const computedStars = calculateTotalStars(stagesProgress);
-    return {
-      ...DEFAULT_PROFILE,
-      ...parsed,
-      totalStars: computedStars,
-      stagesProgress,
-      upgrades: {
-        ...DEFAULT_PROFILE.upgrades,
-        ...(parsed.upgrades || {}),
-      },
-    };
-  } catch {
-    return DEFAULT_PROFILE;
-  }
-}
-
-/**
- * Zod Validation Middleware:
- * Validates updates against Zod schemas before committing into the store.
- * Never destroys player progress or sets stars to 0 on non-fatal warnings.
- */
-export function validateProfileWithZod(raw: unknown): PlayerProfile {
-  if (!raw || typeof raw !== 'object') {
-    return DEFAULT_PROFILE;
-  }
-  const result = PlayerProfileSchema.safeParse(raw);
-  if (!result.success) {
-    console.warn('Profile schema validation warning:', result.error);
-    const r = raw as Partial<PlayerProfile>;
-    const stagesProgress = r.stagesProgress || {};
-    const computedStars = calculateTotalStars(stagesProgress);
-    return {
-      ...DEFAULT_PROFILE,
-      ...r,
-      totalStars: computedStars,
-      totalCredits: r.totalCredits ?? DEFAULT_PROFILE.totalCredits,
-      stagesProgress,
-      upgrades: {
-        ...DEFAULT_PROFILE.upgrades,
-        ...(r.upgrades || {}),
-      },
-    };
-  }
-  return result.data as PlayerProfile;
-}
-
-export function calculateTotalStars(
-  stagesProgress: Record<string, StageProgress>,
-): number {
-  return Object.values(stagesProgress).reduce(
-    (sum, sp) => sum + (sp.starsEarned || 0),
-    0,
-  );
-}
+/** The Profile a new player starts with: every field at its default. */
+export const DEFAULT_PROFILE: PlayerProfile = PlayerProfileSchema.parse({});
 
 export function recordStageResult(
   currentProfile: PlayerProfile,
@@ -176,7 +79,7 @@ export function recordStageResult(
   const updatedProfile: PlayerProfile = {
     ...currentProfile,
     totalCredits: currentProfile.totalCredits + result.creditsEarned,
-    totalStars: calculateTotalStars(newStagesProgress),
+    totalStars: totalStarsOf(newStagesProgress),
     totalKeystrokes: currentProfile.totalKeystrokes + result.keystrokesCount,
     totalErrors: currentProfile.totalErrors + result.errorsCount,
     totalWordsTyped:

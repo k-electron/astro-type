@@ -26,15 +26,16 @@ import { type GameEffects, silentEffects } from './effects';
 import {
   createGameStore,
   type GameStoreState,
+  type UpgradeKind,
   type VictoryResult,
 } from './gameStore';
 import type { SaveStorage } from './save';
 
 export { createMemoryStorage } from './save';
-export type { SaveStorage } from './save';
+export type { MemorySaveStorage, SaveStorage } from './save';
 export type { Clock } from './clock';
 export type { GameEffects } from './effects';
-export type { GameStoreState, VictoryResult } from './gameStore';
+export type { GameStoreState, UpgradeKind, VictoryResult } from './gameStore';
 
 type HighwaySpeed = PlayerProfile['highwaySpeed'];
 
@@ -73,6 +74,13 @@ export interface Game {
   getRun(): Run;
   getDebrief(): VictoryResult | null;
   getProfile(): PlayerProfile;
+  /**
+   * Buy the next level of an Upgrade at its catalog cost. False, with the
+   * Credits unchanged, when the Upgrade is at level 3 or the Credits fall short.
+   */
+  buyUpgrade(kind: UpgradeKind): boolean;
+  /** Why the Save was set aside and the player started fresh, or null. */
+  getLoadNotice(): string | null;
   /** The vanilla store, for the app's React hook. */
   readonly store: StoreApi<GameStoreState>;
 }
@@ -166,6 +174,8 @@ export function createGame(options: GameOptions): Game {
     },
     getDebrief: () => store.getState().victoryResult,
     getProfile: () => store.getState().profile,
+    buyUpgrade: (kind) => store.getState().buyUpgrade(kind),
+    getLoadNotice: () => store.getState().loadNotice,
     store,
   };
 }
