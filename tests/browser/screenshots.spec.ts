@@ -26,9 +26,13 @@ import {
 // - The viewport (1280 x 1100) and a device pixel ratio of 1: the deck is
 //   drawn to the canvas at the display's resolution.
 // - The page clock. It stands still before the page loads and only moves when
-//   the test says so, by amounts that add up to the same total each time, so
-//   Drones, thrusters, lights and effects are exactly where the clock put
-//   them. Real time cannot reach a frame.
+//   the test says so, one whole frame at a time, so Drones, thrusters, lights
+//   and effects are exactly where the clock put them. Real time cannot reach a
+//   frame. The clock's own time is NOT the same each run (its origin is the
+//   few real milliseconds the page took to load), but its frames fall on a
+//   fixed grid of 16 ms, so the test steps by whole frames, never by a number
+//   of milliseconds: a step that ends between two frames can land the hit one
+//   frame earlier or later, which changed the explosion's picture.
 // - `Math.random`, replaced by a seeded generator before the page loads and
 //   again just before the hit, so the sparks and debris fly the same way
 //   every time (and the starfield's draws before the hit can't shift them).
@@ -74,12 +78,12 @@ const COMPARE = {
 // is the one hit in the explosion picture.
 const TEXT = 'abcdef';
 
-// How much of the page's time has gone by when a picture is taken at "Run
-// start": long enough for the Drones to have come down and settled.
-const SETTLE_MS = 3000;
-// One frame of page time (60 fps), the size of each step while waiting for the
-// deck to be drawn.
+// One frame of the page's clock. Playwright's clock fires a frame at every
+// multiple of this, so every step in these tests is a whole number of them.
 const STEP_MS = 16;
+// How many frames the Run has had when a picture is taken at "Run start":
+// long enough for the Drones to have come down and settled.
+const SETTLE_FRAMES = 187;
 
 /**
  * Replaces `Math.random` with a small seeded generator (mulberry32). Runs in
@@ -96,10 +100,11 @@ function useSeededRandom(seed: number) {
 }
 
 /**
- * Free Flight on a clock that stands still, with the Run exactly `SETTLE_MS`
- * of page time old. The deck takes a varying amount of real time to come up
- * (and frames only come when the clock moves), so the clock is stepped a frame
- * at a time until the deck is drawn, and then topped up to the same total.
+ * Free Flight on a clock that stands still, with the Run exactly
+ * `SETTLE_FRAMES` frames old, and the clock on a frame boundary. The deck is
+ * set up in real time, which the page's clock can't see, so the test first
+ * waits (in real time, auto-waiting) for PixiJS to have sized the canvas, and
+ * only then lets the first frame come. That frame draws the deck.
  */
 async function launchOnFixedClock(page: Page, text: string) {
   await page.route(/fonts\.(googleapis|gstatic)\.com/, (route) =>
@@ -123,22 +128,24 @@ async function launchOnFixedClock(page: Page, text: string) {
   ).toBeVisible();
   await expect(flightDeck(page)).toContainText(text);
 
-  // The deck's code and graphics are set up in real time, which the page's
-  // clock can't see, and the first frame is drawn only when the clock first
-  // moves. Giving that setup a head start (real time, on purpose) means the
-  // first step already draws the deck, on a fast machine and a slow one alike.
+  // PixiJS sizes the canvas as soon as its Application is up (a canvas starts
+  // at the browser's default 300 x 150), and the scene is built in the same
+  // breath. Nothing is drawn until the clock moves.
   await page.waitForLoadState('networkidle');
-  await page.waitForTimeout(1000);
-  let elapsed = 0;
-  await expect(async () => {
-    await page.clock.runFor(STEP_MS);
-    elapsed += STEP_MS;
-    await expect(drone(page, text[1])).toBeVisible({ timeout: 250 });
-  }).toPass({ timeout: 15_000 });
-  if (elapsed > SETTLE_MS) {
-    throw new Error(`The deck took ${elapsed} ms of page time to be drawn`);
-  }
-  await page.clock.runFor(SETTLE_MS - elapsed);
+  await expect
+    .poll(() =>
+      deckCanvas(page).evaluate(
+        (canvas) => (canvas as HTMLCanvasElement).width,
+      ),
+    )
+    .toBeGreaterThan(300);
+
+  // Land on a frame boundary: the clock's time isn't a multiple of a frame, and
+  // the frame that this step fires is the Run's first.
+  const now = await page.evaluate(() => performance.now());
+  await page.clock.runFor(STEP_MS - (now % STEP_MS));
+  await expect(drone(page, text[1])).toBeVisible();
+  await page.clock.runFor((SETTLE_FRAMES - 1) * STEP_MS);
 }
 
 /**
@@ -174,7 +181,7 @@ test('the deck frozen mid-explosion', async ({ page }) => {
   await page.keyboard.press('a');
   // React has seen the hit before time moves on, so it can't land half way.
   await expect(flightDeck(page)).toContainText(/Streak\s*1(?!\d)/i);
-  await page.clock.runFor(150);
+  await page.clock.runFor(10 * STEP_MS);
   await hideBackdropCanvases(page);
 
   await expect(deckCanvas(page)).toHaveScreenshot(
