@@ -22,5 +22,26 @@ export const game = createGame({
   },
 });
 
-const stopFrameLoop = startFrameLoop(game, browserFrameEnvironment());
+type FrameListener = (stepFraction: number) => void;
+const frameListeners = new Set<FrameListener>();
+
+/**
+ * Hear every frame of the Run clock's loop, after it has stepped the game,
+ * with how far the frame is into the next step. The PixiJS Action Deck draws
+ * from this. Returns the way to stop listening.
+ */
+export function onFrame(listener: FrameListener): () => void {
+  frameListeners.add(listener);
+  return () => {
+    frameListeners.delete(listener);
+  };
+}
+
+const stopFrameLoop = startFrameLoop(
+  game,
+  browserFrameEnvironment(),
+  (stepFraction) => {
+    for (const listener of frameListeners) listener(stepFraction);
+  },
+);
 import.meta.hot?.dispose(stopFrameLoop);
