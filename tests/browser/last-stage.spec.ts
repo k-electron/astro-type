@@ -11,7 +11,8 @@ import {
 } from './helpers';
 
 // Next Stage on the last Stage takes the player to the Galaxy Map (spec story
-// 13). Its Debrief shows a button called "Galaxy Map" where every other
+// 13). Its Debrief shows a button called "Back to Galaxy Map" (the Debrief's
+// own "Galaxy Map" button keeps its name) where every other
 // Stage's Debrief shows "Next Mission" (decided in #35).
 
 /** The last Stage's text as the player reads it, "␣" standing for a space. */
@@ -24,7 +25,13 @@ async function debriefButtons(page: Page): Promise<string[]> {
   return names
     .map((name) => name.trim())
     .filter((name) =>
-      ['Replay', 'Galaxy Map', 'Main Menu', 'Next Mission'].includes(name),
+      [
+        'Replay',
+        'Galaxy Map',
+        'Main Menu',
+        'Next Mission',
+        'Back to Galaxy Map',
+      ].includes(name),
     );
 }
 
@@ -54,7 +61,7 @@ async function launchLastStage(page: Page) {
   );
 }
 
-test('the Debrief of the last Stage shows "Galaxy Map" in place of "Next Mission", and it opens the Galaxy Map', async ({
+test('the Debrief of the last Stage shows "Back to Galaxy Map" in place of "Next Mission", and it opens the Galaxy Map', async ({
   page,
 }) => {
   // The last Stage's text is 175 characters of prose, typed key by key.
@@ -66,14 +73,13 @@ test('the Debrief of the last Stage shows "Galaxy Map" in place of "Next Mission
   // Where Next Mission sits, after Replay, Galaxy Map and Main Menu.
   await expect
     .poll(() => debriefButtons(page))
-    .toEqual(['Replay', 'Galaxy Map', 'Main Menu', 'Galaxy Map']);
+    .toEqual(['Replay', 'Galaxy Map', 'Main Menu', 'Back to Galaxy Map']);
   await expect(page.getByRole('button', { name: 'Next Mission' })).toHaveCount(
     0,
   );
 
   await debrief(page)
-    .getByRole('button', { name: 'Galaxy Map', exact: true })
-    .last()
+    .getByRole('button', { name: 'Back to Galaxy Map', exact: true })
     .click();
   await expect(menuHeading(page, 'Galaxy Map')).toBeVisible();
 });
