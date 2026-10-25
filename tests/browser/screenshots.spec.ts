@@ -1,6 +1,12 @@
 /// <reference types="node" />
 import { expect, type Locator, type Page, test } from '@playwright/test';
-import { debrief, drone, flightDeck, typeText } from './helpers';
+import {
+  debrief,
+  drone,
+  flightDeck,
+  promptProgress,
+  typeText,
+} from './helpers';
 
 // Three screenshot checks on the PixiJS Action Deck: the Flight Deck at Run
 // start, the deck frozen mid-explosion, and the Debrief. A screenshot is the
@@ -23,8 +29,12 @@ import { debrief, drone, flightDeck, typeText } from './helpers';
 //   the test says so, by amounts that add up to the same total each time, so
 //   Drones, thrusters, lights and effects are exactly where the clock put
 //   them. Real time cannot reach a frame.
-// - `Math.random`, replaced by a seeded generator before the page loads, in
-//   case anything drawn (sparks, debris, stars) is random.
+// - `Math.random`, replaced by a seeded generator before the page loads and
+//   again just before the hit, so the sparks and debris fly the same way
+//   every time (and the starfield's draws before the hit can't shift them).
+// - Sound, which is switched off by removing `AudioContext`: the sound engine
+//   draws random numbers on its own real-time schedule, which would change
+//   the sparks from run to run.
 // - Web fonts, which are blocked: a font that arrives half way through a run
 //   would redraw the text. Every run uses the image's own fallback fonts.
 // - The starfield behind the page, a full-window canvas that is hidden: it
@@ -67,31 +77,41 @@ const TEXT = 'abcdef';
 // How much of the page's time has gone by when a picture is taken at "Run
 // start": long enough for the Drones to have come down and settled.
 const SETTLE_MS = 3000;
+// One frame of page time (60 fps), the size of each step while waiting for the
+// deck to be drawn.
+const STEP_MS = 16;
 
-/** A small seeded random generator (mulberry32): the same numbers every run. */
-async function seedRandom(page: Page) {
-  await page.addInitScript(() => {
-    let seed = 0x5eed;
-    Math.random = () => {
-      seed = (seed + 0x6d2b79f5) | 0;
-      let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
-      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-    };
-  });
+/**
+ * Replaces `Math.random` with a small seeded generator (mulberry32). Runs in
+ * the page, so it has to stand on its own.
+ */
+function useSeededRandom(seed: number) {
+  let state = seed;
+  Math.random = () => {
+    state = (state + 0x6d2b79f5) | 0;
+    let t = Math.imul(state ^ (state >>> 15), 1 | state);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
 }
 
 /**
  * Free Flight on a clock that stands still, with the Run exactly `SETTLE_MS`
  * of page time old. The deck takes a varying amount of real time to come up
- * (and frames only come when the clock moves), so the clock is stepped until
- * the deck is drawn, and then topped up to the same total every time.
+ * (and frames only come when the clock moves), so the clock is stepped a frame
+ * at a time until the deck is drawn, and then topped up to the same total.
  */
 async function launchOnFixedClock(page: Page, text: string) {
   await page.route(/fonts\.(googleapis|gstatic)\.com/, (route) =>
     route.abort(),
   );
-  await seedRandom(page);
+  await page.addInitScript(useSeededRandom, 0x5eed);
+  await page.addInitScript(() => {
+    Object.assign(window, {
+      AudioContext: undefined,
+      webkitAudioContext: undefined,
+    });
+  });
   await page.clock.install({ time: 0 });
   await page.clock.pauseAt(1000);
   await page.goto('/');
@@ -103,10 +123,16 @@ async function launchOnFixedClock(page: Page, text: string) {
   ).toBeVisible();
   await expect(flightDeck(page)).toContainText(text);
 
+  // The deck's code and graphics are set up in real time, which the page's
+  // clock can't see, and the first frame is drawn only when the clock first
+  // moves. Giving that setup a head start (real time, on purpose) means the
+  // first step already draws the deck, on a fast machine and a slow one alike.
+  await page.waitForLoadState('networkidle');
+  await page.waitForTimeout(1000);
   let elapsed = 0;
   await expect(async () => {
-    await page.clock.runFor(50);
-    elapsed += 50;
+    await page.clock.runFor(STEP_MS);
+    elapsed += STEP_MS;
     await expect(drone(page, text[1])).toBeVisible({ timeout: 250 });
   }).toPass({ timeout: 15_000 });
   if (elapsed > SETTLE_MS) {
@@ -144,7 +170,10 @@ test('the deck frozen mid-explosion', async ({ page }) => {
 
   // Hit the lead Drone, then stop the clock at the heart of the explosion:
   // the flash, debris, sparks and shockwaves are all on screen.
+  await page.evaluate(useSeededRandom, 0xa11);
   await page.keyboard.press('a');
+  // React has seen the hit before time moves on, so it can't land half way.
+  await expect(flightDeck(page)).toContainText(/Streak\s*1(?!\d)/i);
   await page.clock.runFor(150);
   await hideBackdropCanvases(page);
 
@@ -159,8 +188,12 @@ test('the Debrief of a cleared Run', async ({ page }) => {
 
   // One key every 400 ms of page time, so the Run's Speed, Rhythm and Stars
   // are the same every time.
-  for (const key of TEXT) {
+  for (const [index, key] of [...TEXT].entries()) {
     await typeText(page, key);
+    if (index < TEXT.length - 1) {
+      const done = Math.round(((index + 1) / TEXT.length) * 100);
+      await expect(promptProgress(page)).toHaveText(`${done}%`);
+    }
     await page.clock.runFor(400);
   }
   await expect(page.getByText(/Mission Debriefing/)).toBeVisible();
