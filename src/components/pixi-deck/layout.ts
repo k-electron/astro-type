@@ -54,6 +54,8 @@ export interface Layout {
   handLeft: { x: number; y: number };
   handRight: { x: number; y: number };
   trench: { x: number; y: number; w: number };
+  /** The top of the player's ship's row: 6 px under the keyboard's wrapper, never above 34 px from the bottom. */
+  shipY: number;
   keys: Map<string, KeyRect>;
 }
 
@@ -115,6 +117,7 @@ export function computeLayout(
     handLeft: { x: deckX - ROW_GAP - HAND_W, y: deckY + deckH - HAND_H },
     handRight: { x: deckX + deckW + ROW_GAP, y: deckY + deckH - HAND_H },
     trench: { x: (width - trenchW) / 2, y: height - TRENCH_BLOCK, w: trenchW },
+    shipY: Math.max(deckY + deckH + WRAPPER_PB + 6, height - 34),
     keys,
   };
 }

@@ -1,10 +1,14 @@
 import { Application } from 'pixi.js';
 import { game, onFrame } from '../../appGame';
 import type { KeySpec } from '../../data/keyboardLayout';
+import { STEP_MS } from '../../game/clock';
 import { DeckScene } from './DeckScene';
+import { resetPlumeGradients } from './DroneView';
 import { DroneMotion } from './droneMotion';
+import { FxClock } from './fxClock';
 import { resetKeyGradients } from './KeyView';
 import { STAGE_HEIGHT } from './layout';
+import { resetTextures } from './textures';
 
 /** Give up waiting for fonts after this long, so a blocked font request can't stall the deck. */
 const FONT_WAIT_MS = 2000;
@@ -66,6 +70,7 @@ class DeckSession {
   private app: Application | null = null;
   private scene: DeckScene | null = null;
   private readonly motion = new DroneMotion();
+  private readonly fxClock = new FxClock();
   private readonly resizeObserver: ResizeObserver;
   private size: { width: number; height: number } | null = null;
   private visible = false;
@@ -112,6 +117,8 @@ class DeckSession {
         this.dirty = true;
       }
     });
+    // Each Judgement fires the ship exactly once, in the lane it landed on.
+    game.onJudgement((judgement) => this.scene?.judge(judgement));
     onFrame((fraction) => this.frame(fraction));
 
     void this.start();
@@ -187,24 +194,41 @@ class DeckSession {
 
   private frame(stepFraction: number): void {
     const { app, scene } = this;
-    const running = game.getPhase() === 'running';
+    const phase = game.getPhase();
+    const running = phase === 'running';
     if (running && !this.wasRunning) this.holdFraction = this.lastFraction;
     this.wasRunning = running;
+
+    // Effects run on the Run clock: none of it passes while the Run is paused.
+    const reading = this.fxClock.advance({
+      phase,
+      runSteps: game.getRunTime() / STEP_MS,
+      fraction: stepFraction,
+      wallMs: performance.now(),
+    });
+    // Even with the deck off the page: a new Run's signal is only given once.
+    if (reading.newRun || phase === 'abandoned' || phase === 'none') {
+      this.scene?.clearEffects();
+    }
     if (!app || !scene || !this.visible) return;
-    if (!running && !this.dirty) return;
+    // A cleared Run's last explosion plays out behind the Debrief.
+    const playingOut = phase === 'cleared' && scene.effectsActive;
+    if (!running && !playingOut && !this.dirty) return;
 
     const fraction = running
       ? (this.holdFraction ?? stepFraction)
       : this.lastFraction;
     this.lastFraction = fraction;
     this.dirty = false;
-    scene.update(this.motion, fraction);
+    scene.update(this.motion, fraction, reading.d);
     app.render();
   }
 
   /** For hot reload: drop what the renderer owns. */
   destroy(): void {
     resetKeyGradients();
+    resetPlumeGradients();
+    resetTextures();
     this.app?.destroy(true, { children: true });
   }
 }

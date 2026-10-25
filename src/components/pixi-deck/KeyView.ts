@@ -1,8 +1,10 @@
-import { Container, Graphics, Rectangle, type Text } from 'pixi.js';
+import { Container, Graphics, Rectangle, Sprite, type Text } from 'pixi.js';
 import { FINGER_LANES } from '../../data/curriculum';
 import type { KeySpec } from '../../data/keyboardLayout';
+import { bounceLift, pulseOpacity } from './animation';
 import { dashedRect, keycapGradient, makeText } from './draw';
 import type { KeyRect } from './layout';
+import { boxGlow } from './textures';
 
 /** What a keycap looks like right now. */
 export interface KeyState {
@@ -75,7 +77,12 @@ export function resetKeyGradients() {
 export class KeyView {
   readonly root = new Container();
   private readonly visual = new Container();
+  /** The box-shadow glow of a lit keycap. */
+  private readonly glow = new Sprite();
   private readonly bg = new Graphics();
+  /** Blind touch-typing: the dot that marks the next key, pulsing. */
+  private readonly dot = new Graphics();
+  private pulsing = false;
   private readonly main: Text | null = null;
   private readonly sub: Text | null = null;
   private readonly spaceLabel: Text | null = null;
@@ -98,7 +105,9 @@ export class KeyView {
 
     this.root.addChild(this.visual);
     this.visual.accessibleChildren = false;
-    this.visual.addChild(this.bg);
+    this.glow.anchor.set(0.5);
+    this.glow.visible = false;
+    this.visual.addChild(this.glow, this.bg, this.dot);
     this.root.zIndex = 1;
 
     this.root.eventMode = 'static';
@@ -167,6 +176,29 @@ export class KeyView {
     this.signature = '';
   }
 
+  /** The glow a lit keycap casts: its lane colour for the next key and a pressed key, amber for Shift. */
+  private drawGlow(target: boolean, modifier: boolean, pressed: boolean): void {
+    if (!(target || modifier || pressed)) {
+      this.glow.visible = false;
+      return;
+    }
+    const { w, h } = this.rect;
+    // target 0 0 24px lane @ 52 %, modifier 0 0 20px amber @ 65 %, pressed 0 0 20px lane @ 56 %
+    const blur = target ? 24 : 20;
+    this.glow.texture = boxGlow(w, h, 6, blur).texture;
+    this.glow.tint = modifier && !target ? '#fbbf24' : this.laneColor;
+    this.glow.alpha = target ? 0.52 : modifier ? 0.65 : 0.565;
+    this.glow.visible = true;
+  }
+
+  /** Move the animated parts (the bouncing HOLD SHIFT badge, the blind-mode dot) to `timeMs` of effect time. */
+  animate(timeMs: number): void {
+    if (this.hold.visible) {
+      this.hold.position.y = -this.rect.h / 2 - 7 - 3.5 * bounceLift(timeMs);
+    }
+    if (this.pulsing) this.dot.alpha = pulseOpacity(timeMs);
+  }
+
   draw(state: KeyState): void {
     const { modifier, target, blind } = state;
     this.hold.visible = modifier;
@@ -180,7 +212,9 @@ export class KeyView {
     const h = rect.h;
     const g = this.bg;
     g.clear();
+    this.dot.clear();
     const lit = target || modifier || pressed;
+    this.drawGlow(target, modifier, pressed);
     this.visual.scale.set(target || modifier ? 1.02 : pressed ? 0.98 : 1);
     this.visual.position.y = pressed && !target ? 2 : 0;
     this.root.zIndex = target || modifier ? 20 : 1;
@@ -191,9 +225,11 @@ export class KeyView {
     g.roundRect(-w / 2, -h / 2, w, h, 6).fill(
       modifier ? gradient.keyGradientAmber : gradient.keyGradient,
     );
-    // The finger-coloured band along the bottom edge (inset 0 -3px 0).
+    // The border is 2 px when lit and 1 px otherwise; the finger-coloured band
+    // (inset 0 -3px 0) and the accent stripe both sit inside it.
+    const bt = lit ? 2 : 1;
     if (!lit) {
-      g.roundRect(-w / 2 + 1, h / 2 - 4, w - 2, 3, 2).fill({
+      g.roundRect(-w / 2 + bt, h / 2 - bt - 3, w - 2 * bt, 3, 2).fill({
         color: laneColor,
         alpha: 0.27,
       });
@@ -221,7 +257,13 @@ export class KeyView {
       .stroke({ width: 1, color: '#ffffff', alpha: lit ? 0.4 : 0.1 });
     // Finger accent stripe.
     const stripe = target || modifier ? 4 : 2.5;
-    g.roundRect(-w / 2 + 4, h / 2 - stripe, w - 8, stripe, stripe / 2).fill({
+    g.roundRect(
+      -w / 2 + bt + 4,
+      h / 2 - bt - stripe,
+      w - 2 * bt - 8,
+      stripe,
+      stripe / 2,
+    ).fill({
       color: modifier ? '#fbbf24' : laneColor,
       alpha: target || modifier ? 1 : 0.75,
     });
@@ -253,7 +295,10 @@ export class KeyView {
     if (blind && !(isSpaceKey && target)) {
       // Blind touch-typing: a dot instead of a legend.
       if (target) {
-        g.circle(0, 0, 5).fill(laneColor);
+        // A glowing dot (0 0 10px in the lane colour) that pulses.
+        this.dot.circle(0, 0, 9).fill({ color: laneColor, alpha: 0.12 });
+        this.dot.circle(0, 0, 7).fill({ color: laneColor, alpha: 0.2 });
+        this.dot.circle(0, 0, 5).fill(laneColor);
       } else if (modifier) {
         g.circle(0, 0, 4)
           .fill({ color: '#fbbf24', alpha: 0.4 })
@@ -264,6 +309,8 @@ export class KeyView {
         g.circle(0, 0, 3).fill({ color: laneColor, alpha: 0.6 });
       }
     }
+    this.pulsing = blind && target && !isSpaceKey;
+    if (!this.pulsing) this.dot.alpha = 1;
     if (this.main && !blind) {
       this.main.style.fill = lit ? '#ffffff' : '#f1f5f9';
       if (this.sub) {

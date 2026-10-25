@@ -1,7 +1,7 @@
 import { Container, Graphics, GraphicsPath, type Text } from 'pixi.js';
 import { FINGER_COLOR_MAP } from '../../data/curriculum';
 import type { FingerZone } from '../../types/game';
-import { dashedRect, makeText } from './draw';
+import { dashedCubic, dashedRect, makeText } from './draw';
 import { HAND_H, HAND_W } from './layout';
 
 // The hand panel beside the keyboard, ported from SmallHandVisualizer.tsx.
@@ -107,15 +107,16 @@ export class HandView {
       .path(new GraphicsPath(isLeft ? PALM_LEFT : PALM_RIGHT))
       .fill('#0b1120')
       .stroke({ width: 1.5, color: '#1e293b' });
-    this.palm
-      .path(
-        new GraphicsPath(
-          isLeft
-            ? 'M 28 98 C 42 108, 60 106, 75 92'
-            : 'M 88 98 C 74 108, 56 106, 41 92',
-        ),
-      )
-      .stroke({ width: 1, color: '#1e293b' });
+    // The palm crease is dashed (2 on, 3 off).
+    dashedCubic(
+      this.palm,
+      isLeft
+        ? [28, 98, 42, 108, 60, 106, 75, 92]
+        : [88, 98, 74, 108, 56, 106, 41, 92],
+      2,
+      3,
+      { width: 1, color: '#1e293b' },
+    );
     this.palm
       .moveTo(isLeft ? 24 : 48, 148)
       .lineTo(isLeft ? 68 : 92, 148)
@@ -137,14 +138,17 @@ export class HandView {
       this.root.addChild(text);
       this.fingerLabels.push(text);
     }
+    // The legend: four items of a 6 px dot, 2 px, and a 5.4 px letter, 6 px apart, centred.
     const legend = this.fingers.filter((f) => !f.isThumb);
-    const cellW = 20;
-    const start = HAND_W / 2 - (legend.length * cellW) / 2;
+    const itemW = 6 + 2 + 5.4;
+    const pitch = itemW + 6;
+    const start =
+      HAND_W / 2 - (legend.length * itemW + (legend.length - 1) * 6) / 2;
     legend.forEach((f, i) => {
-      const x = start + i * cellW + 4;
-      this.legendDots.circle(x, 165, 3).fill(FINGER_COLOR_MAP[f.id]);
+      const left = start + i * pitch;
+      this.legendDots.circle(left + 3, 165, 3).fill(FINGER_COLOR_MAP[f.id]);
       this.legendLabels.push(
-        this.label(f.home, x + 8, 165, 9, '#94a3b8', 0.5, resolution),
+        this.label(f.home, left + 8 + 2.7, 165, 9, '#94a3b8', 0.5, resolution),
       );
     });
   }
@@ -346,14 +350,14 @@ export class HandView {
         main && state.activeKeyDisplay && state.activeKeyDisplay.length > 1;
       const label = this.fingerLabels[i];
       label.text = text;
-      label.style.fontSize = (big ? 6.5 : 8) * ART_SCALE;
+      label.style.fontSize = (big ? 6.5 : 8) * ART_SCALE * 0.85;
       label.style.fill = sec ? '#6ee7b7' : main || mod ? '#020617' : color;
-      label.position.set(ART_X + px * ART_SCALE, ART_Y + py * ART_SCALE - 0.5);
+      label.position.set(ART_X + px * ART_SCALE, ART_Y + py * ART_SCALE + 0.5);
     });
 
     // The footer legend.
-    p.moveTo(2, 155.9)
-      .lineTo(HAND_W - 2, 155.9)
+    p.moveTo(12, 155.9)
+      .lineTo(HAND_W - 12, 155.9)
       .stroke({ width: 1, color: '#1e293b', alpha: 0.8 });
     this.fingers
       .filter((f) => !f.isThumb)
