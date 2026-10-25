@@ -1,6 +1,0 @@
-{
-  "name": "AstroType: Cosmic Touch Typing Academy",
-  "description": "Space-futuristic touch typing game featuring comprehensive curriculum, falling-note highway mechanics, star-gated sector progression, and real-time accuracy analytics.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}

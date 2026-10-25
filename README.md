@@ -314,7 +314,6 @@ astrotype/
 │   └── main.tsx                      # React 19 bootstrap entry point
 ├── index.html                        # HTML5 entry with metadata & font preconnects
 ├── LICENSE                           # MIT License
-├── metadata.json                     # AI Studio project configuration
 ├── package.json                      # Project dependencies and npm scripts
 ├── tsconfig.json                     # TypeScript configuration
 └── vite.config.ts                    # Vite configuration with React & Tailwind plugins
