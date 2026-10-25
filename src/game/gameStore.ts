@@ -366,6 +366,8 @@ export function createGameStore({
                   ? 'great'
                   : 'good',
             key: pressedKey,
+            points: earnedScore,
+            overdrive: state.performance.hyperspaceActive,
           });
           // Overdrive catching fire is its own sound, after the hit's.
           if (charge.ignites) {

@@ -1,4 +1,5 @@
-import { Container, Graphics, Sprite, Text } from 'pixi.js';
+import { Container, Graphics, Rectangle, Sprite, Text } from 'pixi.js';
+import { scoreForHit } from '../../game/rules';
 import { Pool } from './pool';
 import {
   boxGlow,
@@ -27,7 +28,8 @@ import {
  * - Sparks, debris, crystals, flashes, shockwaves and bolts live in pools made
  *   once, and the particles are batched sprites, so a hit allocates nothing.
  *
- * Nothing here reads the game: the scene tells it where things are.
+ * Nothing here reads the game: the scene tells it where things are, and what
+ * the hit scored.
  */
 
 /** A Drone has been hit and the laser is on its way. */
@@ -41,6 +43,9 @@ export interface HitShot {
   originY: number;
   isSpace: boolean;
   grade: 'perfect' | 'great' | 'good';
+  /** The points the hit scored, and whether Overdrive doubled them. */
+  points: number;
+  overdrive: boolean;
   /** What is printed on the Drone. */
   display: string;
   /** The lane's colour. */
@@ -93,6 +98,9 @@ interface Bolt {
   isSpace: boolean;
   /** Hit grade, or null for the red laser of a wrong key. */
   grade: 'perfect' | 'great' | 'good' | null;
+  /** What the hit scored, for its popup; Overdrive's popup names it. */
+  points: number;
+  overdrive: boolean;
   keyName: string;
   /** The locked Drone drawn at the target while the laser flies. */
   locked: { display: string; color: string } | null;
@@ -175,7 +183,6 @@ const POPUP_FONT =
 /** The popup labels a hit can show, per grade, as the DOM deck words them. */
 const HIT_LABELS = {
   perfectSpace: '💥 FLAGSHIP OBLITERATED! +100',
-  overdrive: '⚡ OVERDRIVE STRIKE! +400',
   perfect: [
     '💥 VAPORIZED! +100',
     '🎯 CRITICAL HIT! +100',
@@ -187,13 +194,31 @@ const HIT_LABELS = {
   good: ['✨ GRAZED! +50', '🛡️ DEFUSED! +50', '⚡ CONTACT! +50'],
 } as const;
 
+/** An area that Pixi sizes things by but never counts as hit. */
+class Untouchable extends Rectangle {
+  override contains(): boolean {
+    return false;
+  }
+}
+
+/**
+ * The popup for a Perfect hit in Overdrive names the points the hit scored. It
+ * is the only popup the deck's accessibility layer names, so a player or a test
+ * can read it while it is on screen.
+ */
+const OVERDRIVE_LABEL = '⚡ OVERDRIVE STRIKE! +';
+const overdriveLabel = (points: number) => `${OVERDRIVE_LABEL}${points}`;
+
+/** What a Perfect hit scores in Overdrive at each Multiplier, from the rules. */
+const OVERDRIVE_PERFECT_POINTS = [1, 2, 3, 4].map((multiplier) =>
+  scoreForHit('PERFECT', multiplier, true),
+);
+
 const pick = <T>(items: readonly T[]): T =>
   items[Math.floor(Math.random() * items.length)];
 
 export interface DeckEffectsOptions {
   resolution: number;
-  /** Is Overdrive on right now? Read when a hit lands, for its popup. */
-  isOverdrive: () => boolean;
 }
 
 export class DeckEffects {
@@ -247,11 +272,11 @@ export class DeckEffects {
   private readonly resolution: number;
   private drawnEmpty = true;
 
-  constructor(private readonly options: DeckEffectsOptions) {
+  constructor(options: DeckEffectsOptions) {
     this.resolution = options.resolution;
-    // Nothing in here is something a screen reader should read.
+    // Nothing in here is something a screen reader should read, but the
+    // Overdrive popup, so the walk skips every layer except the popups.
     for (const layer of [
-      this.root,
       this.glyphLayer,
       this.boltSprites,
       this.flashLayer,
@@ -263,6 +288,7 @@ export class DeckEffects {
     ]) {
       layer.accessibleChildren = false;
     }
+    this.popupLayer.accessibleChildren = true;
     this.root.addChild(
       this.lockGraphics,
       this.glyphLayer,
@@ -280,7 +306,7 @@ export class DeckEffects {
     // Rasterise every hit label up front, so the first hit costs no more than the rest.
     for (const label of [
       HIT_LABELS.perfectSpace,
-      HIT_LABELS.overdrive,
+      ...OVERDRIVE_PERFECT_POINTS.map(overdriveLabel),
       HIT_LABELS.greatSpace,
       ...HIT_LABELS.perfect,
       ...HIT_LABELS.great,
@@ -333,6 +359,8 @@ export class DeckEffects {
       hitColor: '#fff',
       isSpace: false,
       grade: null,
+      points: 0,
+      overdrive: false,
       keyName: '',
       locked: null,
       glyph: null,
@@ -439,7 +467,28 @@ export class DeckEffects {
     });
     text.anchor.set(0.5, 0.8);
     text.visible = false;
+    if (label.startsWith(OVERDRIVE_LABEL))
+      this.nameForAccessibility(text, label);
     return text;
+  }
+
+  /**
+   * Accessibility layer: the popup's whole text, like "Drone F" for a Drone.
+   * The name is there only while the popup is in the tree and visible, so it
+   * goes when the popup fades. Not a tab stop and never in the way of a click.
+   */
+  private nameForAccessibility(text: Text, label: string): void {
+    text.accessible = true;
+    text.accessibleType = 'div';
+    text.accessibleHint = label;
+    text.accessibleText = label;
+    text.accessiblePointerEvents = 'none';
+    text.eventMode = 'static';
+    // Pixi sizes the layer's element by the hit area: as big as the text, but
+    // nothing counts as a hit, so a tap goes through to the keycap beneath.
+    const { x, y, width, height } = text.getLocalBounds().rectangle;
+    text.hitArea = new Untouchable(x, y, width, height);
+    text.tabIndex = -1;
   }
 
   private takeText(key: string, make: () => Text): Text {
@@ -483,6 +532,8 @@ export class DeckEffects {
     bolt.hitColor = shot.hitColor;
     bolt.isSpace = shot.isSpace;
     bolt.grade = shot.grade;
+    bolt.points = shot.points;
+    bolt.overdrive = shot.overdrive;
     bolt.keyName = '';
     bolt.locked = { display: shot.display, color: shot.laneColor };
     const key = `glyph|${shot.display}`;
@@ -946,8 +997,8 @@ export class DeckEffects {
       if (bolt.grade === 'perfect') {
         label = isSpace
           ? HIT_LABELS.perfectSpace
-          : this.options.isOverdrive()
-            ? HIT_LABELS.overdrive
+          : bolt.overdrive
+            ? overdriveLabel(bolt.points)
             : pick(HIT_LABELS.perfect);
       } else if (bolt.grade === 'great') {
         label = isSpace ? HIT_LABELS.greatSpace : pick(HIT_LABELS.great);

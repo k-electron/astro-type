@@ -21,10 +21,17 @@ export const STRIKE_LINE_Y = 84;
 
 /**
  * What judging one keystroke produced. Exactly one per keystroke that counts.
- * `key` is the key the player pressed.
+ * `key` is the key the player pressed. A hit also says the points it scored
+ * and whether Overdrive doubled them, the same numbers the score was given.
  */
 export type Judgement =
-  | { type: 'hit'; grade: 'perfect' | 'great' | 'good'; key: string }
+  | {
+      type: 'hit';
+      grade: 'perfect' | 'great' | 'good';
+      key: string;
+      points: number;
+      overdrive: boolean;
+    }
   | { type: 'miss'; key: string }
   | { type: 'shield'; key: string };
 
