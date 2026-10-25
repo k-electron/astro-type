@@ -1,6 +1,6 @@
 # Testing
 
-How tests are written and when a change counts as done. Decided in [#5](https://github.com/k-electron/astro-type/issues/5); use the terms in `GLOSSARY.md`. `pnpm verify` runs everything CI runs before a deploy; the other scripts are in `package.json`.
+How tests are written and when a change counts as done. Decided in [#5](https://github.com/k-electron/astro-type/issues/5); use the terms in `GLOSSARY.md`. `pnpm verify` runs everything CI runs before a deploy except the screenshot checks, which need Docker (`pnpm screenshots`, below); the other scripts are in `package.json`.
 
 ## The rule
 
@@ -25,6 +25,10 @@ Playwright, in `tests/browser/*.spec.ts`, Chromium only, against the production 
 - Find things the way a player sees them: by role and visible text. Inside the PixiJS Action Deck, use its accessibility layer (Drones and keycaps labelled at their drawn positions). Read nothing else from the app: no store, no `window` globals, no test hooks.
 - Tag a test `@smoke` and it also runs against the live URL after every deploy. Keep `@smoke` to "a Stage can start" level: quick, and safe to run on production.
 - Screenshot comparisons are limited to a few key frames, and they're compared only in CI's fixed Playwright image. `pnpm screenshots` runs them there (CI runs the same command); `pnpm screenshots:update` redraws the baselines on purpose, in `tests/browser/screenshots.spec.ts-snapshots`. Both need Docker. A failure leaves the before, after and diff images in `screenshot-results/test-results`, which CI uploads. The baselines carry the Playwright version they were made with, so a Playwright upgrade (a Dependabot bump) fails the check until the upgrade's branch has run `pnpm screenshots:update` and committed the new pictures. Plain `pnpm test:browser` skips them.
+
+Two exceptions to "read nothing but the screen, on the real clock" are sanctioned, both for the canvas:
+- `tests/browser/pixi-effects.spec.ts` checks the Action Deck's effects (lasers, explosions, the ship, the guidance beam, keycap glow) by comparing the pixels of captures taken within the same run. There are no stored baselines, so it runs on any machine in plain `pnpm test:browser`. It uses `page.clock` so an effect is caught mid-flight, and its thresholds are wide: the effects have to be there and run their course, not match a picture.
+- The screenshot specs stub `AudioContext` and `Math.random` and block web fonts, so the same frame draws the same pixels on every run: the sound engine draws random numbers on its own real-time schedule, and a font arriving mid-run would redraw the text. Nothing else in the browser tests does this.
 
 ## Clocks
 

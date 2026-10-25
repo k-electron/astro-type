@@ -48,7 +48,8 @@ pnpm test:browser   # browser tests (Playwright)
 pnpm typecheck  # tsc --noEmit
 pnpm check      # Biome; fails on any diagnostic
 pnpm fix        # apply Biome's safe fixes and formatting
-pnpm verify     # typecheck, check, test, build and test:browser: what CI runs
+pnpm verify     # typecheck, check, test, build and test:browser: most of what CI runs
+pnpm screenshots    # the screenshot checks CI also runs, in Docker (see docs/agents/testing.md)
 pnpm smoke <url>    # check that a deployed URL serves the app and a Stage starts
 ```
 
@@ -56,7 +57,7 @@ The browser tests need Chromium, which `pnpm exec playwright install chromium` i
 
 ## Deploying
 
-Every push to `main` runs `pnpm verify` in GitHub Actions. If it passes, the build is deployed to https://astro-type.k-electron.workers.dev and smoke-tested there. Pull requests run the checks without deploying.
+Every push to `main` runs `pnpm verify` and `pnpm screenshots` in GitHub Actions. If it passes, the build is deployed to https://astro-type.k-electron.workers.dev and smoke-tested there. Pull requests run the checks without deploying.
 
 ## License
 

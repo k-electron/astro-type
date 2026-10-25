@@ -5,7 +5,7 @@ A browser typing game: React and Tailwind for the screens, a Zustand store and a
 ## Working here
 
 - Use pnpm on the Node version pinned in `package.json`. The scripts there install, run, check and build.
-- `pnpm verify` runs exactly what CI checks before a deploy. Run it before you push.
+- `pnpm verify` runs the checks CI runs on any machine: typecheck, Biome, unit tests, the build and the browser tests. CI also runs `pnpm screenshots`, which `verify` skips (it needs Docker), so run that too when you've changed how anything looks. Run `verify` before you push.
 - `pnpm check` runs Biome, and every Biome rule is an error: fix any diagnostic it reports. Where a rule truly can't apply, suppress that one line with a `// biome-ignore lint/...: reason` that says why. Don't weaken a rule in `biome.json`.
 - Screenshot checks compare a few key frames inside CI's fixed Playwright image: `pnpm screenshots` runs them and `pnpm screenshots:update` redraws the baselines on purpose. Both need Docker (linux/amd64). They're part of CI, but `pnpm verify` doesn't run them. See `docs/agents/testing.md`.
 - The README overstates the game: it describes shortcuts, states and features that don't exist. Treat the code and `GLOSSARY.md` as the truth.
@@ -31,7 +31,7 @@ ADR-0001 sets the split between the store and the machine.
 ## Shipping
 
 - Commit only when the project owner asks. Commits go straight to `main`, with messages written as `type: summary` (`feat`, `fix`, `docs`, `ci`, `chore`, `refactor`, `style`).
-- **Every push to `main` goes to production.** CI runs `pnpm verify`, deploys the built `dist/` to https://astro-type.k-electron.workers.dev, then smoke-tests it there. If a check fails, the deploy stops. There are no preview deploys.
+- **Every push to `main` goes to production.** CI runs `pnpm verify` and `pnpm screenshots`, deploys the built `dist/` to https://astro-type.k-electron.workers.dev, then smoke-tests it there. If a check fails, the deploy stops. There are no preview deploys.
 - **To roll back,** `git revert` the commit and push it. In an emergency, the project owner runs `pnpm exec wrangler rollback`, which needs their Cloudflare login.
 - **Dependabot** opens grouped PRs every week. CI checks them, and the project owner merges them by hand.
 
