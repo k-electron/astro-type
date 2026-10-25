@@ -155,7 +155,9 @@ export const TextPromptStream: React.FC = () => {
                 aria-current={isCurrent ? 'true' : undefined}
                 className={`inline-block select-none transition-all duration-75 ${
                   isCurrent
-                    ? 'px-1.5 py-0.2 mx-0.5 rounded bg-cyan-500/25 ring-1.5 ring-cyan-400 text-cyan-200 font-bold shadow-[0_0_10px_rgba(6,182,212,0.5)] scale-105'
+                    ? `px-1.5 py-0.2 mx-0.5 rounded bg-cyan-500/25 ring-1.5 ring-cyan-400 text-cyan-200 font-bold shadow-[0_0_10px_rgba(6,182,212,0.5)] scale-105${
+                        hasError ? ' line-through decoration-rose-500' : ''
+                      }`
                     : isTyped
                       ? hasError
                         ? 'px-1 text-rose-400 line-through decoration-rose-500 font-bold'
@@ -175,8 +177,12 @@ export const TextPromptStream: React.FC = () => {
               ? 'text-rose-400 line-through decoration-rose-500 bg-rose-950/30'
               : 'text-emerald-400 font-medium';
           } else if (isCurrent) {
-            charClass =
-              'text-white bg-cyan-500/30 ring-2 ring-cyan-400 rounded-sm font-bold shadow-[0_0_12px_rgba(6,182,212,0.6)]';
+            // A wrong key marks the character at once; the cursor stays on it.
+            charClass = `bg-cyan-500/30 ring-2 ring-cyan-400 rounded-sm font-bold shadow-[0_0_12px_rgba(6,182,212,0.6)] ${
+              hasError
+                ? 'text-rose-400 line-through decoration-rose-500'
+                : 'text-white'
+            }`;
           }
 
           return (
