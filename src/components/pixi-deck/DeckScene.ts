@@ -16,6 +16,7 @@ import { DroneView } from './DroneView';
 import type { DroneMotion } from './droneMotion';
 import { makeText } from './draw';
 import { HandView, type HandState } from './HandView';
+import { hitPopupColor } from './hitPopups';
 import { KeyView, keycapLabel } from './KeyView';
 import { ShipView } from './ShipView';
 import { boxGlow, releaseBoxGlow } from './textures';
@@ -317,14 +318,11 @@ export class DeckScene {
       const info = KEY_FINGER_MAP[char] || KEY_FINGER_MAP[char.toLowerCase()];
       const laneColor = info ? FINGER_COLOR_MAP[info.finger] : '#38bdf8';
       const grade = judgement.grade;
-      const hitColor =
-        grade === 'perfect'
-          ? isSpace
-            ? '#34d399'
-            : '#38bdf8'
-          : grade === 'great'
-            ? '#4ade80'
-            : '#facc15';
+      const hitColor = hitPopupColor({
+        grade,
+        isSpace,
+        overdrive: judgement.overdrive,
+      });
       this.ship.fire(false, 0);
       this.effects.fireHit({
         x: rect.cx,
