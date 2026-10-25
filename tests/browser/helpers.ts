@@ -179,6 +179,7 @@ export const sectorUnlockedBanner = (page: Page): Locator =>
 export async function seedStageStars(
   page: Page,
   stars: Record<string, number>,
+  otherFields: Record<string, unknown> = {},
 ): Promise<void> {
   const stagesProgress = Object.fromEntries(
     Object.entries(stars).map(([stageId, starsEarned]) => [
@@ -202,7 +203,10 @@ export async function seedStageStars(
       sessionStorage.setItem('seeded', 'yes');
       localStorage.setItem(key, value);
     },
-    { key: 'astrotype_profile_v1', value: JSON.stringify({ stagesProgress }) },
+    {
+      key: 'astrotype_profile_v1',
+      value: JSON.stringify({ ...otherFields, stagesProgress }),
+    },
   );
 }
 

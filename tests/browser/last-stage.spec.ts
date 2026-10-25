@@ -36,7 +36,13 @@ async function launchLastStage(page: Page) {
       stars[`s${sector}-l${stage}`] = 3;
     }
   }
-  await seedStageStars(page, stars);
+  // The hands and the keyboard are hidden (set in the Profile, not clicked, so
+  // no button keeps focus and takes a Space): the Run is long, and the lighter
+  // deck keeps it quick.
+  await seedStageStars(page, stars, {
+    handsVisible: false,
+    keyboardVisible: false,
+  });
   await page.goto('/');
   await openMenu(page, 'Galaxy Map');
   await page.getByRole('button', { name: /Sector 07/ }).click();
@@ -52,7 +58,7 @@ test('the Debrief of the last Stage shows "Galaxy Map" in place of "Next Mission
   page,
 }) => {
   // The last Stage's text is 175 characters of prose, typed key by key.
-  test.setTimeout(240_000);
+  test.setTimeout(120_000);
   await launchLastStage(page);
   await typeText(page, LAST_STAGE_TEXT);
   await expect(page.getByText(/Mission Debriefing/)).toBeVisible();
