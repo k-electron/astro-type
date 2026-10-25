@@ -13,3 +13,7 @@ The five default roles, each label string matching its role name (`needs-triage`
 ### Domain docs
 
 Single-context: `GLOSSARY.md` and `docs/adr/` at the repo root. See `docs/agents/domain.md`.
+
+### Testing
+
+Before writing or changing a test, or calling a gameplay change done, read `docs/agents/testing.md`.
