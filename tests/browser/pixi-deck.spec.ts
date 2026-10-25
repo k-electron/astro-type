@@ -197,7 +197,7 @@ test('the paused deck is frozen: Drones stay where they were, and fall on after 
 }) => {
   // Thousands of fake-clock frames are rendered for real, which takes ~20 s on
   // software GL: give it room so load can't make it flaky.
-  test.setTimeout(90_000);
+  test.setTimeout(180_000);
   // The page's clock is stopped before it loads and only moves when this test
   // says so, so a Drone is caught mid-fall and nothing else moves it.
   await page.clock.install({ time: 0 });

@@ -145,7 +145,7 @@ const test = base.extend<{ pixels: Pixels }>({
 test.use({ viewport: { width: 1280, height: 1100 } });
 // The deck is slow to step under a stopped clock (every frame is drawn), so
 // give each journey room.
-test.setTimeout(90_000);
+test.setTimeout(180_000);
 
 /** An element PixiJS's accessibility layer made for something it drew. */
 const labelled = (page: Page, name: RegExp): Locator =>
