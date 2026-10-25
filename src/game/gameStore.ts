@@ -31,7 +31,8 @@ import {
   cadenceAfterMiss,
   chargeOverdrive,
   freshPerformance,
-  IGNORED_KEYS,
+  countsAsKeystroke,
+  type Judgement,
   judge,
   moveDrones,
   multiplierForStreak,
@@ -85,7 +86,7 @@ export interface GameStoreState {
     stage: Stage,
     customSpeed?: 'SLOW' | 'NORMAL' | 'FAST' | 'HYPER',
   ) => void;
-  processKeystroke: (key: string) => void;
+  processKeystroke: (key: string, options?: { repeat?: boolean }) => void;
   releaseKeystroke: (key?: string) => void;
   updateFallingNotesOnTick: () => void;
   updateTelemetryOnInterval: () => void;
@@ -117,6 +118,8 @@ export interface GameStoreDeps {
   storage: SaveStorage;
   clock: Clock;
   effects: GameEffects;
+  /** Told of each Judgement as it happens, after the Run has changed. */
+  onJudgement: (judgement: Judgement) => void;
 }
 
 /**
@@ -129,6 +132,7 @@ export function createGameStore({
   storage,
   clock,
   effects,
+  onJudgement,
 }: GameStoreDeps): StoreApi<GameStoreState> {
   const saveProfile = (profile: PlayerProfile) => storage.save(profile);
 
@@ -237,11 +241,11 @@ export function createGameStore({
         });
       },
 
-      processKeystroke: (pressedKey: string) => {
+      processKeystroke: (pressedKey: string, options) => {
         const state = get();
         if (state.gameState !== 'PLAYING') return;
 
-        if (IGNORED_KEYS.includes(pressedKey)) {
+        if (!countsAsKeystroke(pressedKey, options?.repeat)) {
           return;
         }
 
@@ -276,8 +280,6 @@ export function createGameStore({
             state.profile.upgrades.precisionSensors,
           );
 
-          effects.playLaneHit(targetInfo.lane, rating, targetChar === ' ');
-
           const nextStreak = state.performance.currentStreak + 1;
           const newMaxStreak = Math.max(
             state.performance.maxStreak,
@@ -295,10 +297,6 @@ export function createGameStore({
             state.performance.hyperspaceActive,
             state.profile.upgrades.hyperdriveReactor,
           );
-          if (charge.ignites) {
-            effects.playHyperspaceIgnition();
-          }
-
           const nextCharIndex = currentCharIdx + 1;
           const now = clock.now();
 
@@ -352,6 +350,21 @@ export function createGameStore({
             recentKeystrokeTimes: updatedKeystrokeTimes,
           });
 
+          onJudgement({
+            type: 'hit',
+            grade:
+              rating === 'PERFECT'
+                ? 'perfect'
+                : rating === 'GREAT'
+                  ? 'great'
+                  : 'good',
+            key: pressedKey,
+          });
+          // Overdrive catching fire is its own sound, after the hit's.
+          if (charge.ignites) {
+            effects.playHyperspaceIgnition();
+          }
+
           // Stage completed check
           if (nextCharIndex >= targetText.length) {
             get().handleStageComplete();
@@ -366,15 +379,14 @@ export function createGameStore({
             cadenceAfterMiss(state.performance.cadenceConsistency ?? 100),
           );
 
-          if (shielded) {
-            effects.playShieldAbsorb();
-          } else {
-            effects.playMiss();
-          }
           set({
             errorIndices: newErrorIndices,
             sessionKeyStats: updatedKeyStats,
             performance: perf,
+          });
+          onJudgement({
+            type: shielded ? 'shield' : 'miss',
+            key: pressedKey,
           });
         }
       },

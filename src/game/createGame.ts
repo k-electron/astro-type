@@ -22,7 +22,9 @@ import type {
   Stage,
 } from '../types/game';
 import { type Clock, createSteppedClock } from './clock';
+import { getNoteLaneAndFinger } from '../data/curriculum';
 import { type GameEffects, silentEffects } from './effects';
+import type { Judgement } from './rules';
 import {
   createGameStore,
   type GameStoreState,
@@ -34,6 +36,7 @@ export { createMemoryStorage } from './save';
 export type { SaveStorage } from './save';
 export type { Clock } from './clock';
 export type { GameEffects } from './effects';
+export type { Judgement } from './rules';
 export type { GameStoreState, VictoryResult } from './gameStore';
 
 type HighwaySpeed = PlayerProfile['highwaySpeed'];
@@ -65,8 +68,18 @@ export interface Game {
    * store's side effects first. The machine drops what it doesn't accept.
    */
   send(event: GameMachineEvent): void;
-  /** Press a character key, as a keydown does. */
-  pressKey(key: string): void;
+  /**
+   * Press a key, as a keydown does; `key` is a `KeyboardEvent.key` value.
+   * Only a key that types one character is judged. Everything else (Escape,
+   * Backspace, Enter, arrows, function keys, Tab, modifiers) and every
+   * auto-repeat keydown (`repeat: true`) is ignored and changes nothing.
+   */
+  pressKey(key: string, options?: { repeat?: boolean }): void;
+  /**
+   * Hear each Judgement as it happens: exactly one per keystroke that counts.
+   * Returns the way to stop listening.
+   */
+  onJudgement(listener: (judgement: Judgement) => void): () => void;
   /** Advance the Run clock by `count` steps of 1/60 s. */
   step(count?: number): void;
   getScreen(): GameState;
@@ -91,6 +104,25 @@ const NAVIGATION_TARGETS: GameState[] = [
 /** The telemetry tick: every 30 steps, which is 500 ms at 60 steps a second. */
 const TELEMETRY_EVERY_STEPS = 30;
 
+/** Each Judgement plays exactly one sound. */
+function soundFor(judgement: Judgement, effects: GameEffects): void {
+  if (judgement.type === 'hit') {
+    effects.playLaneHit(
+      getNoteLaneAndFinger(judgement.key).lane,
+      judgement.grade === 'perfect'
+        ? 'PERFECT'
+        : judgement.grade === 'great'
+          ? 'GREAT'
+          : 'GOOD',
+      judgement.key === ' ',
+    );
+  } else if (judgement.type === 'shield') {
+    effects.playShieldAbsorb();
+  } else {
+    effects.playMiss();
+  }
+}
+
 export function createGame(options: GameOptions): Game {
   const clock = options.clock ?? createSteppedClock();
   const effects: GameEffects = { ...silentEffects, ...options.effects };
@@ -98,11 +130,17 @@ export function createGame(options: GameOptions): Game {
   const actor = createActor(gameMachine);
   actor.start();
 
+  const judgementListeners = new Set<(judgement: Judgement) => void>();
   const store = createGameStore({
     actor,
     storage: options.storage,
     clock,
     effects,
+    onJudgement(judgement) {
+      // Sound answers the Judgement first, once, then everyone else hears it.
+      soundFor(judgement, effects);
+      for (const listener of [...judgementListeners]) listener(judgement);
+    },
   });
 
   const getScreen = () =>
@@ -141,8 +179,14 @@ export function createGame(options: GameOptions): Game {
         actor.send(event);
       }
     },
-    pressKey(key) {
-      store.getState().processKeystroke(key);
+    pressKey(key, pressOptions) {
+      store.getState().processKeystroke(key, pressOptions);
+    },
+    onJudgement(listener) {
+      judgementListeners.add(listener);
+      return () => {
+        judgementListeners.delete(listener);
+      };
     },
     step(count = 1) {
       for (let i = 0; i < count; i++) {
