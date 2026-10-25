@@ -367,7 +367,9 @@ pnpm preview
 ### Type Checking & Linting
 
 ```bash
-pnpm lint
+pnpm typecheck   # tsc --noEmit
+pnpm check       # Biome lint + format check
+pnpm fix         # apply Biome's safe fixes and formatting
 ```
 
 ---
