@@ -21,6 +21,7 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach } from 'vitest';
 import App from '../../src/App';
+import { CURRICULUM_SECTORS } from '../../src/data/curriculum';
 import {
   createGame,
   createMemoryStorage,
@@ -88,6 +89,24 @@ export interface Player {
    * what the game saved comes back and everything else is gone.
    */
   reload(): void;
+  /**
+   * Open the Galaxy Map, pick the Sector that holds the Stage, and press its
+   * Launch Mission (or Replay Mission) button, as a player does. The Sector
+   * must be open in the Save. Throws if no Stage has that id.
+   */
+  startStage(stageId: string): void;
+  /**
+   * Type the rest of the text the prompt is showing, from the character the
+   * player is on, the way a player reads it ("␣" is a Space). `stepsPerKey`
+   * is as in `type`. The last character of a Run's text clears it. With
+   * `characters`, type only that many and stop short of the end.
+   */
+  typePrompt(options?: { stepsPerKey?: number; characters?: number }): void;
+  /**
+   * Choose a file on the "Import Backup" control. The file is read after
+   * this returns, so wait for its outcome on screen (`findBy...`).
+   */
+  importBackup(contents: string): void;
 }
 
 /** Steps the Run clock takes before each typed character: the Drone arrives. */
@@ -182,6 +201,58 @@ export function renderGame(options: RenderGameOptions = {}): Player {
     reload() {
       unmount();
       mount();
+    },
+    startStage(stageId) {
+      const sector = CURRICULUM_SECTORS.find((candidate) =>
+        candidate.stages.some((stage) => stage.id === stageId),
+      );
+      const stage = sector?.stages.find(
+        (candidate) => candidate.id === stageId,
+      );
+      if (!sector || !stage) throw new Error(`No Stage has the id ${stageId}`);
+      player.openHeader('Sectors');
+      fireEvent.click(
+        screen.getByRole('button', { name: new RegExp(sector.codenick) }),
+      );
+      // The Stage's card is the nearest one around its title that has a button.
+      let card: HTMLElement | null = screen.getByRole('heading', {
+        level: 4,
+        name: stage.title,
+      });
+      const launch = /^(Launch|Replay) Mission$/;
+      while (card && !within(card).queryByRole('button', { name: launch })) {
+        card = card.parentElement;
+      }
+      if (!card) throw new Error(`No Launch Mission button for ${stageId}`);
+      const button = within(card).getByRole('button', { name: launch });
+      if ((button as HTMLButtonElement).disabled) {
+        throw new Error(`${stageId} is in a Sector that is still locked`);
+      }
+      fireEvent.click(button);
+    },
+    typePrompt(typeOptions = {}) {
+      const characters = screen
+        .getByLabelText('Text prompt')
+        .querySelectorAll('[aria-current]');
+      const current = [...characters].find(
+        (character) => character.getAttribute('aria-current') !== 'false',
+      );
+      if (!current) throw new Error('The prompt has no current character');
+      const line = [...(current.parentElement?.children ?? [])];
+      const rest = line
+        .slice(line.indexOf(current))
+        .map((character) => character.textContent ?? '')
+        .join('')
+        .replaceAll('␣', ' ');
+      player.type(rest.slice(0, typeOptions.characters), typeOptions);
+    },
+    importBackup(contents) {
+      const file = new File([contents], 'astrotype_backup.json', {
+        type: 'application/json',
+      });
+      fireEvent.change(screen.getByLabelText('Import Backup'), {
+        target: { files: [file] },
+      });
     },
   };
 

@@ -54,6 +54,20 @@ describe('the popup of a hit', () => {
     });
   });
 
+  it('uses the glossary names: never combo, hyperspace or warp', () => {
+    // The deck draws these on the canvas, where a screen-text sweep can't see
+    // them. The game says Streak and Overdrive (GLOSSARY.md lists these as
+    // words to avoid). `\b` keeps this to whole words; the endings cover
+    // "combos", "warped", "warping" and "hyper-space".
+    const bannedName = /\b(?:combos?|hyper[\s-]?space|warp(?:s|ed|ing)?)\b/i;
+
+    const offenders = hitPopupsToPrepare()
+      .map(({ label }) => label)
+      .filter((label) => bannedName.test(label));
+
+    expect(offenders).toEqual([]);
+  });
+
   it('is an ordinary Perfect unless Overdrive doubled the hit: the hit that lights Overdrive is not a strike', () => {
     const strike = (kind: HitKind) =>
       hitPopupStems(kind).some((stem) => /OVERDRIVE STRIKE/.test(stem));
