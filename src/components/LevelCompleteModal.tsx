@@ -1,17 +1,16 @@
-import React, { useEffect } from 'react';
+import type React from 'react';
+import { useEffect } from 'react';
 import {
   Star,
-  Trophy,
   Sparkles,
   RotateCcw,
   ArrowRight,
-  Map,
+  Map as MapIcon,
   CheckCircle2,
-  ShieldCheck,
   Home,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { Stage } from '../types/game';
+import type { Stage } from '../types/game';
 
 interface LevelCompleteModalProps {
   stage: Stage;
@@ -30,6 +29,8 @@ interface LevelCompleteModalProps {
   totalCredits: number;
   hasUnlockedNextSector: boolean;
   hasNextStage: boolean;
+  /** The Stage is the last one in the curriculum (a Free Flight is none). */
+  isLastStage: boolean;
   onReplay: () => void;
   onNextStage: () => void;
   onReturnToMap: () => void;
@@ -40,9 +41,9 @@ export const LevelCompleteModal: React.FC<LevelCompleteModalProps> = ({
   stage,
   result,
   totalStars,
-  totalCredits,
   hasUnlockedNextSector,
   hasNextStage,
+  isLastStage,
   onReplay,
   onNextStage,
   onReturnToMap,
@@ -53,7 +54,6 @@ export const LevelCompleteModal: React.FC<LevelCompleteModalProps> = ({
     score,
     wpm,
     accuracy,
-    maxStreak,
     creditsEarned,
     isNewHighScore,
     newStarsAwarded,
@@ -76,7 +76,7 @@ export const LevelCompleteModal: React.FC<LevelCompleteModalProps> = ({
   }, [starsEarned]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/85 backdrop-blur-md overflow-y-auto">
+    <div className="fixed inset-x-0 bottom-0 top-[var(--header-height,0px)] z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/85 backdrop-blur-md overflow-y-auto">
       <div className="w-full max-w-xl rounded-2xl border border-slate-800 bg-slate-900 shadow-2xl p-6 sm:p-8 flex flex-col items-center text-center my-auto">
         {/* Stage Badge & Title */}
         <span className="text-xs uppercase font-mono tracking-wider text-cyan-400 mb-1">
@@ -326,13 +326,14 @@ export const LevelCompleteModal: React.FC<LevelCompleteModalProps> = ({
         {hasUnlockedNextSector && (
           <div className="w-full mb-5 p-3 rounded-xl border border-cyan-500/50 bg-cyan-950/40 text-cyan-200 text-xs font-mono flex items-center justify-center gap-2">
             <Sparkles className="w-4 h-4 text-cyan-400 shrink-0" />
-            <span>Warp Gate Opened: New Interstellar Sector Unlocked!</span>
+            <span>New Sector Unlocked! Find it on the Galaxy Map.</span>
           </div>
         )}
 
         {/* Action Buttons */}
         <div className="w-full flex flex-wrap items-center justify-center gap-2.5">
           <button
+            type="button"
             onClick={onReplay}
             className="flex-1 min-w-[120px] px-3.5 py-2.5 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs sm:text-sm font-medium flex items-center justify-center gap-2 transition-colors cursor-pointer"
           >
@@ -341,14 +342,16 @@ export const LevelCompleteModal: React.FC<LevelCompleteModalProps> = ({
           </button>
 
           <button
+            type="button"
             onClick={onReturnToMap}
             className="flex-1 min-w-[130px] px-3.5 py-2.5 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs sm:text-sm font-medium flex items-center justify-center gap-2 transition-colors cursor-pointer"
           >
-            <Map className="w-4 h-4 text-cyan-400" />
+            <MapIcon className="w-4 h-4 text-cyan-400" />
             <span>Galaxy Map</span>
           </button>
 
           <button
+            type="button"
             onClick={onReturnToMenu}
             className="flex-1 min-w-[120px] px-3.5 py-2.5 rounded-xl border border-slate-800 bg-slate-950 hover:bg-slate-800 text-slate-400 hover:text-slate-200 text-xs sm:text-sm font-medium flex items-center justify-center gap-2 transition-colors cursor-pointer"
           >
@@ -356,12 +359,16 @@ export const LevelCompleteModal: React.FC<LevelCompleteModalProps> = ({
             <span>Main Menu</span>
           </button>
 
-          {hasNextStage && (
+          {/* On the last Stage, Next Stage opens the Galaxy Map instead. */}
+          {(hasNextStage || isLastStage) && (
             <button
+              type="button"
               onClick={onNextStage}
               className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-lg shadow-cyan-950/50 transition-all cursor-pointer"
             >
-              <span>Next Mission</span>
+              <span>
+                {hasNextStage ? 'Next Mission' : 'Back to Galaxy Map'}
+              </span>
               <ArrowRight className="w-4 h-4" />
             </button>
           )}

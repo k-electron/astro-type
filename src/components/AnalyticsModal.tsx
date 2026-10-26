@@ -1,18 +1,28 @@
-import React, { useState } from 'react';
-import { PlayerProfile } from '../types/game';
+import type React from 'react';
+import { useState } from 'react';
+import type { PlayerProfile, Screen } from '../types/game';
+import { closeLabel, flightDeckLabel } from './closeLabel';
 import {
   KEY_FINGER_MAP,
   FINGER_COLOR_MAP,
   FINGER_DISPLAY_NAMES,
 } from '../data/curriculum';
+import {
+  exportBackup,
+  REFUSED_BACKUP_MESSAGE,
+  type BackupImport,
+} from '../game/save';
 import { Download, Upload, RotateCcw, AlertTriangle, Play } from 'lucide-react';
 
 interface AnalyticsModalProps {
   profile: PlayerProfile;
   onClose: () => void;
   onGoToFlightDeck?: () => void;
-  sourceState?: 'MENU' | 'PLAYING' | 'VICTORY' | 'STAGE_SELECT';
-  onImportProfile: (json: string) => void;
+  /** The screen Close returns to. */
+  opener?: Screen | null;
+  /** A paused Run is waiting, so the Flight Deck button resumes it. */
+  runPaused?: boolean;
+  onImportProfile: (text: string) => BackupImport;
   onWipeAchievements?: () => void;
   onResetProgress: () => void;
 }
@@ -21,7 +31,8 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
   profile,
   onClose,
   onGoToFlightDeck,
-  sourceState = 'MENU',
+  opener = null,
+  runPaused = false,
   onImportProfile,
   onWipeAchievements,
   onResetProgress,
@@ -29,6 +40,9 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
   const [confirmMode, setConfirmMode] = useState<
     'NONE' | 'WIPE_ACHIEVEMENTS' | 'FULL_RESET'
   >('NONE');
+  // Why the last import was refused, shown beside the import control. A good
+  // import clears it: the header's Stars and Credits are the player's proof.
+  const [refusal, setRefusal] = useState<string | null>(null);
 
   const {
     totalPracticeSeconds,
@@ -109,7 +123,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
   const handleExport = () => {
     const dataStr =
       'data:text/json;charset=utf-8,' +
-      encodeURIComponent(JSON.stringify(profile, null, 2));
+      encodeURIComponent(exportBackup(profile));
     const downloadAnchor = document.createElement('a');
     downloadAnchor.setAttribute('href', dataStr);
     downloadAnchor.setAttribute(
@@ -122,19 +136,22 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
   };
 
   const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const text = event.target?.result as string;
-        if (text) onImportProfile(text);
-      };
-      reader.readAsText(file);
-    }
+    const input = e.target;
+    const file = input.files?.[0];
+    // Clear the pick, so choosing the same file again still counts as a change.
+    input.value = '';
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const outcome = onImportProfile(String(reader.result ?? ''));
+      setRefusal(outcome.ok ? null : outcome.message);
+    };
+    reader.onerror = () => setRefusal(REFUSED_BACKUP_MESSAGE);
+    reader.readAsText(file);
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
+    <div className="fixed inset-x-0 bottom-0 top-[var(--header-height,0px)] z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
       <div className="w-full max-w-4xl rounded-2xl border border-slate-800 bg-slate-900 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
         <div className="flex items-center justify-between p-4 sm:p-6 border-b border-slate-800 bg-slate-950/70">
@@ -150,30 +167,22 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
           <div className="flex flex-wrap items-center gap-2.5">
             {onGoToFlightDeck && (
               <button
+                type="button"
                 onClick={onGoToFlightDeck}
                 className="px-3.5 py-1.5 text-xs font-bold rounded-lg bg-cyan-400 hover:bg-cyan-300 text-slate-950 transition-all flex items-center gap-1.5 cursor-pointer shadow-md shadow-cyan-950/60"
                 title="Launch directly into the cockpit flight deck"
               >
                 <Play className="w-3.5 h-3.5 fill-current" />
-                <span>
-                  {sourceState === 'PLAYING'
-                    ? 'Resume Flight'
-                    : 'Enter Flight Deck'}
-                </span>
+                <span>{flightDeckLabel(runPaused)}</span>
               </button>
             )}
 
             <button
+              type="button"
               onClick={onClose}
               className="px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer"
             >
-              {sourceState === 'STAGE_SELECT'
-                ? 'Back to Sectors'
-                : sourceState === 'VICTORY'
-                  ? 'Back to Debriefing'
-                  : sourceState === 'PLAYING'
-                    ? 'Pause Menu'
-                    : 'Back to Academy'}
+              {closeLabel(opener)}
             </button>
           </div>
         </div>
@@ -289,8 +298,8 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
             </div>
 
             <div className="flex flex-col gap-1.5 items-center select-none overflow-x-auto py-2">
-              {keyboardHeatmapRows.map((row, rIdx) => (
-                <div key={rIdx} className="flex gap-1.5">
+              {keyboardHeatmapRows.map((row) => (
+                <div key={row.join('')} className="flex gap-1.5">
                   {row.map((k) => {
                     const stats = keyAnalytics[k] ||
                       keyAnalytics[k.toUpperCase()] || { hits: 0, misses: 0 };
@@ -435,6 +444,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
 
             <div className="flex flex-wrap items-center gap-2">
               <button
+                type="button"
                 onClick={handleExport}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-800 text-xs font-medium text-slate-300 hover:text-white transition-colors cursor-pointer"
               >
@@ -455,6 +465,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
 
               {onWipeAchievements && (
                 <button
+                  type="button"
                   onClick={() => setConfirmMode('WIPE_ACHIEVEMENTS')}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-900/60 bg-amber-950/40 text-xs font-medium text-amber-300 hover:bg-amber-900/50 hover:text-white transition-colors cursor-pointer"
                   title="Wipe curriculum stars and stage records for the new curriculum"
@@ -465,6 +476,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
               )}
 
               <button
+                type="button"
                 onClick={() => setConfirmMode('FULL_RESET')}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-rose-900/60 bg-rose-950/30 text-xs font-medium text-rose-300 hover:bg-rose-900/50 transition-colors cursor-pointer"
                 title="Completely reset all starship stats, credits, and achievements"
@@ -473,6 +485,15 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                 <span>Factory Reset</span>
               </button>
             </div>
+
+            {refusal && (
+              <p
+                role="alert"
+                className="basis-full text-xs font-medium text-rose-300"
+              >
+                {refusal}
+              </p>
+            )}
           </div>
         </div>
 
@@ -498,12 +519,14 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
 
               <div className="flex items-center gap-3">
                 <button
+                  type="button"
                   onClick={() => setConfirmMode('NONE')}
                   className="flex-1 py-2.5 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
+                  type="button"
                   onClick={() => {
                     if (confirmMode === 'WIPE_ACHIEVEMENTS') {
                       onWipeAchievements?.();

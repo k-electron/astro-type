@@ -1,33 +1,27 @@
-import React, { useRef, useEffect } from 'react';
+import type React from 'react';
+import { useRef, useEffect } from 'react';
 import {
   KEY_FINGER_MAP,
   FINGER_LANES,
   FINGER_DISPLAY_NAMES,
 } from '../data/curriculum';
+import { useGameStore } from '../store/useGameStore';
 
-interface TextPromptStreamProps {
-  fullText: string;
-  currentIndex: number;
-  errorIndices: Set<number>;
-  targetWpm: number;
-  stageTitle: string;
-  techniqueTip?: string;
-  focusFingers?: string;
-}
-
-export const TextPromptStream: React.FC<TextPromptStreamProps> = ({
-  fullText,
-  currentIndex,
-  errorIndices,
-  targetWpm,
-  stageTitle,
-  techniqueTip,
-  focusFingers,
-}) => {
+/** The Stage's text and where the player is in it. It reads only what it shows from the store. */
+export const TextPromptStream: React.FC = () => {
+  const stage = useGameStore((state) => state.currentStage);
+  const currentIndex = useGameStore(
+    (state) => state.performance.currentCharIndex,
+  );
+  const errorIndices = useGameStore((state) => state.errorIndices);
+  const fullText = stage.sampleText;
+  const { targetWpm, techniqueTip, focusFingers } = stage;
+  const stageTitle = `${stage.title} · ${stage.subtitle}`;
   const activeCharRef = useRef<HTMLSpanElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   // Auto-scroll so current text remains centered
+  // biome-ignore lint/correctness/useExhaustiveDependencies: currentIndex is the trigger, not an input: scroll each time the typed index moves.
   useEffect(() => {
     if (activeCharRef.current && containerRef.current) {
       const activeEl = activeCharRef.current;
@@ -56,7 +50,10 @@ export const TextPromptStream: React.FC<TextPromptStreamProps> = ({
   const laneInfo = charInfo ? FINGER_LANES[charInfo.lane] : null;
 
   return (
-    <div className="w-full flex flex-col rounded-xl border border-slate-800 bg-slate-900/90 shadow-xl backdrop-blur-md overflow-hidden">
+    <section
+      aria-label="Text prompt"
+      className="w-full flex flex-col rounded-xl border border-slate-800 bg-slate-900/90 shadow-xl backdrop-blur-md overflow-hidden"
+    >
       {/* Top Header bar with live target finger indicator (Fixed Height: h-11) */}
       <div className="h-11 flex items-center justify-between gap-3 px-4 border-b border-slate-800/80 bg-slate-950/70 text-xs shrink-0">
         <div className="flex items-center gap-3 truncate">
@@ -98,7 +95,15 @@ export const TextPromptStream: React.FC<TextPromptStreamProps> = ({
         </div>
 
         {/* Progress bar */}
-        <div className="flex items-center gap-2 shrink-0">
+        <div
+          role="progressbar"
+          aria-label="Progress"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={progressPercent}
+          aria-valuetext={`${progressPercent}%`}
+          className="flex items-center gap-2 shrink-0"
+        >
           <div className="w-20 sm:w-28 h-1.5 rounded-full bg-slate-800 overflow-hidden">
             <div
               className="h-full bg-cyan-400 transition-all duration-150"
@@ -144,11 +149,17 @@ export const TextPromptStream: React.FC<TextPromptStreamProps> = ({
           if (isSpaceChar) {
             return (
               <span
+                // biome-ignore lint/suspicious/noArrayIndexKey: a character's position is its identity; the text can repeat any character.
                 key={index}
                 ref={isCurrent ? activeCharRef : null}
+                aria-current={isCurrent ? 'true' : undefined}
                 className={`inline-block select-none transition-all duration-75 ${
                   isCurrent
-                    ? 'px-1.5 py-0.2 mx-0.5 rounded bg-cyan-500/25 ring-1.5 ring-cyan-400 text-cyan-200 font-bold shadow-[0_0_10px_rgba(6,182,212,0.5)] scale-105'
+                    ? `px-1.5 py-0.2 mx-0.5 rounded bg-cyan-500/25 ring-1.5 ring-cyan-400 font-bold shadow-[0_0_10px_rgba(6,182,212,0.5)] scale-105 ${
+                        hasError
+                          ? 'text-rose-400 line-through decoration-rose-500'
+                          : 'text-cyan-200'
+                      }`
                     : isTyped
                       ? hasError
                         ? 'px-1 text-rose-400 line-through decoration-rose-500 font-bold'
@@ -168,14 +179,20 @@ export const TextPromptStream: React.FC<TextPromptStreamProps> = ({
               ? 'text-rose-400 line-through decoration-rose-500 bg-rose-950/30'
               : 'text-emerald-400 font-medium';
           } else if (isCurrent) {
-            charClass =
-              'text-white bg-cyan-500/30 ring-2 ring-cyan-400 rounded-sm font-bold shadow-[0_0_12px_rgba(6,182,212,0.6)]';
+            // A wrong key marks the character at once; the cursor stays on it.
+            charClass = `bg-cyan-500/30 ring-2 ring-cyan-400 rounded-sm font-bold shadow-[0_0_12px_rgba(6,182,212,0.6)] ${
+              hasError
+                ? 'text-rose-400 line-through decoration-rose-500'
+                : 'text-white'
+            }`;
           }
 
           return (
             <span
+              // biome-ignore lint/suspicious/noArrayIndexKey: a character's position is its identity; the text can repeat any character.
               key={index}
               ref={isCurrent ? activeCharRef : null}
+              aria-current={isCurrent ? 'true' : undefined}
               className={`inline-block px-[2px] transition-colors ${charClass}`}
             >
               {char}
@@ -183,6 +200,6 @@ export const TextPromptStream: React.FC<TextPromptStreamProps> = ({
           );
         })}
       </div>
-    </div>
+    </section>
   );
 };

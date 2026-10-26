@@ -1,4 +1,4 @@
-import { FingerLaneInfo, FingerZone, Sector, Stage } from '../types/game';
+import type { FingerLaneInfo, FingerZone, Sector, Stage } from '../types/game';
 
 export const FINGER_COLOR_MAP: Record<FingerZone, string> = {
   LEFT_PINKY: '#ec4899', // Vibrant Pink
@@ -1710,7 +1710,7 @@ export const CURRICULUM_SECTORS: Sector[] = [
           '"Signal detected!" whispered Maya: "Could it be alien?" Yes, indeed; verify it immediately!',
         difficulty: 'Expert',
         targetWpm: 28,
-        focusFingers: 'Right Pinky Punctuation + Shift Combos',
+        focusFingers: 'Right Pinky Punctuation + Shift Pairs',
         techniqueTip:
           'Notice the dotted modifier highlight for Shift keys. Hold Shift firmly before striking the target symbol.',
         drillPatternType: 'SHIFT_DISCIPLINE',
@@ -1749,7 +1749,7 @@ export const CURRICULUM_SECTORS: Sector[] = [
           '@',
         ],
         sampleText:
-          'const ship = { shields: 100, warp: true, coords: [42, 98] }; if (speed > max && power >= 90) { return true; }',
+          'const ship = { shields: 100, jump: true, coords: [42, 98] }; if (speed > max && power >= 90) { return true; }',
         difficulty: 'Expert',
         targetWpm: 30,
         focusFingers: 'Symbol Matrix Reaches',
@@ -1796,6 +1796,7 @@ export const CURRICULUM_SECTORS: Sector[] = [
           '0',
         ],
         sampleText:
+          // biome-ignore lint/suspicious/noTemplateCurlyInString: the sample text is typed as written; the ${id} is meant literally.
           'import { Container } from "pixi.js"; function launch(id: number = 7) { return `Beacon#${id} launched @ 100%`; }',
         difficulty: 'Expert',
         targetWpm: 34,
@@ -1943,7 +1944,7 @@ export const CURRICULUM_SECTORS: Sector[] = [
         id: 's7-l3',
         sectorId: 'sector-7',
         stageNumber: 3,
-        title: 'Warp Corridor Flight',
+        title: 'Long Corridor Flight',
         subtitle: 'Endurance & Velocity Challenge',
         description:
           'JFK Moon speech. Test your sustained velocity and composure across extended prose.',

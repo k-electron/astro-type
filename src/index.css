@@ -75,3 +75,16 @@
 .box-glow-amber {
   box-shadow: 0 0 20px -3px rgba(245, 158, 11, 0.25);
 }
+
+/* The PixiJS Action Deck's accessibility layer sits over its canvas. PixiJS
+   moves it with the canvas's position on the screen, which is wrong inside a
+   positioned stage and when the page scrolls; the stage is its positioning
+   context, so it needs no move. The keycap buttons also act as keycaps. */
+[data-deck-a11y] {
+  /* biome-ignore lint/complexity/noImportantStyles: PixiJS sets this transform inline, so only !important overrides it. */
+  transform: none !important;
+}
+
+[data-deck-a11y] button {
+  cursor: pointer;
+}

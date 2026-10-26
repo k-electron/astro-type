@@ -19,32 +19,32 @@
     "rules": {
       "preset": "recommended",
       "a11y": {
-        "noLabelWithoutControl": "warn",
-        "noStaticElementInteractions": "warn",
-        "noSvgWithoutTitle": "warn",
-        "useButtonType": "warn",
-        "useKeyWithClickEvents": "warn"
+        "noLabelWithoutControl": "error",
+        "noStaticElementInteractions": "error",
+        "noSvgWithoutTitle": "error",
+        "useButtonType": "error",
+        "useKeyWithClickEvents": "error"
       },
       "correctness": {
-        "noUnusedFunctionParameters": "warn",
-        "noUnusedImports": "warn",
-        "noUnusedVariables": "warn",
-        "useExhaustiveDependencies": "warn"
+        "noUnusedFunctionParameters": "error",
+        "noUnusedImports": "error",
+        "noUnusedVariables": "error",
+        "useExhaustiveDependencies": "error"
       },
       "style": {
-        "noNonNullAssertion": "warn",
-        "useExponentiationOperator": "warn",
-        "useImportType": "warn",
-        "useNodejsImportProtocol": "warn",
-        "useTemplate": "warn"
+        "noNonNullAssertion": "error",
+        "useExponentiationOperator": "error",
+        "useImportType": "error",
+        "useNodejsImportProtocol": "error",
+        "useTemplate": "error"
       },
       "suspicious": {
-        "noArrayIndexKey": "warn",
-        "noCommentText": "warn",
-        "noExplicitAny": "warn",
-        "noShadowRestrictedNames": "warn",
-        "noTemplateCurlyInString": "warn",
-        "useIterableCallbackReturn": "warn"
+        "noArrayIndexKey": "error",
+        "noCommentText": "error",
+        "noExplicitAny": "error",
+        "noShadowRestrictedNames": "error",
+        "noTemplateCurlyInString": "error",
+        "useIterableCallbackReturn": "error"
       }
     }
   },

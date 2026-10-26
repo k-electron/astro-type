@@ -1,4 +1,4 @@
-import { AudioSynthCore, BeatTheme } from '../types/game';
+import type { AudioSynthCore, BeatTheme } from '../types/game';
 
 class SoundEngine {
   private ctx: AudioContext | null = null;
@@ -333,7 +333,9 @@ class SoundEngine {
         [164.81, 196, 246.94], // Em
       ];
       const chord = chords[measure] || chords[0];
-      chord.forEach((f) => this.playWarmChime(time, f));
+      chord.forEach((f) => {
+        this.playWarmChime(time, f);
+      });
     }
   }
 

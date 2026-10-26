@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import type React from 'react';
+import { useState } from 'react';
 import {
   Star,
   Lock,
@@ -10,11 +11,11 @@ import {
   ArrowLeft,
   Home,
   RotateCcw,
-  AlertTriangle,
 } from 'lucide-react';
-import { Sector, Stage, StageProgress } from '../types/game';
+import type { Screen, Stage, StageProgress } from '../types/game';
+import { closeLabel, flightDeckLabel } from './closeLabel';
 import { CURRICULUM_SECTORS } from '../data/curriculum';
-import { isSectorUnlocked } from '../utils/storage';
+import { isSectorUnlocked } from '../game/profile';
 
 interface StageSelectModalProps {
   stagesProgress: Record<string, StageProgress>;
@@ -26,7 +27,10 @@ interface StageSelectModalProps {
   onOpenHangar: () => void;
   onOpenAnalytics: () => void;
   onWipeAchievements: () => void;
-  sourceState?: 'MENU' | 'PLAYING' | 'VICTORY' | 'PAUSED' | 'STAGE_SELECT';
+  /** The screen Close returns to. */
+  opener?: Screen | null;
+  /** A paused Run is waiting, so the Flight Deck button resumes it. */
+  runPaused?: boolean;
   onReturnToDebrief?: () => void;
   onReturnToMenu?: () => void;
 }
@@ -41,7 +45,8 @@ export const StageSelectModal: React.FC<StageSelectModalProps> = ({
   onOpenHangar,
   onOpenAnalytics,
   onWipeAchievements,
-  sourceState = 'MENU',
+  opener = null,
+  runPaused = false,
   onReturnToDebrief,
   onReturnToMenu,
 }) => {
@@ -57,7 +62,7 @@ export const StageSelectModal: React.FC<StageSelectModalProps> = ({
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
+    <div className="fixed inset-x-0 bottom-0 top-[var(--header-height,0px)] z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
       <div className="w-full max-w-5xl rounded-2xl border border-slate-800 bg-slate-900 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         {/* Top Header Bar */}
         <div className="flex flex-wrap items-center justify-between gap-4 p-4 sm:p-6 border-b border-slate-800 bg-slate-950/70">
@@ -91,6 +96,7 @@ export const StageSelectModal: React.FC<StageSelectModalProps> = ({
 
               {(totalStars > 0 || Object.keys(stagesProgress).length > 0) && (
                 <button
+                  type="button"
                   onClick={() => setShowWipeConfirm(true)}
                   title="Wipe curriculum achievements and reset stars to 0 for the classical touch-typing curriculum"
                   className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-rose-900/60 bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 hover:text-white text-xs font-mono transition-all cursor-pointer shadow-sm"
@@ -114,29 +120,33 @@ export const StageSelectModal: React.FC<StageSelectModalProps> = ({
 
             <div className="flex items-center gap-2">
               <button
+                type="button"
                 onClick={onOpenHangar}
                 className="px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700 transition-colors whitespace-nowrap cursor-pointer"
               >
                 Hangar Upgrades
               </button>
               <button
+                type="button"
                 onClick={onOpenAnalytics}
                 className="px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700 transition-colors whitespace-nowrap cursor-pointer"
               >
                 Report
               </button>
 
-              {sourceState === 'VICTORY' ? (
+              {opener === 'debrief' ? (
                 <div className="flex items-center gap-1.5">
                   <button
+                    type="button"
                     onClick={onReturnToDebrief || onClose}
                     className="px-3 py-1.5 text-xs font-medium rounded-lg border border-cyan-500/50 bg-cyan-950/50 text-cyan-300 hover:bg-cyan-900/60 transition-colors flex items-center gap-1 cursor-pointer whitespace-nowrap"
                   >
                     <ArrowLeft className="w-3.5 h-3.5" />
-                    <span>Debriefing</span>
+                    <span>{closeLabel(opener)}</span>
                   </button>
                   {onReturnToMenu && (
                     <button
+                      type="button"
                       onClick={onReturnToMenu}
                       className="px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-700 bg-slate-800 text-slate-300 hover:text-white transition-colors flex items-center gap-1 cursor-pointer whitespace-nowrap"
                     >
@@ -149,20 +159,18 @@ export const StageSelectModal: React.FC<StageSelectModalProps> = ({
                 <div className="flex items-center gap-1.5">
                   {onGoToFlightDeck && (
                     <button
+                      type="button"
                       onClick={onGoToFlightDeck}
                       className="px-3 py-1.5 text-xs font-bold rounded-lg bg-cyan-400 hover:bg-cyan-300 text-slate-950 transition-all flex items-center gap-1 cursor-pointer shadow-sm shadow-cyan-950 whitespace-nowrap"
                       title="Launch directly into the cockpit flight deck"
                     >
                       <Play className="w-3.5 h-3.5 fill-current" />
-                      <span>
-                        {sourceState === 'PLAYING'
-                          ? 'Resume Flight'
-                          : 'Enter Flight Deck'}
-                      </span>
+                      <span>{flightDeckLabel(runPaused)}</span>
                     </button>
                   )}
-                  {onReturnToMenu && sourceState !== 'MENU' && (
+                  {onReturnToMenu && opener !== 'academy-home' && (
                     <button
+                      type="button"
                       onClick={onReturnToMenu}
                       className="px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-700 bg-slate-800 text-slate-300 hover:text-white transition-colors flex items-center gap-1 cursor-pointer whitespace-nowrap"
                     >
@@ -171,10 +179,11 @@ export const StageSelectModal: React.FC<StageSelectModalProps> = ({
                     </button>
                   )}
                   <button
+                    type="button"
                     onClick={onClose}
                     className="px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-700 bg-slate-800 text-slate-300 hover:text-white transition-colors cursor-pointer"
                   >
-                    Close
+                    {closeLabel(opener)}
                   </button>
                 </div>
               )}
@@ -191,10 +200,7 @@ export const StageSelectModal: React.FC<StageSelectModalProps> = ({
             </span>
 
             {CURRICULUM_SECTORS.map((sector) => {
-              const { unlocked, starsRemaining: remaining } = isSectorUnlocked(
-                sector.id,
-                totalStars,
-              );
+              const { unlocked } = isSectorUnlocked(sector.id, totalStars);
               const isSelected = sector.id === selectedSectorId;
 
               // Calculate stars earned in this sector
@@ -205,6 +211,7 @@ export const StageSelectModal: React.FC<StageSelectModalProps> = ({
 
               return (
                 <button
+                  type="button"
                   key={sector.id}
                   onClick={() => setSelectedSectorId(sector.id)}
                   className={`w-full text-left p-3 rounded-xl border transition-all flex items-center justify-between cursor-pointer ${
@@ -284,8 +291,8 @@ export const StageSelectModal: React.FC<StageSelectModalProps> = ({
                 <div className="flex items-center gap-2 p-3 rounded-lg border border-amber-500/40 bg-amber-950/30 text-amber-300 text-xs font-medium">
                   <Lock className="w-4 h-4 shrink-0 text-amber-400" />
                   <span>
-                    Sector Locked. Earn {starsRemaining} more stars to open warp
-                    gates.
+                    Sector Locked. Earn {starsRemaining} more stars to unlock
+                    this Sector.
                   </span>
                 </div>
               )}
@@ -423,6 +430,7 @@ export const StageSelectModal: React.FC<StageSelectModalProps> = ({
 
                     {/* Launch Mission Button */}
                     <button
+                      type="button"
                       disabled={!isCurrentUnlocked}
                       onClick={() => onSelectStage(stage)}
                       className={`w-full py-2.5 px-4 rounded-lg font-medium text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer ${
@@ -485,12 +493,14 @@ export const StageSelectModal: React.FC<StageSelectModalProps> = ({
 
             <div className="flex items-center gap-3">
               <button
+                type="button"
                 onClick={() => setShowWipeConfirm(false)}
                 className="flex-1 py-2.5 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition-colors cursor-pointer"
               >
                 Cancel
               </button>
               <button
+                type="button"
                 onClick={() => {
                   onWipeAchievements();
                   setSelectedSectorId('sector-1');

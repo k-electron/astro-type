@@ -1,4 +1,4 @@
-import React from 'react';
+import type React from 'react';
 import {
   Shield,
   Zap,
@@ -8,20 +8,29 @@ import {
   Check,
   Play,
 } from 'lucide-react';
-import { ShipUpgrades, TrailColorTheme, AudioSynthCore } from '../types/game';
-import { UPGRADE_CATALOG } from '../utils/storage';
+import type {
+  ShipUpgrades,
+  TrailColorTheme,
+  AudioSynthCore,
+  Screen,
+} from '../types/game';
+import { closeLabel, flightDeckLabel } from './closeLabel';
+import { UPGRADE_CATALOG } from '../game/profile';
 
 interface HangarUpgradesModalProps {
   upgrades: ShipUpgrades;
   totalCredits: number;
-  onUpgradeShields: (cost: number) => void;
-  onUpgradeReactor: (cost: number) => void;
-  onUpgradeSensors: (cost: number) => void;
+  onUpgradeShields: () => void;
+  onUpgradeReactor: () => void;
+  onUpgradeSensors: () => void;
   onUnlockOrEquipTheme: (themeId: TrailColorTheme, cost: number) => void;
   onUnlockOrEquipAudio: (coreId: AudioSynthCore, cost: number) => void;
   onClose: () => void;
   onGoToFlightDeck: () => void;
-  sourceState?: 'MENU' | 'PLAYING' | 'VICTORY' | 'STAGE_SELECT';
+  /** The screen Close returns to. */
+  opener?: Screen | null;
+  /** A paused Run is waiting, so the Flight Deck button resumes it. */
+  runPaused?: boolean;
 }
 
 export const HangarUpgradesModal: React.FC<HangarUpgradesModalProps> = ({
@@ -34,7 +43,8 @@ export const HangarUpgradesModal: React.FC<HangarUpgradesModalProps> = ({
   onUnlockOrEquipAudio,
   onClose,
   onGoToFlightDeck,
-  sourceState = 'MENU',
+  opener = null,
+  runPaused = false,
 }) => {
   const nextShield =
     UPGRADE_CATALOG.deflectorShields[upgrades.deflectorShields];
@@ -44,7 +54,7 @@ export const HangarUpgradesModal: React.FC<HangarUpgradesModalProps> = ({
     UPGRADE_CATALOG.precisionSensors[upgrades.precisionSensors];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
+    <div className="fixed inset-x-0 bottom-0 top-[var(--header-height,0px)] z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
       <div className="w-full max-w-4xl rounded-2xl border border-slate-800 bg-slate-900 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
         <div className="flex flex-wrap items-center justify-between gap-3 p-4 sm:p-6 border-b border-slate-800 bg-slate-950/70">
@@ -70,30 +80,22 @@ export const HangarUpgradesModal: React.FC<HangarUpgradesModalProps> = ({
 
             {/* Direct Flight Deck Button (Always reliable: resumes flight or launches flight deck) */}
             <button
+              type="button"
               onClick={onGoToFlightDeck}
               className="px-3.5 py-1.5 text-xs font-bold rounded-lg bg-cyan-400 hover:bg-cyan-300 text-slate-950 transition-all flex items-center gap-1.5 cursor-pointer shadow-md shadow-cyan-950/60"
               title="Launch directly into the cockpit flight deck"
             >
               <Play className="w-3.5 h-3.5 fill-current" />
-              <span>
-                {sourceState === 'PLAYING'
-                  ? 'Resume Flight'
-                  : 'Enter Flight Deck'}
-              </span>
+              <span>{flightDeckLabel(runPaused)}</span>
             </button>
 
             {/* Context-Aware Return Button */}
             <button
+              type="button"
               onClick={onClose}
               className="px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer"
             >
-              {sourceState === 'STAGE_SELECT'
-                ? 'Back to Sectors'
-                : sourceState === 'VICTORY'
-                  ? 'Back to Debriefing'
-                  : sourceState === 'PLAYING'
-                    ? 'Pause Menu'
-                    : 'Back to Academy'}
+              {closeLabel(opener)}
             </button>
           </div>
         </div>
@@ -122,8 +124,8 @@ export const HangarUpgradesModal: React.FC<HangarUpgradesModalProps> = ({
                     </span>
                   </div>
                   <p className="text-xs text-slate-400 mb-3">
-                    Absorbs typing error keystrokes without breaking combo
-                    streak or multiplier.
+                    Absorbs typing error keystrokes without breaking your Streak
+                    or Multiplier.
                   </p>
                   <div className="flex items-center gap-1.5 mb-4">
                     {[1, 2, 3].map((lvl) => (
@@ -141,8 +143,9 @@ export const HangarUpgradesModal: React.FC<HangarUpgradesModalProps> = ({
 
                 {nextShield ? (
                   <button
+                    type="button"
                     disabled={totalCredits < nextShield.cost}
-                    onClick={() => onUpgradeShields(nextShield.cost)}
+                    onClick={() => onUpgradeShields()}
                     className={`w-full py-2 px-3 rounded-lg text-xs font-medium font-mono flex items-center justify-between transition-colors ${
                       totalCredits >= nextShield.cost
                         ? 'bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold'
@@ -159,14 +162,14 @@ export const HangarUpgradesModal: React.FC<HangarUpgradesModalProps> = ({
                 )}
               </div>
 
-              {/* Hyperdrive Reactor */}
+              {/* Overdrive Reactor */}
               <div className="p-4 rounded-xl border border-slate-800 bg-slate-950/60 flex flex-col justify-between">
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2 text-amber-400">
                       <Zap className="w-4 h-4" />
                       <span className="font-bold text-sm text-white">
-                        Hyperdrive Reactor
+                        Overdrive Reactor
                       </span>
                     </div>
                     <span className="text-xs font-mono text-amber-400">
@@ -174,8 +177,8 @@ export const HangarUpgradesModal: React.FC<HangarUpgradesModalProps> = ({
                     </span>
                   </div>
                   <p className="text-xs text-slate-400 mb-3">
-                    Accelerates Overdrive energy charging rate so you trigger
-                    Hyperspace 4x mode faster.
+                    Speeds up how fast the Overdrive meter fills, so Overdrive
+                    starts sooner.
                   </p>
                   <div className="flex items-center gap-1.5 mb-4">
                     {[1, 2, 3].map((lvl) => (
@@ -193,8 +196,9 @@ export const HangarUpgradesModal: React.FC<HangarUpgradesModalProps> = ({
 
                 {nextReactor ? (
                   <button
+                    type="button"
                     disabled={totalCredits < nextReactor.cost}
-                    onClick={() => onUpgradeReactor(nextReactor.cost)}
+                    onClick={() => onUpgradeReactor()}
                     className={`w-full py-2 px-3 rounded-lg text-xs font-medium font-mono flex items-center justify-between transition-colors ${
                       totalCredits >= nextReactor.cost
                         ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold'
@@ -245,8 +249,9 @@ export const HangarUpgradesModal: React.FC<HangarUpgradesModalProps> = ({
 
                 {nextSensor ? (
                   <button
+                    type="button"
                     disabled={totalCredits < nextSensor.cost}
-                    onClick={() => onUpgradeSensors(nextSensor.cost)}
+                    onClick={() => onUpgradeSensors()}
                     className={`w-full py-2 px-3 rounded-lg text-xs font-medium font-mono flex items-center justify-between transition-colors ${
                       totalCredits >= nextSensor.cost
                         ? 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold'
@@ -306,6 +311,7 @@ export const HangarUpgradesModal: React.FC<HangarUpgradesModalProps> = ({
                     </div>
 
                     <button
+                      type="button"
                       disabled={!isUnlocked && totalCredits < theme.cost}
                       onClick={() => onUnlockOrEquipTheme(theme.id, theme.cost)}
                       className={`w-full py-1.5 px-2 rounded-lg text-[11px] font-mono transition-colors ${
@@ -372,6 +378,7 @@ export const HangarUpgradesModal: React.FC<HangarUpgradesModalProps> = ({
                     </div>
 
                     <button
+                      type="button"
                       disabled={!isUnlocked && totalCredits < core.cost}
                       onClick={() => onUnlockOrEquipAudio(core.id, core.cost)}
                       className={`w-full py-1.5 px-2 rounded-lg text-[11px] font-mono transition-colors ${

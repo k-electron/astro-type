@@ -1,20 +1,17 @@
-import React from 'react';
+import type React from 'react';
 import { Shield, Zap, Pause } from 'lucide-react';
-import { LivePerformance } from '../types/game';
+import { useShallow } from 'zustand/react/shallow';
+import { useGame } from '../store/gameContext';
+import { overdriveScoreFactor } from '../game/rules';
+import { useGameStore } from '../store/useGameStore';
 
 interface HUDProps {
-  performance: LivePerformance;
   onPause: () => void;
-  onToggleKeyboard: () => void;
-  keyboardVisible: boolean;
 }
 
-export const HUD: React.FC<HUDProps> = ({
-  performance,
-  onPause,
-  onToggleKeyboard,
-  keyboardVisible,
-}) => {
+/** The readouts above the deck. It reads only the fields it shows, so it re-renders when one of them changes. */
+export const HUD: React.FC<HUDProps> = ({ onPause }) => {
+  const game = useGame();
   const {
     score,
     currentStreak,
@@ -24,10 +21,29 @@ export const HUD: React.FC<HUDProps> = ({
     shieldsRemaining,
     netWpm,
     accuracy,
-  } = performance;
+    cadence,
+    keyboardVisible,
+  } = useGameStore(
+    useShallow((state) => ({
+      score: state.performance.score,
+      currentStreak: state.performance.currentStreak,
+      multiplier: state.performance.multiplier,
+      hyperspaceActive: state.performance.hyperspaceActive,
+      hyperspaceEnergy: state.performance.hyperspaceEnergy,
+      shieldsRemaining: state.performance.shieldsRemaining,
+      netWpm: state.performance.netWpm,
+      accuracy: state.performance.accuracy,
+      cadence: state.performance.cadenceConsistency ?? 100,
+      keyboardVisible: state.profile.keyboardVisible,
+    })),
+  );
+  const onToggleKeyboard = game.store.getState().toggleKeyboard;
 
   return (
-    <div className="w-full h-14 flex items-center justify-between gap-2 sm:gap-4 px-3 sm:px-4 rounded-xl border border-slate-800 bg-slate-900/90 shadow-lg backdrop-blur-md shrink-0 overflow-hidden">
+    <section
+      aria-label="HUD"
+      className="w-full h-14 flex items-center justify-between gap-2 sm:gap-4 px-3 sm:px-4 rounded-xl border border-slate-800 bg-slate-900/90 shadow-lg backdrop-blur-md shrink-0 overflow-hidden"
+    >
       {/* Left: Score & Multiplier */}
       <div className="flex items-center gap-3 sm:gap-5 shrink-0">
         <div>
@@ -35,7 +51,7 @@ export const HUD: React.FC<HUDProps> = ({
             Score
           </span>
           <span className="text-lg sm:text-xl font-bold font-mono tabular-nums text-white leading-none">
-            {(score ?? 0).toLocaleString()}
+            {score.toLocaleString()}
           </span>
         </div>
 
@@ -50,13 +66,15 @@ export const HUD: React.FC<HUDProps> = ({
                   : 'border-slate-800 bg-slate-950 text-slate-400'
             }`}
           >
-            {hyperspaceActive ? 'OVERDRIVE x4' : `x${multiplier}`}
+            {hyperspaceActive
+              ? `OVERDRIVE x${overdriveScoreFactor(multiplier)}`
+              : `x${multiplier}`}
           </div>
 
           {/* Overdrive Energy Meter */}
           <div className="hidden sm:flex flex-col gap-0.5">
             <span className="text-[8px] uppercase font-mono text-slate-500 leading-none">
-              Warp Energy
+              Overdrive Meter
             </span>
             <div className="w-16 sm:w-20 h-1.5 rounded bg-slate-800 overflow-hidden border border-slate-700/60">
               <div
@@ -125,27 +143,23 @@ export const HUD: React.FC<HUDProps> = ({
           <div className="flex items-center gap-1.5 mt-0.5">
             <span
               className={`w-2 h-2 rounded-full ${
-                (performance.cadenceConsistency ?? 100) >= 85
+                cadence >= 85
                   ? 'bg-emerald-400 shadow-[0_0_8px_#34d399] animate-pulse'
-                  : (performance.cadenceConsistency ?? 100) >= 70
+                  : cadence >= 70
                     ? 'bg-cyan-400 shadow-[0_0_8px_#38bdf8]'
                     : 'bg-amber-400'
               }`}
             />
             <span
               className={`text-xs font-mono font-bold leading-none ${
-                (performance.cadenceConsistency ?? 100) >= 85
+                cadence >= 85
                   ? 'text-emerald-300'
-                  : (performance.cadenceConsistency ?? 100) >= 70
+                  : cadence >= 70
                     ? 'text-cyan-300'
                     : 'text-amber-300'
               }`}
             >
-              {(performance.cadenceConsistency ?? 100) >= 85
-                ? 'Steady'
-                : (performance.cadenceConsistency ?? 100) >= 70
-                  ? 'Paced'
-                  : 'Uneven'}
+              {cadence >= 85 ? 'Steady' : cadence >= 70 ? 'Paced' : 'Uneven'}
             </span>
           </div>
         </div>
@@ -166,6 +180,7 @@ export const HUD: React.FC<HUDProps> = ({
       {/* Right: Flight Deck Navigation Controls */}
       <div className="flex items-center gap-2 shrink-0">
         <button
+          type="button"
           onClick={onToggleKeyboard}
           className={`px-2.5 py-1 text-xs font-medium rounded-md border transition-colors whitespace-nowrap cursor-pointer ${
             keyboardVisible
@@ -178,6 +193,7 @@ export const HUD: React.FC<HUDProps> = ({
         </button>
 
         <button
+          type="button"
           onClick={onPause}
           className="flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-md border border-slate-800 bg-slate-950 text-slate-300 hover:bg-slate-800 transition-colors whitespace-nowrap cursor-pointer"
         >
@@ -185,6 +201,6 @@ export const HUD: React.FC<HUDProps> = ({
           <span>Pause</span>
         </button>
       </div>
-    </div>
+    </section>
   );
 };

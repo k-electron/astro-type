@@ -1,50 +1,70 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import {
   CURRICULUM_SECTORS,
   getNextStage,
-  getNoteLaneAndFinger,
+  getStageById,
 } from './data/curriculum';
 import { soundEngine } from './audio/soundEngine';
 import { HeaderNav } from './components/HeaderNav';
 import { HUD } from './components/HUD';
 import { TextPromptStream } from './components/TextPromptStream';
-import { IntegratedLanesKeyboard } from './components/IntegratedLanesKeyboard';
 import { StageSelectModal } from './components/StageSelectModal';
 import { HangarUpgradesModal } from './components/HangarUpgradesModal';
 import { AnalyticsModal } from './components/AnalyticsModal';
+import { PixiActionDeck } from './components/pixi-deck/PixiActionDeck';
 import { CustomPracticeModal } from './components/CustomPracticeModal';
 import { LevelCompleteModal } from './components/LevelCompleteModal';
 import { GlobalCosmicBackground } from './components/GlobalCosmicBackground';
+import { useGame } from './store/gameContext';
+import { useShallow } from 'zustand/react/shallow';
 import { useGameStore } from './store/useGameStore';
+import { useOpener, useRunPhase, useScreen } from './store/useGameScreen';
 import { Play, RotateCcw } from 'lucide-react';
 
+/**
+ * The starfield behind everything. It reads the two fields that speed it up
+ * itself, so a change to either re-renders only the starfield, not the app.
+ */
+function CosmicBackdrop({ onFlightDeck }: { onFlightDeck: boolean }) {
+  const { hyperspaceActive, multiplier } = useGameStore(
+    useShallow((state) => ({
+      hyperspaceActive: state.performance.hyperspaceActive,
+      multiplier: state.performance.multiplier,
+    })),
+  );
+  return (
+    <GlobalCosmicBackground
+      hyperspaceActive={onFlightDeck && hyperspaceActive}
+      multiplier={onFlightDeck ? multiplier : 1}
+    />
+  );
+}
+
 export default function App() {
+  const game = useGame();
+  const screen = useScreen();
+  const phase = useRunPhase();
+  const opener = useOpener();
+  const runPaused = phase === 'paused';
+  const { send } = game;
+
+  // App reads only what it shows itself. The Run's moving fields (Drones,
+  // score, Streak, the typed index) belong to the deck, the HUD and the text
+  // prompt, which read them on their own.
+  const currentStage = useGameStore((state) => state.currentStage);
+  const profile = useGameStore((state) => state.profile);
+  const loadNotice = useGameStore((state) => state.loadNotice);
+  const victoryResult = useGameStore((state) => state.victoryResult);
+  // The store's actions never change, so reading them off the store is stable.
   const {
-    gameState,
-    currentStage,
-    profile,
-    performance,
-    activeLaneIndex,
-    lastPressedKey,
-    errorIndices,
-    fallingNotes,
-    victoryResult,
-    setGameState,
-    startStage,
     processKeystroke,
     releaseKeystroke,
-    updateFallingNotesOnTick,
-    updateTelemetryOnInterval,
-    launchNextStage,
     toggleGlobalMute,
     toggleSound,
     toggleMusic,
     setSoundVolume,
     setMusicVolume,
     setBeatTheme,
-    cycleBeatTheme,
-    toggleKeyboard,
-    toggleHands,
     upgradeShields,
     upgradeReactor,
     upgradeSensors,
@@ -53,57 +73,7 @@ export default function App() {
     importProfile,
     wipeCurriculumAchievements,
     resetProgress,
-  } = useGameStore();
-
-  // Track the source screen before opening modal to guarantee clean return navigation
-  const [modalSourceState, setModalSourceState] = useState<
-    'MENU' | 'PLAYING' | 'VICTORY' | 'STAGE_SELECT'
-  >('MENU');
-
-  const goToFlightDeck = () => {
-    // If a mission was in progress and incomplete, resume it!
-    if (
-      currentStage &&
-      currentStage.sampleText.length > 0 &&
-      performance.currentCharIndex < currentStage.sampleText.length &&
-      victoryResult === null
-    ) {
-      setGameState('PLAYING');
-      if (
-        profile.musicEnabled &&
-        !profile.globalMuted &&
-        (profile.musicVolume ?? 0.4) > 0
-      ) {
-        soundEngine.startBeat();
-      }
-    } else {
-      // Start current stage or default stage fresh
-      startStage(currentStage || CURRICULUM_SECTORS[0].stages[0]);
-    }
-  };
-
-  const openModal = (
-    target: 'STAGE_SELECT' | 'HANGAR' | 'ANALYTICS' | 'CUSTOM_PRACTICE',
-  ) => {
-    if (gameState === 'VICTORY') {
-      setModalSourceState('VICTORY');
-    } else if (gameState === 'PLAYING') {
-      soundEngine.stopBeat();
-      setModalSourceState('PLAYING');
-    } else if (gameState === 'STAGE_SELECT') {
-      setModalSourceState('STAGE_SELECT');
-    } else {
-      setModalSourceState('MENU');
-    }
-    setGameState(target);
-  };
-
-  useEffect(() => {
-    (window as any).__astrotype = {
-      useGameStore,
-      CURRICULUM_SECTORS,
-    };
-  }, []);
+  } = game.store.getState();
 
   // Synchronize audio engine with current profile settings
   useEffect(() => {
@@ -124,73 +94,34 @@ export default function App() {
     profile.upgrades.equippedAudioCore,
   ]);
 
-  // Defensive guard against zombie flight deck: if gameState is PLAYING but stage was already completed, safely route to VICTORY or MENU
-  useEffect(() => {
-    if (
-      gameState === 'PLAYING' &&
-      currentStage.sampleText.length > 0 &&
-      performance.currentCharIndex >= currentStage.sampleText.length
-    ) {
-      soundEngine.stopBeat();
-      soundEngine.setOverdrive(false);
-      if (victoryResult) {
-        setGameState('VICTORY');
-      } else {
-        setGameState('MENU');
-      }
-    }
-  }, [
-    gameState,
-    performance.currentCharIndex,
-    currentStage.sampleText.length,
-    victoryResult,
-    setGameState,
-  ]);
-
-  // Falling Notes Highway Motion & Conveyor Loop (60 FPS)
-  useEffect(() => {
-    if (gameState !== 'PLAYING') return;
-
-    const interval = setInterval(() => {
-      updateFallingNotesOnTick();
-    }, 1000 / 60);
-
-    return () => clearInterval(interval);
-  }, [gameState, updateFallingNotesOnTick]);
-
-  // Live WPM and accuracy calculation timer (every 500ms)
-  useEffect(() => {
-    if (gameState !== 'PLAYING') return;
-
-    const interval = setInterval(() => {
-      updateTelemetryOnInterval();
-    }, 500);
-
-    return () => clearInterval(interval);
-  }, [gameState, updateTelemetryOnInterval]);
-
   // Main Keystroke Handler (Active touch-typing listener with down/up press duration tracking)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (gameState !== 'PLAYING') return;
-
-      // Ignore functional modifier keystrokes alone
-      if (
-        ['Shift', 'Control', 'Alt', 'Meta', 'CapsLock', 'Tab'].includes(e.key)
-      ) {
+      // Esc is a player event on every screen; the machine decides what it
+      // means there. It is never a keystroke. A header dropdown that took the
+      // Esc to close itself has already marked it handled.
+      if (e.key === 'Escape') {
+        if (!e.repeat && !e.defaultPrevented) send({ type: 'PRESS_ESC' });
         return;
       }
+
+      if (phase !== 'running') return;
 
       // Prevent Spacebar from scrolling the page
       if (e.key === ' ') {
         e.preventDefault();
       }
 
-      processKeystroke(e.key);
+      // A shortcut such as Cmd+R types nothing. (Ctrl with Alt is how some
+      // layouts type AltGr characters, so that pair still counts.)
+      if (e.metaKey || (e.ctrlKey && !e.altKey)) return;
+
+      // Which keys count, and dropping auto-repeat, is the game's call.
+      processKeystroke(e.key, { repeat: e.repeat });
     };
 
     const handleKeyUp = (e: KeyboardEvent) => {
-      if (gameState !== 'PLAYING') return;
+      if (phase !== 'running') return;
       releaseKeystroke(e.key);
     };
 
@@ -206,29 +137,34 @@ export default function App() {
       window.removeEventListener('keyup', handleKeyUp);
       window.removeEventListener('blur', handleBlur);
     };
-  }, [gameState, processKeystroke, releaseKeystroke]);
+  }, [phase, send, processKeystroke, releaseKeystroke]);
 
-  const activeChar =
-    currentStage.sampleText[performance.currentCharIndex] || null;
-  const previousChar =
-    performance.currentCharIndex > 0
-      ? currentStage.sampleText[performance.currentCharIndex - 1]
-      : null;
-  const nextChar =
-    performance.currentCharIndex + 1 < currentStage.sampleText.length
-      ? currentStage.sampleText[performance.currentCharIndex + 1]
-      : null;
-  const targetCharInfo = activeChar ? getNoteLaneAndFinger(activeChar) : null;
+  // Leaving the page (another window, another tab) is a player event: the
+  // machine pauses a running Run and ignores it anywhere else.
+  useEffect(() => {
+    const handleLostFocus = () => send({ type: 'LOST_FOCUS' });
+    const handleVisibility = () => {
+      if (document.visibilityState === 'hidden') handleLostFocus();
+    };
+    window.addEventListener('blur', handleLostFocus);
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => {
+      window.removeEventListener('blur', handleLostFocus);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, [send]);
+
+  // The Pause Menu takes focus itself, not a button, so a stray Enter or
+  // Space (typing on after a focus-loss pause) has nothing to activate.
+  const pauseMenuRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (screen === 'pause-menu') pauseMenuRef.current?.focus();
+  }, [screen]);
 
   return (
     <div className="relative min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-cyan-500/30 selection:text-cyan-200 overflow-x-hidden">
       {/* Global Cosmic Starfield Background: tranquil on home & modals; hyperwarp ONLY during active flight */}
-      <GlobalCosmicBackground
-        hyperspaceActive={
-          gameState === 'PLAYING' && performance.hyperspaceActive
-        }
-        multiplier={gameState === 'PLAYING' ? performance.multiplier : 1}
-      />
+      <CosmicBackdrop onFlightDeck={screen === 'flight-deck'} />
 
       {/* Strict Top Bar Contract */}
       <HeaderNav
@@ -248,28 +184,22 @@ export default function App() {
         onSetMusicVolume={setMusicVolume}
         onSetBeatTheme={setBeatTheme}
         onSetAudioCore={(core) => unlockOrEquipAudio(core, 0)}
-        onGoHome={() => {
-          soundEngine.stopBeat();
-          setGameState('MENU');
-        }}
-        onOpenStages={() => openModal('STAGE_SELECT')}
-        onOpenHangar={() => openModal('HANGAR')}
-        onOpenAnalytics={() => openModal('ANALYTICS')}
-        onOpenCustom={() => openModal('CUSTOM_PRACTICE')}
-        onQuickPlay={() => {
-          if (gameState === 'PLAYING') {
-            soundEngine.stopBeat();
-            setGameState('PAUSED');
-          } else {
-            goToFlightDeck();
-          }
-        }}
-        isPlaying={gameState === 'PLAYING'}
+        onGoHome={() => send({ type: 'PRESS_HOME' })}
+        onOpenStages={() => send({ type: 'OPEN_GALAXY_MAP' })}
+        onOpenHangar={() => send({ type: 'OPEN_HANGAR' })}
+        onOpenAnalytics={() => send({ type: 'OPEN_ANALYTICS' })}
+        onOpenCustom={() => send({ type: 'OPEN_FREE_FLIGHT' })}
+        onQuickPlay={() =>
+          send({
+            type: screen === 'flight-deck' ? 'PRESS_PAUSE' : 'PRESS_PLAY',
+          })
+        }
+        isPlaying={screen === 'flight-deck'}
       />
 
       {/* Main Game Screen */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-6 flex flex-col gap-4">
-        {gameState === 'MENU' ? (
+        {screen === 'academy-home' ? (
           /* Title Screen / Academy Briefing */
           <div className="flex-1 flex flex-col items-center justify-center text-center p-6 sm:p-12 max-w-3xl mx-auto my-auto">
             <div className="w-16 h-16 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(6,182,212,0.3)]">
@@ -290,35 +220,23 @@ export default function App() {
             </p>
 
             <div className="flex flex-wrap items-center justify-center gap-4 mb-10">
-              {performance.currentCharIndex > 0 &&
-                performance.currentCharIndex < currentStage.sampleText.length &&
-                !victoryResult && (
-                  <button
-                    onClick={goToFlightDeck}
-                    className="px-6 py-3.5 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-bold text-sm sm:text-base flex items-center gap-2 shadow-xl shadow-cyan-950 transition-all cursor-pointer"
-                  >
-                    <Play className="w-4 h-4 fill-current" />
-                    <span>Resume Flight Deck</span>
-                  </button>
-                )}
-
               <button
-                onClick={() => startStage(CURRICULUM_SECTORS[0].stages[0])}
-                className={`px-6 py-3.5 rounded-xl text-sm sm:text-base flex items-center gap-2 font-bold transition-all cursor-pointer ${
-                  performance.currentCharIndex > 0 &&
-                  performance.currentCharIndex <
-                    currentStage.sampleText.length &&
-                  !victoryResult
-                    ? 'border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-200'
-                    : 'bg-cyan-400 hover:bg-cyan-300 text-slate-950 shadow-xl shadow-cyan-950'
-                }`}
+                type="button"
+                onClick={() =>
+                  send({
+                    type: 'PICK_STAGE',
+                    stageId: CURRICULUM_SECTORS[0].stages[0].id,
+                  })
+                }
+                className="px-6 py-3.5 rounded-xl text-sm sm:text-base flex items-center gap-2 font-bold transition-all cursor-pointer bg-cyan-400 hover:bg-cyan-300 text-slate-950 shadow-xl shadow-cyan-950"
               >
                 <Play className="w-4 h-4 fill-current" />
                 <span>Begin Home Row Mission</span>
               </button>
 
               <button
-                onClick={() => openModal('STAGE_SELECT')}
+                type="button"
+                onClick={() => send({ type: 'OPEN_GALAXY_MAP' })}
                 className="px-6 py-3.5 rounded-xl border border-slate-700 bg-slate-900/80 hover:bg-slate-800 text-slate-200 font-medium text-sm sm:text-base transition-colors cursor-pointer"
               >
                 View Galaxy Sectors (7 Sectors)
@@ -334,12 +252,19 @@ export default function App() {
                 <span>·</span>
                 <span className="text-slate-400">Curriculum updated?</span>
                 <button
-                  onClick={() => openModal('STAGE_SELECT')}
+                  type="button"
+                  onClick={() => send({ type: 'OPEN_GALAXY_MAP' })}
                   className="text-rose-400 hover:text-rose-300 font-bold underline cursor-pointer ml-1"
                 >
                   Wipe Achievements & Replay
                 </button>
               </div>
+            )}
+
+            {loadNotice && (
+              <p role="status" className="mb-8 text-xs text-slate-500">
+                {loadNotice}
+              </p>
             )}
 
             {/* Feature Highlights Grid */}
@@ -359,8 +284,8 @@ export default function App() {
                   Rhythm Space Highway
                 </span>
                 <p className="text-xs text-slate-400">
-                  9-lane falling keystroke notes, PERFECT strike timing, combo
-                  multipliers, and Hyperspace warp drive.
+                  9-lane falling keystroke notes, PERFECT strike timing, Streak
+                  Multipliers, and Overdrive.
                 </p>
               </div>
 
@@ -379,56 +304,32 @@ export default function App() {
           /* Active Cockpit Flight Deck */
           <div className="flex-1 flex flex-col gap-4">
             {/* Top HUD Telemetry */}
-            <HUD
-              performance={performance}
-              onPause={() => {
-                soundEngine.stopBeat();
-                setGameState('PAUSED');
-              }}
-              onToggleKeyboard={toggleKeyboard}
-              keyboardVisible={profile.keyboardVisible}
-            />
+            <HUD onPause={() => send({ type: 'PRESS_PAUSE' })} />
 
             {/* Text Prompt Stream */}
-            <TextPromptStream
-              fullText={currentStage.sampleText}
-              currentIndex={performance.currentCharIndex}
-              errorIndices={errorIndices}
-              targetWpm={currentStage.targetWpm}
-              stageTitle={`${currentStage.title} · ${currentStage.subtitle}`}
-              techniqueTip={currentStage.techniqueTip}
-              focusFingers={currentStage.focusFingers}
-            />
+            <TextPromptStream />
 
             {/* Interactive Rhythm Keyboard Flight Deck */}
-            <IntegratedLanesKeyboard
-              notes={fallingNotes}
-              hyperspaceActive={performance.hyperspaceActive}
-              multiplier={performance.multiplier}
-              currentStreak={performance.currentStreak}
-              activeLaneIndex={activeLaneIndex}
-              targetLaneIndex={targetCharInfo ? targetCharInfo.lane : null}
-              timingFeedback={performance.timingFeedback}
-              timingFeedbackKey={performance.timingFeedbackKey}
-              lastHitDrone={performance.lastHitDrone}
-              trailTheme={profile.upgrades.equippedTrailTheme}
-              activeChar={activeChar}
-              previousChar={previousChar}
-              nextChar={nextChar}
-              lastPressedKey={lastPressedKey}
-              keyboardVisible={profile.keyboardVisible}
-              handsVisible={profile.handsVisible}
-              onToggleHands={toggleHands}
-            />
+            <PixiActionDeck />
           </div>
         )}
       </main>
 
       {/* Pause Menu Modal */}
-      {gameState === 'PAUSED' && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
-          <div className="w-full max-w-sm rounded-2xl border border-slate-800 bg-slate-900 shadow-2xl p-6 text-center">
-            <h3 className="text-xl font-bold font-display text-white mb-1">
+      {screen === 'pause-menu' && (
+        <div className="fixed inset-x-0 bottom-0 top-[var(--header-height,0px)] z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+          <div
+            ref={pauseMenuRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="pause-menu-title"
+            tabIndex={-1}
+            className="w-full max-w-sm rounded-2xl border border-slate-800 bg-slate-900 shadow-2xl p-6 text-center outline-none"
+          >
+            <h3
+              id="pause-menu-title"
+              className="text-xl font-bold font-display text-white mb-1"
+            >
               Mission Paused
             </h3>
             <p className="text-xs text-slate-400 mb-6">
@@ -437,23 +338,16 @@ export default function App() {
 
             <div className="flex flex-col gap-2.5">
               <button
-                onClick={() => {
-                  setGameState('PLAYING');
-                  if (
-                    profile.musicEnabled &&
-                    !profile.globalMuted &&
-                    (profile.musicVolume ?? 0.4) > 0
-                  ) {
-                    soundEngine.startBeat();
-                  }
-                }}
+                type="button"
+                onClick={() => send({ type: 'PRESS_RESUME' })}
                 className="w-full py-2.5 rounded-lg bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-bold text-xs font-mono transition-colors cursor-pointer"
               >
                 Resume Flight
               </button>
 
               <button
-                onClick={() => startStage(currentStage)}
+                type="button"
+                onClick={() => send({ type: 'PRESS_REPLAY' })}
                 className="w-full py-2.5 rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-mono transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
@@ -461,21 +355,16 @@ export default function App() {
               </button>
 
               <button
-                onClick={() => {
-                  soundEngine.stopBeat();
-                  setModalSourceState('MENU');
-                  setGameState('STAGE_SELECT');
-                }}
+                type="button"
+                onClick={() => send({ type: 'OPEN_GALAXY_MAP' })}
                 className="w-full py-2.5 rounded-lg border border-slate-800 bg-slate-950 text-slate-300 hover:text-white hover:bg-slate-800 text-xs font-mono transition-colors cursor-pointer"
               >
-                Exit to Galaxy Map
+                View Galaxy Map
               </button>
 
               <button
-                onClick={() => {
-                  soundEngine.stopBeat();
-                  setGameState('MENU');
-                }}
+                type="button"
+                onClick={() => send({ type: 'PRESS_HOME' })}
                 className="w-full py-2.5 rounded-lg border border-slate-800 bg-slate-950 text-slate-400 hover:text-slate-200 text-xs font-mono transition-colors cursor-pointer"
               >
                 Exit to Academy Home
@@ -486,58 +375,28 @@ export default function App() {
       )}
 
       {/* Stage Select Galaxy Modal */}
-      {gameState === 'STAGE_SELECT' && (
+      {screen === 'galaxy-map' && (
         <StageSelectModal
           stagesProgress={profile.stagesProgress}
           totalStars={profile.totalStars}
           totalCredits={profile.totalCredits}
-          sourceState={modalSourceState}
-          onSelectStage={(stage) => startStage(stage)}
-          onGoToFlightDeck={goToFlightDeck}
-          onReturnToDebrief={() => {
-            soundEngine.stopBeat();
-            setGameState('VICTORY');
-          }}
-          onReturnToMenu={() => {
-            soundEngine.stopBeat();
-            setGameState('MENU');
-          }}
-          onClose={() => {
-            if (modalSourceState === 'MENU') {
-              soundEngine.stopBeat();
-              setGameState('MENU');
-            } else if (
-              modalSourceState === 'VICTORY' ||
-              performance.currentCharIndex >= currentStage.sampleText.length ||
-              victoryResult !== null
-            ) {
-              soundEngine.stopBeat();
-              setGameState('VICTORY');
-            } else {
-              setGameState('PLAYING');
-              if (
-                profile.musicEnabled &&
-                !profile.globalMuted &&
-                (profile.musicVolume ?? 0.4) > 0
-              ) {
-                soundEngine.startBeat();
-              }
-            }
-          }}
-          onOpenHangar={() => {
-            setModalSourceState('STAGE_SELECT');
-            setGameState('HANGAR');
-          }}
-          onOpenAnalytics={() => {
-            setModalSourceState('STAGE_SELECT');
-            setGameState('ANALYTICS');
-          }}
+          opener={opener}
+          runPaused={runPaused}
+          onSelectStage={(stage) =>
+            send({ type: 'PICK_STAGE', stageId: stage.id })
+          }
+          onGoToFlightDeck={() => send({ type: 'PRESS_PLAY' })}
+          onReturnToDebrief={() => send({ type: 'PRESS_CLOSE' })}
+          onReturnToMenu={() => send({ type: 'PRESS_HOME' })}
+          onClose={() => send({ type: 'PRESS_CLOSE' })}
+          onOpenHangar={() => send({ type: 'OPEN_HANGAR' })}
+          onOpenAnalytics={() => send({ type: 'OPEN_ANALYTICS' })}
           onWipeAchievements={wipeCurriculumAchievements}
         />
       )}
 
       {/* Hangar Upgrades Modal */}
-      {gameState === 'HANGAR' && (
+      {screen === 'hangar' && (
         <HangarUpgradesModal
           upgrades={profile.upgrades}
           totalCredits={profile.totalCredits}
@@ -546,49 +405,21 @@ export default function App() {
           onUpgradeSensors={upgradeSensors}
           onUnlockOrEquipTheme={unlockOrEquipTheme}
           onUnlockOrEquipAudio={unlockOrEquipAudio}
-          sourceState={modalSourceState}
-          onGoToFlightDeck={goToFlightDeck}
-          onClose={() => {
-            if (modalSourceState === 'MENU') setGameState('MENU');
-            else if (modalSourceState === 'VICTORY') setGameState('VICTORY');
-            else if (modalSourceState === 'STAGE_SELECT')
-              setGameState('STAGE_SELECT');
-            else if (modalSourceState === 'PLAYING') {
-              setGameState('PLAYING');
-              if (
-                profile.musicEnabled &&
-                !profile.globalMuted &&
-                (profile.musicVolume ?? 0.4) > 0
-              ) {
-                soundEngine.startBeat();
-              }
-            } else setGameState('MENU');
-          }}
+          opener={opener}
+          runPaused={runPaused}
+          onGoToFlightDeck={() => send({ type: 'PRESS_PLAY' })}
+          onClose={() => send({ type: 'PRESS_CLOSE' })}
         />
       )}
 
       {/* Performance Analytics & Heatmap Modal */}
-      {gameState === 'ANALYTICS' && (
+      {screen === 'analytics' && (
         <AnalyticsModal
           profile={profile}
-          sourceState={modalSourceState}
-          onGoToFlightDeck={goToFlightDeck}
-          onClose={() => {
-            if (modalSourceState === 'MENU') setGameState('MENU');
-            else if (modalSourceState === 'VICTORY') setGameState('VICTORY');
-            else if (modalSourceState === 'STAGE_SELECT')
-              setGameState('STAGE_SELECT');
-            else if (modalSourceState === 'PLAYING') {
-              setGameState('PLAYING');
-              if (
-                profile.musicEnabled &&
-                !profile.globalMuted &&
-                (profile.musicVolume ?? 0.4) > 0
-              ) {
-                soundEngine.startBeat();
-              }
-            } else setGameState('MENU');
-          }}
+          opener={opener}
+          runPaused={runPaused}
+          onGoToFlightDeck={() => send({ type: 'PRESS_PLAY' })}
+          onClose={() => send({ type: 'PRESS_CLOSE' })}
           onImportProfile={importProfile}
           onWipeAchievements={wipeCurriculumAchievements}
           onResetProgress={resetProgress}
@@ -596,50 +427,34 @@ export default function App() {
       )}
 
       {/* Custom Practice / Free Flight Modal */}
-      {gameState === 'CUSTOM_PRACTICE' && (
+      {screen === 'free-flight' && (
         <CustomPracticeModal
           initialSpeed={profile.highwaySpeed}
-          onStartCustom={(customStage, speed) => {
-            startStage(customStage, speed);
-          }}
-          onClose={() => {
-            if (modalSourceState === 'PLAYING') {
-              setGameState('PLAYING');
-              if (
-                profile.musicEnabled &&
-                !profile.globalMuted &&
-                (profile.musicVolume ?? 0.4) > 0
-              ) {
-                soundEngine.startBeat();
-              }
-            } else if (modalSourceState === 'STAGE_SELECT') {
-              setGameState('STAGE_SELECT');
-            } else {
-              setGameState('MENU');
-            }
-          }}
+          onStartCustom={(stage, speed) =>
+            send({ type: 'LAUNCH_FREE_FLIGHT', stage, speed })
+          }
+          opener={opener}
+          onClose={() => send({ type: 'PRESS_CLOSE' })}
         />
       )}
 
       {/* Victory / Level Complete Modal */}
-      {gameState === 'VICTORY' && victoryResult && (
+      {screen === 'debrief' && victoryResult && (
         <LevelCompleteModal
           stage={currentStage}
           result={victoryResult}
           totalStars={profile.totalStars}
           totalCredits={profile.totalCredits}
-          hasUnlockedNextSector={victoryResult.newStarsAwarded > 0}
+          hasUnlockedNextSector={victoryResult.unlockedSector}
           hasNextStage={Boolean(getNextStage(currentStage.id))}
-          onReplay={() => startStage(currentStage)}
-          onNextStage={launchNextStage}
-          onReturnToMap={() => {
-            setModalSourceState('VICTORY');
-            setGameState('STAGE_SELECT');
-          }}
-          onReturnToMenu={() => {
-            soundEngine.stopBeat();
-            setGameState('MENU');
-          }}
+          isLastStage={
+            getStageById(currentStage.id) !== undefined &&
+            !getNextStage(currentStage.id)
+          }
+          onReplay={() => send({ type: 'PRESS_REPLAY' })}
+          onNextStage={() => send({ type: 'PRESS_NEXT_STAGE' })}
+          onReturnToMap={() => send({ type: 'OPEN_GALAXY_MAP' })}
+          onReturnToMenu={() => send({ type: 'PRESS_HOME' })}
         />
       )}
     </div>

@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
-import { Play, Sparkles, Sliders } from 'lucide-react';
-import { Stage } from '../types/game';
+import type React from 'react';
+import { useState } from 'react';
+import { Play } from 'lucide-react';
+import { FreeFlightTextSchema } from '../store/schemas';
+import type { Screen, Stage } from '../types/game';
+import { closeLabel } from './closeLabel';
 
 interface CustomPracticeModalProps {
   onStartCustom: (
@@ -8,6 +11,8 @@ interface CustomPracticeModalProps {
     speed: 'SLOW' | 'NORMAL' | 'FAST' | 'HYPER',
   ) => void;
   onClose: () => void;
+  /** The screen Close returns to. */
+  opener: Screen | null;
   initialSpeed: 'SLOW' | 'NORMAL' | 'FAST' | 'HYPER';
 }
 
@@ -37,6 +42,7 @@ const PRESET_TEXTS = [
 export const CustomPracticeModal: React.FC<CustomPracticeModalProps> = ({
   onStartCustom,
   onClose,
+  opener,
   initialSpeed,
 }) => {
   const [customText, setCustomText] = useState<string>(PRESET_TEXTS[0].text);
@@ -45,8 +51,17 @@ export const CustomPracticeModal: React.FC<CustomPracticeModalProps> = ({
     initialSpeed,
   );
 
+  // Free Flight text is checked as it is typed, so Launch is disabled (with
+  // the reason) before the player can start a Run that would get stuck.
+  const checked = FreeFlightTextSchema.safeParse(customText);
+  const untypeableMessage =
+    !checked.success && customText.trim() !== ''
+      ? checked.error.issues[0].message
+      : null;
+
   const handleLaunch = () => {
-    if (!customText.trim()) return;
+    if (!checked.success) return;
+    const cleanText = checked.data;
 
     const customStage: Stage = {
       id: `custom-${Date.now()}`,
@@ -55,8 +70,8 @@ export const CustomPracticeModal: React.FC<CustomPracticeModalProps> = ({
       title: 'Free Flight Drill',
       subtitle: 'Custom Practice Mission',
       description: 'Player tailored free-form typing session.',
-      targetKeys: Array.from(new Set(customText.toLowerCase().split(''))),
-      sampleText: customText.trim(),
+      targetKeys: Array.from(new Set(cleanText.toLowerCase().split(''))),
+      sampleText: cleanText,
       difficulty:
         targetWpm > 50
           ? 'Expert'
@@ -82,7 +97,7 @@ export const CustomPracticeModal: React.FC<CustomPracticeModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
+    <div className="fixed inset-x-0 bottom-0 top-[var(--header-height,0px)] z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
       <div className="w-full max-w-2xl rounded-2xl border border-slate-800 bg-slate-900 shadow-2xl p-6 flex flex-col max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-5">
@@ -96,10 +111,11 @@ export const CustomPracticeModal: React.FC<CustomPracticeModalProps> = ({
           </div>
 
           <button
+            type="button"
             onClick={onClose}
             className="px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer"
           >
-            Cancel
+            {closeLabel(opener)}
           </button>
         </div>
 
@@ -111,6 +127,7 @@ export const CustomPracticeModal: React.FC<CustomPracticeModalProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {PRESET_TEXTS.map((preset) => (
               <button
+                type="button"
                 key={preset.name}
                 onClick={() => {
                   setCustomText(preset.text);
@@ -131,10 +148,14 @@ export const CustomPracticeModal: React.FC<CustomPracticeModalProps> = ({
 
         {/* Custom Text Area */}
         <div className="mb-5">
-          <label className="text-xs font-mono uppercase tracking-wider text-slate-400 block mb-2">
+          <label
+            htmlFor="custom-drill-text"
+            className="text-xs font-mono uppercase tracking-wider text-slate-400 block mb-2"
+          >
             Custom Drill Text
           </label>
           <textarea
+            id="custom-drill-text"
             value={customText}
             onChange={(e) => setCustomText(e.target.value)}
             rows={4}
@@ -187,6 +208,7 @@ export const CustomPracticeModal: React.FC<CustomPracticeModalProps> = ({
             <div className="grid grid-cols-4 gap-1">
               {(['SLOW', 'NORMAL', 'FAST', 'HYPER'] as const).map((s) => (
                 <button
+                  type="button"
                   key={s}
                   onClick={() => setSpeed(s)}
                   title={`${s === 'SLOW' ? 'Relaxed approach (0.9x)' : s === 'NORMAL' ? 'Standard rhythm (1.5x)' : s === 'FAST' ? 'High-speed tempo (2.2x)' : 'Hyper-velocity reflex (3.4x)'}`}
@@ -203,9 +225,16 @@ export const CustomPracticeModal: React.FC<CustomPracticeModalProps> = ({
           </div>
         </div>
 
+        {untypeableMessage && (
+          <p role="alert" className="mb-3 text-xs font-mono text-rose-400">
+            {untypeableMessage}
+          </p>
+        )}
+
         {/* Start Button */}
         <button
-          disabled={!customText.trim()}
+          type="button"
+          disabled={!checked.success}
           onClick={handleLaunch}
           className="w-full py-3 px-4 rounded-xl bg-cyan-500 hover:bg-cyan-400 disabled:bg-slate-800 disabled:text-slate-500 text-slate-950 font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-cyan-950/50 transition-all cursor-pointer"
         >

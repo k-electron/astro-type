@@ -2,15 +2,30 @@
  * AstroType Core Data Contracts & State Types
  */
 
-export type GameState =
-  | 'MENU'
-  | 'PLAYING'
-  | 'PAUSED'
-  | 'VICTORY'
-  | 'STAGE_SELECT'
-  | 'HANGAR'
-  | 'ANALYTICS'
-  | 'CUSTOM_PRACTICE';
+// The Save and its parts are defined once, by the schema.
+export type {
+  AudioSynthCore,
+  BeatTheme,
+  KeyAnalytics,
+  PlayerProfile,
+  ShipUpgrades,
+  StageProgress,
+  TrailColorTheme,
+} from '../store/schemas';
+
+/** The screens, named as in GLOSSARY.md. The machine decides which one shows. */
+export type Screen =
+  | 'academy-home'
+  | 'flight-deck'
+  | 'pause-menu'
+  | 'galaxy-map'
+  | 'hangar'
+  | 'analytics'
+  | 'free-flight'
+  | 'debrief';
+
+/** Where the Run is: none yet since load, or running, paused, cleared or abandoned. */
+export type RunPhase = 'none' | 'running' | 'paused' | 'cleared' | 'abandoned';
 
 export type FingerZone =
   | 'LEFT_PINKY'
@@ -32,15 +47,12 @@ export interface FingerLaneInfo {
   glowColor: string;
 }
 
-export type BeatTheme = 'NEON_SYNTHWAVE' | 'CYBER_PULSE' | 'COSMIC_LOFI';
-
 export interface FallingNote {
   id: string;
   char: string;
   displayChar: string; // e.g. "␣" for space
   lane: number; // 0 to 8
   finger: FingerZone;
-  targetTimeMs: number; // absolute timestamp or stage progress time
   yPercent: number; // 0 to 100 on canvas
   status: 'PENDING' | 'PERFECT' | 'GREAT' | 'GOOD' | 'MISS' | 'PROCESSED';
   hitTimestamp?: number;
@@ -93,68 +105,6 @@ export interface Sector {
   themeSymbol: string;
 }
 
-export interface StageProgress {
-  stageId: string;
-  completed: boolean;
-  starsEarned: number; // 0 to 3
-  highScore: number;
-  bestWpm: number;
-  bestAccuracy: number;
-  bestStreak: number;
-  timesPlayed: number;
-  lastPlayedAt?: number;
-}
-
-export interface KeyAnalytics {
-  hits: number;
-  misses: number;
-}
-
-export type TrailColorTheme =
-  | 'CYAN'
-  | 'AMBER'
-  | 'EMERALD'
-  | 'VIOLET'
-  | 'SUPERNOVA';
-export type AudioSynthCore =
-  | 'CYBER_SYNTH'
-  | 'RETRO_8BIT'
-  | 'DEEP_SPACE'
-  | 'NEO_ACOUSTIC';
-
-export interface ShipUpgrades {
-  deflectorShields: number; // 0 to 3 (absorbs mistakes without breaking combo)
-  hyperdriveReactor: number; // 0 to 3 (fills hyperspace meter faster)
-  precisionSensors: number; // 0 to 3 (widens PERFECT timing window)
-  equippedTrailTheme: TrailColorTheme;
-  equippedAudioCore: AudioSynthCore;
-  unlockedThemes: TrailColorTheme[];
-  unlockedAudioCores: AudioSynthCore[];
-}
-
-export interface PlayerProfile {
-  totalCredits: number;
-  totalStars: number;
-  totalKeystrokes: number;
-  totalErrors: number;
-  totalWordsTyped: number;
-  totalPracticeSeconds: number;
-  highestWpmAllTime: number;
-  stagesProgress: Record<string, StageProgress>;
-  keyAnalytics: Record<string, KeyAnalytics>;
-  upgrades: ShipUpgrades;
-  soundEnabled: boolean;
-  soundVolume: number; // 0 to 1
-  ambientMusicVolume: number; // 0 to 1
-  highwaySpeed: 'SLOW' | 'NORMAL' | 'FAST' | 'HYPER';
-  keyboardVisible: boolean;
-  handsVisible: boolean;
-  musicEnabled: boolean;
-  musicVolume: number; // 0 to 1
-  beatTheme: BeatTheme;
-  globalMuted?: boolean;
-}
-
 export interface LivePerformance {
   score: number;
   currentStreak: number;
@@ -171,8 +121,6 @@ export interface LivePerformance {
   accuracy: number;
   currentCharIndex: number;
   timeElapsedSeconds: number;
-  timingFeedback: 'PERFECT' | 'GREAT' | 'GOOD' | 'MISS' | null;
-  timingFeedbackKey: number; // counter to re-trigger animations
   cadenceConsistency?: number; // 0 to 100% rhythm regularity between keystrokes
   lastHitDrone?: {
     id?: string;

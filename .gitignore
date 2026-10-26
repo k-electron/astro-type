@@ -6,5 +6,6 @@ coverage/
 *.log
 .env*
 test-results/
+screenshot-results/
 playwright-report/
 blob-report/
