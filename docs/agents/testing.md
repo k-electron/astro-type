@@ -59,7 +59,7 @@ Two exceptions to "read nothing but the screen, on the real clock" are sanctione
 
 ## Local-only browser suite
 
-Playwright, in `tests/browser/local/*.local.spec.ts`, run by `pnpm test:local` (or `pnpm verify:full`). CI never runs them: the `local` project doesn't exist when `CI` is set, and each file skips itself there. They follow the browser-test rules above. They hold what is real-browser but too heavy for CI's runner: the deck's effects by pixel comparison, the hit-popup matrix, long Streak and Overdrive climbs, exact Run Time through the real frame loop, and full Stage Runs. Run them before landing a gameplay or Action Deck change; the play-check subagent runs them too. Write them as journeys (`test.step`, `expect.soft`), and start a file with `test.skip(Boolean(process.env.CI), 'Local-only: run with pnpm test:local')`. A test that belongs in CI, because it is cheap and guards a release, goes in a CI journey instead.
+Playwright, in `tests/browser/local/*.local.spec.ts`, run by `pnpm test:local` (or `pnpm verify:full`). CI never runs them: the `local` project doesn't exist when `CI` is set, and each file skips itself there. They follow the browser-test rules above. They hold what is real-browser but too heavy for CI's runner: the deck's effects by pixel comparison, long Streak and Overdrive climbs, exact Run Time through the real frame loop, and full Stage Runs. Run them before landing a gameplay or Action Deck change; the play-check subagent runs them too. Write them as journeys (`test.step`, `expect.soft`), and start a file with `test.skip(Boolean(process.env.CI), 'Local-only: run with pnpm test:local')`. A test that belongs in CI, because it is cheap and guards a release, goes in a CI journey instead.
 
 ## Flaky tests
 
