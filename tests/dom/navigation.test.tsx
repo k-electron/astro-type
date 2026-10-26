@@ -314,6 +314,13 @@ describe('the Pause Menu', () => {
     player.click('Exit to Academy Home');
     expect(pauseMenu()).toBeNull();
     expect(academyHome()).not.toBeNull();
+    // There is no Run waiting to be resumed.
+    player.openHeader('Sectors');
+    expect(
+      screen.getByRole('button', { name: 'Enter Flight Deck' }),
+    ).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Resume Flight' })).toBeNull();
+    closeMenu(player);
     player.click('Start Mission');
 
     expect(progress()).toBe('0%');
