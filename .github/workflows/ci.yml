@@ -32,6 +32,9 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium
+      # Mesa's lavapipe, so the browser tests draw WebGL on it instead of on
+      # Chromium's much slower SwiftShader (see playwright.config.ts).
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq --no-install-recommends mesa-vulkan-drivers
       # The same checks as a local `pnpm verify`.
       - run: pnpm verify
       # The screenshot checks, in the Playwright Docker image their baselines
