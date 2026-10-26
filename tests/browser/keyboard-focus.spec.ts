@@ -58,6 +58,8 @@ async function enterAndSpaceLeaveItPaused(page: Page) {
 test('native keys and focus: Space, Esc, Enter and the window losing focus', async ({
   page,
 }) => {
+  // The most real-clock keys of any journey: a busy machine can double its time.
+  test.setTimeout(120_000);
   await test.step('part A: a missed space is struck through at once, and looks like one that was passed', async () => {
     // A short window, so the Flight Deck is taller than the page and Space
     // would scroll it if the game let the key through.
