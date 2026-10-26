@@ -5,9 +5,10 @@ A browser typing game: React and Tailwind for the screens, a Zustand store and a
 ## Working here
 
 - Use pnpm on the Node version pinned in `package.json`. The scripts there install, run, check and build.
-- `pnpm verify` runs the checks CI runs on any machine: typecheck, Biome, unit tests, the build and the browser tests. CI also runs `pnpm screenshots`, which `verify` skips (it needs Docker), so run that too when you've changed how anything looks. Run `verify` before you push.
+- `pnpm verify` runs the checks CI runs on any machine: typecheck, Biome, unit and screen tests, the build and the CI browser journeys. CI also runs `pnpm screenshots`, which `verify` skips (it needs Docker), so run that too when you've changed how anything looks. Run `verify` before you push.
+- `pnpm test:local` runs the local-only browser suite (`tests/browser/local/*.local.spec.ts`): the deck's effect pixels, the hit-popup matrix, the long Streak and Overdrive climbs, exact Run Time through the real frame loop, and full Stage Runs. CI's runner can't afford them, so CI never runs them, and `pnpm verify` (CI parity) skips them. Run it, or `pnpm verify:full` (both), before you land a gameplay or Action Deck change.
 - `pnpm check` runs Biome, and every Biome rule is an error: fix any diagnostic it reports. Where a rule truly can't apply, suppress that one line with a `// biome-ignore lint/...: reason` that says why. Don't weaken a rule in `biome.json`.
-- Screenshot checks compare a few key frames inside CI's fixed Playwright image: `pnpm screenshots` runs them and `pnpm screenshots:update` redraws the baselines on purpose. Both need Docker (linux/amd64). They're part of CI, but `pnpm verify` doesn't run them. See `docs/agents/testing.md`.
+- Screenshot checks compare a few key frames inside CI's fixed Playwright image: `pnpm screenshots` runs them and `pnpm screenshots:update` redraws the baselines on purpose. Both need Docker (linux/amd64). They're part of CI, but `pnpm verify` doesn't run them (nor does it run the local suite). See `docs/agents/testing.md`.
 - The README overstates the game: it describes shortcuts, states and features that don't exist. Treat the code and `GLOSSARY.md` as the truth.
 
 ## Where things live
@@ -21,12 +22,13 @@ ADR-0001 sets the split between the store and the machine.
 - **Curriculum:** `src/data/curriculum.ts`.
 - **Save and Backup:** `src/game/save.ts` is the Save module, `src/utils/storage.ts` is the localStorage adapter, and the schemas are in `src/store/schemas.ts`.
 - **Sound:** `src/audio/soundEngine.ts`, attached to the game through the effects port in `src/audio/soundEffects.ts`.
+- **Tests:** headless unit tests in `src/**/*.test.ts`, screen tests in `tests/dom/*.test.tsx` (through `tests/dom/harness.tsx`), CI browser journeys in `tests/browser/*.spec.ts`, and the local-only suite in `tests/browser/local/`. ADR-0002 sets the layers.
 
 ## Ground rules
 
 - **Game rules stay as they are.** A change that gives the player a different rule is the project owner's call, so raise it on the ticket. That covers scoring, Stars, unlocks and timing.
 - **Player data stays in the player's browser, in localStorage.** There are no accounts and no analytics.
-- **Testing and done:** a gameplay change is done only when it's seen working in a real browser on a real clock. Before you write or change a test, or call a gameplay change done, read `docs/agents/testing.md`.
+- **Testing and done:** a gameplay change is done only when `pnpm test:local` passes and the change is seen working in a real browser on a real clock. Before you write or change a test, or call a gameplay change done, read `docs/agents/testing.md`.
 
 ## Shipping
 
