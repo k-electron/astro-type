@@ -8,7 +8,9 @@ import { drone, keycap } from '../helpers';
 import { launchOnStoppedClock } from '../journey-helpers';
 
 // LOCAL ONLY (`pnpm test:local`, docs/agents/testing.md): hundreds of drawn
-// frames per test, too heavy for CI's runner.
+// frames per test, too heavy for CI's runner. The old browser tests guarded
+// the same effects: a hit explodes its Drone, a Miss shows red, the ship and
+// guidance beam are drawn, and a pause freezes an explosion mid-flight.
 //
 // The effects on the PixiJS Action Deck: lasers, lock-on
 // brackets, explosions, the ship, the guidance beam, Drone thrusters and keycap

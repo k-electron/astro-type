@@ -70,7 +70,6 @@ export async function clickWhereDrawn(page: Page, element: Locator) {
   await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
 }
 
-/** Types text with real key presses, one key at a time. */
 export async function typeText(page: Page, text: string): Promise<void> {
   for (const character of text) {
     await page.keyboard.press(character === ' ' ? 'Space' : character);
@@ -124,7 +123,6 @@ export const MENUS = {
 
 export type MenuName = keyof typeof MENUS;
 
-/** A header button, found by its visible text. */
 export const headerButton = (page: Page, name: string): Locator =>
   page.getByRole('navigation').getByRole('button', { name, exact: true });
 
@@ -187,13 +185,11 @@ export async function seedSave(page: Page, save: unknown): Promise<void> {
   );
 }
 
-/** Open a menu from the header. */
 export async function openMenu(page: Page, menu: MenuName) {
   await headerButton(page, MENUS[menu].header).click();
   await expect(menuHeading(page, menu)).toBeVisible();
 }
 
-/** Close the menu that is showing. */
 export async function closeMenu(page: Page) {
   await closeButton(page).click();
 }

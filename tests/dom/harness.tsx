@@ -233,20 +233,21 @@ export function renderGame(options: RenderGameOptions = {}): Player {
       fireEvent.click(
         screen.getByRole('button', { name: new RegExp(sector.codenick) }),
       );
-      // A card has no name of its own to query by. The Sector lists one card
-      // per Stage, each a title heading and a launch button, in the same
-      // order, so the Stage's button is the one at the position of its title.
-      const titles = screen.getAllByRole('heading', { level: 4 });
-      const launches = screen.getAllByRole('button', {
-        name: /^(Launch|Replay) Mission$/,
+      // A card has no name of its own to query by. Each Stage shows its title
+      // heading and then its launch button, so the Stage's button is the first
+      // one that comes after its title on the page.
+      const title = screen.getByRole('heading', {
+        level: 4,
+        name: stage.title,
       });
-      const position = titles.findIndex(
-        (title) => title.textContent === stage.title,
-      );
-      const button = launches[position];
-      if (position === -1 || titles.length !== launches.length || !button) {
-        throw new Error(`No Launch Mission button for ${stageId}`);
-      }
+      const button = screen
+        .getAllByRole('button', { name: /^(Launch|Replay) Mission$/ })
+        .find(
+          (launch) =>
+            title.compareDocumentPosition(launch) &
+            Node.DOCUMENT_POSITION_FOLLOWING,
+        );
+      if (!button) throw new Error(`No Launch Mission button for ${stageId}`);
       if ((button as HTMLButtonElement).disabled) {
         throw new Error(`${stageId} is in a Sector that is still locked`);
       }

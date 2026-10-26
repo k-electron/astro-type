@@ -80,14 +80,10 @@ export async function waitForDeck(page: Page, first: string) {
  * page loads. Nothing moves until a journey runs the clock: the Drones stay
  * where the Run seeded them, far above the Strike Line, so any key is a Good.
  */
-export async function launchOnStoppedClock(
-  page: Page,
-  text: string,
-  shown: string = text,
-) {
+export async function launchOnStoppedClock(page: Page, text: string) {
   await page.clock.install({ time: 0 });
   await page.clock.pauseAt(1000);
-  await launchFreeFlight(page, text, shown);
+  await launchFreeFlight(page, text);
 }
 
 /**
