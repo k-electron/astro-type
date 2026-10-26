@@ -17,7 +17,11 @@ Vitest, in `src/**/*.test.ts(x)`, only where the logic is real:
 - the machine's promises from [#10](https://github.com/k-electron/astro-type/issues/10): every chain of opened screens unwinds back to its start, every header button works on every screen, only Academy Home and starting a Stage abandon a Run, and Close onto a paused Run lands on the Pause Menu. Test the promises, never a copy of the transition table.
 - the curriculum's integrity check from [#11](https://github.com/k-electron/astro-type/issues/11): its schema, unique Stage ids, every character typeable, star thresholds stricter at each level, Sector unlocks only going up
 
-Everything else is covered by browser journeys or by playing. Sound is checked by ear. There is no coverage target.
+Screens are covered by DOM tests (below), browser journeys or by playing. Sound is checked by ear. There is no coverage target.
+
+## DOM tests
+
+Vitest, in `tests/dom/*.test.tsx`, run by `pnpm test` beside the unit tests. They mount the real `<App />` in happy-dom on a headless game and drive it as a player does (buttons, keys, Run clock steps), asserting by role and text. The PixiJS Action Deck, WebGL, layout, focus and real time are not there: those stay with the browser journeys. [`dom-tests.md`](dom-tests.md) shows how to write one and what is stubbed.
 
 ## Browser tests
 
