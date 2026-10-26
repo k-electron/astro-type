@@ -40,6 +40,7 @@ Two exceptions to "read nothing but the screen, on the real clock" are sanctione
 - Unit tests step the Run clock by hand.
 - Browser tests use the real clock and real key presses. Drones wait at the Strike Line, so there is no race. Wait with Playwright's auto-waiting `expect`, never with fixed sleeps.
 - `page.clock` is for exact timing only: a paused deck is frozen, Run Time stands still during a pause, catch-up after a slow frame is capped, and exact Judgement timing (a hit that must land a given distance from the Strike Line).
+- `page.clock` may also keep the deck still while a journey types keys whose timing doesn't matter. Nothing moves until the test runs the clock, so every key is then a Good, and the journey costs no drawing until it asks for frames.
 
 ## Flaky tests
 
