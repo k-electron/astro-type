@@ -24,6 +24,8 @@ it('shows the Debrief when the text is typed to the end', () => {
 - `player.openHeader('Sectors' | 'Hangar' | 'Analytics' | 'Free Flight' | 'Home')` and `player.click(name)` press real buttons.
 - `player.launchFreeFlight(text)`, `player.press(key, { repeat?, ctrlKey?, metaKey? })`, `player.type(text, { stepsPerKey? })` and `player.step(steps)` start and play a Run. Keys go through the App's own key listener as a keydown and a keyup on `window`. `type` steps the Run clock half a second (30 steps) before each character so the Drone is at the Strike Line.
 - `player.blur()` and `player.hideTab()` are the player leaving the page; `player.reload()` rebuilds the app over the same Save, so only what the game saved survives.
+- `player.startStage(stageId)` opens the Galaxy Map, the Stage's Sector and presses its Launch Mission (or Replay Mission) button, as a player does; the Sector must be open in the Save, or it throws. `player.typePrompt({ stepsPerKey?, characters? })` types the rest of the text the prompt is showing, from the current character, so a test needn't know the Stage's text; with `characters` it stops short of the end. `player.importBackup(contents)` chooses a file on "Import Backup"; the file is read after it returns, so wait for the outcome on screen with `findBy...`.
+- `tests/dom/saves.ts` has the Saves to start from: `RETURNING_PLAYER` (5 Stars in all and 1,234 Credits) and `clearedStages({ 's1-l1': 3 })` for Stage progress. Pass one as `renderGame({ profile })`.
 - The player has no handle on the game, so a test can only check what is on screen. The HUD's Accuracy and Speed refresh every 30 steps; `type` leaves them current, and after a bare `press` call `step(30)`.
 
 Rules:
@@ -46,10 +48,10 @@ Tailwind is not loaded, so no element is hidden by CSS. A DOM test sees the head
 
 ## What still needs the real browser
 
-Do not try to cover these here; they have a Playwright journey, a screenshot, or a person playing:
+Do not try to cover these here; they have a Playwright journey (CI's, in `tests/browser/*.spec.ts` using `tests/browser/journey-helpers.ts`, or the local-only suite in `tests/browser/local/`), a screenshot, or a person playing:
 - the Action Deck's canvas: Drones, keycaps, lasers, effects, hit popups, and clicking a keycap
 - the real clock and frames: Drone motion, catch-up after a slow frame, a pause freezing the deck, exact Judgement timing
-- native focus and keyboard: what has focus after a screen opens or closes, a stray Enter on a focused button, a key held down, the `blur` and tab-hidden events
+- native focus and keyboard: what has focus after a screen opens or closes, a stray Enter or Space on a focused button, Space scrolling the page (the App's handling of `blur`, tab-hidden and a held key is here, via `blur()`, `hideTab()` and `press(..., { repeat })`)
 - layout: what is on screen at a given size, scrolling, anything CSS hides or moves
 - persistence across a reload: the localStorage adapter and a Save surviving a page load
 - how it looks (screenshots) and how it sounds (by ear)

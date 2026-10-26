@@ -1,23 +1,35 @@
 import { expect, type Page, test } from '@playwright/test';
 import {
   debrief,
-  hud,
   launchFreeFlight,
   promptProgress,
   startFirstStage,
-} from './helpers';
+} from '../helpers';
+import {
+  hudScore,
+  hudSpeed,
+  pauseButton,
+  resumeButton,
+} from '../journey-helpers';
 
+// LOCAL ONLY (`pnpm test:local`, docs/agents/testing.md): exact Run Time
+// numbers through the real frame loop, thousands of frames in all, which CI's
+// runner cannot afford. CI keeps the freeze (deck-timing.spec.ts, J3); the
+// numbers are also unit-tested (run-clock.test.ts, frameLoop.test.ts).
+//
 // Exact timing: `page.clock` takes the page's time over, so the test decides
 // how much time passes. The clock is stopped before the page loads and only
 // moves when a test says so. Nothing here sleeps.
-
-// Every step renders the Pixi deck in software GL, so a parallel run on a busy
-// machine takes far longer than the 25-30 s these take alone.
-test.setTimeout(180_000);
 //
 // The HUD has no timer to read. What the player sees of Run Time is the
 // Speed in the HUD and on the Debrief (WPM is measured against Run Time) and
 // the Rhythm (cadence is measured between keystrokes in Run Time).
+//
+// Mapping rows: #123 and #126 (the first test), #124, #125.
+
+test.skip(Boolean(process.env.CI), 'Local-only: run with pnpm test:local');
+// The tests are independent, so they can run on separate workers.
+test.describe.configure({ mode: 'parallel' });
 
 const MINUTE = 60_000;
 
@@ -33,14 +45,6 @@ async function startFirstStageOnStoppedClock(page: Page) {
   await page.clock.install({ time: 0 });
   await page.clock.pauseAt(1000);
   await startFirstStage(page);
-}
-
-/** The Speed the HUD shows right now. */
-async function hudSpeed(page: Page): Promise<number> {
-  const text = (await hud(page).textContent()) ?? '';
-  const match = /Speed\s*(\d+)\s*WPM/i.exec(text);
-  if (!match) throw new Error(`No Speed in the HUD: ${text}`);
-  return Number(match[1]);
 }
 
 /**
@@ -66,14 +70,14 @@ async function speedStillNear(page: Page, before: number, drop: number) {
 }
 
 async function pause(page: Page) {
-  await page.getByRole('button', { name: 'Pause', exact: true }).click();
+  await pauseButton(page).click();
   await expect(
     page.getByRole('heading', { name: 'Mission Paused' }),
   ).toBeVisible();
 }
 
 async function resume(page: Page) {
-  await page.getByRole('button', { name: 'Resume Flight' }).click();
+  await resumeButton(page).click();
   await expect(
     page.getByRole('heading', { name: 'Mission Paused' }),
   ).toBeHidden();
@@ -85,7 +89,7 @@ async function pressAfter(page: Page, ms: number, key: string) {
   await page.keyboard.press(key);
 }
 
-test('Run Time and the Speed in the HUD stand still during a pause', async ({
+test('Run Time and the Speed in the HUD stand still during a pause, and a long stall without one barely moves them', async ({
   page,
 }) => {
   await launchOnStoppedClock(page, 'abcdefghijklmnop');
@@ -99,20 +103,33 @@ test('Run Time and the Speed in the HUD stand still during a pause', async ({
 
   await pause(page);
 
-  // Five minutes go by behind the Pause Menu, in one jump and then some frames.
-  await page.clock.fastForward(5 * MINUTE);
-  await page.clock.runFor(2000);
-  expect(await hudSpeed(page)).toBe(before);
+  await test.step('five minutes go by behind the Pause Menu: the Speed has not moved [#123]', async () => {
+    // In one jump and then some frames.
+    await page.clock.fastForward(5 * MINUTE);
+    await page.clock.runFor(500);
+    expect(await hudSpeed(page)).toBe(before);
+  });
 
-  // Back in the Run, it carries on from where it was: a second more of Run
-  // Time moves the Speed by a couple of WPM (16 to 14), not down to nothing.
-  await resume(page);
-  expect(await hudSpeed(page)).toBe(before);
-  await page.clock.runFor(1000);
-  await speedStillNear(page, before, 3);
+  await test.step('back in the Run it carries on from where it was [#123]', async () => {
+    // A second more of Run Time moves the Speed by a couple of WPM (16 to 14),
+    // not down to nothing.
+    await resume(page);
+    expect(await hudSpeed(page)).toBe(before);
+    await page.clock.runFor(1000);
+    await speedStillNear(page, before, 3);
+  });
+
+  await test.step('a five-minute stall with no pause is caught up only by a fraction of a second [#126]', async () => {
+    const resumed = await hudSpeed(page);
+    // The Run has only 100 ms of the stall to catch up on, so the Speed is what
+    // about 8 seconds of typing gives (12 WPM), not what 5 minutes gives (0).
+    await page.clock.fastForward(5 * MINUTE);
+    await page.clock.runFor(1000);
+    await speedStillNear(page, resumed, 3);
+  });
 });
 
-test('a pause in the middle of a Run does not drag the final Speed or the Rhythm down', async ({
+test('a pause in the middle of a Run does not drag the final Speed or the Rhythm down [#124]', async ({
   page,
 }) => {
   await launchOnStoppedClock(page, 'abcdef');
@@ -122,7 +139,7 @@ test('a pause in the middle of a Run does not drag the final Speed or the Rhythm
   for (const key of 'abc') await pressAfter(page, 1000, key);
   await pause(page);
   await page.clock.fastForward(5 * MINUTE);
-  await page.clock.runFor(2000);
+  await page.clock.runFor(500);
   await resume(page);
   for (const key of 'def') await pressAfter(page, 1000, key);
 
@@ -133,7 +150,7 @@ test('a pause in the middle of a Run does not drag the final Speed or the Rhythm
   await expect(result).toContainText(/Rhythm:\s*\d+% \(Steady\)/i);
 });
 
-test('catch-up after a long stall is capped, so the Drones do not jump across the deck', async ({
+test('catch-up after a long stall is capped, so the Drones do not jump across the deck [#125]', async ({
   page,
 }) => {
   await startFirstStageOnStoppedClock(page);
@@ -149,23 +166,5 @@ test('catch-up after a long stall is capped, so the Drones do not jump across th
   await page.clock.fastForward(5 * MINUTE);
   await page.keyboard.press('f');
 
-  await expect(hud(page)).toContainText(/Score\s*75(?!\d)/i);
-});
-
-test('catch-up after a long stall is capped, so Run Time and the Speed barely move', async ({
-  page,
-}) => {
-  await launchOnStoppedClock(page, 'abcdefghijklmnop');
-
-  await page.clock.runFor(1000);
-  for (const key of 'abcdefgh') await page.keyboard.press(key);
-  await page.clock.runFor(5000);
-  const before = await speedBetween(page, 15, 17);
-
-  // Five minutes stall in one go, with no pause. The Run has only 100 ms of
-  // it to catch up on, so the Speed is what 7 seconds of typing gives (14
-  // WPM), not what 5 minutes gives (0).
-  await page.clock.fastForward(5 * MINUTE);
-  await page.clock.runFor(1000);
-  await speedStillNear(page, before, 3);
+  await expect.poll(() => hudScore(page)).toBe(75);
 });
