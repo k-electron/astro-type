@@ -105,7 +105,7 @@ The screen for spending Credits on Upgrades and Cosmetics.
 _Avoid_: Shop, upgrades screen
 
 **Analytics**:
-The screen showing the player's typing history and per-key stats.
+The screen showing the player's lifetime totals, hand balance and per-key stats.
 _Avoid_: Telemetry, stats screen
 
 **Free Flight**:
