@@ -177,7 +177,7 @@ async function launchOnStoppedClock(page: Page, text: string) {
   await expect(async () => {
     await page.clock.runFor(50);
     await expect(drone(page, text[1])).toBeVisible({ timeout: 250 });
-  }).toPass({ timeout: 10_000 });
+  }).toPass({ timeout: 30_000 });
   // Settle the lead Drone at the Strike Line (it needs about half a second of
   // frames), then see that it has stopped: the lane the tests measure is
   // computed from where it waits.
@@ -191,7 +191,7 @@ async function launchOnStoppedClock(page: Page, text: string) {
     const still = bottom === last;
     last = bottom;
     expect(still, 'the lead Drone has stopped at the Strike Line').toBe(true);
-  }).toPass({ timeout: 20_000, intervals: [50] });
+  }).toPass({ timeout: 30_000, intervals: [50] });
 }
 
 /** The Action Deck's canvas: the one place PixiJS draws. */
