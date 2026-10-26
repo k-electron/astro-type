@@ -1,3 +1,4 @@
+import type { Stage } from '../types/game';
 import { createGame, createMemoryStorage } from './createGame';
 
 /** Stage 1 of Sector 1. Its Stars thresholds: 85% / 10 WPM + 92% / 14 WPM + 97% + Streak 14. */
@@ -78,4 +79,36 @@ export function clearStage(
   game.step(total - lastIndex * STEPS_TO_REACH_LINE);
   if (missBeforeLast) miss(game);
   game.pressKey(targetKey(game));
+}
+
+/** A Free Flight Stage of the player's own text, built the way the Free Flight screen builds one. */
+export function freeFlightStage(text: string): Stage {
+  return {
+    id: 'custom-test',
+    sectorId: 'sector-custom',
+    stageNumber: 0,
+    title: 'Free Flight Drill',
+    subtitle: 'Custom Practice Mission',
+    description: 'Player tailored free-form typing session.',
+    targetKeys: Array.from(new Set(text.toLowerCase().split(''))),
+    sampleText: text,
+    difficulty: 'Intermediate',
+    targetWpm: 20,
+    starThresholds: {
+      oneStarAccuracy: 75,
+      twoStarWpm: 20,
+      twoStarAccuracy: 90,
+      threeStarWpm: 26,
+      threeStarAccuracy: 96,
+      threeStarMinStreak: 20,
+    },
+  };
+}
+
+/** Type `text` key by key, each key after the lead Drone has reached the Strike Line. */
+export function typeText(game: Game, text: string): void {
+  for (const key of Array.from(text)) {
+    game.step(STEPS_TO_REACH_LINE);
+    game.pressKey(key);
+  }
 }
