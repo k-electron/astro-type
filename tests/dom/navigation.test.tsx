@@ -462,8 +462,16 @@ describe('Esc', () => {
 
 describe('leaving the page mid-Run', () => {
   const WAYS = [
-    ['the window loses focus', (player: Player) => player.blur()],
-    ['the tab is hidden', (player: Player) => player.hideTab()],
+    [
+      'the window loses focus',
+      (player: Player) => player.blur(),
+      (player: Player) => player.focus(),
+    ],
+    [
+      'the tab is hidden',
+      (player: Player) => player.hideTab(),
+      (player: Player) => player.showTab(),
+    ],
   ] as const;
 
   it.each(WAYS)('pauses the Run, with its Streak, when %s', (_way, leave) => {
@@ -477,6 +485,23 @@ describe('leaving the page mid-Run', () => {
     player.click('Resume Flight');
     expectCarriesOn(player);
   });
+
+  it.each(WAYS)(
+    'stays paused when the player comes back after %s',
+    (_way, leave, comeBack) => {
+      const player = halfwayThroughARun();
+      leave(player);
+      expectPausedHalfway();
+
+      comeBack(player);
+      player.step(30);
+
+      expectPausedHalfway();
+      expect(accuracy()).toBe('100%');
+      player.click('Resume Flight');
+      expectCarriesOn(player);
+    },
+  );
 
   it('is a real pause: Esc on it resumes from the same character', () => {
     const player = halfwayThroughARun();

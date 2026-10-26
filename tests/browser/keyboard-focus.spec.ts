@@ -162,4 +162,21 @@ test('native keys and focus: Space, Esc, Enter and the window losing focus', asy
     await expect(promptProgress(page)).toHaveText('67%');
     await expect.soft(flightDeck(page)).toContainText(/Streak\s*4(?!\d)/i);
   });
+
+  await test.step('part B: a mistyped letter is struck through at once, and stays struck once passed', async () => {
+    // The cursor is on "e". A letter is drawn by another branch than a space.
+    const letter = (which: string) =>
+      textPrompt(page).getByText(which, { exact: true });
+
+    const struck = 'line-through';
+
+    await page.keyboard.press('z');
+    await expect.soft(currentCharacter(page)).toHaveText('e');
+    await expect.soft(letter('e')).toHaveCSS('text-decoration-line', struck);
+
+    await page.keyboard.press('e');
+    await expect(promptProgress(page)).toHaveText('83%');
+    await expect.soft(letter('e')).toHaveCSS('text-decoration-line', struck);
+    await expect.soft(letter('f')).toHaveCSS('text-decoration-line', 'none');
+  });
 });
