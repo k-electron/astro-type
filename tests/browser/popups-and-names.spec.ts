@@ -6,6 +6,7 @@ import {
   launchOnStoppedClock,
   pauseButton,
   typeKeys,
+  waitForDeck,
 } from './journey-helpers';
 
 // J4: the hit popups the Action Deck names, and a sweep of the glossary names
@@ -86,6 +87,7 @@ test('hit popups name the points a hit scored, and no screen uses a banned name'
   page,
 }) => {
   await launchOnStoppedClock(page, TEXT);
+  await waitForDeck(page, TEXT[0]);
   const badge = hud(page).getByText(BADGE);
   let typed = 0;
 

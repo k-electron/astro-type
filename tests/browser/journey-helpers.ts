@@ -1,5 +1,5 @@
 import { expect, type Locator, type Page } from '@playwright/test';
-import { hud } from './helpers';
+import { drone, hud } from './helpers';
 
 // Helpers shared by the CI journeys (deck, keyboard-focus, deck-timing,
 // popups-and-names, persistence). Like helpers.ts, they find things the way a
@@ -55,6 +55,27 @@ export const pauseButton = (page: Page): Locator =>
 /** The Pause Menu's Resume button. */
 export const resumeButton = (page: Page): Locator =>
   page.getByRole('button', { name: 'Resume Flight' });
+
+/**
+ * Waits until the Action Deck is up and has drawn its Drones (the deck starts
+ * in the background, and a hit judged before it is up gets no popup), without
+ * letting the Drones fall: the Run is paused while the clock gives the deck its
+ * frames, and carries on afterwards. Pass the first character of the text.
+ */
+export async function waitForDeck(page: Page, first: string) {
+  await pauseButton(page).click();
+  await expect(
+    page.getByRole('heading', { name: 'Mission Paused' }),
+  ).toBeVisible();
+  await expect(async () => {
+    await page.clock.runFor(50);
+    await expect(drone(page, first)).toBeVisible({ timeout: 250 });
+  }).toPass({ timeout: 20_000 });
+  await resumeButton(page).click();
+  await expect(
+    page.getByRole('heading', { name: 'Mission Paused' }),
+  ).toBeHidden();
+}
 
 /**
  * Free Flight, ready for the first key, with the page clock stopped before the
