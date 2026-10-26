@@ -220,7 +220,7 @@ describe('Free Flight', () => {
         }) as HTMLButtonElement
       ).disabled,
     ).toBe(true);
-    // The message lists the character; the textbox's own value doesn't count.
-    expect(screen.getAllByText(/\u{1F680}/u).length).toBeGreaterThan(0);
+    // The message names the character; the textbox's own value doesn't count.
+    expect(screen.getByRole('alert').textContent).toContain('\u{1F680}');
   });
 });

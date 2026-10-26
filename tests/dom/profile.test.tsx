@@ -134,7 +134,7 @@ describe('Import Backup and Factory Reset', () => {
     const player = renderGame({ profile: RETURNING_PLAYER });
     player.openHeader('Analytics');
 
-    player.importBackup('{"foo":1,"hello":"world"}');
+    player.importBackup('{}');
 
     expect((await screen.findByRole('alert')).textContent).toBe(REFUSAL);
     expect(stars(5)).toBeTruthy();

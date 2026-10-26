@@ -224,7 +224,11 @@ export function renderGame(options: RenderGameOptions = {}): Player {
         card = card.parentElement;
       }
       if (!card) throw new Error(`No Launch Mission button for ${stageId}`);
-      fireEvent.click(within(card).getByRole('button', { name: launch }));
+      const button = within(card).getByRole('button', { name: launch });
+      if ((button as HTMLButtonElement).disabled) {
+        throw new Error(`${stageId} is in a Sector that is still locked`);
+      }
+      fireEvent.click(button);
     },
     typePrompt(typeOptions = {}) {
       const characters = screen

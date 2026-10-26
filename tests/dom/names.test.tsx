@@ -8,8 +8,9 @@ import { clearedStages } from './saves';
 // reads every piece of text on it.
 //
 // Not here, because a DOM has no head and no canvas: the page's <title> and
-// the names the Action Deck's canvas gives its Drones, keycaps and popups.
-// The browser journey J4 reads those on the real page.
+// the names the Action Deck's canvas gives its Drones and keycaps. The browser
+// journey J4 reads those on the real page. The hit popups' text is checked
+// against the same words in hitPopups.test.ts.
 
 /**
  * The banned words. `\b` keeps this to whole words, so a word that merely
