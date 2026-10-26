@@ -1,7 +1,7 @@
 import { Award, Flame, Hand, Sparkles } from 'lucide-react';
 import { memo, useLayoutEffect, useRef } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { game } from '../../appGame';
+import { useGame } from '../../store/gameContext';
 import { FINGER_COLOR_MAP } from '../../data/curriculum';
 import { overdriveScoreFactor } from '../../game/rules';
 import { useGameStore } from '../../store/useGameStore';
@@ -15,6 +15,7 @@ import { getDeckSession } from './deckSession';
  * on the Run clock, so React never re-renders it per frame.
  */
 export const PixiActionDeck = memo(function PixiActionDeck() {
+  const game = useGame();
   const { hyperspaceActive, multiplier, currentStreak, handsVisible } =
     useGameStore(
       useShallow((state) => ({

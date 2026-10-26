@@ -1,7 +1,7 @@
 import type React from 'react';
 import { Shield, Zap, Pause } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
-import { game } from '../appGame';
+import { useGame } from '../store/gameContext';
 import { overdriveScoreFactor } from '../game/rules';
 import { useGameStore } from '../store/useGameStore';
 
@@ -11,6 +11,7 @@ interface HUDProps {
 
 /** The readouts above the deck. It reads only the fields it shows, so it re-renders when one of them changes. */
 export const HUD: React.FC<HUDProps> = ({ onPause }) => {
+  const game = useGame();
   const {
     score,
     currentStreak,

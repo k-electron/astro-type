@@ -15,7 +15,7 @@ import { PixiActionDeck } from './components/pixi-deck/PixiActionDeck';
 import { CustomPracticeModal } from './components/CustomPracticeModal';
 import { LevelCompleteModal } from './components/LevelCompleteModal';
 import { GlobalCosmicBackground } from './components/GlobalCosmicBackground';
-import { game } from './appGame';
+import { useGame } from './store/gameContext';
 import { useShallow } from 'zustand/react/shallow';
 import { useGameStore } from './store/useGameStore';
 import { useOpener, useRunPhase, useScreen } from './store/useGameScreen';
@@ -41,6 +41,7 @@ function CosmicBackdrop({ onFlightDeck }: { onFlightDeck: boolean }) {
 }
 
 export default function App() {
+  const game = useGame();
   const screen = useScreen();
   const phase = useRunPhase();
   const opener = useOpener();
@@ -136,7 +137,7 @@ export default function App() {
       window.removeEventListener('keyup', handleKeyUp);
       window.removeEventListener('blur', handleBlur);
     };
-  }, [phase, processKeystroke, releaseKeystroke]);
+  }, [phase, send, processKeystroke, releaseKeystroke]);
 
   // Leaving the page (another window, another tab) is a player event: the
   // machine pauses a running Run and ignores it anywhere else.
@@ -151,7 +152,7 @@ export default function App() {
       window.removeEventListener('blur', handleLostFocus);
       document.removeEventListener('visibilitychange', handleVisibility);
     };
-  }, []);
+  }, [send]);
 
   // The Pause Menu takes focus itself, not a button, so a stray Enter or
   // Space (typing on after a focus-loss pause) has nothing to activate.
