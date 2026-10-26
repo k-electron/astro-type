@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { type Player, renderGame, screen, within } from './harness';
-import { clearedStages } from './saves';
+import { BANNED_NAME } from '../shared/names';
+import { clearedStages } from '../shared/saves';
 
 // One name for each thing: the game says Streak and Overdrive, never combo,
 // hyperspace or warp (GLOSSARY.md: Streak, Multiplier and Overdrive each list
@@ -11,13 +12,6 @@ import { clearedStages } from './saves';
 // the names the Action Deck's canvas gives its Drones and keycaps. The browser
 // journey J4 reads those on the real page. The hit popups' text is checked
 // against the same words in hitPopups.test.ts.
-
-/**
- * The banned words. `\b` keeps this to whole words, so a word that merely
- * contains one ("swarp", "Comboy") is not flagged; the endings cover "combos",
- * "warped", "warping" and "hyper-space".
- */
-const BANNED_NAME = /\b(?:combos?|hyper[\s-]?space|warp(?:s|ed|ing)?)\b/i;
 
 /** The attributes that put words in front of a player, a screen reader or a tooltip. */
 const NAMING_ATTRIBUTES = ['aria-label', 'title', 'alt', 'placeholder'];

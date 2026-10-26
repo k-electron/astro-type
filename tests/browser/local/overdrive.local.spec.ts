@@ -7,8 +7,8 @@ import {
   launchFreeFlight,
   pauseMenu,
 } from '../helpers';
-import { pauseButton } from '../journey-helpers';
-import { expectNoBannedNames } from './glossary-sweep';
+import { multiplierAt } from '../../shared/multiplier';
+import { expectNoBannedNames, pauseButton } from '../journey-helpers';
 
 // LOCAL ONLY (`pnpm test:local`, docs/agents/testing.md): a Streak of 30 and
 // more, twice over, on the real clock, which CI's runner cannot afford. The DOM
@@ -26,7 +26,9 @@ import { expectNoBannedNames } from './glossary-sweep';
 // the real clock with real key presses, a key at a time; each check waits for
 // what the player would see.
 //
-// Mapping rows: #103, #104 (the badges), #92, #93, #102 (the sweep).
+// The old browser tests guarded two things: the Overdrive badges across the
+// climb, and the glossary-name sweep over the Flight Deck, the Hangar and the
+// Pause Menu in real Overdrive.
 
 test.skip(Boolean(process.env.CI), 'Local-only: run with pnpm test:local');
 
@@ -37,10 +39,6 @@ const OVERDRIVE_BADGE = /^overdrive\s*x\d+$/i;
 // (the Run is never finished), and "z" is never the next letter.
 const TEXT = 'abcdefghij'.repeat(8);
 const WRONG_KEY = 'z';
-
-/** The Multiplier a Streak has earned: x1, then x2 at 10, x3 at 20, x4 at 30. */
-const multiplierAt = (streak: number) =>
-  Math.min(4, 1 + Math.floor(streak / 10));
 
 /** The HUD's Multiplier badge while Overdrive is off: "x1" to "x4". */
 const hudMultiplier = (page: Page) => hud(page).getByText(/^x\d$/);
@@ -111,7 +109,7 @@ test('the Streak climbs through every Multiplier into Overdrive, the badges agre
   await launchFreeFlight(page, TEXT);
   const run = followRun(page);
 
-  await test.step('outside Overdrive the HUD shows x{Multiplier} and the deck header has no Overdrive badge [#103]', async () => {
+  await test.step('outside Overdrive the HUD shows x{Multiplier} and the deck header has no Overdrive badge', async () => {
     await expectPlain(page, 1);
     while (run.streak < 9) await run.hit();
     await expectPlain(page, 1);
@@ -123,7 +121,7 @@ test('the Streak climbs through every Multiplier into Overdrive, the badges agre
     await expectPlain(page, 3); // Streak 20: Multiplier x3
   });
 
-  await test.step('in Overdrive both badges read the Multiplier doubled, up to x4 [#104]', async () => {
+  await test.step('in Overdrive both badges read the Multiplier doubled, up to x4', async () => {
     // Fill the meter with a long Streak, then follow Overdrive up to x4.
     await run.hitUntilOverdrive(60);
     await expectOverdrive(page, run.streak);
@@ -133,7 +131,7 @@ test('the Streak climbs through every Multiplier into Overdrive, the badges agre
     }
   });
 
-  await test.step('the Flight Deck in Overdrive shows an Overdrive label and uses the glossary names [#92]', async () => {
+  await test.step('the Flight Deck in Overdrive shows an Overdrive label and uses the glossary names', async () => {
     await expect
       .soft(
         hud(page)
@@ -145,7 +143,7 @@ test('the Streak climbs through every Multiplier into Overdrive, the badges agre
     await expectNoBannedNames(page, 'the Flight Deck in Overdrive');
   });
 
-  await test.step('the Hangar opened from the Flight Deck uses the glossary names, and closes onto the Pause Menu, with Overdrive behind it [#102, #93]', async () => {
+  await test.step('the Hangar opened from the Flight Deck uses the glossary names, and closes onto the Pause Menu, with Overdrive behind it', async () => {
     await headerButton(page, 'Hangar').click();
     await expect(
       page.getByRole('heading', { name: 'Starship Hangar Upgrades' }),
@@ -157,7 +155,7 @@ test('the Streak climbs through every Multiplier into Overdrive, the badges agre
     await expectNoBannedNames(page, 'the Pause Menu, with Overdrive behind it');
   });
 
-  await test.step('resumed, a Miss ends Overdrive and the Streak, and Overdrive comes back and carries through every step [#104]', async () => {
+  await test.step('resumed, a Miss ends Overdrive and the Streak, and Overdrive comes back and carries through every step', async () => {
     await page.getByRole('button', { name: 'Resume Flight' }).click();
     await expect(pauseMenu(page)).toBeHidden();
     await expect(pauseButton(page)).toBeVisible();

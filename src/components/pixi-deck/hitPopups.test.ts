@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { scoreForHit } from '../../game/rules';
+import { BANNED_NAME } from '../../../tests/shared/names';
 import {
   type HitKind,
   hitPopupColor,
@@ -55,15 +56,11 @@ describe('the popup of a hit', () => {
   });
 
   it('uses the glossary names: never combo, hyperspace or warp', () => {
-    // The deck draws these on the canvas, where a screen-text sweep can't see
-    // them. The game says Streak and Overdrive (GLOSSARY.md lists these as
-    // words to avoid). `\b` keeps this to whole words; the endings cover
-    // "combos", "warped", "warping" and "hyper-space".
-    const bannedName = /\b(?:combos?|hyper[\s-]?space|warp(?:s|ed|ing)?)\b/i;
-
+    // The sweep over the real page (journey J4) reads only the popups it
+    // happens to draw; this reads every label the deck can draw.
     const offenders = hitPopupsToPrepare()
       .map(({ label }) => label)
-      .filter((label) => bannedName.test(label));
+      .filter((label) => BANNED_NAME.test(label));
 
     expect(offenders).toEqual([]);
   });

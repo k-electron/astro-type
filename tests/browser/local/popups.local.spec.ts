@@ -1,6 +1,7 @@
 import { expect as baseExpect, type Page, test } from '@playwright/test';
-import { drone, flightDeck, hud, labelled, launchFreeFlight } from '../helpers';
-import { hudScore } from '../journey-helpers';
+import { drone, hud, labelled, launchFreeFlight } from '../helpers';
+import { hudScore, launchOnStoppedClock } from '../journey-helpers';
+import { multiplierAt } from '../../shared/multiplier';
 
 // LOCAL ONLY (`pnpm test:local`, docs/agents/testing.md): about thirty hits
 // settled at Perfects on a real clock, which CI's runner cannot afford. CI
@@ -32,7 +33,9 @@ import { hudScore } from '../journey-helpers';
 // into the Great band. The HUD's Score is checked on every hit, so a hit that
 // was not the rating a test meant fails there, and not on the popup.
 //
-// Mapping rows: #59-#62, #105 (the climb); #63-#66 (the stopped-clock tests).
+// Two parts: the climb, which guarded that a popup names the points a hit
+// scored at each Multiplier, in Overdrive, and for Space; and the
+// stopped-clock tests, which guarded the same for a Good and a Great.
 
 test.skip(Boolean(process.env.CI), 'Local-only: run with pnpm test:local');
 
@@ -54,10 +57,6 @@ const strikeWorth = (points: number) =>
 
 /** An Overdrive badge on the HUD: "OVERDRIVE x6". */
 const BADGE = /^overdrive\s*x(\d+)$/i;
-
-/** The Multiplier a Streak has earned: x1, then x2 at 10, x3 at 20, x4 at 30. */
-const multiplierAt = (streak: number) =>
-  Math.min(4, 1 + Math.floor(streak / 10));
 
 /**
  * The climb's text: ten different letters, repeated (no letter twice among the
@@ -293,7 +292,7 @@ test('a Perfect hit raises a popup with the points it scored, at every Multiplie
   await launchFreeFlight(page, CLIMB);
   const run = followRun(page, CLIMB);
 
-  await test.step('Space, the flagship, at x2 (Streak 10): +200, not +100 [#61]', async () => {
+  await test.step('Space, the flagship, at x2 (Streak 10): +200, not +100', async () => {
     await run.hitUntil(9);
     expect(run.nextMultiplier).toBe(2);
     expect(await overdriveOn(page), 'Overdrive is not on yet').toBe(false);
@@ -301,7 +300,7 @@ test('a Perfect hit raises a popup with the points it scored, at every Multiplie
     await perfectHit(page, run, 200, 'Perfect Space at Streak 10');
   });
 
-  await test.step('a letter at x3 (Streak 20): +300, not +100 [#59]', async () => {
+  await test.step('a letter at x3 (Streak 20): +300, not +100', async () => {
     await run.hitUntil(19);
     expect(await overdriveOn(page), 'Overdrive is not on yet').toBe(false);
     expect(run.nextMultiplier).toBe(3);
@@ -309,7 +308,7 @@ test('a Perfect hit raises a popup with the points it scored, at every Multiplie
     await perfectHit(page, run, 300, 'Perfect at Streak 20');
   });
 
-  await test.step('the hit that ignites Overdrive is not doubled: +300 at x3, and not OVERDRIVE STRIKE [#60]', async () => {
+  await test.step('the hit that ignites Overdrive is not doubled: +300 at x3, and not OVERDRIVE STRIKE', async () => {
     // 28 hits fill the Overdrive meter to 98 of 100 (no upgrades): the 29th
     // hit ignites it, at Streak 29 (x3).
     await run.hitUntil(28);
@@ -327,7 +326,7 @@ test('a Perfect hit raises a popup with the points it scored, at every Multiplie
     ).toBeVisible();
   });
 
-  await test.step('Space in Overdrive at x4 (Streak 30): a popup saying +800 [#62]', async () => {
+  await test.step('Space in Overdrive at x4 (Streak 30): a popup saying +800', async () => {
     expect(run.nextMultiplier).toBe(4);
     // Perfect 100 x4 x2 for Overdrive. The flagship has its own popup text; the
     // OVERDRIVE STRIKE one is for the letter keys.
@@ -347,7 +346,7 @@ test('a Perfect hit raises a popup with the points it scored, at every Multiplie
     expect(run.streak, 'Overdrive came back before Streak 10').toBeLessThan(10);
   });
 
-  await test.step('an OVERDRIVE STRIKE (a letter) names its real points at x1, x2, x3 and x4 [#105]', async () => {
+  await test.step('an OVERDRIVE STRIKE (a letter) names its real points at x1, x2, x3 and x4', async () => {
     // One Perfect hit under each Multiplier, as soon as the Streak reaches it:
     // the first hit back in Overdrive (x1), then the hits making Streak 10, 20
     // and 30. Each is worth 100 x Multiplier x 2.
@@ -375,24 +374,8 @@ test('a Perfect hit raises a popup with the points it scored, at every Multiplie
 // Greats and Goods, on a clock that stands still.
 // ---------------------------------------------------------------------------
 
-/**
- * Free Flight on a clock that stands still before the page loads. Nothing
- * moves until a test runs the clock: the Run starts with its Drones where it
- * seeded them, the first at 62% of the way down, the Strike Line at 84%.
- */
-async function launchOnStoppedClock(page: Page, text: string) {
-  await page.clock.install({ time: 0 });
-  await page.clock.pauseAt(1000);
-  await page.goto('/');
-  await page.getByRole('button', { name: 'Free Flight', exact: true }).click();
-  await page.getByRole('textbox').fill(text);
-  await page.getByRole('button', { name: 'Launch Custom Flight' }).click();
-  await expect(
-    page.getByRole('button', { name: 'Pause', exact: true }),
-  ).toBeVisible();
-  await expect(flightDeck(page)).toContainText(text.replaceAll(' ', '␣'));
-  await startPopupLog(page);
-}
+// On a stopped clock the Run starts with its Drones where it seeded them, the
+// first at 62% of the way down, the Strike Line at 84%.
 
 /** Presses a key and waits for the HUD to show the Streak it makes. */
 async function pressAtStreak(page: Page, key: string, streak: number) {
@@ -432,10 +415,9 @@ async function expectPopupOnStoppedClock(
   });
 }
 
-test('a Good letter hit at x1 raises a popup saying +50 [#63]', async ({
-  page,
-}) => {
+test('a Good letter hit at x1 raises a popup saying +50', async ({ page }) => {
   await launchOnStoppedClock(page, 'abcdef');
+  await startPopupLog(page);
 
   // No time has passed: the lead Drone is far above the Strike Line.
   await page.keyboard.press('a');
@@ -444,10 +426,9 @@ test('a Good letter hit at x1 raises a popup saying +50 [#63]', async ({
   await expectPopupOnStoppedClock(page, 50, 'Good at x1');
 });
 
-test('a Great letter hit at x1 raises a popup saying +75 [#64]', async ({
-  page,
-}) => {
+test('a Great letter hit at x1 raises a popup saying +75', async ({ page }) => {
   await launchOnStoppedClock(page, 'abcdef');
+  await startPopupLog(page);
 
   // About six steps in, the lead Drone has come down from 62% to 71%: 13 from
   // the Strike Line, inside the Great band (more than 8, at most 16). The
@@ -462,11 +443,11 @@ test('a Great letter hit at x1 raises a popup saying +75 [#64]', async ({
 // Nine quick hits with no time passing are nine Goods (450). The 10th makes
 // Streak 10: a Good at x2. (A Great needs its own launch above: after a Good
 // the next Drone's height differs, so the band can't be aimed at.)
-for (const [name, key, text, row] of [
-  ['letter', 'j', 'abcdefghijklmn', '#65'],
-  ['Space (flagship)', 'Space', 'abcdefghi jklmn', '#66'],
+for (const [name, key, text] of [
+  ['letter', 'j', 'abcdefghijklmn'],
+  ['Space (flagship)', 'Space', 'abcdefghi jklmn'],
 ] as const) {
-  test(`a Good ${name} hit at x2 (Streak 10) raises a popup saying +100, not +50 [${row}]`, async ({
+  test(`a Good ${name} hit at x2 (Streak 10) raises a popup saying +100, not +50`, async ({
     page,
   }) => {
     await launchOnStoppedClock(page, text);

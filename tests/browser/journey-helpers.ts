@@ -1,10 +1,11 @@
 import { expect, type Locator, type Page } from '@playwright/test';
-import { drone, hud } from './helpers';
+import { BANNED_NAME } from '../shared/names';
+import { drone, hud, launchFreeFlight } from './helpers';
 
-// Helpers shared by the CI journeys (deck, keyboard-focus, deck-timing,
-// popups-and-names, persistence). Like helpers.ts, they find things the way a
-// player sees them: by role and visible text, and, inside the Action Deck's
-// canvas, through the PixiJS accessibility layer.
+// Helpers shared by the journeys, CI's and the local-only ones. Like
+// helpers.ts, they find things the way a player sees them: by role and visible
+// text, and, inside the Action Deck's canvas, through the PixiJS accessibility
+// layer.
 
 /** The bottom edge of an element on the page, or -1 while it isn't drawn. */
 export async function bottomEdge(element: Locator): Promise<number> {
@@ -42,17 +43,14 @@ export async function typeKeys(page: Page, keys: string): Promise<void> {
   }
 }
 
-/** Waits for the HUD to show this Streak. */
 export const expectStreak = (page: Page, streak: number) =>
   expect(hud(page)).toContainText(
     new RegExp(`Streak\\s*${streak}(?!\\d)`, 'i'),
   );
 
-/** The Pause button on the Flight Deck. */
 export const pauseButton = (page: Page): Locator =>
   page.getByRole('button', { name: 'Pause', exact: true });
 
-/** The Pause Menu's Resume button. */
 export const resumeButton = (page: Page): Locator =>
   page.getByRole('button', { name: 'Resume Flight' });
 
@@ -82,13 +80,60 @@ export async function waitForDeck(page: Page, first: string) {
  * page loads. Nothing moves until a journey runs the clock: the Drones stay
  * where the Run seeded them, far above the Strike Line, so any key is a Good.
  */
-export async function launchOnStoppedClock(page: Page, text: string) {
+export async function launchOnStoppedClock(
+  page: Page,
+  text: string,
+  shown: string = text,
+) {
   await page.clock.install({ time: 0 });
   await page.clock.pauseAt(1000);
-  await page.goto('/');
-  await page.getByRole('button', { name: 'Free Flight', exact: true }).click();
-  await page.getByRole('textbox').fill(text);
-  await page.getByRole('button', { name: 'Launch Custom Flight' }).click();
-  await expect(pauseButton(page)).toBeVisible();
-  await expect(page.getByRole('main')).toContainText(text.replaceAll(' ', '␣'));
+  await launchFreeFlight(page, text, shown);
+}
+
+/**
+ * Every line of text a player can read or hear on the screen as it is right
+ * now: the visible text, the accessible names a screen reader announces (an
+ * accessibility snapshot), the tooltips, the labels, and the page title. The
+ * Action Deck's accessibility layer carries the canvas's drawn text (Drones,
+ * keycaps, hit popups) in its labels and titles.
+ */
+export async function textOnScreen(page: Page): Promise<string[]> {
+  const body = page.locator('body');
+  // innerText on purpose: it reads what is rendered, as the player sees it.
+  // biome-ignore lint/performance/useDomNodeTextContent: rendered text is the point
+  const visible = await body.innerText();
+  const announced = await body.ariaSnapshot();
+  const attributes = await page
+    .locator('[title], [aria-label]')
+    .evaluateAll((elements) =>
+      elements.flatMap((element) => [
+        element.getAttribute('title') ?? '',
+        element.getAttribute('aria-label') ?? '',
+      ]),
+    );
+  const lines = [
+    ...visible.split('\n'),
+    ...announced.split('\n'),
+    ...attributes,
+    await page.title(),
+  ].map((line) => line.trim());
+  return [...new Set(lines.filter((line) => line !== ''))];
+}
+
+/**
+ * Soft: names the offending lines when the screen uses a banned word, and goes
+ * on, so one run reports every screen. Returns the lines it read.
+ */
+export async function expectNoBannedNames(
+  page: Page,
+  where: string,
+): Promise<string[]> {
+  const lines = await textOnScreen(page);
+  expect
+    .soft(
+      lines.filter((line) => BANNED_NAME.test(line)),
+      `${where}: text that uses combo, hyperspace or warp`,
+    )
+    .toEqual([]);
+  return lines;
 }

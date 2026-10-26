@@ -171,42 +171,19 @@ export const sectorUnlockedBanner = (page: Page): Locator =>
   page.getByText(/New Sector Unlocked/);
 
 /**
- * Starts the game with a Profile the player already has: each Stage id in
- * `stars` is cleared with that many Stars (so the fleet's Stars are their
- * sum). It is stored once, before the page loads; fields left out take their
- * defaults. Call it before `page.goto`.
+ * Starts the game with a Save the player already has (see
+ * `tests/shared/saves.ts` for ready-made ones; fields left out take their
+ * defaults). It is put in localStorage once, before the page loads, so a
+ * reload sees whatever the game left behind. Call it before `page.goto`.
  */
-export async function seedStageStars(
-  page: Page,
-  stars: Record<string, number>,
-  otherFields: Record<string, unknown> = {},
-): Promise<void> {
-  const stagesProgress = Object.fromEntries(
-    Object.entries(stars).map(([stageId, starsEarned]) => [
-      stageId,
-      {
-        stageId,
-        completed: true,
-        starsEarned,
-        highScore: 22150,
-        bestWpm: 31,
-        bestAccuracy: 100,
-        bestStreak: 40,
-        timesPlayed: 2,
-        lastPlayedAt: 1792904921385,
-      },
-    ]),
-  );
+export async function seedSave(page: Page, save: unknown): Promise<void> {
   await page.addInitScript(
     ({ key, value }) => {
       if (sessionStorage.getItem('seeded')) return;
       sessionStorage.setItem('seeded', 'yes');
       localStorage.setItem(key, value);
     },
-    {
-      key: 'astrotype_profile_v1',
-      value: JSON.stringify({ ...otherFields, stagesProgress }),
-    },
+    { key: 'astrotype_profile_v1', value: JSON.stringify(save) },
   );
 }
 

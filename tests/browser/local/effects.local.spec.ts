@@ -4,10 +4,11 @@ import {
   type Page,
   test as base,
 } from '@playwright/test';
-import { drone, flightDeck, keycap } from '../helpers';
+import { drone, keycap } from '../helpers';
+import { launchOnStoppedClock } from '../journey-helpers';
 
 // LOCAL ONLY (`pnpm test:local`, docs/agents/testing.md): hundreds of drawn
-// frames per test, too heavy for CI's runner. Mapping rows #119-#122.
+// frames per test, too heavy for CI's runner.
 //
 // The effects on the PixiJS Action Deck: lasers, lock-on
 // brackets, explosions, the ship, the guidance beam, Drone thrusters and keycap
@@ -161,17 +162,8 @@ async function box(element: Locator): Promise<Rect> {
  * Free Flight with the PixiJS deck on a clock that stands still, with the lead
  * Drone settled at the Strike Line. From here the test decides when time moves.
  */
-async function launchOnStoppedClock(page: Page, text: string) {
-  await page.clock.install({ time: 0 });
-  await page.clock.pauseAt(1000);
-  await page.goto('/');
-  await page.getByRole('button', { name: 'Free Flight', exact: true }).click();
-  await page.getByRole('textbox').fill(text);
-  await page.getByRole('button', { name: 'Launch Custom Flight' }).click();
-  await expect(
-    page.getByRole('button', { name: 'Pause', exact: true }),
-  ).toBeVisible();
-  await expect(flightDeck(page)).toContainText(text);
+async function launchWithLeadDroneSettled(page: Page, text: string) {
+  await launchOnStoppedClock(page, text);
 
   // PixiJS draws on animation frames, which only come when the clock moves.
   await expect(async () => {
@@ -243,7 +235,7 @@ test('a hit explodes the Drone in its own lane, and the explosion plays out and 
   page,
   pixels,
 }) => {
-  await launchOnStoppedClock(page, TEXT);
+  await launchWithLeadDroneSettled(page, TEXT);
   const deck = await deckArea(page);
   const lane = await laneOf(page, 'q', deck);
 
@@ -275,7 +267,7 @@ test('a wrong key is a Miss: red on the deck and the keycap lights, and nothing 
   page,
   pixels,
 }) => {
-  await launchOnStoppedClock(page, TEXT);
+  await launchWithLeadDroneSettled(page, TEXT);
   const deck = await deckArea(page);
   const lane = await laneOf(page, 'q', deck);
   // "z" is not the next character ("q"), nor anywhere in the text.
@@ -325,7 +317,7 @@ test('the paused deck is frozen mid-explosion, and the explosion carries on from
   page,
   pixels,
 }) => {
-  await launchOnStoppedClock(page, TEXT);
+  await launchWithLeadDroneSettled(page, TEXT);
   const deck = await deckArea(page);
   const lane = await laneOf(page, 'q', deck);
 
@@ -389,7 +381,7 @@ test('the ship, the guidance beam and the Drone lights are drawn, and the deck k
 }) => {
   // "b" is the lead: the ship waits under its keycap, and the guidance beam
   // runs up from there to the Drone.
-  await launchOnStoppedClock(page, 'bqp');
+  await launchWithLeadDroneSettled(page, 'bqp');
   const deck = await deckArea(page);
   const lead = await box(keycap(page, 'b'));
   const centre = lead.x + lead.width / 2;

@@ -37,7 +37,7 @@ Vitest with happy-dom, in `tests/dom/*.test.tsx`, run by `pnpm test` beside the 
 
 Playwright, in `tests/browser/*.spec.ts`, Chromium only, against the production build. `pnpm test:browser` runs the `chromium` project, which is what CI runs and ignores `*.local.spec.ts`.
 - The browser keeps only what a real browser proves: the Action Deck and its accessibility layer, motion and a frozen pause on the real or a stopped clock, native keyboard and focus behaviour (Space not scrolling, Enter and Space not activating the Pause Menu), the Save in localStorage across a reload, the screenshots, and the `@smoke` journey.
-- There are a few journeys, one launch each. Each fact is a `test.step`, and checks that don't gate the next step use `expect.soft`, so one run reports every broken fact. Helpers shared by the journeys are in `tests/browser/journey-helpers.ts`.
+- There are a few journeys, one launch each. Each fact is a `test.step`, and checks that don't gate the next step use `expect.soft`, so one run reports every broken fact. Helpers shared by the journeys are in `tests/browser/journey-helpers.ts`, CI's and the local-only ones alike. What every layer of tests shares (the Saves to start from, the banned names, the Multiplier steps) is in `tests/shared/`, which imports from no test runner.
 - Add a test to an existing journey before adding a new one.
 - Anything real-browser but too heavy for the runner goes in the local-only suite (below).
 - Keep the whole suite within a few minutes on the 2-vCPU runner. A real-clock key costs about half a second there, and a `page.clock` frame about a third of a second.

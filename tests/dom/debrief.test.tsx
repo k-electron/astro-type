@@ -2,7 +2,7 @@ import { fireEvent } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { CURRICULUM_SECTORS } from '../../src/data/curriculum';
 import { type Player, renderGame, screen, within } from './harness';
-import { clearedStages } from './saves';
+import { clearedStages } from '../shared/saves';
 
 /** The card the Debrief shows over the Flight Deck. */
 function debriefCard(): HTMLElement {

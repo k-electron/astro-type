@@ -11,12 +11,12 @@ import {
   openMenu,
   promptProgress,
   sectorUnlockedBanner,
-  seedStageStars,
+  seedSave,
   startFirstStage,
   typeText,
 } from '../helpers';
-import { pauseButton } from '../journey-helpers';
-import { expectNoBannedNames } from './glossary-sweep';
+import { expectNoBannedNames, pauseButton } from '../journey-helpers';
+import { clearedStages } from '../../shared/saves';
 
 // LOCAL ONLY (`pnpm test:local`, docs/agents/testing.md): long end-to-end Runs
 // with real typing on real Stages. Each clear of the first Stage is 77 keys, on
@@ -25,9 +25,9 @@ import { expectNoBannedNames } from './glossary-sweep';
 // screens, and sector-unlock.test.ts covers the rule; this plays them through
 // the real page.
 //
-// Mapping rows: #147, #22, #86, #97 (the first Stage from a fresh Save), #142,
-// #100, #21 (a Debrief that opens a Sector), #85 (the last Stage), #42, #87,
-// #101 (Free Flight).
+// The old browser tests guarded: the first Stage played from a fresh Save, a
+// Debrief that opens a Sector, the last Stage, and Free Flight from pasted
+// text to the Debrief.
 
 test.skip(Boolean(process.env.CI), 'Local-only: run with pnpm test:local');
 // The tests are independent, so they can run on separate workers.
@@ -73,7 +73,8 @@ async function launchLastStage(page: Page) {
   // The hands and the keyboard are hidden (set in the Profile, not clicked, so
   // no button keeps focus and takes a Space): the lighter deck keeps the
   // Run's many keys quick.
-  await seedStageStars(page, stars, {
+  await seedSave(page, {
+    ...clearedStages(stars),
     handsVisible: false,
     keyboardVisible: false,
   });
@@ -102,7 +103,7 @@ test('the first Stage played from a fresh Save: its Debrief, the next Stage fres
   await clearFirstStage(page);
   const result = debrief(page);
 
-  await test.step('the Debrief shows the Stage, its Speed and the Stars it earned [#147]', async () => {
+  await test.step('the Debrief shows the Stage, its Speed and the Stars it earned', async () => {
     await expect
       .soft(
         result.getByRole('heading', { name: 'The Tactile Anchors', level: 2 }),
@@ -115,20 +116,20 @@ test('the first Stage played from a fresh Save: its Debrief, the next Stage fres
       .toBeVisible();
   });
 
-  await test.step('the Debrief of any other Stage keeps its "Next Mission" button [#86]', async () => {
+  await test.step('the Debrief of any other Stage keeps its "Next Mission" button', async () => {
     await expect
       .poll(() => debriefButtons(page))
       .toEqual(['Replay', 'Galaxy Map', 'Main Menu', 'Next Mission']);
   });
 
-  await test.step('Analytics, once a Run has been played, uses the glossary names, and closes back onto the Debrief [#97]', async () => {
+  await test.step('Analytics, once a Run has been played, uses the glossary names, and closes back onto the Debrief', async () => {
     await openMenu(page, 'Analytics');
     await expectNoBannedNames(page, 'Analytics after a Run');
     await closeMenu(page);
     await expect(debriefHeading(page)).toBeVisible();
   });
 
-  await test.step('Next Mission starts a fresh Run of the next Stage [#22]', async () => {
+  await test.step('Next Mission starts a fresh Run of the next Stage', async () => {
     await expect(flightDeck(page)).not.toContainText(/Score\s*0\s*x1/i);
     // The Debrief calls it "Next Mission".
     await page.getByRole('button', { name: 'Next Mission' }).click();
@@ -140,7 +141,7 @@ test('the first Stage played from a fresh Save: its Debrief, the next Stage fres
     await expect(pauseButton(page)).toBeVisible();
   });
 
-  await test.step('the Save outlives the page: the Stars are still there after a reload [#147]', async () => {
+  await test.step('the Save outlives the page: the Stars are still there after a reload', async () => {
     await page.reload();
     await expect(
       page.getByRole('button', { name: '3 ★', exact: true }),
@@ -157,12 +158,12 @@ test('a Debrief that opens a Sector shows its banner and uses the glossary names
 }) => {
   // 3 Stars already: clearing Stage 1 for 3 more takes the fleet to 6, which
   // opens Sector 02, so the Debrief's unlock notice is on screen to be read.
-  await seedStageStars(page, { 's1-l2': 3 });
+  await seedSave(page, clearedStages({ 's1-l2': 3 }));
   await startFirstStage(page);
   await clearFirstStage(page);
   await expect(page.getByRole('button', { name: 'Replay' })).toBeVisible();
 
-  await test.step('the notice and the 6 Stars are shown, and the Debrief uses the glossary names [#142, #100]', async () => {
+  await test.step('the notice and the 6 Stars are shown, and the Debrief uses the glossary names', async () => {
     await expect
       .soft(page.getByRole('button', { name: '6 ★', exact: true }))
       .toBeVisible();
@@ -173,7 +174,7 @@ test('a Debrief that opens a Sector shows its banner and uses the glossary names
     await expectNoBannedNames(page, 'the Debrief with its Sector unlock');
   });
 
-  await test.step('Replay starts a fresh Run of the same Stage [#21]', async () => {
+  await test.step('Replay starts a fresh Run of the same Stage', async () => {
     await expect(flightDeck(page)).not.toContainText(/Score\s*0\s*x1/i);
     await page.getByRole('button', { name: 'Replay' }).click();
 
@@ -188,7 +189,7 @@ test('a Debrief that opens a Sector shows its banner and uses the glossary names
   });
 });
 
-test('the Debrief of the last Stage shows "Back to Galaxy Map" in place of "Next Mission", and it opens the Galaxy Map [#85]', async ({
+test('the Debrief of the last Stage shows "Back to Galaxy Map" in place of "Next Mission", and it opens the Galaxy Map', async ({
   page,
 }) => {
   await launchLastStage(page);
@@ -213,7 +214,7 @@ test('the Debrief of the last Stage shows "Back to Galaxy Map" in place of "Next
 test('Free Flight plays through to the Debrief: pasted text on plain keys, then with Misses, and no screen says combo, hyperspace or warp', async ({
   page,
 }) => {
-  await test.step('pasted curly quotes, a long dash and line breaks play through on plain keys [#42, #87]', async () => {
+  await test.step('pasted curly quotes, a long dash and line breaks play through on plain keys', async () => {
     // Curly single and double quotes, a long dash, a line break and a tab, as
     // text pasted from a web page or a word processor would carry them.
     const pasted = 'Don’t stop — “go”\nnow\tfast';
@@ -235,7 +236,7 @@ test('Free Flight plays through to the Debrief: pasted text on plain keys, then 
       .toEqual(['Replay', 'Galaxy Map', 'Main Menu']);
   });
 
-  await test.step('a Free Flight cleared with Misses uses the glossary names [#101]', async () => {
+  await test.step('a Free Flight cleared with Misses uses the glossary names', async () => {
     await launchFreeFlight(page, 'abcdef');
     await page.keyboard.press('x');
     await page.keyboard.press('y');

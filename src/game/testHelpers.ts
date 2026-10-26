@@ -81,7 +81,12 @@ export function clearStage(
   game.pressKey(targetKey(game));
 }
 
-/** A Free Flight Stage of the player's own text, built the way the Free Flight screen builds one. */
+/**
+ * A Free Flight Stage of the player's own text. Its literals ('Free Flight
+ * Drill', 'sector-custom') are copied from `handleLaunch` in
+ * `CustomPracticeModal.tsx`, which builds the real one inline in a click
+ * handler, so there is no constructor to import. Change both together.
+ */
 export function freeFlightStage(text: string): Stage {
   return {
     id: 'custom-test',

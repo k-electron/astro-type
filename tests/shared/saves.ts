@@ -1,6 +1,8 @@
 /**
- * Saves a returning player might already have, for `renderGame({ profile })`.
- * Fields left out of a Save take their defaults, as they do for a real one.
+ * Saves a returning player might already have, for `renderGame({ profile })`
+ * and the browser tests' `seedSave`. Fields left out of a Save take their
+ * defaults, as they do for a real one. This imports from no test runner, so
+ * every layer of tests can use it.
  */
 
 /** A Profile's Stage progress: each Stage id cleared with that many Stars. */

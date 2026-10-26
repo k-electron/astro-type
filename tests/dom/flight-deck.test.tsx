@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { multiplierAt } from '../shared/multiplier';
 import { type Player, renderGame, screen, within } from './harness';
 
 // The Flight Deck as the player reads it: the HUD, the text prompt and its
@@ -199,10 +200,6 @@ describe('a held key', () => {
 // "z" is never the next letter.
 const LONG_TEXT = 'abcdefghij'.repeat(20);
 const WRONG_KEY = 'z';
-
-/** The Multiplier a Streak has earned: x1, then x2 at 10, x3 at 20, x4 at 30. */
-const multiplierAt = (streak: number) =>
-  Math.min(4, 1 + Math.floor(streak / 10));
 
 const OVERDRIVE_BADGE = /^overdrive\s*x\d+$/i;
 

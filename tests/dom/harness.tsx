@@ -18,7 +18,14 @@
  *   nothing. Reach a Debrief with `type`.
  * - Tailwind is not loaded: no element is hidden by CSS, and there is no layout.
  */
-import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  isInaccessible,
+  render,
+  screen,
+  within,
+} from '@testing-library/react';
 import { afterEach } from 'vitest';
 import App from '../../src/App';
 import { CURRICULUM_SECTORS } from '../../src/data/curriculum';
@@ -226,34 +233,39 @@ export function renderGame(options: RenderGameOptions = {}): Player {
       fireEvent.click(
         screen.getByRole('button', { name: new RegExp(sector.codenick) }),
       );
-      // The Stage's card is the nearest one around its title that has a button.
-      let card: HTMLElement | null = screen.getByRole('heading', {
-        level: 4,
-        name: stage.title,
+      // A card has no name of its own to query by. The Sector lists one card
+      // per Stage, each a title heading and a launch button, in the same
+      // order, so the Stage's button is the one at the position of its title.
+      const titles = screen.getAllByRole('heading', { level: 4 });
+      const launches = screen.getAllByRole('button', {
+        name: /^(Launch|Replay) Mission$/,
       });
-      const launch = /^(Launch|Replay) Mission$/;
-      while (card && !within(card).queryByRole('button', { name: launch })) {
-        card = card.parentElement;
+      const position = titles.findIndex(
+        (title) => title.textContent === stage.title,
+      );
+      const button = launches[position];
+      if (position === -1 || titles.length !== launches.length || !button) {
+        throw new Error(`No Launch Mission button for ${stageId}`);
       }
-      if (!card) throw new Error(`No Launch Mission button for ${stageId}`);
-      const button = within(card).getByRole('button', { name: launch });
       if ((button as HTMLButtonElement).disabled) {
         throw new Error(`${stageId} is in a Sector that is still locked`);
       }
       fireEvent.click(button);
     },
     typePrompt(typeOptions = {}) {
-      const characters = screen
-        .getByLabelText('Text prompt')
-        .querySelectorAll('[aria-current]');
-      const current = [...characters].find(
-        (character) => character.getAttribute('aria-current') !== 'false',
+      // Each character of the text is a one-character element of the prompt
+      // (a Space reads "␣"), and the one to type next is marked as current.
+      // The prompt's separator dot is aria-hidden, so it is not one of them.
+      const characters = within(screen.getByLabelText('Text prompt'))
+        .getAllByText(/^.$/s)
+        .filter((element) => !isInaccessible(element));
+      const next = characters.findIndex(
+        (element) => element.getAttribute('aria-current') === 'true',
       );
-      if (!current) throw new Error('The prompt has no current character');
-      const line = [...(current.parentElement?.children ?? [])];
-      const rest = line
-        .slice(line.indexOf(current))
-        .map((character) => character.textContent ?? '')
+      if (next === -1) throw new Error('The prompt has no current character');
+      const rest = characters
+        .slice(next)
+        .map((element) => element.textContent)
         .join('')
         .replaceAll('␣', ' ');
       player.type(rest.slice(0, typeOptions.characters), typeOptions);

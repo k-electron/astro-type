@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { type Player, renderGame, screen } from './harness';
-import { clearedStages, RETURNING_PLAYER } from './saves';
+import { clearedStages, RETURNING_PLAYER } from '../shared/saves';
 
 const NOTICE =
   "Your saved progress couldn't be read, so you're starting fresh.";
