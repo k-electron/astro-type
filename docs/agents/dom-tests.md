@@ -22,8 +22,9 @@ it('shows the Debrief when the text is typed to the end', () => {
 `tests/dom/harness.tsx` is the whole interface; read its doc comments.
 - `renderGame({ profile?, storage?, text? })` mounts the app on a new game. `profile` is the Save the player already has (any fields you leave out take their defaults); `text` starts a Free Flight Run of that text.
 - `player.openHeader('Sectors' | 'Hangar' | 'Analytics' | 'Free Flight' | 'Home')` and `player.click(name)` press real buttons.
-- `player.launchFreeFlight(text)`, `player.press(key)`, `player.type(text)` and `player.step(frames)` start and play a Run. Keys go through the App's own key listener as a keydown and a keyup on `window`. `type` lets the Run clock run half a second before each character so the Drone is at the Strike Line.
-- `player.game` is the headless game. Use it to read an outcome the screen does not show; never to do what a button does.
+- `player.launchFreeFlight(text)`, `player.press(key, { repeat?, ctrlKey?, metaKey? })`, `player.type(text, { stepsPerKey? })` and `player.step(steps)` start and play a Run. Keys go through the App's own key listener as a keydown and a keyup on `window`. `type` steps the Run clock half a second (30 steps) before each character so the Drone is at the Strike Line.
+- `player.blur()` and `player.hideTab()` are the player leaving the page; `player.reload()` rebuilds the app over the same Save, so only what the game saved survives.
+- The player has no handle on the game, so a test can only check what is on screen. The HUD's Accuracy and Speed refresh every 30 steps; `type` leaves them current, and after a bare `press` call `step(30)`.
 
 Rules:
 - Find things the way a player sees them: `getByRole` with a name, `getByText`, `getByLabelText`. No test ids, no class names, no store reads for what the screen shows.
@@ -35,7 +36,7 @@ Rules:
 ## What is stubbed, and why
 
 All of it is in `tests/dom/setup.ts`, with a numbered comment each:
-- **The PixiJS Action Deck** (`PixiActionDeck`) renders nothing. It needs WebGL, and a DOM has none. Its own React header bar goes with it: the Overdrive and Streak badges and the Hands toggle. (The Keyboard toggle is in the HUD and stays.)
+- **The PixiJS deck session** (`getDeckSession`, the only place `pixi.js` loads) attaches to nothing. It needs WebGL, and a DOM has none. The Action Deck's React header bar around it stays real: the Overdrive and Streak badges and the Hands toggle can be tested here. The canvas under it (Drones, keycaps, effects) is not there.
 - **`src/appGame.ts`**, the app's real game, is a tripwire: loading it fails the test, because it would bring in real time and localStorage. The tree reads its game with `useGame()`, and `renderGame` provides a headless one.
 - **`canvas-confetti`** draws on a canvas.
 - **`ResizeObserver` and `requestAnimationFrame`** do nothing, since there is no layout and no frame. The starfield's canvas gets no 2D context from happy-dom and skips drawing by itself.
@@ -46,7 +47,7 @@ Tailwind is not loaded, so no element is hidden by CSS. A DOM test sees the head
 ## What still needs the real browser
 
 Do not try to cover these here; they have a Playwright journey, a screenshot, or a person playing:
-- the Action Deck itself: Drones, keycaps, lasers, effects, hit popups, and the badges and Hands toggle in its header bar
+- the Action Deck's canvas: Drones, keycaps, lasers, effects, hit popups, and clicking a keycap
 - the real clock and frames: Drone motion, catch-up after a slow frame, a pause freezing the deck, exact Judgement timing
 - native focus and keyboard: what has focus after a screen opens or closes, a stray Enter on a focused button, a key held down, the `blur` and tab-hidden events
 - layout: what is on screen at a given size, scrolling, anything CSS hides or moves

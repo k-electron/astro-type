@@ -4,7 +4,7 @@
  * entry here stands in for one of those, and for nothing else.
  *
  *   1. The app's singleton game (a tripwire, not a stub)
- *   2. The PixiJS Action Deck (needs WebGL)
+ *   2. The PixiJS deck session (needs WebGL)
  *   3. canvas-confetti (needs a canvas)
  *   4. ResizeObserver (no layout engine)
  *   5. requestAnimationFrame (no frames: the test steps the clock itself)
@@ -26,13 +26,12 @@ vi.mock('../../src/appGame', () => {
   );
 });
 
-// 2. STUB: the PixiJS Action Deck. It draws with WebGL, which a DOM cannot
-//    do, and importing pixi.js would load it. This renders nothing in its
-//    place. It also drops the deck's own React header bar (the Overdrive and
-//    Streak badges, the Hands toggle), so a DOM test cannot see those; the
-//    browser journeys do.
-vi.mock('../../src/components/pixi-deck/PixiActionDeck', () => ({
-  PixiActionDeck: () => null,
+// 2. STUB: the PixiJS deck session, the one place pixi.js is loaded. It draws
+//    with WebGL, which a DOM cannot do. The Action Deck's own React header bar
+//    (the Overdrive and Streak badges, the Hands toggle) stays real; only the
+//    canvas under it is missing, and attaching to it does nothing.
+vi.mock('../../src/components/pixi-deck/deckSession', () => ({
+  getDeckSession: () => ({ attach() {}, detach() {} }),
 }));
 
 // 3. STUB: confetti is drawn on a canvas.

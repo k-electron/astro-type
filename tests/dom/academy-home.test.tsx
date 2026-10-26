@@ -14,7 +14,10 @@ describe('Academy Home', () => {
 
     // The Flight Deck: the HUD and the text prompt are showing.
     expect(screen.getByRole('region', { name: 'HUD' })).toBeTruthy();
-    expect(screen.getByLabelText('Text prompt').textContent).toContain('f');
+    // Stage 1 types "f j f j ff jj ..."; the prompt shows each space as ␣.
+    expect(screen.getByLabelText('Text prompt').textContent).toContain(
+      'f␣j␣f␣j␣ff␣jj␣fff␣jjj',
+    );
     expect(screen.getByRole('button', { name: 'Pause' })).toBeTruthy();
     expect(
       screen.queryByRole('heading', { name: /AstroType: Cosmic Touch Typing/ }),

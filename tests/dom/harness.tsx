@@ -7,9 +7,16 @@
  *   expect(screen.getByText(/Mission Debriefing/)).toBeTruthy();
  *
  * Assert on what is on screen, with Testing Library's role and text queries
- * (re-exported here as `screen` and `within`). `player.game` is there to
- * read an outcome the screen does not show; do not reach into it for
- * anything the screen does.
+ * (re-exported here as `screen` and `within`). The player is given no handle
+ * on the game itself, so a test can only check what a player would see.
+ *
+ * Things worth knowing:
+ * - The HUD's Accuracy and Speed refresh only on the Run clock's telemetry
+ *   tick, every 30 steps. `type` steps 30 between keys, so they are current
+ *   after it; after a bare `press`, call `step(30)` first.
+ * - A Run that was typed with no steps has Run Time 0, so its Speed means
+ *   nothing. Reach a Debrief with `type`.
+ * - Tailwind is not loaded: no element is hidden by CSS, and there is no layout.
  */
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach } from 'vitest';
@@ -39,17 +46,20 @@ export interface RenderGameOptions {
    * the game loads. Fields left out take their defaults, as in a real Save.
    */
   profile?: Record<string, unknown>;
-  /** A Save storage to start from, to inspect what the game saved. Wins over `profile`. */
+  /** A Save storage to start from. Wins over `profile`. */
   storage?: MemorySaveStorage;
   /** Start a Free Flight Run of this text, through the Free Flight screen. */
   text?: string;
 }
 
+export interface PressOptions {
+  /** An auto-repeat keydown, as when a key is held. */
+  repeat?: boolean;
+  ctrlKey?: boolean;
+  metaKey?: boolean;
+}
+
 export interface Player {
-  /** The headless game behind the screen. Prefer asserting on the screen. */
-  readonly game: Game;
-  /** The Save storage the game was built on. */
-  readonly storage: MemorySaveStorage;
   /** Click a header button, as the player would. */
   openHeader(button: HeaderButton): void;
   /** Click a button anywhere on the screen, found by its accessible name. */
@@ -58,21 +68,30 @@ export interface Player {
   launchFreeFlight(text: string): void;
   /**
    * Press one key through the App's own key listener: a keydown, then the
-   * keyup. `key` is a `KeyboardEvent.key` value (' ' for the space bar).
+   * keyup, on `window`. `key` is a `KeyboardEvent.key` value (' ' for Space).
    */
-  press(key: string): void;
+  press(key: string, options?: PressOptions): void;
   /**
-   * Type each character of `text`, letting the Run clock run half a second
-   * before each so the Drone has reached the Strike Line. The last character
-   * of a Run's text clears it.
+   * Type each character of `text`, stepping the Run clock `stepsPerKey`
+   * (default 30, half a second: the Drone is at the Strike Line) before each.
+   * The last character of a Run's text clears it.
    */
-  type(text: string): void;
-  /** Run the Run clock `frames` steps (60 to the second), as the frame loop would. */
-  step(frames: number): void;
+  type(text: string, options?: { stepsPerKey?: number }): void;
+  /** Run the Run clock `steps` steps (60 to the second), as the frame loop would. */
+  step(steps: number): void;
+  /** The window loses focus. */
+  blur(): void;
+  /** The tab is hidden, as when the player switches to another tab. */
+  hideTab(): void;
+  /**
+   * Reload the page: the app is rebuilt from nothing over the same Save, so
+   * what the game saved comes back and everything else is gone.
+   */
+  reload(): void;
 }
 
-/** Frames the Run clock takes before each typed character: the Drone arrives. */
-const FRAMES_BEFORE_A_KEY = 30;
+/** Steps the Run clock takes before each typed character: the Drone arrives. */
+const STEPS_BEFORE_A_KEY = 30;
 
 /** Moves the machine refused during the current test; any is a test failure. */
 let refusals: RefusedMoveError[] = [];
@@ -95,22 +114,25 @@ afterEach(() => {
  */
 export function renderGame(options: RenderGameOptions = {}): Player {
   const storage = options.storage ?? createMemoryStorage(options.profile);
-  const game = createGame({
-    storage,
-    // A throw inside a React click handler would not reliably reach the test,
-    // so a refused move is collected and fails the test when it ends.
-    onRefusedMove: (error) => refusals.push(error),
-  });
+  let game: Game;
+  let unmount: () => void;
 
-  render(
-    <GameProvider game={game}>
-      <App />
-    </GameProvider>,
-  );
+  const mount = () => {
+    game = createGame({
+      storage,
+      // A throw inside a React click handler would not reliably reach the
+      // test, so a refused move is collected and fails the test when it ends.
+      onRefusedMove: (error) => refusals.push(error),
+    });
+    unmount = render(
+      <GameProvider game={game}>
+        <App />
+      </GameProvider>,
+    ).unmount;
+  };
+  mount();
 
   const player: Player = {
-    game,
-    storage,
     openHeader(button) {
       const header = within(screen.getByRole('navigation'));
       fireEvent.click(header.getByRole('button', { name: button }));
@@ -125,18 +147,41 @@ export function renderGame(options: RenderGameOptions = {}): Player {
       });
       player.click('Launch Custom Flight');
     },
-    press(key) {
-      fireEvent.keyDown(window, { key });
-      fireEvent.keyUp(window, { key });
+    press(key, pressOptions = {}) {
+      fireEvent.keyDown(window, { key, ...pressOptions });
+      fireEvent.keyUp(window, { key, ...pressOptions });
     },
-    type(text) {
+    type(text, typeOptions = {}) {
+      const steps = typeOptions.stepsPerKey ?? STEPS_BEFORE_A_KEY;
       for (const character of text) {
-        player.step(FRAMES_BEFORE_A_KEY);
+        player.step(steps);
         player.press(character);
       }
     },
-    step(frames) {
-      act(() => game.step(frames));
+    step(steps) {
+      act(() => game.step(steps));
+    },
+    blur() {
+      fireEvent.blur(window);
+    },
+    hideTab() {
+      const visibility = Object.getOwnPropertyDescriptor(
+        document,
+        'visibilityState',
+      );
+      Object.defineProperty(document, 'visibilityState', {
+        configurable: true,
+        get: () => 'hidden',
+      });
+      fireEvent(document, new Event('visibilitychange'));
+      // Put the page back as found, so the next test sees a visible tab.
+      if (visibility)
+        Object.defineProperty(document, 'visibilityState', visibility);
+      else Reflect.deleteProperty(document, 'visibilityState');
+    },
+    reload() {
+      unmount();
+      mount();
     },
   };
 

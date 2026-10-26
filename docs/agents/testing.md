@@ -21,7 +21,7 @@ Screens are covered by DOM tests (below), browser journeys or by playing. Sound 
 
 ## DOM tests
 
-Vitest, in `tests/dom/*.test.tsx`, run by `pnpm test` beside the unit tests. They mount the real `<App />` in happy-dom on a headless game and drive it as a player does (buttons, keys, Run clock steps), asserting by role and text. The PixiJS Action Deck, WebGL, layout, focus and real time are not there: those stay with the browser journeys. [`dom-tests.md`](dom-tests.md) shows how to write one and what is stubbed.
+Vitest, in `tests/dom/*.test.tsx`, run by `pnpm test` beside the unit tests. They mount the real `<App />` in happy-dom on a headless game and drive it as a player does (buttons, keys, Run clock steps), asserting by role and text. The Action Deck's canvas (PixiJS, WebGL), layout, native focus and real time are not there: those stay with the browser journeys. [`dom-tests.md`](dom-tests.md) shows how to write one and what is stubbed.
 
 ## Browser tests
 
