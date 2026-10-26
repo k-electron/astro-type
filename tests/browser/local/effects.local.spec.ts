@@ -4,8 +4,11 @@ import {
   type Page,
   test as base,
 } from '@playwright/test';
-import { drone, flightDeck, keycap } from './helpers';
+import { drone, flightDeck, keycap } from '../helpers';
 
+// LOCAL ONLY (`pnpm test:local`, docs/agents/testing.md): hundreds of drawn
+// frames per test, too heavy for CI's runner. Mapping rows #119-#122.
+//
 // The effects on the PixiJS Action Deck: lasers, lock-on
 // brackets, explosions, the ship, the guidance beam, Drone thrusters and keycap
 // glow. They are drawn in a canvas, so these journeys do what a player does:
@@ -140,12 +143,13 @@ const test = base.extend<{ pixels: Pixels }>({
   },
 });
 
+test.skip(Boolean(process.env.CI), 'Local-only: run with pnpm test:local');
 // Tall enough that the Drones, the Strike Line and the keyboard are all on
-// screen at once.
+// screen at once. (The local project sets the same viewport and a timeout of
+// 240 s, since every frame stepped under a stopped clock is drawn.)
 test.use({ viewport: { width: 1280, height: 1100 } });
-// The deck is slow to step under a stopped clock (every frame is drawn), so
-// give each journey room.
-test.setTimeout(180_000);
+// The four tests are independent, so they can run on separate workers.
+test.describe.configure({ mode: 'parallel' });
 
 async function box(element: Locator): Promise<Rect> {
   const b = await element.boundingBox({ timeout: 2000 });
@@ -174,7 +178,20 @@ async function launchOnStoppedClock(page: Page, text: string) {
     await page.clock.runFor(50);
     await expect(drone(page, text[1])).toBeVisible({ timeout: 250 });
   }).toPass({ timeout: 10_000 });
-  await page.clock.runFor(3000);
+  // Settle the lead Drone at the Strike Line (it needs about half a second of
+  // frames), then see that it has stopped: the lane the tests measure is
+  // computed from where it waits.
+  await page.clock.runFor(600);
+  const lead = drone(page, text[0]);
+  let last = Number.NaN;
+  await expect(async () => {
+    await page.clock.runFor(100);
+    const b = await box(lead);
+    const bottom = b.y + b.height;
+    const still = bottom === last;
+    last = bottom;
+    expect(still, 'the lead Drone has stopped at the Strike Line').toBe(true);
+  }).toPass({ timeout: 20_000, intervals: [50] });
 }
 
 /** The Action Deck's canvas: the one place PixiJS draws. */

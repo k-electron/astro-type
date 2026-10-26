@@ -1,16 +1,34 @@
 import { expect, type Locator, type Page, test } from '@playwright/test';
-import { flightDeck, hud, launchFreeFlight } from './helpers';
+import {
+  closeButton,
+  flightDeck,
+  headerButton,
+  hud,
+  launchFreeFlight,
+  pauseMenu,
+} from '../helpers';
+import { pauseButton } from '../journey-helpers';
+import { expectNoBannedNames } from './glossary-sweep';
 
-// Round 2, Stream C (#35 item 9): the Overdrive labels agree. While Overdrive
-// is on, the HUD badge and the Action Deck's header badge both read
-// "OVERDRIVE x{n}", where n is the Multiplier doubled by Overdrive. Outside
-// Overdrive the HUD reads "x{Multiplier}" and the deck header has no Overdrive
-// badge.
+// LOCAL ONLY (`pnpm test:local`, docs/agents/testing.md): a Streak of 30 and
+// more, twice over, on the real clock, which CI's runner cannot afford. The DOM
+// tests (tests/dom/flight-deck.test.tsx) cover the labels; this is the same
+// climb through the real page and the real Action Deck.
 //
-// Only the labels are the subject (what each hit scores is a unit test's
-// business), so nothing here reads the score. The Run is played on the real
-// clock with real key presses, a key at a time; each check waits for what the
-// player would see.
+// The Overdrive labels agree. While Overdrive is on, the HUD badge and the
+// Action Deck's header badge both read "OVERDRIVE x{n}", where n is the
+// Multiplier doubled by Overdrive. Outside Overdrive the HUD reads
+// "x{Multiplier}" and the deck header has no Overdrive badge. And in real
+// Overdrive, nothing the player can read says combo, hyperspace or warp.
+//
+// Only the labels are the subject (what each hit scores is the popups
+// journey's business), so nothing here reads the score. The Run is played on
+// the real clock with real key presses, a key at a time; each check waits for
+// what the player would see.
+//
+// Mapping rows: #103, #104 (the badges), #92, #93, #102 (the sweep).
+
+test.skip(Boolean(process.env.CI), 'Local-only: run with pnpm test:local');
 
 /** An Overdrive badge, anywhere on the Flight Deck ("Overdrive Meter" is not one). */
 const OVERDRIVE_BADGE = /^overdrive\s*x\d+$/i;
@@ -86,49 +104,77 @@ async function expectOverdrive(page: Page, streak: number) {
   await expect(hudMultiplier(page)).toHaveCount(0);
 }
 
-test('outside Overdrive the HUD shows x{Multiplier} and the deck header has no Overdrive badge', async ({
+test('the Streak climbs through every Multiplier into Overdrive, the badges agree at every step and through a Miss, and no screen says combo, hyperspace or warp', async ({
   page,
 }) => {
+  test.setTimeout(360_000);
   await launchFreeFlight(page, TEXT);
   const run = followRun(page);
 
-  await expectPlain(page, 1);
-  while (run.streak < 9) await run.hit();
-  await expectPlain(page, 1);
+  await test.step('outside Overdrive the HUD shows x{Multiplier} and the deck header has no Overdrive badge [#103]', async () => {
+    await expectPlain(page, 1);
+    while (run.streak < 9) await run.hit();
+    await expectPlain(page, 1);
 
-  await run.hit(); // Streak 10: Multiplier x2
-  await expectPlain(page, 2);
+    await run.hit(); // Streak 10: Multiplier x2
+    await expectPlain(page, 2);
 
-  while (run.streak < 20) await run.hit();
-  await expectPlain(page, 3); // Streak 20: Multiplier x3
-});
+    while (run.streak < 20) await run.hit();
+    await expectPlain(page, 3); // Streak 20: Multiplier x3
+  });
 
-test('in Overdrive both badges read the Multiplier doubled, at every Multiplier step', async ({
-  page,
-}) => {
-  await launchFreeFlight(page, TEXT);
-  const run = followRun(page);
+  await test.step('in Overdrive both badges read the Multiplier doubled, up to x4 [#104]', async () => {
+    // Fill the meter with a long Streak, then follow Overdrive up to x4.
+    await run.hitUntilOverdrive(60);
+    await expectOverdrive(page, run.streak);
+    while (run.streak < 30) {
+      await run.hit();
+      await expectOverdrive(page, run.streak); // x3 doubled, then x4 doubled at 30
+    }
+  });
 
-  // Fill the meter with a long Streak, then follow Overdrive up to x4.
-  await run.hitUntilOverdrive(60);
-  await expectOverdrive(page, run.streak);
-  while (run.streak < 30) {
-    await run.hit();
-    await expectOverdrive(page, run.streak); // x3 doubled, then x4 doubled at 30
-  }
+  await test.step('the Flight Deck in Overdrive shows an Overdrive label and uses the glossary names [#92]', async () => {
+    await expect
+      .soft(
+        hud(page)
+          .getByText(/Overdrive/i)
+          .first(),
+      )
+      .toBeVisible();
+    await expect.soft(hud(page).getByText(/^Streak$/i)).toBeVisible();
+    await expectNoBannedNames(page, 'the Flight Deck in Overdrive');
+  });
 
-  // A Miss ends Overdrive and the Streak, so the Multiplier is x1 again. The
-  // meter is still most of the way full, so Overdrive comes back while the
-  // Streak is still short of x2, and then carries through every step.
-  await run.miss();
-  await expectPlain(page, 1);
+  await test.step('the Hangar opened from the Flight Deck uses the glossary names, and closes onto the Pause Menu, with Overdrive behind it [#102, #93]', async () => {
+    await headerButton(page, 'Hangar').click();
+    await expect(
+      page.getByRole('heading', { name: 'Starship Hangar Upgrades' }),
+    ).toBeVisible();
+    await expectNoBannedNames(page, 'the Hangar opened mid-Run');
 
-  await run.hitUntilOverdrive(20);
-  expect(run.streak, 'Overdrive came back before Streak 10').toBeLessThan(10);
-  await expectOverdrive(page, run.streak);
+    await closeButton(page).click();
+    await expect(pauseMenu(page)).toBeVisible();
+    await expectNoBannedNames(page, 'the Pause Menu, with Overdrive behind it');
+  });
 
-  while (run.streak < 31) {
-    await run.hit();
-    await expectOverdrive(page, run.streak); // x1, x2 at 10, x3 at 20, x4 at 30
-  }
+  await test.step('resumed, a Miss ends Overdrive and the Streak, and Overdrive comes back and carries through every step [#104]', async () => {
+    await page.getByRole('button', { name: 'Resume Flight' }).click();
+    await expect(pauseMenu(page)).toBeHidden();
+    await expect(pauseButton(page)).toBeVisible();
+
+    // A Miss ends Overdrive and the Streak, so the Multiplier is x1 again. The
+    // meter is still most of the way full, so Overdrive comes back while the
+    // Streak is still short of x2, and then carries through every step.
+    await run.miss();
+    await expectPlain(page, 1);
+
+    await run.hitUntilOverdrive(20);
+    expect(run.streak, 'Overdrive came back before Streak 10').toBeLessThan(10);
+    await expectOverdrive(page, run.streak);
+
+    while (run.streak < 31) {
+      await run.hit();
+      await expectOverdrive(page, run.streak); // x1, x2 at 10, x3 at 20, x4 at 30
+    }
+  });
 });

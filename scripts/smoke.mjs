@@ -54,7 +54,7 @@ for (let attempt = 1; ; attempt++) {
 // The browser tests tagged @smoke, pointed at the live URL.
 const result = spawnSync(
   'pnpm',
-  ['exec', 'playwright', 'test', '--grep', '@smoke'],
+  ['exec', 'playwright', 'test', '--project=chromium', '--grep', '@smoke'],
   { stdio: 'inherit', env: { ...process.env, BASE_URL: base } },
 );
 if (result.status !== 0) {

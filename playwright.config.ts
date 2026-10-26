@@ -56,11 +56,32 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
+      // The local-only suite (tests/browser/local) has a project of its own.
+      testIgnore: /\.local\.spec\.ts$/,
       use: {
         ...devices['Desktop Chrome'],
         launchOptions: { args: lavapipeInstalled() ? softwareVulkan : [] },
       },
     },
+    // The local-only suite: real-browser tests too heavy for CI's runner, run
+    // by `pnpm test:local`. The project does not exist when CI is set, and each
+    // file skips itself there too.
+    ...(process.env.CI
+      ? []
+      : [
+          {
+            name: 'local',
+            testMatch: /\.local\.spec\.ts$/,
+            timeout: 240_000,
+            use: {
+              ...devices['Desktop Chrome'],
+              viewport: { width: 1280, height: 1100 },
+              launchOptions: {
+                args: lavapipeInstalled() ? softwareVulkan : [],
+              },
+            },
+          },
+        ]),
   ],
   webServer: baseURL
     ? undefined
