@@ -58,6 +58,8 @@ async function enterAndSpaceLeaveItPaused(page: Page) {
 test('native keys and focus: Space, Esc, Enter and the window losing focus', async ({
   page,
 }) => {
+  // The most real-clock keys of any journey: a busy machine can double its time.
+  test.setTimeout(120_000);
   await test.step('part A: a missed space is struck through at once, and looks like one that was passed', async () => {
     // A short window, so the Flight Deck is taller than the page and Space
     // would scroll it if the game let the key through.
@@ -161,5 +163,22 @@ test('native keys and focus: Space, Esc, Enter and the window losing focus', asy
     await page.keyboard.press('d');
     await expect(promptProgress(page)).toHaveText('67%');
     await expect.soft(flightDeck(page)).toContainText(/Streak\s*4(?!\d)/i);
+  });
+
+  await test.step('part B: a mistyped letter is struck through at once, and stays struck once passed', async () => {
+    // The cursor is on "e". A letter is drawn by another branch than a space.
+    const letter = (which: string) =>
+      textPrompt(page).getByText(which, { exact: true });
+
+    const struck = 'line-through';
+
+    await page.keyboard.press('z');
+    await expect.soft(currentCharacter(page)).toHaveText('e');
+    await expect.soft(letter('e')).toHaveCSS('text-decoration-line', struck);
+
+    await page.keyboard.press('e');
+    await expect(promptProgress(page)).toHaveText('83%');
+    await expect.soft(letter('e')).toHaveCSS('text-decoration-line', struck);
+    await expect.soft(letter('f')).toHaveCSS('text-decoration-line', 'none');
   });
 });

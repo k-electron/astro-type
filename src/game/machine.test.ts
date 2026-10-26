@@ -46,6 +46,14 @@ const pickStage = (stageId: string): PlayerEvent => ({
 
 const FREE_FLIGHT_ID = 'custom-practice';
 
+/**
+ * The tests that walk many games take 1 to 2 seconds on a quiet machine, so
+ * under load (a full `pnpm test` beside the browser tests) they overran
+ * Vitest's 5 second default. It is the time allowed, not the speed they are
+ * held to: they fail on a wrong screen, not on a slow one.
+ */
+const SLOW_WALK_TIMEOUT = 30_000;
+
 /** A Free Flight Stage: Stage 1's shape with the player's own short text. */
 function freeFlightLaunch(): PlayerEvent {
   const template = startedGame().getRun().currentStage;
@@ -241,32 +249,39 @@ describe('every chain of opened screens unwinds back to its start, one Close at 
   ];
 
   for (const { name, make, start, landing } of starts) {
-    it(`starting from ${name}`, () => {
-      for (const chain of chainsOfOpenedScreens()) {
-        const label = `${start} > ${chain.join(' > ')}`;
-        const game = make();
-        expect(game.getScreen(), label).toBe(start);
-        const before = progress(game);
-        const result = game.getDebrief();
+    it(
+      `starting from ${name}`,
+      () => {
+        for (const chain of chainsOfOpenedScreens()) {
+          const label = `${start} > ${chain.join(' > ')}`;
+          const game = make();
+          expect(game.getScreen(), label).toBe(start);
+          const before = progress(game);
+          const result = game.getDebrief();
 
-        for (const screen of chain) {
-          play(game, OPEN[screen]);
-          expect(game.getScreen(), `${label}: opening ${screen}`).toBe(screen);
+          for (const screen of chain) {
+            play(game, OPEN[screen]);
+            expect(game.getScreen(), `${label}: opening ${screen}`).toBe(
+              screen,
+            );
+          }
+
+          for (let depth = chain.length - 1; depth >= 0; depth--) {
+            play(game, CLOSE);
+            const expected = depth === 0 ? landing : chain[depth - 1];
+            expect(
+              game.getScreen(),
+              `${label}: Close back to ${expected}`,
+            ).toBe(expected);
+          }
+
+          // Nothing was lost on the way: the same Run, the same Debrief.
+          expect(progress(game), label).toEqual(before);
+          expect(game.getDebrief(), label).toEqual(result);
         }
-
-        for (let depth = chain.length - 1; depth >= 0; depth--) {
-          play(game, CLOSE);
-          const expected = depth === 0 ? landing : chain[depth - 1];
-          expect(game.getScreen(), `${label}: Close back to ${expected}`).toBe(
-            expected,
-          );
-        }
-
-        // Nothing was lost on the way: the same Run, the same Debrief.
-        expect(progress(game), label).toEqual(before);
-        expect(game.getDebrief(), label).toEqual(result);
-      }
-    });
+      },
+      SLOW_WALK_TIMEOUT,
+    );
   }
 });
 
@@ -744,78 +759,83 @@ describe('no sequence of the events a screen offers triggers a refused move', ()
   const SEEDS = 40;
   const STEPS = 60;
 
-  it(`${SEEDS} seeded walks of ${STEPS} moves through every screen`, () => {
-    const screensSeen = new Set<Screen>();
+  it(
+    `${SEEDS} seeded walks of ${STEPS} moves through every screen`,
+    () => {
+      const screensSeen = new Set<Screen>();
 
-    for (let seed = 1; seed <= SEEDS; seed++) {
-      const random = mulberry32(seed);
-      const game = newGame();
-      const log: string[] = [];
-      let lastResult: ReturnType<Game['getDebrief']> = null;
-      let before: { index: number; score: number } | null = null;
+      for (let seed = 1; seed <= SEEDS; seed++) {
+        const random = mulberry32(seed);
+        const game = newGame();
+        const log: string[] = [];
+        let lastResult: ReturnType<Game['getDebrief']> = null;
+        let before: { index: number; score: number } | null = null;
 
-      const where = () => `seed ${seed}: ${log.join(' > ')}`;
-      const checkScreen = () => {
-        const screen = game.getScreen();
-        screensSeen.add(screen);
-        switch (screen) {
-          case 'flight-deck':
-            expect(game.getPhase(), where()).toBe('running');
-            break;
-          case 'pause-menu':
-            expect(game.getPhase(), where()).toBe('paused');
-            break;
-          case 'debrief':
-            expect(game.getPhase(), where()).toBe('cleared');
-            // The Debrief is never empty or stale.
-            expect(lastResult, where()).not.toBeNull();
-            expect(game.getDebrief(), where()).toEqual(lastResult);
-            break;
-        }
-      };
-
-      for (let n = 0; n < STEPS; n++) {
-        const screen = game.getScreen();
-        const phase = game.getPhase();
-        const alive = phase === 'running' || phase === 'paused';
-        const roll = random();
-
-        if (screen === 'flight-deck' && roll < 0.3) {
-          log.push('hit keys');
-          hitKeys(game, 1 + Math.floor(random() * 4));
-          before = progress(game);
-        } else if (screen === 'flight-deck' && roll < 0.37) {
-          log.push('finish the Run');
-          finishRun(game);
-          lastResult = game.getDebrief();
-          before = null;
-          expect(game.getScreen(), where()).toBe('debrief');
-        } else {
-          const offered = OFFERED[screen](game);
-          const event = offered[Math.floor(random() * offered.length)];
-          log.push(`${screen}:${event.type}`);
-          expect(game.canSend(event), where()).toBe(true);
-          expect(() => game.send(event), where()).not.toThrow();
-
-          if (ABANDONING.has(event.type) || !alive) {
-            // A Run was ended or began: this is the new baseline.
-            const now = game.getPhase();
-            before =
-              now === 'running' || now === 'paused' ? progress(game) : null;
-          } else if (before) {
-            // Nothing but Home or a Stage start touches a Run in progress.
-            expect(progress(game), where()).toEqual(before);
+        const where = () => `seed ${seed}: ${log.join(' > ')}`;
+        const checkScreen = () => {
+          const screen = game.getScreen();
+          screensSeen.add(screen);
+          switch (screen) {
+            case 'flight-deck':
+              expect(game.getPhase(), where()).toBe('running');
+              break;
+            case 'pause-menu':
+              expect(game.getPhase(), where()).toBe('paused');
+              break;
+            case 'debrief':
+              expect(game.getPhase(), where()).toBe('cleared');
+              // The Debrief is never empty or stale.
+              expect(lastResult, where()).not.toBeNull();
+              expect(game.getDebrief(), where()).toEqual(lastResult);
+              break;
           }
-        }
-        checkScreen();
-      }
-    }
+        };
 
-    // The walks went everywhere, or they proved little.
-    for (const screen of Object.keys(OFFERED)) {
-      expect(screensSeen.has(screen as Screen), `never reached ${screen}`).toBe(
-        true,
-      );
-    }
-  });
+        for (let n = 0; n < STEPS; n++) {
+          const screen = game.getScreen();
+          const phase = game.getPhase();
+          const alive = phase === 'running' || phase === 'paused';
+          const roll = random();
+
+          if (screen === 'flight-deck' && roll < 0.3) {
+            log.push('hit keys');
+            hitKeys(game, 1 + Math.floor(random() * 4));
+            before = progress(game);
+          } else if (screen === 'flight-deck' && roll < 0.37) {
+            log.push('finish the Run');
+            finishRun(game);
+            lastResult = game.getDebrief();
+            before = null;
+            expect(game.getScreen(), where()).toBe('debrief');
+          } else {
+            const offered = OFFERED[screen](game);
+            const event = offered[Math.floor(random() * offered.length)];
+            log.push(`${screen}:${event.type}`);
+            expect(game.canSend(event), where()).toBe(true);
+            expect(() => game.send(event), where()).not.toThrow();
+
+            if (ABANDONING.has(event.type) || !alive) {
+              // A Run was ended or began: this is the new baseline.
+              const now = game.getPhase();
+              before =
+                now === 'running' || now === 'paused' ? progress(game) : null;
+            } else if (before) {
+              // Nothing but Home or a Stage start touches a Run in progress.
+              expect(progress(game), where()).toEqual(before);
+            }
+          }
+          checkScreen();
+        }
+      }
+
+      // The walks went everywhere, or they proved little.
+      for (const screen of Object.keys(OFFERED)) {
+        expect(
+          screensSeen.has(screen as Screen),
+          `never reached ${screen}`,
+        ).toBe(true);
+      }
+    },
+    SLOW_WALK_TIMEOUT,
+  );
 });

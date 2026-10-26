@@ -84,6 +84,10 @@ export interface Player {
   blur(): void;
   /** The tab is hidden, as when the player switches to another tab. */
   hideTab(): void;
+  /** The window regains focus, as when the player clicks back into it. */
+  focus(): void;
+  /** The tab is visible again, as when the player switches back to it. */
+  showTab(): void;
   /**
    * Reload the page: the app is rebuilt from nothing over the same Save, so
    * what the game saved comes back and everything else is gone.
@@ -197,6 +201,14 @@ export function renderGame(options: RenderGameOptions = {}): Player {
       if (visibility)
         Object.defineProperty(document, 'visibilityState', visibility);
       else Reflect.deleteProperty(document, 'visibilityState');
+    },
+    focus() {
+      fireEvent.focus(window);
+    },
+    showTab() {
+      // `hideTab` puts the page back as found, so the tab already reads as
+      // visible: this is the event the browser sends on the way back.
+      fireEvent(document, new Event('visibilitychange'));
     },
     reload() {
       unmount();
