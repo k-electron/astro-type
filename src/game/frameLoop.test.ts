@@ -44,7 +44,7 @@ function fakeBrowser() {
 }
 
 const droneHeights = (game: ReturnType<typeof startedGame>) =>
-  game.getRun().drones.map((drone) => drone.yPercent);
+  game.getState().run.drones.map((drone) => drone.yPercent);
 
 describe('the frame loop on a running Run', () => {
   it('takes the steps that real time calls for, so Run Time follows the clock', () => {

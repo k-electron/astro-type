@@ -85,7 +85,7 @@ export function startedGame(
 
 /** The character the player has to type next. */
 export function targetKey(game: Game): string {
-  return SAMPLE_TEXT[game.getRun().currentCharIndex];
+  return SAMPLE_TEXT[game.getState().run.currentCharIndex];
 }
 
 /** Press the target key `count` times, each time after the lead Drone has reached the Strike Line. */

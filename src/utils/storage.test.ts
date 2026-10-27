@@ -51,8 +51,8 @@ describe('a Save that cannot be read', () => {
 
     const game = openGame();
 
-    expect(game.getLoadNotice()).toBe(UNREADABLE_SAVE_NOTICE);
-    expect(game.getProfile().totalCredits).toBe(0);
+    expect(game.getState().loadNotice).toBe(UNREADABLE_SAVE_NOTICE);
+    expect(game.getState().profile.totalCredits).toBe(0);
     expect(browserStorage.getItem(UNREADABLE_KEY)).toBe(raw);
     expect(browserStorage.getItem(SAVE_KEY)).toBeNull();
   });
@@ -64,7 +64,7 @@ describe('a Save that cannot be read', () => {
 
     const nextVisit = openGame();
 
-    expect(nextVisit.getLoadNotice()).toBeNull();
+    expect(nextVisit.getState().loadNotice).toBeNull();
     expect(browserStorage.getItem(UNREADABLE_KEY)).toBe(raw);
   });
 
@@ -77,7 +77,7 @@ describe('a Save that cannot be read', () => {
 
     const nextVisit = openGame();
 
-    expect(nextVisit.getLoadNotice()).toBeNull();
+    expect(nextVisit.getState().loadNotice).toBeNull();
     expect(browserStorage.getItem(UNREADABLE_KEY)).toBe(raw);
   });
 });
@@ -86,8 +86,8 @@ describe('a first visit', () => {
   it('starts fresh with no notice and sets nothing aside', () => {
     const game = openGame();
 
-    expect(game.getLoadNotice()).toBeNull();
-    expect(game.getProfile().totalStars).toBe(0);
+    expect(game.getState().loadNotice).toBeNull();
+    expect(game.getState().profile.totalStars).toBe(0);
     expect(browserStorage.getItem(UNREADABLE_KEY)).toBeNull();
   });
 });
@@ -100,8 +100,8 @@ describe('a Save that can be read', () => {
 
     const nextVisit = openGame();
 
-    expect(nextVisit.getLoadNotice()).toBeNull();
-    expect(nextVisit.getProfile().totalStars).toBe(3);
+    expect(nextVisit.getState().loadNotice).toBeNull();
+    expect(nextVisit.getState().profile.totalStars).toBe(3);
     expect(browserStorage.getItem(UNREADABLE_KEY)).toBeNull();
   });
 });

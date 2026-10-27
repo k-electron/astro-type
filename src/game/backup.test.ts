@@ -19,15 +19,15 @@ describe('importing a Backup', () => {
       totalCredits: 900,
       ...clearedStages({ 's1-l1': 3 }),
     });
-    const backup = exportBackup(playedGame.getProfile());
+    const backup = exportBackup(playedGame.getState().profile);
     expect(JSON.parse(backup).version).toBe(1);
 
     const { game, storage } = gameWith();
     const outcome = game.importBackup(backup);
 
     expect(outcome.ok).toBe(true);
-    expect(game.getProfile().totalStars).toBe(3);
-    expect(game.getProfile().totalCredits).toBe(900);
+    expect(game.getState().profile.totalStars).toBe(3);
+    expect(game.getState().profile.totalCredits).toBe(900);
     expect(storage.saved?.totalCredits).toBe(900);
   });
 
@@ -39,8 +39,8 @@ describe('importing a Backup', () => {
     });
 
     expect(game.importBackup(unversioned).ok).toBe(true);
-    expect(game.getProfile().version).toBe(1);
-    expect(game.getProfile().totalStars).toBe(2);
+    expect(game.getState().profile.version).toBe(1);
+    expect(game.getState().profile.totalStars).toBe(2);
   });
 
   it('reads an export of the live game from before versions existed, and saves it as version 1', () => {
@@ -52,7 +52,7 @@ describe('importing a Backup', () => {
     const outcome = game.importBackup(JSON.stringify(OLD_LIVE_EXPORT));
 
     expect(outcome.ok).toBe(true);
-    const profile = game.getProfile();
+    const profile = game.getState().profile;
     expect(profile.version).toBe(1);
     expect(profile.totalStars).toBe(3);
     expect(profile.totalCredits).toBe(491);
@@ -75,7 +75,7 @@ describe('importing a Backup', () => {
       );
 
       expect(outcome.ok).toBe(true);
-      const profile = game.getProfile();
+      const profile = game.getState().profile;
       expect(profile.totalStars).toBe(3);
       expect(profile.totalCredits).toBe(491);
       expect(profile.stagesProgress['s1-l1']?.bestWpm).toBe(82);
@@ -94,7 +94,7 @@ describe('importing a Backup', () => {
       ...clearedStages({ 's1-l1': 3, 's1-l2': 2 }),
     });
     const backup = withOldDroneSpeed(
-      JSON.parse(exportBackup(playedGame.getProfile())),
+      JSON.parse(exportBackup(playedGame.getState().profile)),
       'HYPER',
     );
 
@@ -103,8 +103,8 @@ describe('importing a Backup', () => {
 
     expect(outcome.ok).toBe(true);
     expect(backup.version).toBe(1);
-    expect(game.getProfile().totalStars).toBe(5);
-    expect(game.getProfile().totalCredits).toBe(900);
+    expect(game.getState().profile.totalStars).toBe(5);
+    expect(game.getState().profile.totalCredits).toBe(900);
     expect(storage.saved).not.toHaveProperty('highwaySpeed');
   });
 
@@ -115,16 +115,16 @@ describe('importing a Backup', () => {
       upgrades: { deflectorShields: 2 },
     });
     const { version: _version, ...oldExport } = JSON.parse(
-      exportBackup(playedGame.getProfile()),
+      exportBackup(playedGame.getState().profile),
     );
 
     const { game, storage } = gameWith();
     const outcome = game.importBackup(JSON.stringify(oldExport));
 
     expect(outcome.ok).toBe(true);
-    expect(game.getProfile().totalStars).toBe(5);
-    expect(game.getProfile().totalCredits).toBe(900);
-    expect(game.getProfile().upgrades.deflectorShields).toBe(2);
+    expect(game.getState().profile.totalStars).toBe(5);
+    expect(game.getState().profile.totalCredits).toBe(900);
+    expect(game.getState().profile.upgrades.deflectorShields).toBe(2);
     expect(storage.saved?.version).toBe(1);
   });
 
@@ -143,7 +143,7 @@ describe('importing a Backup', () => {
       totalCredits: 321,
       ...clearedStages({ 's1-l1': 3 }),
     });
-    const before = game.getProfile();
+    const before = game.getState().profile;
 
     const outcome = game.importBackup(text);
 
@@ -151,8 +151,8 @@ describe('importing a Backup', () => {
     expect(outcome.ok === false && outcome.message).toBe(
       REFUSED_BACKUP_MESSAGE,
     );
-    expect(game.getProfile()).toEqual(before);
-    expect(game.getProfile().totalCredits).toBe(321);
+    expect(game.getState().profile).toEqual(before);
+    expect(game.getState().profile.totalCredits).toBe(321);
     expect(storage.saved).toBeNull();
   });
 
@@ -167,13 +167,13 @@ describe('importing a Backup', () => {
       totalCredits: 321,
       ...clearedStages({ 's1-l1': 3 }),
     });
-    const before = game.getProfile();
+    const before = game.getState().profile;
 
     const outcome = game.importBackup(text);
 
     expect(outcome.ok).toBe(false);
     expect(outcome.ok === false && outcome.message).toBeTruthy();
-    expect(game.getProfile()).toEqual(before);
+    expect(game.getState().profile).toEqual(before);
     expect(storage.saved).toBeNull();
   });
 });

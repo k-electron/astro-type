@@ -44,7 +44,7 @@ function runningGame(typed = 5): Game {
 }
 
 describe('one notification per move', () => {
-  it('starting a Stage notifies once, and the machine and the store agree in it', () => {
+  it('starting a Stage notifies once, with the screen, the phase and the Run together', () => {
     const game = newGame();
     const { seen } = watch(game);
 

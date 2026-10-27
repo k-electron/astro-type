@@ -49,9 +49,10 @@ it.each([
 
     clearStage(game, { seconds: 60, missesFirst });
 
-    expect(game.getDebrief()?.starsEarned, 'Stars the Debrief shows').toBe(
-      stars,
-    );
+    expect(
+      game.getState().debrief?.starsEarned,
+      'Stars the Debrief shows',
+    ).toBe(stars);
     expect(engine.played, 'right at the clear: the fanfare alone').toEqual([
       'victory',
     ]);
