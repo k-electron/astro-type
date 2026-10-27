@@ -7,9 +7,11 @@
  */
 import { createActor } from 'xstate';
 import {
-  createGameMachine,
   type GameMachineEvent,
+  gameMachine,
+  nextStageOf,
   type PlayerEvent,
+  type ScreenParams,
 } from '../store/gameMachine';
 import type {
   FallingNote,
@@ -102,8 +104,13 @@ export interface GameState {
   phase: RunPhase;
   /** The screen that opened this one (what Close returns to), or null when nothing did. */
   opener: Screen | null;
-  /** The parameter the screen was opened with. Always null until a screen takes one. */
-  screenParams: null;
+  /** The parameter the screen was opened with, or null when it takes none (none does yet). */
+  screenParams: ScreenParams;
+  /**
+   * Whether Next Stage starts another Stage. False on the last Stage, where it
+   * opens the Galaxy Map instead, and on a Free Flight.
+   */
+  hasNextStage: boolean;
   run: Run;
   debrief: VictoryResult | null;
   profile: PlayerProfile;
@@ -182,15 +189,26 @@ export function createGame(options: GameOptions): Game {
       throw error;
     });
 
-  // The machine drives the store's named Run actions; the store reads the
-  // phase and reports "Run cleared". They meet here.
-  const machine = createGameMachine({
-    beginRun: (stage) => store.getState().beginRun(stage),
-    pauseRun: () => store.getState().pauseRun(),
-    resumeRun: () => store.getState().resumeRun(),
-    abandonRun: () => store.getState().abandonRun(),
-    recordResult: () => store.getState().recordResult(),
-    currentStage: () => store.getState().currentStage,
+  // The machine names its effects and the one guard that reads the Stage;
+  // the Game fills them in from the store, which reads the phase and reports
+  // "Run cleared". They meet here.
+  const machine = gameMachine.provide({
+    actions: {
+      beginRun: (_, { stage }) => store.getState().beginRun(stage),
+      beginCurrentStage: () =>
+        store.getState().beginRun(store.getState().currentStage),
+      beginNextStage: () => {
+        const next = nextStageOf(store.getState().currentStage);
+        if (next) store.getState().beginRun(next);
+      },
+      abandonRun: () => store.getState().abandonRun(),
+      recordResult: () => store.getState().recordResult(),
+      releasePressedKey: () => store.getState().releaseKeystroke(),
+    },
+    guards: {
+      hasNextStage: () =>
+        nextStageOf(store.getState().currentStage) !== undefined,
+    },
   });
   const actor = createActor(machine);
 
@@ -231,7 +249,7 @@ export function createGame(options: GameOptions): Game {
 
   const getOpener = (): Screen | null => {
     const { openers } = actor.getSnapshot().context;
-    return openers[openers.length - 1] ?? null;
+    return openers[openers.length - 1]?.screen ?? null;
   };
 
   // The Run is made of five things in the store; it is rebuilt only when one
@@ -294,7 +312,8 @@ export function createGame(options: GameOptions): Game {
       screen: getScreen(),
       phase: getPhase(),
       opener: getOpener(),
-      screenParams: null,
+      screenParams: actor.getSnapshot().context.screenParams,
+      hasNextStage: nextStageOf(state.currentStage) !== undefined,
       run: buildRun(state),
       debrief: state.victoryResult,
       profile: state.profile,
@@ -306,6 +325,8 @@ export function createGame(options: GameOptions): Game {
       next.screen === previous.screen &&
       next.phase === previous.phase &&
       next.opener === previous.opener &&
+      next.screenParams === previous.screenParams &&
+      next.hasNextStage === previous.hasNextStage &&
       next.run === previous.run &&
       next.debrief === previous.debrief &&
       next.profile === previous.profile &&

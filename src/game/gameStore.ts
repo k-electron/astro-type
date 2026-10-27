@@ -77,8 +77,6 @@ export interface GameStoreState {
   // Run moves: the machine calls these, once per accepted move. Each one is
   // the move's data change.
   beginRun: (stage: Stage) => void;
-  pauseRun: () => void;
-  resumeRun: () => void;
   abandonRun: () => void;
   recordResult: () => void;
 
@@ -185,16 +183,6 @@ export function createGameStore({
           lastPressedKey: null,
           victoryResult: null,
         });
-      },
-
-      pauseRun: () => {
-        // Streak, Multiplier and Overdrive stay exactly as they were.
-        set({ lastPressedKey: null });
-      },
-
-      resumeRun: () => {
-        // Nothing to change: the Run's numbers were kept through the pause,
-        // and the sound follows the Run phase.
       },
 
       abandonRun: () => {
