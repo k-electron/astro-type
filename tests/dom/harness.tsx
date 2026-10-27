@@ -11,9 +11,9 @@
  * on the game itself, so a test can only check what a player would see.
  *
  * Things worth knowing:
- * - The HUD's Accuracy and Speed refresh only on the Run clock's telemetry
- *   tick, every 30 steps. `type` steps 30 between keys, so they are current
- *   after it; after a bare `press`, call `step(30)` first.
+ * - The HUD's Accuracy follows every keystroke. Its Speed refreshes only on the
+ *   Run clock's telemetry tick, every 30 steps: `type` steps 30 between keys,
+ *   so Speed is current after it; after a bare `press`, call `step(30)` first.
  * - A Run that was typed with no steps has Run Time 0, so its Speed means
  *   nothing. Reach a Debrief with `type`.
  * - Tailwind is not loaded: no element is hidden by CSS, and there is no layout.

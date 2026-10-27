@@ -402,7 +402,7 @@ export function strike(
     return {
       run: {
         ...run,
-        performance: perf,
+        performance: withAccuracy(perf),
         errorIndices: new Set(run.errorIndices).add(index),
         keyStats: {
           ...run.keyStats,
@@ -461,7 +461,7 @@ export function strike(
   return {
     run: {
       ...run,
-      performance: {
+      performance: withAccuracy({
         ...performance,
         score: performance.score + points,
         currentStreak: streak,
@@ -476,7 +476,7 @@ export function strike(
           keystrokeTimes,
           performance.cadenceConsistency ?? 100,
         ),
-      },
+      }),
       drones: advanceDroneQueue(
         run.drones,
         drone,
@@ -502,8 +502,9 @@ const TELEMETRY_EVERY_STEPS = 30;
 
 /**
  * The whole step: the Drones move one step of 1/60 s, and every 30th step of
- * Run Time WPM and elapsed time refresh. `steps` is the Run's step count, this
- * step included, so a pause doesn't shift the rhythm.
+ * Run Time WPM and elapsed time refresh. Accuracy is not on this cadence: a
+ * keystroke refreshes it. `steps` is the Run's step count, this step included,
+ * so a pause doesn't shift the rhythm.
  */
 export function tick(run: RunState, steps: number): RunState {
   const moved = { ...run, drones: moveDrones(run.drones) };
@@ -528,6 +529,11 @@ export function clearedPerformance(perf: LivePerformance): LivePerformance {
 
 // ---- Telemetry, Stars and Credits ---------------------------------------
 
+/** Accuracy follows every keystroke: it is worked out from the Run's counts each time. */
+function withAccuracy(perf: LivePerformance): LivePerformance {
+  return { ...perf, accuracy: accuracyOf(perf) };
+}
+
 function accuracyOf(perf: LivePerformance): number {
   return perf.totalKeystrokes > 0
     ? Math.max(
@@ -540,7 +546,7 @@ function accuracyOf(perf: LivePerformance): number {
     : 100;
 }
 
-/** Live WPM and accuracy for the HUD. */
+/** Live WPM and elapsed time for the HUD. Accuracy follows every keystroke instead (see `strike`). */
 function telemetry(
   prev: LivePerformance,
   elapsedSeconds: number,
@@ -559,7 +565,6 @@ function telemetry(
     timeElapsedSeconds: Math.round(elapsedSeconds),
     grossWpm,
     netWpm,
-    accuracy: accuracyOf(prev),
   };
 }
 

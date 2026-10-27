@@ -18,7 +18,7 @@ const hudText = () =>
 const expectStreak = (streak: number) =>
   expect(hudText()).toMatch(new RegExp(`Streak\\s*${streak}(?!\\d)`));
 
-/** The HUD's Accuracy readout. It refreshes on the Run clock's 30-step tick. */
+/** The HUD's Accuracy readout. It follows every keystroke. */
 const expectAccuracy = (percent: number) =>
   expect(hudText()).toMatch(new RegExp(`Accuracy\\s*${percent}%`));
 
@@ -89,7 +89,7 @@ describe('a Miss', () => {
     expectStreak(0);
     expect(progress()).toBe('50%');
     expect(currentCharacters()).toEqual(['d']);
-    // 3 right keys and 1 wrong one. The HUD refreshes this readout on a tick.
+    // 3 right keys and 1 wrong one. The HUD works Accuracy out on every keystroke.
     player.step(30);
     expectAccuracy(75);
 
