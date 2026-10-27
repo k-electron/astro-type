@@ -1,3 +1,4 @@
+import type { ComponentType } from 'react';
 import { useEffect } from 'react';
 import { soundEngine } from './audio/soundEngine';
 import { AcademyHome } from './components/AcademyHome';
@@ -15,6 +16,7 @@ import { LevelCompleteModal } from './components/LevelCompleteModal';
 import { GlobalCosmicBackground } from './components/GlobalCosmicBackground';
 import { useGame } from './store/gameContext';
 import { useGameState } from './store/useGameState';
+import type { Screen } from './types/game';
 
 /**
  * The starfield behind everything. It selects the two fields that speed it up
@@ -36,6 +38,24 @@ function CosmicBackdrop() {
   );
 }
 
+/**
+ * The screens that cover the page, by name, each an overlay in the shell.
+ * Adding a Screen to the type breaks the build here until it has a component.
+ */
+type OverlayScreen = Exclude<Screen, 'academy-home' | 'flight-deck'>;
+const OVERLAYS: Record<OverlayScreen, ComponentType> = {
+  'pause-menu': PauseMenu,
+  'galaxy-map': StageSelectModal,
+  hangar: HangarUpgradesModal,
+  analytics: AnalyticsModal,
+  'free-flight': CustomPracticeModal,
+  debrief: LevelCompleteModal,
+};
+
+function overlayFor(screen: Screen): ComponentType | undefined {
+  return screen in OVERLAYS ? OVERLAYS[screen as OverlayScreen] : undefined;
+}
+
 export default function App() {
   const game = useGame();
   const { send } = game;
@@ -49,6 +69,9 @@ export default function App() {
     phase: state.phase,
     profile: state.profile,
   }));
+  // The screen on top, if one covers the page. The Flight Deck behind it can't
+  // be reached by key, click or screen reader until it goes.
+  const Overlay = overlayFor(screen);
 
   // Synchronize audio engine with current profile settings
   useEffect(() => {
@@ -144,7 +167,10 @@ export default function App() {
           <AcademyHome />
         ) : (
           /* Active Cockpit Flight Deck */
-          <div className="flex-1 flex flex-col gap-4">
+          <div
+            className="flex-1 flex flex-col gap-4"
+            inert={Overlay !== undefined}
+          >
             {/* Top HUD Telemetry */}
             <HUD />
 
@@ -157,23 +183,8 @@ export default function App() {
         )}
       </main>
 
-      {/* Pause Menu Modal */}
-      {screen === 'pause-menu' && <PauseMenu />}
-
-      {/* Stage Select Galaxy Modal */}
-      {screen === 'galaxy-map' && <StageSelectModal />}
-
-      {/* Hangar Upgrades Modal */}
-      {screen === 'hangar' && <HangarUpgradesModal />}
-
-      {/* Performance Analytics & Heatmap Modal */}
-      {screen === 'analytics' && <AnalyticsModal />}
-
-      {/* Custom Practice / Free Flight Modal */}
-      {screen === 'free-flight' && <CustomPracticeModal />}
-
-      {/* Victory / Level Complete Modal */}
-      {screen === 'debrief' && <LevelCompleteModal />}
+      {/* The screen on top, in the shell */}
+      {Overlay && <Overlay />}
     </div>
   );
 }
