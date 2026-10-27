@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { CURRICULUM_SECTORS } from './data/curriculum';
 import { soundEngine } from './audio/soundEngine';
 import { HeaderNav } from './components/HeaderNav';
+import { useHeaderHeight } from './components/useHeaderHeight';
 import { HUD } from './components/HUD';
 import { TextPromptStream } from './components/TextPromptStream';
 import { StageSelectModal } from './components/StageSelectModal';
@@ -38,6 +39,7 @@ function CosmicBackdrop() {
 export default function App() {
   const game = useGame();
   const { send } = game;
+  const headerRef = useHeaderHeight();
 
   // App selects only what it shows itself. The Run's moving fields (Drones,
   // score, Streak, the typed index) belong to the deck, the HUD and the text
@@ -141,7 +143,7 @@ export default function App() {
       <CosmicBackdrop />
 
       {/* Strict Top Bar Contract */}
-      <HeaderNav />
+      <HeaderNav ref={headerRef} />
 
       {/* Main Game Screen */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-6 flex flex-col gap-4">
