@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   completeSave,
+  FREE_FLIGHT_SAVE,
   OLD_DRONE_SPEEDS,
   RETURNING_PLAYER,
   stageProgress,
@@ -93,6 +94,33 @@ describe('a Save that is readable', () => {
         .starsEarned,
     ).toBe(1);
     expect(game.getState().profile.totalStars).toBe(6);
+  });
+
+  it('loads a production Save with Free Flight results, each `custom-` entry as it was written', () => {
+    const { game } = load(FREE_FLIGHT_SAVE);
+
+    expect(game.getState().loadNotice).toBeNull();
+    expect(game.getState().profile.stagesProgress).toEqual(
+      FREE_FLIGHT_SAVE.stagesProgress,
+    );
+    expect(game.getState().profile.totalStars).toBe(
+      FREE_FLIGHT_SAVE.totalStars,
+    );
+  });
+
+  it('keeps the Free Flight results when the next write goes out', () => {
+    const { game, storage } = load(FREE_FLIGHT_SAVE);
+    startStage(game, STAGE_ID);
+    clearStage(game, { seconds: 60 });
+
+    expect(game.getState().screen).toBe('debrief');
+    const customEntries = Object.fromEntries(
+      Object.entries(FREE_FLIGHT_SAVE.stagesProgress).filter(([id]) =>
+        id.startsWith('custom-'),
+      ),
+    );
+    expect(Object.keys(customEntries)).toHaveLength(2);
+    expect(storage.saved?.stagesProgress).toMatchObject(customEntries);
   });
 
   it('accepts Upgrades at level 3', () => {

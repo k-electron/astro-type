@@ -104,6 +104,34 @@ export function completeSave() {
 }
 
 /**
+ * A returning player's Save with Free Flight results in it, as production
+ * writes them: Stage progress keyed `custom-<launch time>`, beside the
+ * curriculum Stages and every other field of `completeSave()`. Free Flight Stars
+ * count toward the fleet's total, so the Save's Stars are 5 + 2 + 3.
+ */
+export const FREE_FLIGHT_SAVE = (() => {
+  const save = completeSave();
+  return {
+    ...save,
+    totalStars: 10,
+    stagesProgress: {
+      ...save.stagesProgress,
+      'custom-1792904921385': stageProgress('custom-1792904921385', 2, {
+        highScore: 9100,
+        bestWpm: 44,
+        timesPlayed: 3,
+      }),
+      'custom-1792905000123': stageProgress('custom-1792905000123', 3, {
+        highScore: 15200,
+        bestWpm: 61,
+        bestStreak: 25,
+        timesPlayed: 1,
+      }),
+    },
+  };
+})();
+
+/**
  * The Drone speeds the game once let a player choose. Every Run now moves at
  * one speed (FAST), but Saves and Backups made before that still carry the
  * choice in a `highwaySpeed` field, which must load and then be left behind.
