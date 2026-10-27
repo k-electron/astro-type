@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Judgement } from './createGame';
+import type { Judgement, Moment } from './createGame';
 import {
   type Game,
   hitPerfect,
@@ -22,10 +22,25 @@ import {
  * window's edge at this speed, so the table brackets each edge instead).
  */
 
+/**
+ * A listener that adds each Judgement moment to `into`, as the bare Judgement
+ * it carries (a hit's Drone, lane and finger left off).
+ */
+function collectInto(into: Judgement[]): (moment: Moment) => void {
+  return (moment) => {
+    if (moment.type === 'hit') {
+      const { type, grade, key, points, overdrive } = moment;
+      into.push({ type, grade, key, points, overdrive });
+    } else if (moment.type === 'miss' || moment.type === 'shield') {
+      into.push({ type: moment.type, key: moment.key });
+    }
+  };
+}
+
 /** Collects every Judgement event the game announces from now on. */
 function listen(game: Game): Judgement[] {
   const events: Judgement[] = [];
-  game.onJudgement((event) => events.push(event));
+  game.onMoment(collectInto(events));
   return events;
 }
 
@@ -213,8 +228,8 @@ describe('one event per counted keystroke', () => {
     const game = startedGame();
     const first: Judgement[] = [];
     const second: Judgement[] = [];
-    const stopFirst = game.onJudgement((event) => first.push(event));
-    game.onJudgement((event) => second.push(event));
+    const stopFirst = game.onMoment(collectInto(first));
+    game.onMoment(collectInto(second));
 
     game.pressKey('x');
     stopFirst();

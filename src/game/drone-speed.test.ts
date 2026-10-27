@@ -150,8 +150,8 @@ describe('Perfect stays reachable at high WPM', () => {
       const game = newGame();
       startStage(game, STAGE_ID);
       const grades: string[] = [];
-      game.onJudgement((event) => {
-        if (event.type === 'hit') grades.push(event.grade);
+      game.onMoment((moment) => {
+        if (moment.type === 'hit') grades.push(moment.grade);
       });
 
       game.step(30); // the first Drone is waiting on the line
