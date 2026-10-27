@@ -10,19 +10,19 @@ import {
   Home,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { getNextStage, getStageById } from '../data/curriculum';
+import { getStageById } from '../data/curriculum';
 import { useGame } from '../store/gameContext';
 import { useGameState } from '../store/useGameState';
 import { OverlayShell } from './OverlayShell';
 
 export const LevelCompleteModal: React.FC = () => {
   const { send } = useGame();
-  const { stage, result, totalStars } = useGameState((state) => ({
+  const { stage, hasNextStage, result, totalStars } = useGameState((state) => ({
     stage: state.run.currentStage,
+    hasNextStage: state.hasNextStage,
     result: state.debrief,
     totalStars: state.profile.totalStars,
   }));
-  const hasNextStage = Boolean(getNextStage(stage.id));
   // A Free Flight is no Stage of the curriculum, so it is never the last one.
   const isLastStage = getStageById(stage.id) !== undefined && !hasNextStage;
   const hasUnlockedNextSector = result?.unlockedSector ?? false;

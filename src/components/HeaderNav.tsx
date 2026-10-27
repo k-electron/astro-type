@@ -35,8 +35,7 @@ export const HeaderNav: React.FC<{ ref?: React.Ref<HTMLElement> }> = ({
   const onOpenHangar = () => send({ type: 'OPEN_HANGAR' });
   const onOpenAnalytics = () => send({ type: 'OPEN_ANALYTICS' });
   const onOpenCustom = () => send({ type: 'OPEN_FREE_FLIGHT' });
-  const onQuickPlay = () =>
-    send({ type: isPlaying ? 'PRESS_PAUSE' : 'PRESS_PLAY' });
+  const onQuickPlay = () => send({ type: 'PRESS_FLIGHT_DECK' });
   const [isAudioMenuOpen, setIsAudioMenuOpen] = useState(false);
   const audioMenuRef = useRef<HTMLDivElement>(null);
 
