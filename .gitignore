@@ -9,3 +9,4 @@ test-results/
 screenshot-results/
 playwright-report/
 blob-report/
+.claude/worktrees/
