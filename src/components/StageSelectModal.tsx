@@ -12,44 +12,34 @@ import {
   Home,
   RotateCcw,
 } from 'lucide-react';
-import type { Screen, Stage, StageProgress } from '../types/game';
+import type { Stage } from '../types/game';
+import { useGame } from '../store/gameContext';
+import { useGameState } from '../store/useGameState';
 import { closeLabel, flightDeckLabel } from './closeLabel';
 import { CURRICULUM_SECTORS } from '../data/curriculum';
 import { isSectorUnlocked } from '../game/profile';
 
-interface StageSelectModalProps {
-  stagesProgress: Record<string, StageProgress>;
-  totalStars: number;
-  totalCredits: number;
-  onSelectStage: (stage: Stage) => void;
-  onClose: () => void;
-  onGoToFlightDeck?: () => void;
-  onOpenHangar: () => void;
-  onOpenAnalytics: () => void;
-  onWipeAchievements: () => void;
-  /** The screen Close returns to. */
-  opener?: Screen | null;
-  /** A paused Run is waiting, so the Flight Deck button resumes it. */
-  runPaused?: boolean;
-  onReturnToDebrief?: () => void;
-  onReturnToMenu?: () => void;
-}
-
-export const StageSelectModal: React.FC<StageSelectModalProps> = ({
-  stagesProgress,
-  totalStars,
-  totalCredits,
-  onSelectStage,
-  onClose,
-  onGoToFlightDeck,
-  onOpenHangar,
-  onOpenAnalytics,
-  onWipeAchievements,
-  opener = null,
-  runPaused = false,
-  onReturnToDebrief,
-  onReturnToMenu,
-}) => {
+export const StageSelectModal: React.FC = () => {
+  const game = useGame();
+  const { send } = game;
+  const { stagesProgress, totalStars, totalCredits, opener, runPaused } =
+    useGameState((state) => ({
+      stagesProgress: state.profile.stagesProgress,
+      totalStars: state.profile.totalStars,
+      totalCredits: state.profile.totalCredits,
+      opener: state.opener,
+      // A paused Run is waiting, so the Flight Deck button resumes it.
+      runPaused: state.phase === 'paused',
+    }));
+  const onSelectStage = (stage: Stage) =>
+    send({ type: 'PICK_STAGE', stageId: stage.id });
+  const onClose = () => send({ type: 'PRESS_CLOSE' });
+  const onGoToFlightDeck = () => send({ type: 'PRESS_PLAY' });
+  const onOpenHangar = () => send({ type: 'OPEN_HANGAR' });
+  const onOpenAnalytics = () => send({ type: 'OPEN_ANALYTICS' });
+  const onReturnToDebrief = onClose;
+  const onReturnToMenu = () => send({ type: 'PRESS_HOME' });
+  const onWipeAchievements = game.wipeAchievements;
   const [selectedSectorId, setSelectedSectorId] = useState<string>('sector-1');
   const [showWipeConfirm, setShowWipeConfirm] = useState<boolean>(false);
 
@@ -138,37 +128,33 @@ export const StageSelectModal: React.FC<StageSelectModalProps> = ({
                 <div className="flex items-center gap-1.5">
                   <button
                     type="button"
-                    onClick={onReturnToDebrief || onClose}
+                    onClick={onReturnToDebrief}
                     className="px-3 py-1.5 text-xs font-medium rounded-lg border border-cyan-500/50 bg-cyan-950/50 text-cyan-300 hover:bg-cyan-900/60 transition-colors flex items-center gap-1 cursor-pointer whitespace-nowrap"
                   >
                     <ArrowLeft className="w-3.5 h-3.5" />
                     <span>{closeLabel(opener)}</span>
                   </button>
-                  {onReturnToMenu && (
-                    <button
-                      type="button"
-                      onClick={onReturnToMenu}
-                      className="px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-700 bg-slate-800 text-slate-300 hover:text-white transition-colors flex items-center gap-1 cursor-pointer whitespace-nowrap"
-                    >
-                      <Home className="w-3.5 h-3.5" />
-                      <span>Menu</span>
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    onClick={onReturnToMenu}
+                    className="px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-700 bg-slate-800 text-slate-300 hover:text-white transition-colors flex items-center gap-1 cursor-pointer whitespace-nowrap"
+                  >
+                    <Home className="w-3.5 h-3.5" />
+                    <span>Menu</span>
+                  </button>
                 </div>
               ) : (
                 <div className="flex items-center gap-1.5">
-                  {onGoToFlightDeck && (
-                    <button
-                      type="button"
-                      onClick={onGoToFlightDeck}
-                      className="px-3 py-1.5 text-xs font-bold rounded-lg bg-cyan-400 hover:bg-cyan-300 text-slate-950 transition-all flex items-center gap-1 cursor-pointer shadow-sm shadow-cyan-950 whitespace-nowrap"
-                      title="Launch directly into the cockpit flight deck"
-                    >
-                      <Play className="w-3.5 h-3.5 fill-current" />
-                      <span>{flightDeckLabel(runPaused)}</span>
-                    </button>
-                  )}
-                  {onReturnToMenu && opener !== 'academy-home' && (
+                  <button
+                    type="button"
+                    onClick={onGoToFlightDeck}
+                    className="px-3 py-1.5 text-xs font-bold rounded-lg bg-cyan-400 hover:bg-cyan-300 text-slate-950 transition-all flex items-center gap-1 cursor-pointer shadow-sm shadow-cyan-950 whitespace-nowrap"
+                    title="Launch directly into the cockpit flight deck"
+                  >
+                    <Play className="w-3.5 h-3.5 fill-current" />
+                    <span>{flightDeckLabel(runPaused)}</span>
+                  </button>
+                  {opener !== 'academy-home' && (
                     <button
                       type="button"
                       onClick={onReturnToMenu}

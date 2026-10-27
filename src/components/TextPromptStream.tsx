@@ -5,15 +5,13 @@ import {
   FINGER_LANES,
   FINGER_DISPLAY_NAMES,
 } from '../data/curriculum';
-import { useGameStore } from '../store/useGameStore';
+import { useGameState } from '../store/useGameState';
 
-/** The Stage's text and where the player is in it. It reads only what it shows from the store. */
+/** The Stage's text and where the player is in it. It selects only what it shows. */
 export const TextPromptStream: React.FC = () => {
-  const stage = useGameStore((state) => state.currentStage);
-  const currentIndex = useGameStore(
-    (state) => state.performance.currentCharIndex,
-  );
-  const errorIndices = useGameStore((state) => state.errorIndices);
+  const stage = useGameState((state) => state.run.currentStage);
+  const currentIndex = useGameState((state) => state.run.currentCharIndex);
+  const errorIndices = useGameState((state) => state.run.errorIndices);
   const fullText = stage.sampleText;
   const { targetWpm, techniqueTip, focusFingers } = stage;
   const stageTitle = `${stage.title} · ${stage.subtitle}`;

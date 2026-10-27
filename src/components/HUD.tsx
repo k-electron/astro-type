@@ -1,16 +1,11 @@
 import type React from 'react';
 import { Shield, Zap, Pause } from 'lucide-react';
-import { useShallow } from 'zustand/react/shallow';
 import { useGame } from '../store/gameContext';
 import { overdriveScoreFactor } from '../game/rules';
-import { useGameStore } from '../store/useGameStore';
+import { useGameState } from '../store/useGameState';
 
-interface HUDProps {
-  onPause: () => void;
-}
-
-/** The readouts above the deck. It reads only the fields it shows, so it re-renders when one of them changes. */
-export const HUD: React.FC<HUDProps> = ({ onPause }) => {
+/** The readouts above the deck. It selects only the fields it shows, so it re-renders when one of them changes. */
+export const HUD: React.FC = () => {
   const game = useGame();
   const {
     score,
@@ -23,21 +18,20 @@ export const HUD: React.FC<HUDProps> = ({ onPause }) => {
     accuracy,
     cadence,
     keyboardVisible,
-  } = useGameStore(
-    useShallow((state) => ({
-      score: state.performance.score,
-      currentStreak: state.performance.currentStreak,
-      multiplier: state.performance.multiplier,
-      hyperspaceActive: state.performance.hyperspaceActive,
-      hyperspaceEnergy: state.performance.hyperspaceEnergy,
-      shieldsRemaining: state.performance.shieldsRemaining,
-      netWpm: state.performance.netWpm,
-      accuracy: state.performance.accuracy,
-      cadence: state.performance.cadenceConsistency ?? 100,
-      keyboardVisible: state.profile.keyboardVisible,
-    })),
-  );
-  const onToggleKeyboard = game.store.getState().toggleKeyboard;
+  } = useGameState((state) => ({
+    score: state.run.score,
+    currentStreak: state.run.currentStreak,
+    multiplier: state.run.multiplier,
+    hyperspaceActive: state.run.hyperspaceActive,
+    hyperspaceEnergy: state.run.hyperspaceEnergy,
+    shieldsRemaining: state.run.shieldsRemaining,
+    netWpm: state.run.netWpm,
+    accuracy: state.run.accuracy,
+    cadence: state.run.cadenceConsistency ?? 100,
+    keyboardVisible: state.profile.keyboardVisible,
+  }));
+  const onToggleKeyboard = game.profileActions.toggleKeyboard;
+  const onPause = () => game.send({ type: 'PRESS_PAUSE' });
 
   return (
     <section

@@ -10,58 +10,30 @@ import {
   Home,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import type { Stage } from '../types/game';
+import { getNextStage, getStageById } from '../data/curriculum';
+import { useGame } from '../store/gameContext';
+import { useGameState } from '../store/useGameState';
 
-interface LevelCompleteModalProps {
-  stage: Stage;
-  result: {
-    score: number;
-    wpm: number;
-    accuracy: number;
-    maxStreak: number;
-    starsEarned: number;
-    creditsEarned: number;
-    isNewHighScore: boolean;
-    newStarsAwarded: number;
-    cadenceConsistency?: number;
-  };
-  totalStars: number;
-  totalCredits: number;
-  hasUnlockedNextSector: boolean;
-  hasNextStage: boolean;
-  /** The Stage is the last one in the curriculum (a Free Flight is none). */
-  isLastStage: boolean;
-  onReplay: () => void;
-  onNextStage: () => void;
-  onReturnToMap: () => void;
-  onReturnToMenu: () => void;
-}
-
-export const LevelCompleteModal: React.FC<LevelCompleteModalProps> = ({
-  stage,
-  result,
-  totalStars,
-  hasUnlockedNextSector,
-  hasNextStage,
-  isLastStage,
-  onReplay,
-  onNextStage,
-  onReturnToMap,
-  onReturnToMenu,
-}) => {
-  const {
-    starsEarned,
-    score,
-    wpm,
-    accuracy,
-    creditsEarned,
-    isNewHighScore,
-    newStarsAwarded,
-  } = result;
+export const LevelCompleteModal: React.FC = () => {
+  const { send } = useGame();
+  const { stage, result, totalStars } = useGameState((state) => ({
+    stage: state.run.currentStage,
+    result: state.debrief,
+    totalStars: state.profile.totalStars,
+  }));
+  const hasNextStage = Boolean(getNextStage(stage.id));
+  // A Free Flight is no Stage of the curriculum, so it is never the last one.
+  const isLastStage = getStageById(stage.id) !== undefined && !hasNextStage;
+  const hasUnlockedNextSector = result?.unlockedSector ?? false;
+  const onReplay = () => send({ type: 'PRESS_REPLAY' });
+  const onNextStage = () => send({ type: 'PRESS_NEXT_STAGE' });
+  const onReturnToMap = () => send({ type: 'OPEN_GALAXY_MAP' });
+  const onReturnToMenu = () => send({ type: 'PRESS_HOME' });
+  const earned = result?.starsEarned;
   const thresholds = stage.starThresholds;
 
   useEffect(() => {
-    if (starsEarned === 3) {
+    if (earned === 3) {
       try {
         confetti({
           particleCount: 80,
@@ -73,7 +45,18 @@ export const LevelCompleteModal: React.FC<LevelCompleteModalProps> = ({
         // Confetti fallback
       }
     }
-  }, [starsEarned]);
+  }, [earned]);
+
+  if (!result) return null;
+  const {
+    starsEarned,
+    score,
+    wpm,
+    accuracy,
+    creditsEarned,
+    isNewHighScore,
+    newStarsAwarded,
+  } = result;
 
   return (
     <div className="fixed inset-x-0 bottom-0 top-[var(--header-height,0px)] z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/85 backdrop-blur-md overflow-y-auto">

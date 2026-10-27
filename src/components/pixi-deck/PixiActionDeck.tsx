@@ -1,31 +1,28 @@
 import { Award, Flame, Hand, Sparkles } from 'lucide-react';
 import { memo, useLayoutEffect, useRef } from 'react';
-import { useShallow } from 'zustand/react/shallow';
 import { useGame } from '../../store/gameContext';
 import { FINGER_COLOR_MAP } from '../../data/curriculum';
 import { overdriveScoreFactor } from '../../game/rules';
-import { useGameStore } from '../../store/useGameStore';
+import { useGameState } from '../../store/useGameState';
 import { getDeckSession } from './deckSession';
 
 /**
  * The Action Deck: a card with a header bar around a stage that the session's
  * PixiJS Application draws.
  *
- * React reads only what the header bar shows. The deck itself reads the store
+ * React reads only what the header bar shows. The deck itself reads the game
  * on the Run clock, so React never re-renders it per frame.
  */
 export const PixiActionDeck = memo(function PixiActionDeck() {
   const game = useGame();
   const { hyperspaceActive, multiplier, currentStreak, handsVisible } =
-    useGameStore(
-      useShallow((state) => ({
-        hyperspaceActive: state.performance.hyperspaceActive,
-        multiplier: state.performance.multiplier,
-        currentStreak: state.performance.currentStreak,
-        handsVisible: state.profile.handsVisible,
-      })),
-    );
-  const onToggleHands = game.store.getState().toggleHands;
+    useGameState((state) => ({
+      hyperspaceActive: state.run.hyperspaceActive,
+      multiplier: state.run.multiplier,
+      currentStreak: state.run.currentStreak,
+      handsVisible: state.profile.handsVisible,
+    }));
+  const onToggleHands = game.profileActions.toggleHands;
   const stageRef = useRef<HTMLDivElement>(null);
 
   useLayoutEffect(() => {

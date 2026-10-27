@@ -1,9 +1,5 @@
 import { useEffect, useRef } from 'react';
-import {
-  CURRICULUM_SECTORS,
-  getNextStage,
-  getStageById,
-} from './data/curriculum';
+import { CURRICULUM_SECTORS } from './data/curriculum';
 import { soundEngine } from './audio/soundEngine';
 import { HeaderNav } from './components/HeaderNav';
 import { HUD } from './components/HUD';
@@ -16,21 +12,20 @@ import { CustomPracticeModal } from './components/CustomPracticeModal';
 import { LevelCompleteModal } from './components/LevelCompleteModal';
 import { GlobalCosmicBackground } from './components/GlobalCosmicBackground';
 import { useGame } from './store/gameContext';
-import { useShallow } from 'zustand/react/shallow';
-import { useGameStore } from './store/useGameStore';
-import { useOpener, useRunPhase, useScreen } from './store/useGameScreen';
+import { useGameState } from './store/useGameState';
 import { Play, RotateCcw } from 'lucide-react';
 
 /**
- * The starfield behind everything. It reads the two fields that speed it up
+ * The starfield behind everything. It selects the two fields that speed it up
  * itself, so a change to either re-renders only the starfield, not the app.
  */
-function CosmicBackdrop({ onFlightDeck }: { onFlightDeck: boolean }) {
-  const { hyperspaceActive, multiplier } = useGameStore(
-    useShallow((state) => ({
-      hyperspaceActive: state.performance.hyperspaceActive,
-      multiplier: state.performance.multiplier,
-    })),
+function CosmicBackdrop() {
+  const { onFlightDeck, hyperspaceActive, multiplier } = useGameState(
+    (state) => ({
+      onFlightDeck: state.screen === 'flight-deck',
+      hyperspaceActive: state.run.hyperspaceActive,
+      multiplier: state.run.multiplier,
+    }),
   );
   return (
     <GlobalCosmicBackground
@@ -42,38 +37,17 @@ function CosmicBackdrop({ onFlightDeck }: { onFlightDeck: boolean }) {
 
 export default function App() {
   const game = useGame();
-  const screen = useScreen();
-  const phase = useRunPhase();
-  const opener = useOpener();
-  const runPaused = phase === 'paused';
   const { send } = game;
 
-  // App reads only what it shows itself. The Run's moving fields (Drones,
+  // App selects only what it shows itself. The Run's moving fields (Drones,
   // score, Streak, the typed index) belong to the deck, the HUD and the text
-  // prompt, which read them on their own.
-  const currentStage = useGameStore((state) => state.currentStage);
-  const profile = useGameStore((state) => state.profile);
-  const loadNotice = useGameStore((state) => state.loadNotice);
-  const victoryResult = useGameStore((state) => state.victoryResult);
-  // The store's actions never change, so reading them off the store is stable.
-  const {
-    processKeystroke,
-    releaseKeystroke,
-    toggleGlobalMute,
-    toggleSound,
-    toggleMusic,
-    setSoundVolume,
-    setMusicVolume,
-    setBeatTheme,
-    upgradeShields,
-    upgradeReactor,
-    upgradeSensors,
-    unlockOrEquipTheme,
-    unlockOrEquipAudio,
-    importProfile,
-    wipeCurriculumAchievements,
-    resetProgress,
-  } = game.store.getState();
+  // prompt, which select them on their own.
+  const { screen, phase, profile, loadNotice } = useGameState((state) => ({
+    screen: state.screen,
+    phase: state.phase,
+    profile: state.profile,
+    loadNotice: state.loadNotice,
+  }));
 
   // Synchronize audio engine with current profile settings
   useEffect(() => {
@@ -117,16 +91,16 @@ export default function App() {
       if (e.metaKey || (e.ctrlKey && !e.altKey)) return;
 
       // Which keys count, and dropping auto-repeat, is the game's call.
-      processKeystroke(e.key, { repeat: e.repeat });
+      game.pressKey(e.key, { repeat: e.repeat });
     };
 
     const handleKeyUp = (e: KeyboardEvent) => {
       if (phase !== 'running') return;
-      releaseKeystroke(e.key);
+      game.releaseKey(e.key);
     };
 
     const handleBlur = () => {
-      releaseKeystroke();
+      game.releaseKey();
     };
 
     window.addEventListener('keydown', handleKeyDown);
@@ -137,7 +111,7 @@ export default function App() {
       window.removeEventListener('keyup', handleKeyUp);
       window.removeEventListener('blur', handleBlur);
     };
-  }, [phase, send, processKeystroke, releaseKeystroke]);
+  }, [phase, game, send]);
 
   // Leaving the page (another window, another tab) is a player event: the
   // machine pauses a running Run and ignores it anywhere else.
@@ -164,38 +138,10 @@ export default function App() {
   return (
     <div className="relative min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-cyan-500/30 selection:text-cyan-200 overflow-x-hidden">
       {/* Global Cosmic Starfield Background: tranquil on home & modals; hyperwarp ONLY during active flight */}
-      <CosmicBackdrop onFlightDeck={screen === 'flight-deck'} />
+      <CosmicBackdrop />
 
       {/* Strict Top Bar Contract */}
-      <HeaderNav
-        totalStars={profile.totalStars}
-        totalCredits={profile.totalCredits}
-        isMuted={Boolean(profile.globalMuted)}
-        soundEnabled={profile.soundEnabled}
-        musicEnabled={profile.musicEnabled !== false}
-        soundVolume={profile.soundVolume}
-        musicVolume={profile.musicVolume ?? 0.4}
-        beatTheme={profile.beatTheme || 'NEON_SYNTHWAVE'}
-        audioCore={profile.upgrades.equippedAudioCore}
-        onToggleGlobalMute={toggleGlobalMute}
-        onToggleSound={toggleSound}
-        onToggleMusic={toggleMusic}
-        onSetSoundVolume={setSoundVolume}
-        onSetMusicVolume={setMusicVolume}
-        onSetBeatTheme={setBeatTheme}
-        onSetAudioCore={(core) => unlockOrEquipAudio(core, 0)}
-        onGoHome={() => send({ type: 'PRESS_HOME' })}
-        onOpenStages={() => send({ type: 'OPEN_GALAXY_MAP' })}
-        onOpenHangar={() => send({ type: 'OPEN_HANGAR' })}
-        onOpenAnalytics={() => send({ type: 'OPEN_ANALYTICS' })}
-        onOpenCustom={() => send({ type: 'OPEN_FREE_FLIGHT' })}
-        onQuickPlay={() =>
-          send({
-            type: screen === 'flight-deck' ? 'PRESS_PAUSE' : 'PRESS_PLAY',
-          })
-        }
-        isPlaying={screen === 'flight-deck'}
-      />
+      <HeaderNav />
 
       {/* Main Game Screen */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-6 flex flex-col gap-4">
@@ -304,7 +250,7 @@ export default function App() {
           /* Active Cockpit Flight Deck */
           <div className="flex-1 flex flex-col gap-4">
             {/* Top HUD Telemetry */}
-            <HUD onPause={() => send({ type: 'PRESS_PAUSE' })} />
+            <HUD />
 
             {/* Text Prompt Stream */}
             <TextPromptStream />
@@ -375,85 +321,19 @@ export default function App() {
       )}
 
       {/* Stage Select Galaxy Modal */}
-      {screen === 'galaxy-map' && (
-        <StageSelectModal
-          stagesProgress={profile.stagesProgress}
-          totalStars={profile.totalStars}
-          totalCredits={profile.totalCredits}
-          opener={opener}
-          runPaused={runPaused}
-          onSelectStage={(stage) =>
-            send({ type: 'PICK_STAGE', stageId: stage.id })
-          }
-          onGoToFlightDeck={() => send({ type: 'PRESS_PLAY' })}
-          onReturnToDebrief={() => send({ type: 'PRESS_CLOSE' })}
-          onReturnToMenu={() => send({ type: 'PRESS_HOME' })}
-          onClose={() => send({ type: 'PRESS_CLOSE' })}
-          onOpenHangar={() => send({ type: 'OPEN_HANGAR' })}
-          onOpenAnalytics={() => send({ type: 'OPEN_ANALYTICS' })}
-          onWipeAchievements={wipeCurriculumAchievements}
-        />
-      )}
+      {screen === 'galaxy-map' && <StageSelectModal />}
 
       {/* Hangar Upgrades Modal */}
-      {screen === 'hangar' && (
-        <HangarUpgradesModal
-          upgrades={profile.upgrades}
-          totalCredits={profile.totalCredits}
-          onUpgradeShields={upgradeShields}
-          onUpgradeReactor={upgradeReactor}
-          onUpgradeSensors={upgradeSensors}
-          onUnlockOrEquipTheme={unlockOrEquipTheme}
-          onUnlockOrEquipAudio={unlockOrEquipAudio}
-          opener={opener}
-          runPaused={runPaused}
-          onGoToFlightDeck={() => send({ type: 'PRESS_PLAY' })}
-          onClose={() => send({ type: 'PRESS_CLOSE' })}
-        />
-      )}
+      {screen === 'hangar' && <HangarUpgradesModal />}
 
       {/* Performance Analytics & Heatmap Modal */}
-      {screen === 'analytics' && (
-        <AnalyticsModal
-          profile={profile}
-          opener={opener}
-          runPaused={runPaused}
-          onGoToFlightDeck={() => send({ type: 'PRESS_PLAY' })}
-          onClose={() => send({ type: 'PRESS_CLOSE' })}
-          onImportProfile={importProfile}
-          onWipeAchievements={wipeCurriculumAchievements}
-          onResetProgress={resetProgress}
-        />
-      )}
+      {screen === 'analytics' && <AnalyticsModal />}
 
       {/* Custom Practice / Free Flight Modal */}
-      {screen === 'free-flight' && (
-        <CustomPracticeModal
-          onStartCustom={(stage) => send({ type: 'LAUNCH_FREE_FLIGHT', stage })}
-          opener={opener}
-          onClose={() => send({ type: 'PRESS_CLOSE' })}
-        />
-      )}
+      {screen === 'free-flight' && <CustomPracticeModal />}
 
       {/* Victory / Level Complete Modal */}
-      {screen === 'debrief' && victoryResult && (
-        <LevelCompleteModal
-          stage={currentStage}
-          result={victoryResult}
-          totalStars={profile.totalStars}
-          totalCredits={profile.totalCredits}
-          hasUnlockedNextSector={victoryResult.unlockedSector}
-          hasNextStage={Boolean(getNextStage(currentStage.id))}
-          isLastStage={
-            getStageById(currentStage.id) !== undefined &&
-            !getNextStage(currentStage.id)
-          }
-          onReplay={() => send({ type: 'PRESS_REPLAY' })}
-          onNextStage={() => send({ type: 'PRESS_NEXT_STAGE' })}
-          onReturnToMap={() => send({ type: 'OPEN_GALAXY_MAP' })}
-          onReturnToMenu={() => send({ type: 'PRESS_HOME' })}
-        />
-      )}
+      {screen === 'debrief' && <LevelCompleteModal />}
     </div>
   );
 }

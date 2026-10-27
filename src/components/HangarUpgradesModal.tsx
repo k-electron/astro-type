@@ -8,44 +8,26 @@ import {
   Check,
   Play,
 } from 'lucide-react';
-import type {
-  ShipUpgrades,
-  TrailColorTheme,
-  AudioSynthCore,
-  Screen,
-} from '../types/game';
 import { closeLabel, flightDeckLabel } from './closeLabel';
 import { UPGRADE_CATALOG } from '../game/profile';
+import { useGame } from '../store/gameContext';
+import { useGameState } from '../store/useGameState';
 
-interface HangarUpgradesModalProps {
-  upgrades: ShipUpgrades;
-  totalCredits: number;
-  onUpgradeShields: () => void;
-  onUpgradeReactor: () => void;
-  onUpgradeSensors: () => void;
-  onUnlockOrEquipTheme: (themeId: TrailColorTheme, cost: number) => void;
-  onUnlockOrEquipAudio: (coreId: AudioSynthCore, cost: number) => void;
-  onClose: () => void;
-  onGoToFlightDeck: () => void;
-  /** The screen Close returns to. */
-  opener?: Screen | null;
-  /** A paused Run is waiting, so the Flight Deck button resumes it. */
-  runPaused?: boolean;
-}
-
-export const HangarUpgradesModal: React.FC<HangarUpgradesModalProps> = ({
-  upgrades,
-  totalCredits,
-  onUpgradeShields,
-  onUpgradeReactor,
-  onUpgradeSensors,
-  onUnlockOrEquipTheme,
-  onUnlockOrEquipAudio,
-  onClose,
-  onGoToFlightDeck,
-  opener = null,
-  runPaused = false,
-}) => {
+export const HangarUpgradesModal: React.FC = () => {
+  const game = useGame();
+  const { send, buyUpgrade } = game;
+  const { unlockOrEquipTheme, unlockOrEquipAudio } = game.profileActions;
+  const { upgrades, totalCredits, opener, runPaused } = useGameState(
+    (state) => ({
+      upgrades: state.profile.upgrades,
+      totalCredits: state.profile.totalCredits,
+      opener: state.opener,
+      // A paused Run is waiting, so the Flight Deck button resumes it.
+      runPaused: state.phase === 'paused',
+    }),
+  );
+  const onClose = () => send({ type: 'PRESS_CLOSE' });
+  const onGoToFlightDeck = () => send({ type: 'PRESS_PLAY' });
   const nextShield =
     UPGRADE_CATALOG.deflectorShields[upgrades.deflectorShields];
   const nextReactor =
@@ -145,7 +127,7 @@ export const HangarUpgradesModal: React.FC<HangarUpgradesModalProps> = ({
                   <button
                     type="button"
                     disabled={totalCredits < nextShield.cost}
-                    onClick={() => onUpgradeShields()}
+                    onClick={() => buyUpgrade('shields')}
                     className={`w-full py-2 px-3 rounded-lg text-xs font-medium font-mono flex items-center justify-between transition-colors ${
                       totalCredits >= nextShield.cost
                         ? 'bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold'
@@ -198,7 +180,7 @@ export const HangarUpgradesModal: React.FC<HangarUpgradesModalProps> = ({
                   <button
                     type="button"
                     disabled={totalCredits < nextReactor.cost}
-                    onClick={() => onUpgradeReactor()}
+                    onClick={() => buyUpgrade('reactor')}
                     className={`w-full py-2 px-3 rounded-lg text-xs font-medium font-mono flex items-center justify-between transition-colors ${
                       totalCredits >= nextReactor.cost
                         ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold'
@@ -251,7 +233,7 @@ export const HangarUpgradesModal: React.FC<HangarUpgradesModalProps> = ({
                   <button
                     type="button"
                     disabled={totalCredits < nextSensor.cost}
-                    onClick={() => onUpgradeSensors()}
+                    onClick={() => buyUpgrade('sensors')}
                     className={`w-full py-2 px-3 rounded-lg text-xs font-medium font-mono flex items-center justify-between transition-colors ${
                       totalCredits >= nextSensor.cost
                         ? 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold'
@@ -313,7 +295,7 @@ export const HangarUpgradesModal: React.FC<HangarUpgradesModalProps> = ({
                     <button
                       type="button"
                       disabled={!isUnlocked && totalCredits < theme.cost}
-                      onClick={() => onUnlockOrEquipTheme(theme.id, theme.cost)}
+                      onClick={() => unlockOrEquipTheme(theme.id, theme.cost)}
                       className={`w-full py-1.5 px-2 rounded-lg text-[11px] font-mono transition-colors ${
                         isEquipped
                           ? 'bg-cyan-950/60 text-cyan-300 border border-cyan-800 cursor-default'
@@ -380,7 +362,7 @@ export const HangarUpgradesModal: React.FC<HangarUpgradesModalProps> = ({
                     <button
                       type="button"
                       disabled={!isUnlocked && totalCredits < core.cost}
-                      onClick={() => onUnlockOrEquipAudio(core.id, core.cost)}
+                      onClick={() => unlockOrEquipAudio(core.id, core.cost)}
                       className={`w-full py-1.5 px-2 rounded-lg text-[11px] font-mono transition-colors ${
                         isEquipped
                           ? 'bg-cyan-950/60 text-cyan-300 border border-cyan-800 cursor-default'

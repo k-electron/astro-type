@@ -1,42 +1,27 @@
 import type React from 'react';
 import { useState } from 'react';
-import type { PlayerProfile, Screen } from '../types/game';
+import { useGame } from '../store/gameContext';
+import { useGameState } from '../store/useGameState';
 import { closeLabel, flightDeckLabel } from './closeLabel';
 import {
   KEY_FINGER_MAP,
   FINGER_COLOR_MAP,
   FINGER_DISPLAY_NAMES,
 } from '../data/curriculum';
-import {
-  exportBackup,
-  REFUSED_BACKUP_MESSAGE,
-  type BackupImport,
-} from '../game/save';
+import { exportBackup, REFUSED_BACKUP_MESSAGE } from '../game/save';
 import { Download, Upload, RotateCcw, AlertTriangle, Play } from 'lucide-react';
 
-interface AnalyticsModalProps {
-  profile: PlayerProfile;
-  onClose: () => void;
-  onGoToFlightDeck?: () => void;
-  /** The screen Close returns to. */
-  opener?: Screen | null;
-  /** A paused Run is waiting, so the Flight Deck button resumes it. */
-  runPaused?: boolean;
-  onImportProfile: (text: string) => BackupImport;
-  onWipeAchievements?: () => void;
-  onResetProgress: () => void;
-}
-
-export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
-  profile,
-  onClose,
-  onGoToFlightDeck,
-  opener = null,
-  runPaused = false,
-  onImportProfile,
-  onWipeAchievements,
-  onResetProgress,
-}) => {
+export const AnalyticsModal: React.FC = () => {
+  const game = useGame();
+  const { send, importBackup, wipeAchievements, resetProgress } = game;
+  const { profile, opener, runPaused } = useGameState((state) => ({
+    profile: state.profile,
+    opener: state.opener,
+    // A paused Run is waiting, so the Flight Deck button resumes it.
+    runPaused: state.phase === 'paused',
+  }));
+  const onClose = () => send({ type: 'PRESS_CLOSE' });
+  const onGoToFlightDeck = () => send({ type: 'PRESS_PLAY' });
   const [confirmMode, setConfirmMode] = useState<
     'NONE' | 'WIPE_ACHIEVEMENTS' | 'FULL_RESET'
   >('NONE');
@@ -143,7 +128,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
     if (!file) return;
     const reader = new FileReader();
     reader.onload = () => {
-      const outcome = onImportProfile(String(reader.result ?? ''));
+      const outcome = importBackup(String(reader.result ?? ''));
       setRefusal(outcome.ok ? null : outcome.message);
     };
     reader.onerror = () => setRefusal(REFUSED_BACKUP_MESSAGE);
@@ -165,17 +150,15 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5">
-            {onGoToFlightDeck && (
-              <button
-                type="button"
-                onClick={onGoToFlightDeck}
-                className="px-3.5 py-1.5 text-xs font-bold rounded-lg bg-cyan-400 hover:bg-cyan-300 text-slate-950 transition-all flex items-center gap-1.5 cursor-pointer shadow-md shadow-cyan-950/60"
-                title="Launch directly into the cockpit flight deck"
-              >
-                <Play className="w-3.5 h-3.5 fill-current" />
-                <span>{flightDeckLabel(runPaused)}</span>
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={onGoToFlightDeck}
+              className="px-3.5 py-1.5 text-xs font-bold rounded-lg bg-cyan-400 hover:bg-cyan-300 text-slate-950 transition-all flex items-center gap-1.5 cursor-pointer shadow-md shadow-cyan-950/60"
+              title="Launch directly into the cockpit flight deck"
+            >
+              <Play className="w-3.5 h-3.5 fill-current" />
+              <span>{flightDeckLabel(runPaused)}</span>
+            </button>
 
             <button
               type="button"
@@ -463,17 +446,15 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                 />
               </label>
 
-              {onWipeAchievements && (
-                <button
-                  type="button"
-                  onClick={() => setConfirmMode('WIPE_ACHIEVEMENTS')}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-900/60 bg-amber-950/40 text-xs font-medium text-amber-300 hover:bg-amber-900/50 hover:text-white transition-colors cursor-pointer"
-                  title="Wipe curriculum stars and stage records for the new curriculum"
-                >
-                  <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Wipe Stars</span>
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={() => setConfirmMode('WIPE_ACHIEVEMENTS')}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-900/60 bg-amber-950/40 text-xs font-medium text-amber-300 hover:bg-amber-900/50 hover:text-white transition-colors cursor-pointer"
+                title="Wipe curriculum stars and stage records for the new curriculum"
+              >
+                <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
+                <span>Wipe Stars</span>
+              </button>
 
               <button
                 type="button"
@@ -529,9 +510,9 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                   type="button"
                   onClick={() => {
                     if (confirmMode === 'WIPE_ACHIEVEMENTS') {
-                      onWipeAchievements?.();
+                      wipeAchievements();
                     } else {
-                      onResetProgress();
+                      resetProgress();
                     }
                     setConfirmMode('NONE');
                   }}

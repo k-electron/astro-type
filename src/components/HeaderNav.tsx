@@ -12,32 +12,8 @@ import {
   Check,
 } from 'lucide-react';
 import type { BeatTheme, AudioSynthCore } from '../types/game';
-
-interface HeaderNavProps {
-  totalStars: number;
-  totalCredits: number;
-  isMuted: boolean;
-  soundEnabled: boolean;
-  musicEnabled: boolean;
-  soundVolume: number;
-  musicVolume: number;
-  beatTheme: BeatTheme;
-  audioCore?: AudioSynthCore;
-  onToggleGlobalMute: () => void;
-  onToggleSound: () => void;
-  onToggleMusic: () => void;
-  onSetSoundVolume: (vol: number) => void;
-  onSetMusicVolume: (vol: number) => void;
-  onSetBeatTheme: (theme: BeatTheme) => void;
-  onSetAudioCore?: (core: AudioSynthCore) => void;
-  onGoHome: () => void;
-  onOpenStages: () => void;
-  onOpenHangar: () => void;
-  onOpenAnalytics: () => void;
-  onOpenCustom: () => void;
-  onQuickPlay: () => void;
-  isPlaying: boolean;
-}
+import { useGame } from '../store/gameContext';
+import { useGameState } from '../store/useGameState';
 
 const BEAT_OPTIONS: { id: BeatTheme; name: string; bpm: number }[] = [
   { id: 'NEON_SYNTHWAVE', name: 'Synthwave', bpm: 106 },
@@ -52,31 +28,48 @@ const CORE_OPTIONS: { id: AudioSynthCore; name: string; desc: string }[] = [
   { id: 'NEO_ACOUSTIC', name: 'Neo Acoustic', desc: 'Kalimba' },
 ];
 
-export const HeaderNav: React.FC<HeaderNavProps> = ({
-  totalStars,
-  totalCredits,
-  isMuted,
-  soundEnabled,
-  musicEnabled,
-  soundVolume,
-  musicVolume,
-  beatTheme,
-  audioCore = 'CYBER_SYNTH',
-  onToggleGlobalMute,
-  onToggleSound,
-  onToggleMusic,
-  onSetSoundVolume,
-  onSetMusicVolume,
-  onSetBeatTheme,
-  onSetAudioCore,
-  onGoHome,
-  onOpenStages,
-  onOpenHangar,
-  onOpenAnalytics,
-  onOpenCustom,
-  onQuickPlay,
-  isPlaying,
-}) => {
+export const HeaderNav: React.FC = () => {
+  const game = useGame();
+  const { send } = game;
+  const {
+    toggleGlobalMute: onToggleGlobalMute,
+    toggleSound: onToggleSound,
+    toggleMusic: onToggleMusic,
+    setSoundVolume: onSetSoundVolume,
+    setMusicVolume: onSetMusicVolume,
+    setBeatTheme: onSetBeatTheme,
+    unlockOrEquipAudio,
+  } = game.profileActions;
+  const {
+    totalStars,
+    totalCredits,
+    isMuted,
+    soundEnabled,
+    musicEnabled,
+    soundVolume,
+    musicVolume,
+    beatTheme,
+    audioCore,
+    isPlaying,
+  } = useGameState((state) => ({
+    totalStars: state.profile.totalStars,
+    totalCredits: state.profile.totalCredits,
+    isMuted: Boolean(state.profile.globalMuted),
+    soundEnabled: state.profile.soundEnabled,
+    musicEnabled: state.profile.musicEnabled !== false,
+    soundVolume: state.profile.soundVolume,
+    musicVolume: state.profile.musicVolume ?? 0.4,
+    beatTheme: state.profile.beatTheme || 'NEON_SYNTHWAVE',
+    audioCore: state.profile.upgrades.equippedAudioCore ?? 'CYBER_SYNTH',
+    isPlaying: state.screen === 'flight-deck',
+  }));
+  const onGoHome = () => send({ type: 'PRESS_HOME' });
+  const onOpenStages = () => send({ type: 'OPEN_GALAXY_MAP' });
+  const onOpenHangar = () => send({ type: 'OPEN_HANGAR' });
+  const onOpenAnalytics = () => send({ type: 'OPEN_ANALYTICS' });
+  const onOpenCustom = () => send({ type: 'OPEN_FREE_FLIGHT' });
+  const onQuickPlay = () =>
+    send({ type: isPlaying ? 'PRESS_PAUSE' : 'PRESS_PLAY' });
   const [isAudioMenuOpen, setIsAudioMenuOpen] = useState(false);
   const audioMenuRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLElement>(null);
@@ -371,43 +364,41 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
                 </div>
 
                 {/* Quick Synthesizer Core Selector */}
-                {onSetAudioCore && (
-                  <div className="pt-2 border-t border-slate-800/80 mt-1">
-                    <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block mb-1.5">
-                      Synthesizer Voice
-                    </span>
-                    <div className="grid grid-cols-2 gap-1.5">
-                      {CORE_OPTIONS.map((c) => {
-                        const isEquipped = audioCore === c.id;
-                        return (
-                          <button
-                            type="button"
-                            key={c.id}
-                            disabled={isMuted || !soundEnabled}
-                            onClick={() => onSetAudioCore(c.id)}
-                            className={`p-1.5 rounded-lg border text-left transition-all cursor-pointer ${
-                              isEquipped && !isMuted && soundEnabled
-                                ? 'border-cyan-500/60 bg-cyan-950/50 text-cyan-200'
-                                : 'border-slate-800 bg-slate-900/60 text-slate-400 hover:text-slate-200 hover:border-slate-700'
-                            }`}
-                          >
-                            <div className="flex items-center justify-between">
-                              <span className="text-[11px] font-bold block truncate">
-                                {c.name}
-                              </span>
-                              {isEquipped && (
-                                <Check className="w-3 h-3 text-cyan-400 shrink-0" />
-                              )}
-                            </div>
-                            <span className="text-[9px] font-mono text-slate-500 block truncate">
-                              {c.desc}
+                <div className="pt-2 border-t border-slate-800/80 mt-1">
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block mb-1.5">
+                    Synthesizer Voice
+                  </span>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {CORE_OPTIONS.map((c) => {
+                      const isEquipped = audioCore === c.id;
+                      return (
+                        <button
+                          type="button"
+                          key={c.id}
+                          disabled={isMuted || !soundEnabled}
+                          onClick={() => unlockOrEquipAudio(c.id, 0)}
+                          className={`p-1.5 rounded-lg border text-left transition-all cursor-pointer ${
+                            isEquipped && !isMuted && soundEnabled
+                              ? 'border-cyan-500/60 bg-cyan-950/50 text-cyan-200'
+                              : 'border-slate-800 bg-slate-900/60 text-slate-400 hover:text-slate-200 hover:border-slate-700'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-[11px] font-bold block truncate">
+                              {c.name}
                             </span>
-                          </button>
-                        );
-                      })}
-                    </div>
+                            {isEquipped && (
+                              <Check className="w-3 h-3 text-cyan-400 shrink-0" />
+                            )}
+                          </div>
+                          <span className="text-[9px] font-mono text-slate-500 block truncate">
+                            {c.desc}
+                          </span>
+                        </button>
+                      );
+                    })}
                   </div>
-                )}
+                </div>
               </div>
 
               {/* Channel 2: Background Rhythm Beats */}

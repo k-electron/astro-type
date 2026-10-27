@@ -6,15 +6,9 @@ import {
   DEFAULT_FREE_FLIGHT_WPM,
 } from '../game/freeFlight';
 import { FreeFlightTextSchema } from '../store/schemas';
-import type { Screen, Stage } from '../types/game';
+import { useGame } from '../store/gameContext';
+import { useGameState } from '../store/useGameState';
 import { closeLabel } from './closeLabel';
-
-interface CustomPracticeModalProps {
-  onStartCustom: (customStage: Stage) => void;
-  onClose: () => void;
-  /** The screen Close returns to. */
-  opener: Screen | null;
-}
 
 const PRESET_TEXTS = [
   {
@@ -39,11 +33,10 @@ const PRESET_TEXTS = [
   },
 ];
 
-export const CustomPracticeModal: React.FC<CustomPracticeModalProps> = ({
-  onStartCustom,
-  onClose,
-  opener,
-}) => {
+export const CustomPracticeModal: React.FC = () => {
+  const { send } = useGame();
+  const opener = useGameState((state) => state.opener);
+  const onClose = () => send({ type: 'PRESS_CLOSE' });
   const [customText, setCustomText] = useState<string>(PRESET_TEXTS[0].text);
   const [targetWpm, setTargetWpm] = useState<number>(DEFAULT_FREE_FLIGHT_WPM);
 
@@ -65,7 +58,7 @@ export const CustomPracticeModal: React.FC<CustomPracticeModalProps> = ({
       targetWpm,
     );
 
-    onStartCustom(customStage);
+    send({ type: 'LAUNCH_FREE_FLIGHT', stage: customStage });
   };
 
   return (
