@@ -56,7 +56,9 @@ describe('the frame loop on a running Run', () => {
     browser.frames(2 * SECOND);
 
     // Frames of 50 ms are three steps each, give or take the step in hand.
-    expect(Math.abs(game.getRunTime() - 2 * SECOND)).toBeLessThan(STEP_MS);
+    expect(Math.abs(game.getState().runTime - 2 * SECOND)).toBeLessThan(
+      STEP_MS,
+    );
   });
 
   it('catches up on at most 100 ms after a stall, so the Drones do not jump across the deck', () => {
@@ -71,8 +73,8 @@ describe('the frame loop on a running Run', () => {
     // The Run took 6 steps (100 ms), the same as a game stepped by hand.
     const reference = startedGame();
     reference.step(6);
-    expect(stalled.getRunTime()).toBeGreaterThan(0);
-    expect(stalled.getRunTime()).toBeLessThanOrEqual(100 + STEP_MS / 2);
+    expect(stalled.getState().runTime).toBeGreaterThan(0);
+    expect(stalled.getState().runTime).toBeLessThanOrEqual(100 + STEP_MS / 2);
     expect(droneHeights(stalled)).toEqual(droneHeights(reference));
   });
 
@@ -82,11 +84,11 @@ describe('the frame loop on a running Run', () => {
     startFrameLoop(game, browser.env);
     browser.frame(0);
     browser.frame(5 * MINUTE);
-    const afterStall = game.getRunTime();
+    const afterStall = game.getState().runTime;
 
     browser.frame(STEP_MS);
 
-    expect(game.getRunTime() - afterStall).toBeLessThan(2 * STEP_MS);
+    expect(game.getState().runTime - afterStall).toBeLessThan(2 * STEP_MS);
   });
 });
 
@@ -97,13 +99,13 @@ describe('the frame loop across a pause', () => {
     startFrameLoop(game, browser.env);
     browser.frame(0);
     browser.frames(SECOND);
-    const before = game.getRunTime();
+    const before = game.getState().runTime;
     const dronesBefore = droneHeights(game);
 
     game.send({ type: 'PRESS_PAUSE' });
     browser.frames(5 * MINUTE, SECOND);
 
-    expect(game.getRunTime()).toBe(before);
+    expect(game.getState().runTime).toBe(before);
     expect(droneHeights(game)).toEqual(dronesBefore);
   });
 
@@ -119,7 +121,7 @@ describe('the frame loop across a pause', () => {
     paused.send({ type: 'PRESS_RESUME' });
     // The frame after resume comes a long time after the last one that ran.
     browser.frame(5 * MINUTE);
-    expect(paused.getRunTime()).toBeCloseTo(SECOND, -1);
+    expect(paused.getState().runTime).toBeCloseTo(SECOND, -1);
     browser.frames(SECOND);
 
     // The same Run with no pause in it: two seconds of running, in 50 ms frames.
@@ -129,10 +131,13 @@ describe('the frame loop across a pause', () => {
     other.frame(0);
     other.frames(2 * SECOND);
 
-    expect(paused.getRunTime()).toBeCloseTo(unpaused.getRunTime(), -1);
-    expect(Math.abs(paused.getRunTime() - unpaused.getRunTime())).toBeLessThan(
-      2 * STEP_MS,
+    expect(paused.getState().runTime).toBeCloseTo(
+      unpaused.getState().runTime,
+      -1,
     );
+    expect(
+      Math.abs(paused.getState().runTime - unpaused.getState().runTime),
+    ).toBeLessThan(2 * STEP_MS);
     expect(droneHeights(paused)).toEqual(droneHeights(unpaused));
   });
 });
@@ -172,7 +177,7 @@ describe('the frame loop reporting each frame', () => {
     // 25 ms is one step and half of the next.
     browser.frame(25);
 
-    expect(game.getRunTime()).toBeCloseTo(STEP_MS, 3);
+    expect(game.getState().runTime).toBeCloseTo(STEP_MS, 3);
     expect(reported.at(-1)).toBeCloseTo(0.5, 5);
   });
 });
