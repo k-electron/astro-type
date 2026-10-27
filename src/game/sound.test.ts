@@ -41,7 +41,8 @@ it('sounds right at every moment of a Run', () => {
 
   /** Hit Perfects one at a time until Overdrive catches fire. Quiet until then. */
   const hitUntilOverdrive = (moment: string) => {
-    const budget = SAMPLE_TEXT.length - game.getRun().currentCharIndex - 2;
+    const budget =
+      SAMPLE_TEXT.length - game.getState().run.currentCharIndex - 2;
     for (let i = 0; i < budget; i++) {
       hitPerfect(game, 1);
       if (sound.heard().overdrive) {
@@ -126,7 +127,7 @@ it('sounds right at every moment of a Run', () => {
   heard('unmuted after resuming', { beat: true, overdrive: true });
 
   // Typing on to the last character: a hit cue each, nothing else.
-  const left = SAMPLE_TEXT.length - 1 - game.getRun().currentCharIndex;
+  const left = SAMPLE_TEXT.length - 1 - game.getState().run.currentCharIndex;
   hitPerfect(game, left);
   heard('typed on to the last character', {
     beat: true,
@@ -137,7 +138,7 @@ it('sounds right at every moment of a Run', () => {
   // Clearing the Stage: the last hit, the fanfare, then the chimes for the
   // Stars the Debrief shows. Beat and Overdrive layer go.
   hitPerfect(game, 1);
-  const debrief = game.getDebrief();
+  const debrief = game.getState().debrief;
   expect(debrief, 'Debrief after the clear').not.toBeNull();
   heard('Stage cleared', {
     beat: false,

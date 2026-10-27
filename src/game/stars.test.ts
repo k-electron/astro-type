@@ -16,7 +16,7 @@ import {
  */
 
 function debriefOf(game: ReturnType<typeof startedGame>) {
-  const debrief = game.getDebrief();
+  const debrief = game.getState().debrief;
   if (!debrief) throw new Error('expected a Debrief after clearing the Stage');
   return debrief;
 }
@@ -38,7 +38,7 @@ describe('Stars from WPM, accuracy and Streak', () => {
     expect(debrief.isNewHighScore).toBe(true);
     expect(debrief.newStarsAwarded).toBe(3);
 
-    const profile = game.getProfile();
+    const profile = game.getState().profile;
     expect(profile.totalCredits).toBe(547);
     expect(profile.totalStars).toBe(3);
     expect(profile.totalKeystrokes).toBe(77);
@@ -90,7 +90,7 @@ describe('Stars from WPM, accuracy and Streak', () => {
     clearStage(game, { seconds: 60, missesFirst: 15 });
 
     expect(debriefOf(game).creditsEarned).toBe(100 + 222); // no Star bonus
-    const profile = game.getProfile();
+    const profile = game.getState().profile;
     expect(profile.totalCredits).toBe(322);
     expect(profile.totalStars).toBe(0);
     expect(profile.totalErrors).toBe(15);
@@ -112,7 +112,7 @@ describe('Stars from WPM, accuracy and Streak', () => {
   it('the 3rd Star also needs the Streak: the same clean Run falls to 2 Stars when the Streak asked is out of reach', () => {
     // On the real Stage, accuracy always trips before the Streak can, so give the
     // Stage a Streak longer than the text to see the Streak gate on its own.
-    const stage = startedGame().getRun().currentStage;
+    const stage = startedGame().getState().run.currentStage;
     if (!stage) throw new Error('expected a current Stage');
     const strictStage = {
       ...stage,
@@ -149,7 +149,7 @@ describe('Stars from WPM, accuracy and Streak', () => {
     expect(debrief.isNewHighScore).toBe(false);
     expect(debrief.creditsEarned).toBe(100 + 2 * 75 + 222); // Credits are paid on every clear
 
-    const profile = game.getProfile();
+    const profile = game.getState().profile;
     expect(profile.stagesProgress[STAGE_ID]).toMatchObject({
       starsEarned: 3,
       highScore: 50000,

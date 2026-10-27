@@ -36,7 +36,7 @@ const SAVES: Array<[string, unknown]> = [
 function firstKeyScores(game: Game, key: string, steps: number): number {
   game.step(steps);
   game.pressKey(key);
-  return game.getRun().score;
+  return game.getState().run.score;
 }
 
 /** [steps before the first key, the points that key scores]. */
@@ -75,7 +75,7 @@ describe('a Free Flight Run moves at the same Drone speed', () => {
 });
 
 describe('the Drones move the same way in every Run', () => {
-  const leadHeight = (game: Game) => game.getRun().drones[0].yPercent;
+  const leadHeight = (game: Game) => game.getState().run.drones[0].yPercent;
 
   it.each(SAVES)(
     'from %s, the lead Drone falls 2.2 a step to the Strike Line and waits there',
@@ -93,9 +93,9 @@ describe('the Drones move the same way in every Run', () => {
 
       // It is locked on from y = 83.5, which it reaches on the 10th step.
       game.step(9);
-      expect(game.getRun().drones[0].isTargetLocked).toBeFalsy();
+      expect(game.getState().run.drones[0].isTargetLocked).toBeFalsy();
       game.step(1);
-      expect(game.getRun().drones[0].isTargetLocked).toBe(true);
+      expect(game.getState().run.drones[0].isTargetLocked).toBe(true);
 
       // It never falls past the line, however long it waits.
       game.step(600);
@@ -106,15 +106,15 @@ describe('the Drones move the same way in every Run', () => {
   it('the Drone behind eases down toward its slot and settles there', () => {
     const game = newGame();
     startStage(game, STAGE_ID);
-    const start = game.getRun().drones[1].yPercent;
+    const start = game.getState().run.drones[1].yPercent;
 
     game.step(10);
-    const underway = game.getRun().drones[1].yPercent;
+    const underway = game.getState().run.drones[1].yPercent;
     expect(underway).toBeGreaterThan(start);
     expect(underway).toBeLessThan(68);
 
     game.step(600);
-    expect(game.getRun().drones[1].yPercent).toBeCloseTo(68, 3);
+    expect(game.getState().run.drones[1].yPercent).toBeCloseTo(68, 3);
   });
 
   it.each(OLD_DRONE_SPEEDS)(
@@ -127,7 +127,7 @@ describe('the Drones move the same way in every Run', () => {
         return [1, 2, 3, 5, 8, 13, 21, 60].map((at) => {
           game.step(at - done);
           done = at;
-          return game.getRun().drones[1].yPercent;
+          return game.getState().run.drones[1].yPercent;
         });
       };
 

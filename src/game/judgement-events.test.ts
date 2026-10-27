@@ -89,11 +89,11 @@ describe('a hit says the points it scored', () => {
   /** Plays one Perfect hit and returns its event with the score it added. */
   function strike(game: Game) {
     const events = listen(game);
-    const before = game.getRun().score;
+    const before = game.getState().run.score;
     hitPerfect(game, 1);
     const [event] = events;
     if (event?.type !== 'hit') throw new Error('Expected a hit');
-    return { event, added: game.getRun().score - before };
+    return { event, added: game.getState().run.score - before };
   }
 
   it('under a Multiplier, counting the Streak the hit makes', () => {
@@ -111,7 +111,7 @@ describe('a hit says the points it scored', () => {
     const game = startedGame();
     hitPerfect(game, 28);
     const igniting = strike(game);
-    expect(game.getRun().hyperspaceActive).toBe(true);
+    expect(game.getState().run.hyperspaceActive).toBe(true);
     expect(igniting.event).toMatchObject({ points: 300, overdrive: false });
     expect(igniting.event.points).toBe(igniting.added);
 
@@ -136,7 +136,7 @@ describe('a Miss', () => {
 
     expect(events).toEqual([{ type: 'miss', key }]);
     // The Drone is still the one to hit.
-    expect(game.getRun().currentCharIndex).toBe(0);
+    expect(game.getState().run.currentCharIndex).toBe(0);
   });
 
   it('is a shield event while a shield absorbs it, then a Miss', () => {
@@ -146,15 +146,15 @@ describe('a Miss', () => {
 
     game.pressKey('x');
     expect(events).toEqual([{ type: 'shield', key: 'x' }]);
-    expect(game.getRun().shieldsRemaining).toBe(0);
-    expect(game.getRun().currentStreak).toBe(3);
+    expect(game.getState().run.shieldsRemaining).toBe(0);
+    expect(game.getState().run.currentStreak).toBe(3);
 
     game.pressKey('y');
     expect(events).toEqual([
       { type: 'shield', key: 'x' },
       { type: 'miss', key: 'y' },
     ]);
-    expect(game.getRun().currentStreak).toBe(0);
+    expect(game.getState().run.currentStreak).toBe(0);
   });
 });
 
@@ -167,7 +167,7 @@ describe('one event per counted keystroke', () => {
     for (const wrong of ['x', 'y', 'z']) game.pressKey(wrong);
     hitPerfect(game, SAMPLE_TEXT.length);
 
-    expect(game.getDebrief()).not.toBeNull();
+    expect(game.getState().debrief).not.toBeNull();
     expect(events).toHaveLength(3 + SAMPLE_TEXT.length);
     expect(events.map((event) => event.type)).toEqual([
       'shield',
@@ -200,7 +200,7 @@ describe('one event per counted keystroke', () => {
   it('is not given for keys pressed after the Run is cleared', () => {
     const game = startedGame();
     hitPerfect(game, SAMPLE_TEXT.length);
-    expect(game.getDebrief()).not.toBeNull();
+    expect(game.getState().debrief).not.toBeNull();
     const events = listen(game);
 
     game.pressKey('f');
@@ -260,13 +260,13 @@ describe('a key that types no character', () => {
     // A Run with a Streak, Overdrive charge and shields to lose.
     const game = startedGame({ deflectorShields: 2 });
     hitPerfect(game, 3);
-    const before = structuredClone(game.getRun());
+    const before = structuredClone(game.getState().run);
     const events = listen(game);
 
     game.pressKey(key);
 
     expect(events).toEqual([]);
-    expect(game.getRun()).toEqual(before);
+    expect(game.getState().run).toEqual(before);
     expect(before.currentStreak).toBe(3);
     expect(before.shieldsRemaining).toBe(2);
   });
@@ -284,8 +284,8 @@ describe('a key that types no character', () => {
     game.pressKey(' ');
 
     expect(events.map((event) => event.type)).toEqual(['hit', 'hit']);
-    expect(game.getRun().currentStreak).toBe(2);
-    expect(game.getRun().incorrectKeystrokes).toBe(0);
+    expect(game.getState().run.currentStreak).toBe(2);
+    expect(game.getState().run.incorrectKeystrokes).toBe(0);
   });
 });
 
@@ -294,14 +294,14 @@ describe('an auto-repeat keydown', () => {
     const game = startedGame({ deflectorShields: 2 });
     hitPerfect(game, 3);
     game.step(30);
-    const before = structuredClone(game.getRun());
+    const before = structuredClone(game.getState().run);
     const events = listen(game);
 
     game.pressKey(targetKey(game), { repeat: true });
     game.pressKey('x', { repeat: true });
 
     expect(events).toEqual([]);
-    expect(game.getRun()).toEqual(before);
+    expect(game.getState().run).toEqual(before);
   });
 
   it('after a held right key scores that one hit and nothing more, even on a repeated letter', () => {
@@ -322,14 +322,14 @@ describe('an auto-repeat keydown', () => {
         overdrive: false,
       },
     ]);
-    expect(game.getRun().currentCharIndex).toBe(9);
-    expect(game.getRun().incorrectKeystrokes).toBe(0);
+    expect(game.getState().run.currentCharIndex).toBe(9);
+    expect(game.getState().run.incorrectKeystrokes).toBe(0);
 
     // Letting go and pressing again is a new keystroke, and counts.
     game.step(30);
     game.pressKey('f', { repeat: false });
     expect(events).toHaveLength(2);
-    expect(game.getRun().currentCharIndex).toBe(10);
+    expect(game.getState().run.currentCharIndex).toBe(10);
   });
 
   it('after a held wrong key is one Miss, and uses up one shield', () => {
@@ -341,9 +341,9 @@ describe('an auto-repeat keydown', () => {
     for (let i = 0; i < 5; i++) game.pressKey('x', { repeat: true });
 
     expect(events).toEqual([{ type: 'shield', key: 'x' }]);
-    expect(game.getRun().shieldsRemaining).toBe(1);
-    expect(game.getRun().incorrectKeystrokes).toBe(1);
-    expect(game.getRun().currentStreak).toBe(3);
+    expect(game.getState().run.shieldsRemaining).toBe(1);
+    expect(game.getState().run.incorrectKeystrokes).toBe(1);
+    expect(game.getState().run.currentStreak).toBe(3);
   });
 
   it('on a key that types no character is ignored too', () => {

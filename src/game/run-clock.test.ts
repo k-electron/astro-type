@@ -29,7 +29,7 @@ function pauseFor(game: Game, steps = TEN_MINUTES_OF_STEPS): void {
 
 /** What the HUD shows (Speed, Accuracy), and the cadence reading, all measured in Run Time. */
 function readings(game: Game) {
-  const run = game.getRun();
+  const run = game.getState().run;
   return {
     netWpm: run.netWpm,
     accuracy: run.accuracy,
@@ -38,7 +38,7 @@ function readings(game: Game) {
 }
 
 const droneHeights = (game: Game) =>
-  game.getRun().drones.map((drone) => drone.yPercent);
+  game.getState().run.drones.map((drone) => drone.yPercent);
 
 afterEach(() => {
   vi.useRealTimers();
@@ -143,7 +143,7 @@ describe('Run Time', () => {
     // wall clock says: 77 keys in a minute of Run Time is 15 WPM.
     clearStage(game, { seconds: 60 });
     vi.setSystemTime(new Date('2026-01-01T12:20:00Z'));
-    expect(game.getDebrief()?.wpm).toBe(15);
+    expect(game.getState().debrief?.wpm).toBe(15);
   });
 });
 
@@ -175,11 +175,11 @@ describe('the Run clock steps only while the Run is running', () => {
     game.pressKey(targetKey(game));
     game.send({ type: 'PRESS_PAUSE' });
     game.step(600);
-    expect(game.getRun().netWpm).toBe(0);
+    expect(game.getState().run.netWpm).toBe(0);
 
     game.send({ type: 'PRESS_RESUME' });
     game.step(30);
-    expect(game.getRun().netWpm).toBe(12);
+    expect(game.getState().run.netWpm).toBe(12);
   });
 
   it('refreshes the telemetry every 30 steps, which is 500 ms', () => {
@@ -189,16 +189,16 @@ describe('the Run clock steps only while the Run is running', () => {
     // One key in the first second of Run Time: 1 / 5 / (1 / 60) = 12 WPM.
     // A Run under a second long is read as one second.
     game.step(29);
-    expect(game.getRun().netWpm).toBe(0);
+    expect(game.getState().run.netWpm).toBe(0);
     game.step(1);
-    expect(game.getRun().netWpm).toBe(12);
+    expect(game.getState().run.netWpm).toBe(12);
 
     // A second key lands in the next half second: not shown until step 60.
     game.pressKey(targetKey(game));
     game.step(29);
-    expect(game.getRun().netWpm).toBe(12);
+    expect(game.getState().run.netWpm).toBe(12);
     game.step(1);
-    expect(game.getRun().netWpm).toBe(24);
+    expect(game.getState().run.netWpm).toBe(24);
   });
 });
 
@@ -239,7 +239,7 @@ describe('a pause in the middle of a Run leaves WPM, accuracy and cadence unchan
       game.step(60 * 60 - 76 * 30);
       game.pressKey(targetKey(game));
       expect(game.getScreen()).toBe('debrief');
-      return game.getDebrief();
+      return game.getState().debrief;
     }
 
     const straight = clear(false);
@@ -266,10 +266,10 @@ describe('a pause in the middle of a Run leaves WPM, accuracy and cadence unchan
     game.step(60 * 60 - 76 * 30);
     game.pressKey(targetKey(game));
 
-    const debrief = game.getDebrief();
+    const debrief = game.getState().debrief;
     expect(debrief?.wpm).toBe(15);
     expect(debrief?.starsEarned).toBe(3);
-    expect(game.getProfile().stagesProgress[STAGE_ID]?.bestWpm).toBe(15);
+    expect(game.getState().profile.stagesProgress[STAGE_ID]?.bestWpm).toBe(15);
   });
 
   it('counts the time between keystrokes in Run Time, so a pause is not one slow keystroke', () => {
@@ -279,7 +279,7 @@ describe('a pause in the middle of a Run leaves WPM, accuracy and cadence unchan
     hitPerfect(game, 5);
 
     // Ten keystrokes 30 steps apart: perfectly even typing.
-    expect(game.getRun().cadenceConsistency).toBe(100);
+    expect(game.getState().run.cadenceConsistency).toBe(100);
   });
 
   it('measures the same cadence for uneven typing with or without a pause between keystrokes', () => {
@@ -294,12 +294,12 @@ describe('a pause in the middle of a Run leaves WPM, accuracy and cadence unchan
       return game;
     }
 
-    const straight = unevenTyping(null).getRun().cadenceConsistency;
+    const straight = unevenTyping(null).getState().run.cadenceConsistency;
     // Steady typing is 100; this alternates 4:1, so it reads well under.
     expect(straight).toBeLessThan(100);
     expect(straight).toBeGreaterThanOrEqual(30);
 
-    expect(unevenTyping(5).getRun().cadenceConsistency).toBe(straight);
-    expect(unevenTyping(6).getRun().cadenceConsistency).toBe(straight);
+    expect(unevenTyping(5).getState().run.cadenceConsistency).toBe(straight);
+    expect(unevenTyping(6).getState().run.cadenceConsistency).toBe(straight);
   });
 });
