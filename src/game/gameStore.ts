@@ -31,7 +31,6 @@ import {
   chargeOverdrive,
   freshPerformance,
   countsAsKeystroke,
-  type Judgement,
   judge,
   moveDrones,
   multiplierForStreak,
@@ -40,7 +39,7 @@ import {
   seedDrones,
   telemetry,
 } from './rules';
-import type { JustHappened } from './sound';
+import type { Moment } from './moments';
 
 export interface VictoryResult {
   score: number;
@@ -116,10 +115,8 @@ export interface GameStoreDeps {
   clock: Clock;
   /** Run Time: what WPM, Stars, cadence and keystroke intervals are measured in. */
   runClock: RunClock;
-  /** Told of what happens that has a sound of its own: Overdrive catching fire, a clear, a purchase. */
-  onHappened: (happened: JustHappened) => void;
-  /** Told of each Judgement as it happens, after the Run has changed. */
-  onJudgement: (judgement: Judgement) => void;
+  /** Told of each moment as it happens: the Judgement, Overdrive catching fire, a clear, a purchase. */
+  emit: (moment: Moment) => void;
 }
 
 /**
@@ -133,8 +130,7 @@ export function createGameStore({
   storage,
   clock,
   runClock,
-  onHappened,
-  onJudgement,
+  emit,
 }: GameStoreDeps): StoreApi<GameStoreState> {
   const save = createSave(storage);
   // Wiping or resetting sends the player back to the first Stage, unless a
@@ -303,12 +299,6 @@ export function createGameStore({
             totalKeystrokes: state.performance.totalKeystrokes + 1,
             currentCharIndex: nextCharIndex,
             cadenceConsistency: liveCadence,
-            lastHitDrone: {
-              id: matchingNote?.id,
-              char: targetChar,
-              yPercent: matchingNote ? matchingNote.yPercent : 84,
-              lane: targetInfo.lane,
-            },
           };
 
           set({
@@ -319,7 +309,7 @@ export function createGameStore({
             recentKeystrokeTimes: updatedKeystrokeTimes,
           });
 
-          onJudgement({
+          emit({
             type: 'hit',
             grade:
               rating === 'PERFECT'
@@ -330,10 +320,15 @@ export function createGameStore({
             key: pressedKey,
             points: earnedScore,
             overdrive: state.performance.hyperspaceActive,
+            // The Drone carries its lane and finger. The Run always keeps a
+            // Drone for the next character; the key table is the fallback.
+            droneId: matchingNote?.id ?? '',
+            lane: matchingNote?.lane ?? targetInfo.lane,
+            finger: matchingNote?.finger ?? targetInfo.finger,
           });
-          // Overdrive catching fire is its own sound, after the hit's.
+          // Overdrive catching fire comes right after the hit that lit it.
           if (charge.ignites) {
-            onHappened({ type: 'ignition' });
+            emit({ type: 'ignition' });
           }
 
           // Stage completed check
@@ -355,7 +350,7 @@ export function createGameStore({
             sessionKeyStats: updatedKeyStats,
             performance: perf,
           });
-          onJudgement({
+          emit({
             type: shielded ? 'shield' : 'miss',
             key: pressedKey,
           });
@@ -404,7 +399,7 @@ export function createGameStore({
           state.currentStage.starThresholds,
         );
 
-        onHappened({ type: 'clear', stars: starsEarned });
+        emit({ type: 'cleared', stars: starsEarned });
 
         const { updatedProfile, newStarsAwarded, isNewHighScore } =
           recordStageResult(
@@ -461,8 +456,10 @@ export function createGameStore({
         const purchase = purchaseOf(get().profile, itemId);
         if (!purchase) return false;
         updateProfile(purchase);
-        const entry = catalogEntry(itemId);
-        onHappened({ type: 'purchase', kind: entry.kind });
+        // A Synthesizer Voice is sound state, not a moment: it just starts sounding.
+        const { kind } = catalogEntry(itemId);
+        if (kind === 'upgrade') emit({ type: 'upgrade' });
+        else if (kind === 'trail') emit({ type: 'equip' });
         return true;
       },
 

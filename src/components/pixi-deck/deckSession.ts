@@ -2,6 +2,7 @@ import { Application } from 'pixi.js';
 import { game, onFrame } from '../../appGame';
 import type { KeySpec } from '../../data/keyboardLayout';
 import { STEP_MS } from '../../game/clock';
+import { isJudgement } from '../../game/moments';
 import { DeckScene } from './DeckScene';
 import { resetPlumeGradients } from './DroneView';
 import { DroneMotion } from './droneMotion';
@@ -119,7 +120,9 @@ class DeckSession {
       }
     });
     // Each Judgement fires the ship exactly once, in the lane it landed on.
-    game.onJudgement((judgement) => this.scene?.judge(judgement));
+    game.onMoment((moment) => {
+      if (isJudgement(moment)) this.scene?.judge(moment);
+    });
     onFrame((fraction) => this.frame(fraction));
 
     void this.start();

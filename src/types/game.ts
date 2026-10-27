@@ -122,10 +122,4 @@ export interface LivePerformance {
   currentCharIndex: number;
   timeElapsedSeconds: number;
   cadenceConsistency?: number; // 0 to 100% rhythm regularity between keystrokes
-  lastHitDrone?: {
-    id?: string;
-    char: string;
-    yPercent: number;
-    lane: number;
-  } | null;
 }

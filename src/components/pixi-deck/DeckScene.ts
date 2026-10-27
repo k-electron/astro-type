@@ -8,7 +8,8 @@ import {
 import type { KeySpec } from '../../data/keyboardLayout';
 import { trailColor } from '../../game/catalog';
 import { STEP_MS } from '../../game/clock';
-import type { Judgement } from '../../game/createGame';
+import type { JudgementMoment } from '../../game/moments';
+import { STRIKE_LINE_Y } from '../../game/rules';
 import type { GameStoreState } from '../../game/gameStore';
 import { pulseOpacity } from './animation';
 import { DeckEffects } from './DeckEffects';
@@ -281,7 +282,7 @@ export class DeckScene {
    * red laser to the wrong keycap. Called from the event, so the Drone's view
    * is still on the deck, exactly where the player last saw it.
    */
-  judge(judgement: Judgement): void {
+  judge(judgement: JudgementMoment): void {
     const layout = this.layout;
     if (!layout) return;
     const state = this.options.getState();
@@ -292,8 +293,7 @@ export class DeckScene {
       const rect = layout.keys.get(keyId(char));
       if (!rect) return;
       const isSpace = char === ' ';
-      const lastHit = state.performance.lastHitDrone;
-      let view = lastHit?.id ? this.drones.get(lastHit.id) : undefined;
+      let view = this.drones.get(judgement.droneId);
       if (!view) {
         for (const candidate of this.drones.values()) {
           if (candidate.char === char) {
@@ -305,9 +305,8 @@ export class DeckScene {
       // The laser flies to the Drone's top edge; with no Drone in view, to the Strike Line.
       const topY = view
         ? view.root.y - rect.h / 2
-        : droneTop(0, lastHit?.yPercent ?? 84, layout.deckY);
-      const info = KEY_FINGER_MAP[char] || KEY_FINGER_MAP[char.toLowerCase()];
-      const laneColor = info ? FINGER_COLOR_MAP[info.finger] : '#38bdf8';
+        : droneTop(0, STRIKE_LINE_Y, layout.deckY);
+      const laneColor = FINGER_COLOR_MAP[judgement.finger];
       const grade = judgement.grade;
       const hitColor = hitPopupColor({
         grade,

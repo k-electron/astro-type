@@ -23,9 +23,9 @@ import type {
 } from '../types/game';
 import { type Clock, createRunClock, createSteppedClock } from './clock';
 import type { Judgement } from './rules';
+import { isJudgement, type Moment } from './moments';
 import {
   cueFor,
-  type JustHappened,
   type Sound,
   sameSound,
   silentSound,
@@ -45,6 +45,7 @@ export type { MemorySaveStorage, SaveStorage } from './save';
 export type { Clock } from './clock';
 export type { Cue, Sound, SoundState } from './sound';
 export type { Judgement } from './rules';
+export type { Moment } from './moments';
 export type { GameStoreState, VictoryResult } from './gameStore';
 export type { PlayerEvent } from '../store/gameMachine';
 export type { RunPhase, Screen } from '../types/game';
@@ -132,6 +133,14 @@ export interface Game {
    */
   onJudgement(listener: (judgement: Judgement) => void): () => void;
   /**
+   * Hear what just happened: each Judgement (a hit names its Drone, lane and
+   * finger), Overdrive catching fire, the Stage clear and a purchase. A moment
+   * is heard once the move that made it has settled, so `getState()` already
+   * shows its effects (on a clear, the Debrief). Returns the way to stop
+   * listening.
+   */
+  onMoment(listener: (moment: Moment) => void): () => void;
+  /**
    * Advance the Run clock by `count` steps of 1/60 s. Does nothing unless the
    * Run phase is running: Run Time, the Drones and the telemetry stand still.
    */
@@ -208,25 +217,23 @@ export function createGame(options: GameOptions): Game {
   const getPhase = (): RunPhase => actor.getSnapshot().context.phase;
   const getScreen = (): Screen => actor.getSnapshot().value as Screen;
 
-  // What just happened plays its cues, at once. The continuous sound (the
-  // beat, its Overdrive layer, mute, volumes, theme, voice) is not played from
-  // here: it is derived from the snapshot and synced when that changes.
-  function hear(happened: JustHappened) {
-    for (const cue of cueFor(happened)) sound.play(cue);
-  }
-
-  const judgementListeners = new Set<(judgement: Judgement) => void>();
+  // Moments are queued as the store makes them and heard when the move has
+  // settled (see `heardAfter`): sound plays their cues first, then everyone
+  // else hears them. The continuous sound (the beat, its Overdrive layer,
+  // mute, volumes, theme, voice) is not played from moments: it is derived
+  // from the snapshot and synced when that changes.
+  const momentListeners = new Set<(moment: Moment) => void>();
+  const happened: Moment[] = [];
   const store = createGameStore({
     getPhase,
     reportRunCleared: () => deliver({ type: 'RUN_CLEARED' }),
     storage: options.storage,
     clock,
     runClock,
-    onHappened: hear,
-    onJudgement(judgement) {
-      // Sound answers the Judgement first, once, then everyone else hears it.
-      hear({ type: 'judgement', judgement });
-      for (const listener of [...judgementListeners]) listener(judgement);
+    emit: (moment) => {
+      happened.push(moment);
+      // A change on the store itself, outside any move, is heard at once.
+      if (depth === 0) heardAfter();
     },
   });
 
@@ -283,6 +290,7 @@ export function createGame(options: GameOptions): Game {
   // built when the outermost move ends, and listeners hear it once.
   const listeners = new Set<() => void>();
   let depth = 0;
+  let hearing = false;
 
   const snapshotNow = (previous: GameState | null): GameState => {
     const state = store.getState();
@@ -329,6 +337,21 @@ export function createGame(options: GameOptions): Game {
     for (const listener of [...listeners]) listener();
   }
 
+  // Hears the queued moments, in order, once the snapshot has settled. A
+  // listener that makes a move of its own queues more, heard in the same loop.
+  function heardAfter() {
+    if (hearing) return;
+    hearing = true;
+    try {
+      for (let moment = happened.shift(); moment; moment = happened.shift()) {
+        for (const cue of cueFor(moment)) sound.play(cue);
+        for (const listener of [...momentListeners]) listener(moment);
+      }
+    } finally {
+      hearing = false;
+    }
+  }
+
   function move<T>(change: () => T): T {
     depth++;
     try {
@@ -336,6 +359,7 @@ export function createGame(options: GameOptions): Game {
     } finally {
       depth--;
       settle();
+      if (depth === 0) heardAfter();
     }
   }
 
@@ -343,6 +367,13 @@ export function createGame(options: GameOptions): Game {
   store.subscribe(settle);
 
   const send = (event: PlayerEvent) => move(() => deliver(event));
+
+  const onMoment = (listener: (moment: Moment) => void) => {
+    momentListeners.add(listener);
+    return () => {
+      momentListeners.delete(listener);
+    };
+  };
 
   const actions = () => store.getState();
 
@@ -363,11 +394,22 @@ export function createGame(options: GameOptions): Game {
       move(() => actions().processKeystroke(key, pressOptions)),
     releaseKey: (key) => move(() => actions().releaseKeystroke(key)),
     onJudgement(listener) {
-      judgementListeners.add(listener);
-      return () => {
-        judgementListeners.delete(listener);
-      };
+      return onMoment((moment) => {
+        if (!isJudgement(moment)) return;
+        listener(
+          moment.type === 'hit'
+            ? {
+                type: 'hit',
+                grade: moment.grade,
+                key: moment.key,
+                points: moment.points,
+                overdrive: moment.overdrive,
+              }
+            : moment,
+        );
+      });
     },
+    onMoment,
     step(count = 1) {
       move(() => {
         for (let i = 0; i < count; i++) {

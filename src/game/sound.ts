@@ -1,4 +1,3 @@
-import { getNoteLaneAndFinger } from '../data/curriculum';
 import type {
   AudioSynthCore,
   BeatTheme,
@@ -7,6 +6,7 @@ import type {
   RunPhase,
 } from '../types/game';
 import type { Judgement } from './rules';
+import type { Moment } from './moments';
 
 /**
  * Sound is state plus cues. The state is everything continuous the player
@@ -89,42 +89,27 @@ export function sameSound(a: SoundState, b: SoundState): boolean {
   return (Object.keys(a) as (keyof SoundState)[]).every((k) => a[k] === b[k]);
 }
 
-/**
- * What just happened that has a sound of its own. The game's moments will
- * replace this (#70); until then it is the Judgement, Overdrive catching fire,
- * a Stage clear and a purchase.
- */
-export type JustHappened =
-  | { type: 'judgement'; judgement: Judgement }
-  | { type: 'ignition' }
-  | { type: 'clear'; stars: number }
-  | { type: 'purchase'; kind: 'upgrade' | 'trail' | 'core' };
-
-/** The cues for what just happened, in the order they play. */
-export function cueFor(happened: JustHappened): Cue[] {
-  switch (happened.type) {
-    case 'judgement': {
-      const { judgement } = happened;
-      if (judgement.type === 'hit') {
-        return [
-          {
-            type: 'hit',
-            lane: getNoteLaneAndFinger(judgement.key).lane,
-            grade: judgement.grade,
-            space: judgement.key === ' ',
-          },
-        ];
-      }
-      return [{ type: judgement.type }];
-    }
+/** The cues for a moment, in the order they play. */
+export function cueFor(moment: Moment): Cue[] {
+  switch (moment.type) {
+    case 'hit':
+      return [
+        {
+          type: 'hit',
+          lane: moment.lane,
+          grade: moment.grade,
+          space: moment.key === ' ',
+        },
+      ];
+    case 'miss':
+    case 'shield':
     case 'ignition':
-      return [{ type: 'ignition' }];
-    case 'clear':
-      return [{ type: 'victory' }, { type: 'stars', count: happened.stars }];
-    case 'purchase':
-      // A Synthesizer Voice is sound state, not a cue: it just starts sounding.
-      if (happened.kind === 'upgrade') return [{ type: 'upgrade' }];
-      if (happened.kind === 'trail') return [{ type: 'equip' }];
-      return [];
+      return [{ type: moment.type }];
+    case 'cleared':
+      return [{ type: 'victory' }, { type: 'stars', count: moment.stars }];
+    case 'upgrade':
+      return [{ type: 'upgrade' }];
+    case 'equip':
+      return [{ type: 'equip' }];
   }
 }
