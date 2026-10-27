@@ -7,7 +7,7 @@ import {
 import { drone, keycap } from '../helpers';
 import { launchOnStoppedClock } from '../journey-helpers';
 
-// LOCAL ONLY (`pnpm test:local`, docs/agents/testing.md): hundreds of drawn
+// LOCAL ONLY (run by `pnpm verify`, not in CI; docs/agents/testing.md): hundreds of drawn
 // frames per test, too heavy for CI's runner. The old browser tests guarded
 // the same effects: a hit explodes its Drone, a Miss shows red, the ship and
 // guidance beam are drawn, and a pause freezes an explosion mid-flight.
@@ -146,7 +146,10 @@ const test = base.extend<{ pixels: Pixels }>({
   },
 });
 
-test.skip(Boolean(process.env.CI), 'Local-only: run with pnpm test:local');
+test.skip(
+  Boolean(process.env.CI),
+  'Local-only: pnpm verify runs it, CI does not',
+);
 // Tall enough that the Drones, the Strike Line and the keyboard are all on
 // screen at once. (The local project sets the same viewport and a timeout of
 // 240 s, since every frame stepped under a stopped clock is drawn.)

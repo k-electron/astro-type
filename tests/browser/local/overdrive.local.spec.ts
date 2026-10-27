@@ -10,7 +10,7 @@ import {
 import { multiplierAt } from '../../shared/multiplier';
 import { expectNoBannedNames, pauseButton } from '../journey-helpers';
 
-// LOCAL ONLY (`pnpm test:local`, docs/agents/testing.md): a Streak of 30 and
+// LOCAL ONLY (run by `pnpm verify`, not in CI; docs/agents/testing.md): a Streak of 30 and
 // more, twice over, on the real clock, which CI's runner cannot afford. The DOM
 // tests (tests/dom/flight-deck.test.tsx) cover the labels; this is the same
 // climb through the real page and the real Action Deck.
@@ -30,7 +30,10 @@ import { expectNoBannedNames, pauseButton } from '../journey-helpers';
 // climb, and the glossary-name sweep over the Flight Deck, the Hangar and the
 // Pause Menu in real Overdrive.
 
-test.skip(Boolean(process.env.CI), 'Local-only: run with pnpm test:local');
+test.skip(
+  Boolean(process.env.CI),
+  'Local-only: pnpm verify runs it, CI does not',
+);
 
 /** An Overdrive badge, anywhere on the Flight Deck ("Overdrive Meter" is not one). */
 const OVERDRIVE_BADGE = /^overdrive\s*x\d+$/i;

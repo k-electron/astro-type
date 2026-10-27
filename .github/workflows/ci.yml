@@ -35,8 +35,10 @@ jobs:
       # Mesa's lavapipe, so the browser tests draw WebGL on it instead of on
       # Chromium's much slower SwiftShader (see playwright.config.ts).
       - run: sudo apt-get update -qq && sudo apt-get install -y -qq --no-install-recommends mesa-vulkan-drivers
-      # The same checks as a local `pnpm verify`.
-      - run: pnpm verify
+      # A local `pnpm verify` minus what CI doesn't run here: the local-only
+      # suite is absent under CI, and the screenshots have the parallel job
+      # below.
+      - run: pnpm verify --no-screenshots
       - if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
@@ -66,7 +68,7 @@ jobs:
           node-version-file: .node-version
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm screenshots
+      - run: node scripts/screenshots.mjs
       # A changed picture: its expected (before), actual (after) and diff images.
       - if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

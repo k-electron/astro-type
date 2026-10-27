@@ -48,7 +48,7 @@ const FREE_FLIGHT_ID = 'custom-practice';
 
 /**
  * The tests that walk many games take 1 to 2 seconds on a quiet machine, so
- * under load (a full `pnpm test` beside the browser tests) they overran
+ * under load (a full `pnpm check` beside the browser tests) they overran
  * Vitest's 5 second default. It is the time allowed, not the speed they are
  * held to: they fail on a wrong screen, not on a slow one.
  */

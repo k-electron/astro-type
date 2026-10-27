@@ -42,22 +42,15 @@ Use the Node version in `.node-version` and the pnpm version pinned in `package.
 pnpm install
 pnpm dev        # Vite dev server on http://localhost:3000
 pnpm build      # production build into dist/
-pnpm preview    # serve dist/ locally
-pnpm test       # unit tests (Vitest)
-pnpm test:browser   # browser tests (Playwright)
-pnpm typecheck  # tsc --noEmit
-pnpm check      # Biome; fails on any diagnostic
-pnpm fix        # apply Biome's safe fixes and formatting
-pnpm verify     # typecheck, check, test, build and test:browser: most of what CI runs
-pnpm screenshots    # the screenshot checks CI also runs, in Docker (see docs/agents/testing.md)
-pnpm smoke <url>    # check that a deployed URL serves the app and a Stage starts
+pnpm check      # typecheck, Biome and the unit and DOM tests
+pnpm verify     # every check before a push; needs Docker (see docs/agents/testing.md)
 ```
 
-The browser tests need Chromium, which `pnpm exec playwright install chromium` installs.
+The other scripts are in `package.json`. The browser tests need Chromium, which `pnpm exec playwright install chromium` installs.
 
 ## Deploying
 
-Every push to `main` runs `pnpm verify` and `pnpm screenshots` in GitHub Actions. If it passes, the build is deployed to https://astro-type.k-electron.workers.dev and smoke-tested there. Pull requests run the checks without deploying.
+Every push to `main` runs the same checks as `pnpm verify` in GitHub Actions. If it passes, the build is deployed to https://astro-type.k-electron.workers.dev and smoke-tested there. Pull requests run the checks without deploying.
 
 ## License
 

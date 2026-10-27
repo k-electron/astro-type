@@ -1,8 +1,9 @@
 // Runs the screenshot checks (tests/browser/screenshots.spec.ts) in the
 // official Playwright Docker image, the one place their pictures are compared.
 //
-//   pnpm screenshots           compare against the baselines (what CI runs)
-//   pnpm screenshots:update    redraw the baselines on purpose, then commit them
+//   node scripts/screenshots.mjs   compare against the baselines (what `pnpm verify`
+//                                  and CI's screenshots job run)
+//   pnpm screenshots:update        redraw the baselines on purpose, then commit them
 //
 // Pixels depend on the OS, its fonts and the GL backend, so the baselines are
 // made for one environment: `mcr.microsoft.com/playwright:v<version>-noble`,
@@ -11,8 +12,8 @@
 //
 // The checks run in a clean copy of the working tree (tracked and untracked
 // files, no node_modules, no dist) with a fresh `pnpm install` and a fresh
-// build, using Node from .node-version and pnpm from `packageManager`. Nothing
-// from the host's node_modules ever goes in.
+// build (made by Playwright's webServer), using Node from .node-version and
+// pnpm from `packageManager`. Nothing from the host's node_modules ever goes in.
 //
 // Results come out in ./screenshot-results (never in ./test-results): for a
 // failing comparison, the expected, actual and diff images are under
@@ -85,6 +86,9 @@ if (spawnSync('docker', ['info'], { stdio: 'ignore' }).status !== 0) {
   );
 }
 
+// `pnpm verify` runs the checks above first (before its long steps) to fail early.
+if (process.argv.includes('--preflight')) process.exit(0);
+
 // What goes into the container: every tracked or untracked-but-not-ignored
 // file that exists on disk (so uncommitted edits are checked, and deleted
 // files are not).
@@ -117,9 +121,7 @@ npm install --global --silent "pnpm@$PNPM_VERSION"
 echo "[$(date +%T)] installing"
 pnpm install --frozen-lockfile
 echo "in the container: node $(node -v), pnpm $(pnpm -v), $(pnpm exec playwright --version)"
-echo "[$(date +%T)] building"
-pnpm build
-echo "[$(date +%T)] running the checks"
+echo "[$(date +%T)] building and running the checks (Playwright's webServer builds)"
 status=0
 if [ "$UPDATE" = 1 ]; then
   pnpm exec playwright test screenshots --update-snapshots=all || status=$?

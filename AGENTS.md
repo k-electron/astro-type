@@ -5,10 +5,9 @@ A browser typing game: React and Tailwind for the screens, a Zustand store and a
 ## Working here
 
 - Use pnpm on the Node version pinned in `package.json`. The scripts there install, run, check and build.
-- `pnpm verify` runs the checks CI runs on any machine: typecheck, Biome, unit and screen tests, the build and the CI browser journeys. CI also runs `pnpm screenshots`, which `verify` skips (it needs Docker), so run that too when you've changed how anything looks. Run `verify` before you push.
-- `pnpm test:local` runs the local-only browser suite (`tests/browser/local/*.local.spec.ts`): the deck's effect pixels, the long Streak and Overdrive climbs, exact Run Time through the real frame loop, and full Stage Runs. CI's runner can't afford them, so CI never runs them, and `pnpm verify` (CI parity) skips them. Run it, or `pnpm verify:full` (both), before you land a gameplay or Action Deck change.
-- `pnpm check` runs Biome, and every Biome rule is an error: fix any diagnostic it reports. Where a rule truly can't apply, suppress that one line with a `// biome-ignore lint/...: reason` that says why. Don't weaken a rule in `biome.json`.
-- Screenshot checks compare a few key frames inside CI's fixed Playwright image: `pnpm screenshots` runs them and `pnpm screenshots:update` redraws the baselines on purpose. Both need Docker (linux/amd64). They're part of CI, but `pnpm verify` doesn't run them (nor does it run the local suite). See `docs/agents/testing.md`.
+- Two commands and one rule. `pnpm check` while you work (about 10 s): typecheck, Biome and the unit and screen tests. `pnpm verify` before every push: `check`, then one build, then the CI browser journeys and the local-only suite (`tests/browser/local/*.local.spec.ts`) in one Playwright run, then the screenshot checks last. `pnpm fix` applies Biome's safe fixes.
+- `verify` needs Docker for the screenshots (linux/amd64, in CI's fixed Playwright image) and fails at once, with a message, when Docker isn't running: it never skips them. `pnpm screenshots:update` redraws the baselines on purpose. CI runs `verify --no-screenshots` in one job and the screenshots in a parallel one; the local-only suite doesn't exist under `CI`, so CI is a strict subset of `verify`. See `docs/agents/testing.md`.
+- Every Biome rule is an error: fix any diagnostic `check` reports. Where a rule truly can't apply, suppress that one line with a `// biome-ignore lint/...: reason` that says why. Don't weaken a rule in `biome.json`.
 - The README overstates the game: it describes shortcuts, states and features that don't exist. Treat the code and `GLOSSARY.md` as the truth.
 
 ## Where things live
@@ -28,12 +27,12 @@ ADR-0001 sets the split between the store and the machine.
 
 - **Game rules stay as they are.** A change that gives the player a different rule is the project owner's call, so raise it on the ticket. That covers scoring, Stars, unlocks and timing.
 - **Player data stays in the player's browser, in localStorage.** There are no accounts and no analytics.
-- **Testing and done:** a gameplay change is done only when `pnpm test:local` passes and the change is seen working in a real browser on a real clock. Before you write or change a test, or call a gameplay change done, read `docs/agents/testing.md`.
+- **Testing and done:** a gameplay change is done only when `pnpm verify` passes and the change is seen working in a real browser on a real clock. Before you write or change a test, or call a gameplay change done, read `docs/agents/testing.md`.
 
 ## Shipping
 
 - Commit only when the project owner asks. Commits go straight to `main`, with messages written as `type: summary` (`feat`, `fix`, `docs`, `ci`, `chore`, `refactor`, `style`).
-- **Every push to `main` goes to production.** CI runs `pnpm verify` and `pnpm screenshots`, deploys the built `dist/` to https://astro-type.k-electron.workers.dev, then smoke-tests it there. If a check fails, the deploy stops. There are no preview deploys.
+- **Every push to `main` goes to production.** CI runs the same checks as `pnpm verify`, deploys the built `dist/` to https://astro-type.k-electron.workers.dev, then smoke-tests it there. If a check fails, the deploy stops. There are no preview deploys.
 - **To roll back,** `git revert` the commit and push it. In an emergency, the project owner runs `pnpm exec wrangler rollback`, which needs their Cloudflare login.
 - **Dependabot** opens grouped PRs every week. CI checks them, and the project owner merges them by hand.
 

@@ -11,19 +11,11 @@
   },
   "scripts": {
     "dev": "vite --port=3000 --host=0.0.0.0",
-    "build": "vite build",
-    "preview": "vite preview",
-    "clean": "rm -rf dist",
-    "typecheck": "tsc --noEmit",
-    "check": "biome check --error-on-warnings",
+    "check": "tsc --noEmit && biome check --error-on-warnings && vitest run --passWithNoTests",
+    "verify": "node scripts/verify.mjs",
     "fix": "biome check --write",
-    "test": "vitest run --passWithNoTests",
-    "test:browser": "playwright test --project=chromium",
-    "test:local": "pnpm build && playwright test --project=local",
-    "screenshots": "node scripts/screenshots.mjs",
     "screenshots:update": "node scripts/screenshots.mjs --update",
-    "verify": "pnpm typecheck && pnpm check && pnpm test && pnpm build && pnpm test:browser",
-    "verify:full": "pnpm verify && pnpm test:local",
+    "build": "vite build",
     "smoke": "node scripts/smoke.mjs"
   },
   "dependencies": {

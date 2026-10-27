@@ -4,7 +4,7 @@ A test lives in the cheapest layer that can see what it checks. Game rules and t
 
 ## Consequences
 
-- `pnpm verify` is exact CI parity: typecheck, Biome, unit and DOM tests, the build, and the CI journeys. `pnpm test:local` runs the local suite, and `pnpm verify:full` runs both. Screenshots stay in Docker (`pnpm screenshots`).
+- CI is a strict subset of `pnpm verify`: typecheck, Biome, unit and DOM tests, the build, the CI journeys and the local suite in one Playwright run, then the screenshots in Docker. The local suite is absent under `CI`, and CI runs the screenshots in a job of their own.
 - DOM tests find things by role and visible text only. The harness gives no access to the store or the machine. happy-dom has no CSS, layout, scrolling, canvas or native key activation, so those facts stay in a browser.
 - The harness injects the game through the `GameProvider` seam (`src/store/gameContext.tsx`; the `appGame.ts` singleton is a tripwire in tests), replaces the deck session, and stubs what happy-dom lacks or the screens must not run (`ResizeObserver`, `requestAnimationFrame`, confetti). A move the machine refuses still fails the test.
 - CI journeys share one launch each, check facts with `expect.soft` inside `test.step`, and may use `page.clock` to keep the deck still while keys are typed. The suite must fit well under the CI job's time budget.

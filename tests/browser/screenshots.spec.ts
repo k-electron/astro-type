@@ -16,7 +16,7 @@ import {
 // ONLY IN CI'S FIXED IMAGE. Pixels depend on the OS, its fonts and the GL
 // backend, so the baselines live next to this file for one environment only:
 // the Playwright Docker image (Linux) that CI runs in. Everywhere else, these
-// tests skip, which includes `pnpm verify` on a laptop. They run when
+// tests skip, which includes the Playwright step of `pnpm verify`. They run when
 // `PW_SCREENSHOTS` is set, and a baseline is updated, on purpose, by running
 // with `PW_SCREENSHOTS=1` and `--update-snapshots` in that same image. A
 // failing comparison leaves the expected, actual and diff images under

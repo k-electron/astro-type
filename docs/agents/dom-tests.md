@@ -4,7 +4,7 @@ How to test a React screen without a browser. The rule in `testing.md` still hol
 
 A DOM test mounts the real `<App />` in happy-dom against a headless game (`createGame`, with a stepped clock, silent sound and a Save in memory), then drives it as a player does: it clicks buttons, types keys and lets the Run clock run. It takes tens of milliseconds, so it is the place for "this screen shows the right thing after that move".
 
-Files live in `tests/dom/*.test.tsx`. They run in `pnpm test` (the `dom` project in `vite.config.ts`, beside the Node `unit` project) and not in Playwright.
+Files live in `tests/dom/*.test.tsx`. They run in `pnpm check` (the `dom` project in `vite.config.ts`, beside the Node `unit` project) and not in Playwright.
 
 ## Writing one
 

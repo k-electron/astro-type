@@ -8,7 +8,7 @@ import {
   resumeButton,
 } from '../journey-helpers';
 
-// LOCAL ONLY (`pnpm test:local`, docs/agents/testing.md): exact Run Time
+// LOCAL ONLY (run by `pnpm verify`, not in CI; docs/agents/testing.md): exact Run Time
 // numbers through the real frame loop, thousands of frames in all, which CI's
 // runner cannot afford. CI keeps the freeze (deck-timing.spec.ts, J3); the
 // numbers are also unit-tested (run-clock.test.ts, frameLoop.test.ts).
@@ -25,7 +25,10 @@ import {
 // a capped catch-up after a stall, and a pause not dragging down the final
 // Speed or the Rhythm.
 
-test.skip(Boolean(process.env.CI), 'Local-only: run with pnpm test:local');
+test.skip(
+  Boolean(process.env.CI),
+  'Local-only: pnpm verify runs it, CI does not',
+);
 // The tests are independent, so they can run on separate workers.
 test.describe.configure({ mode: 'parallel' });
 

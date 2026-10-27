@@ -3,9 +3,11 @@ import { readdirSync } from 'node:fs';
 import { defineConfig, devices } from '@playwright/test';
 
 // BASE_URL points the tests at a deployed site (the post-deploy smoke check).
-// Without it they run against the production build served by `vite preview`.
+// Without it they run against a fresh production build served by `vite preview`
+// (see webServer below), on a port of their own: not Vite's default 4173, which
+// a leftover `vite preview` could be holding.
 const baseURL = process.env.BASE_URL;
-const previewPort = 4173;
+const previewPort = 4318;
 
 /**
  * Whether Mesa's lavapipe (a software Vulkan driver) is installed, as CI
@@ -64,7 +66,7 @@ export default defineConfig({
       },
     },
     // The local-only suite: real-browser tests too heavy for CI's runner, run
-    // by `pnpm test:local`. The project does not exist when CI is set, and each
+    // by `pnpm verify`. The project does not exist when CI is set, and each
     // file skips itself there too.
     ...(process.env.CI
       ? []
@@ -86,8 +88,14 @@ export default defineConfig({
   webServer: baseURL
     ? undefined
     : {
-        command: `pnpm preview --port ${previewPort} --strictPort`,
+        // Every run builds and serves fresh, so no test can run against a stale
+        // dist/ or someone else's server: the one build `pnpm verify` does is
+        // this one. A taken port fails the run (--strictPort,
+        // reuseExistingServer: false) instead of testing whatever answers there.
+        command: `pnpm build && pnpm exec vite preview --port ${previewPort} --strictPort`,
         url: `http://localhost:${previewPort}`,
-        reuseExistingServer: !process.env.CI,
+        reuseExistingServer: false,
+        // The build and the server start; the CI runner is slow.
+        timeout: 180_000,
       },
 });
