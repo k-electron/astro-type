@@ -139,6 +139,24 @@ afterEach(() => {
 });
 
 /**
+ * Fail now, with `where` in the message, if the machine has refused a move
+ * since the test began (or since the last call). Without it a refused move
+ * fails the test only when it ends, which says nothing of where it happened:
+ * a walk calls this after every action so its failure names the seed and step.
+ */
+export function expectNoRefusedMove(where: string): void {
+  const refused = refusals;
+  refusals = [];
+  if (refused.length > 0) {
+    throw new Error(
+      `${where}: the machine refused ${refused.length} move(s): ${refused
+        .map((error) => error.message)
+        .join('; ')}`,
+    );
+  }
+}
+
+/**
  * Mount the real <App /> on a fresh headless game: a stepped clock, silent
  * sound, and a Save in memory. Every call builds a new game.
  */

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { MENU_HEADINGS } from '../shared/screens';
 import { type HeaderButton, type Player, renderGame, screen } from './harness';
 
 // Navigation: where each menu's Back button leads, the header on every screen,
@@ -7,13 +8,7 @@ import { type HeaderButton, type Player, renderGame, screen } from './harness';
 
 type MenuButton = Exclude<HeaderButton, 'Home'>;
 
-/** Each header button that opens a screen, and the heading of that screen. */
-const MENUS: Record<MenuButton, string> = {
-  Sectors: 'Flight Sectors & Missions',
-  Hangar: 'Starship Hangar Upgrades',
-  Analytics: 'Typing Analytics & Heatmap',
-  'Free Flight': 'Custom Typing Practice',
-};
+const MENUS: Record<MenuButton, string> = MENU_HEADINGS;
 const MENU_BUTTONS = Object.keys(MENUS) as MenuButton[];
 
 const menuHeading = (button: MenuButton) =>

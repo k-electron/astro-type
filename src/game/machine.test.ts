@@ -69,66 +69,6 @@ function freeFlightLaunch(): PlayerEvent {
   };
 }
 
-/** The events that end the Run in progress and begin another (or none). */
-const ABANDONING = new Set([
-  'PRESS_HOME',
-  'PICK_STAGE',
-  'LAUNCH_FREE_FLIGHT',
-  'PRESS_REPLAY',
-  'PRESS_NEXT_STAGE',
-]);
-
-// ---------------------------------------------------------------------------
-// What each screen offers the player, read off the running game. Each line is a
-// button (or key, or window event) a player can use there. The header offers
-// Home and the four screens everywhere, so they are listed once.
-//
-// To adjust: change a line here. No test below depends on one line.
-// ---------------------------------------------------------------------------
-const HEADER: PlayerEvent[] = [HOME, ...OPENERS.map((screen) => OPEN[screen])];
-
-const OFFERED: Record<Screen, (game: Game) => PlayerEvent[]> = {
-  // Header Start Mission; Begin Home Row Mission; View Galaxy Sectors.
-  'academy-home': () => [PLAY, pickStage(STAGE_ID), ...HEADER],
-  // Pause (HUD and header); Esc pauses; the window can lose focus.
-  'flight-deck': () => [PAUSE, ESC, LOST_FOCUS, ...HEADER],
-  // Resume Flight; Restart Mission; View Galaxy Map; Exit to Academy Home
-  // (Home is in HEADER); header Start Mission; Esc resumes.
-  'pause-menu': () => [
-    RESUME,
-    PLAY,
-    REPLAY,
-    OPEN['galaxy-map'],
-    ESC,
-    ...HEADER,
-  ],
-  // Close; Hangar Upgrades; Report; Enter Flight Deck / Resume Flight;
-  // Launch Mission (Sector 1 only, the rest are locked); Menu is Home.
-  'galaxy-map': () => [
-    CLOSE,
-    ESC,
-    OPEN.hangar,
-    OPEN.analytics,
-    PLAY,
-    pickStage(STAGE_ID),
-    pickStage('s1-l2'),
-    ...HEADER,
-  ],
-  // Close; Enter Flight Deck / Resume Flight.
-  hangar: () => [CLOSE, ESC, PLAY, ...HEADER],
-  analytics: () => [CLOSE, ESC, PLAY, ...HEADER],
-  // Cancel; Launch Custom Flight.
-  'free-flight': () => [CLOSE, ESC, freeFlightLaunch(), ...HEADER],
-  // Replay; Galaxy Map; Main Menu; Next Mission (a curriculum Stage only: the
-  // Free Flight Debrief has no such button). No Esc, no Play.
-  debrief: (game) => [
-    REPLAY,
-    OPEN['galaxy-map'],
-    ...(game.getRun().currentStage.id === FREE_FLIGHT_ID ? [] : [NEXT_STAGE]),
-    ...HEADER,
-  ],
-};
-
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -158,16 +98,6 @@ function clearedGame(): Game {
   const game = startedGame();
   clearStage(game, { seconds: 8 });
   return game;
-}
-
-/** Hit `count` more characters, stopping short of clearing the Run. */
-function hitKeys(game: Game, count: number): void {
-  for (let i = 0; i < count; i++) {
-    const run = game.getRun();
-    if (run.currentCharIndex >= run.currentStage.sampleText.length - 1) return;
-    game.step(30);
-    game.pressKey(run.currentStage.sampleText[run.currentCharIndex]);
-  }
 }
 
 /** Type every remaining character: the last one clears the Run. */
@@ -562,18 +492,31 @@ describe('only going to Academy Home and starting a Stage abandon a Run', () => 
   });
 
   it('nothing else the player can do on a Run in progress abandons it', () => {
-    const keepsTheRun = (event: PlayerEvent) => !ABANDONING.has(event.type);
+    // Every other thing the player can do, offered or not: a move the machine
+    // refuses changes nothing, so the Run must be as it was either way.
+    const KEEPS_THE_RUN: PlayerEvent[] = [
+      CLOSE,
+      PAUSE,
+      RESUME,
+      ESC,
+      PLAY,
+      LOST_FOCUS,
+      ...OPENERS.map((screen) => OPEN[screen]),
+    ];
     for (let seed = 1; seed <= 30; seed++) {
       const random = mulberry32(seed);
       const game = runningGame();
       const before = progress(game);
       const log: string[] = [];
       for (let n = 0; n < 40; n++) {
-        const screen = game.getScreen();
-        const offered = OFFERED[screen](game).filter(keepsTheRun);
-        const event = offered[Math.floor(random() * offered.length)];
-        log.push(`${screen}:${event.type}`);
-        play(game, event);
+        const event =
+          KEEPS_THE_RUN[Math.floor(random() * KEEPS_THE_RUN.length)];
+        log.push(`${game.getScreen()}:${event.type}`);
+        try {
+          game.send(event);
+        } catch (error) {
+          if (!(error instanceof RefusedMoveError)) throw error;
+        }
         if (random() < 0.3) game.step(1 + Math.floor(random() * 40));
         const where = `seed ${seed}: ${log.join(' > ')}`;
         expect(['running', 'paused'], where).toContain(game.getPhase());
@@ -749,93 +692,4 @@ describe('a refused move changes nothing and fails the test that triggers it', (
     expect(game.getPhase()).toBe('running');
     expect(progress(game)).toEqual(before);
   });
-});
-
-// ---------------------------------------------------------------------------
-// No player event sequence the UI can offer triggers a refused move
-// ---------------------------------------------------------------------------
-
-describe('no sequence of the events a screen offers triggers a refused move', () => {
-  const SEEDS = 40;
-  const STEPS = 60;
-
-  it(
-    `${SEEDS} seeded walks of ${STEPS} moves through every screen`,
-    () => {
-      const screensSeen = new Set<Screen>();
-
-      for (let seed = 1; seed <= SEEDS; seed++) {
-        const random = mulberry32(seed);
-        const game = newGame();
-        const log: string[] = [];
-        let lastResult: ReturnType<Game['getDebrief']> = null;
-        let before: { index: number; score: number } | null = null;
-
-        const where = () => `seed ${seed}: ${log.join(' > ')}`;
-        const checkScreen = () => {
-          const screen = game.getScreen();
-          screensSeen.add(screen);
-          switch (screen) {
-            case 'flight-deck':
-              expect(game.getPhase(), where()).toBe('running');
-              break;
-            case 'pause-menu':
-              expect(game.getPhase(), where()).toBe('paused');
-              break;
-            case 'debrief':
-              expect(game.getPhase(), where()).toBe('cleared');
-              // The Debrief is never empty or stale.
-              expect(lastResult, where()).not.toBeNull();
-              expect(game.getDebrief(), where()).toEqual(lastResult);
-              break;
-          }
-        };
-
-        for (let n = 0; n < STEPS; n++) {
-          const screen = game.getScreen();
-          const phase = game.getPhase();
-          const alive = phase === 'running' || phase === 'paused';
-          const roll = random();
-
-          if (screen === 'flight-deck' && roll < 0.3) {
-            log.push('hit keys');
-            hitKeys(game, 1 + Math.floor(random() * 4));
-            before = progress(game);
-          } else if (screen === 'flight-deck' && roll < 0.37) {
-            log.push('finish the Run');
-            finishRun(game);
-            lastResult = game.getDebrief();
-            before = null;
-            expect(game.getScreen(), where()).toBe('debrief');
-          } else {
-            const offered = OFFERED[screen](game);
-            const event = offered[Math.floor(random() * offered.length)];
-            log.push(`${screen}:${event.type}`);
-            expect(game.canSend(event), where()).toBe(true);
-            expect(() => game.send(event), where()).not.toThrow();
-
-            if (ABANDONING.has(event.type) || !alive) {
-              // A Run was ended or began: this is the new baseline.
-              const now = game.getPhase();
-              before =
-                now === 'running' || now === 'paused' ? progress(game) : null;
-            } else if (before) {
-              // Nothing but Home or a Stage start touches a Run in progress.
-              expect(progress(game), where()).toEqual(before);
-            }
-          }
-          checkScreen();
-        }
-      }
-
-      // The walks went everywhere, or they proved little.
-      for (const screen of Object.keys(OFFERED)) {
-        expect(
-          screensSeen.has(screen as Screen),
-          `never reached ${screen}`,
-        ).toBe(true);
-      }
-    },
-    SLOW_WALK_TIMEOUT,
-  );
 });

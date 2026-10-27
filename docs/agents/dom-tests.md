@@ -32,7 +32,7 @@ Rules:
 - Find things the way a player sees them: `getByRole` with a name, `getByText`, `getByLabelText`. No test ids, no class names, no store reads for what the screen shows.
 - No snapshots of markup, and no checks that a function was called. Assert on text, buttons and headings.
 - Test one behaviour per test, through the screen. A rule's outcome (Judgement, Stars, WPM) belongs in a unit test; a DOM test checks that the screen shows it.
-- A move the machine refuses fails the test when it ends, even if it happened inside a click handler.
+- A move the machine refuses fails the test when it ends, even if it happened inside a click handler. `expectNoRefusedMove(where)` fails at once instead, with `where` in the message; `random-walk.test.tsx` calls it after every step so a failure names its seed and step.
 - No fixed sleeps and no fake timers: nothing here runs on real time. The Run only moves when the test calls `step` or `type`.
 
 ## What is stubbed, and why
