@@ -47,14 +47,14 @@ afterEach(() => {
 describe('Run Time', () => {
   it('starts at 0 with the Run and counts the steps taken while it runs', () => {
     const game = startedGame();
-    expect(game.getRunTime()).toBe(0);
+    expect(game.getState().runTime).toBe(0);
 
     game.step(60);
-    expect(game.getRunTime()).toBeCloseTo(1000, 3);
+    expect(game.getState().runTime).toBeCloseTo(1000, 3);
 
     game.step(30);
-    expect(game.getRunTime()).toBeCloseTo(1500, 3);
-    expect(game.getRunTime()).toBeCloseTo(90 * STEP_MS, 3);
+    expect(game.getState().runTime).toBeCloseTo(1500, 3);
+    expect(game.getState().runTime).toBeCloseTo(90 * STEP_MS, 3);
   });
 
   it('stands still during a pause and carries on after it', () => {
@@ -62,13 +62,13 @@ describe('Run Time', () => {
     game.step(60);
 
     game.send({ type: 'PRESS_PAUSE' });
-    expect(game.getPhase()).toBe('paused');
+    expect(game.getState().phase).toBe('paused');
     game.step(TEN_MINUTES_OF_STEPS);
-    expect(game.getRunTime()).toBeCloseTo(1000, 3);
+    expect(game.getState().runTime).toBeCloseTo(1000, 3);
 
     game.send({ type: 'PRESS_RESUME' });
     game.step(60);
-    expect(game.getRunTime()).toBeCloseTo(2000, 3);
+    expect(game.getState().runTime).toBeCloseTo(2000, 3);
   });
 
   it.each([
@@ -83,32 +83,32 @@ describe('Run Time', () => {
       game.step(60);
 
       game.send({ type: menu });
-      expect(game.getPhase()).toBe('paused');
+      expect(game.getState().phase).toBe('paused');
       game.step(600);
-      expect(game.getRunTime()).toBeCloseTo(1000, 3);
+      expect(game.getState().runTime).toBeCloseTo(1000, 3);
 
       // Closing back onto the Pause Menu: still paused, still standing still.
       game.send({ type: 'PRESS_CLOSE' });
-      expect(game.getScreen()).toBe('pause-menu');
+      expect(game.getState().screen).toBe('pause-menu');
       game.step(600);
-      expect(game.getRunTime()).toBeCloseTo(1000, 3);
+      expect(game.getState().runTime).toBeCloseTo(1000, 3);
     },
   );
 
   it('stands still once the Stage is cleared, on the Debrief', () => {
     const game = startedGame();
     clearStage(game, { seconds: 60 });
-    expect(game.getScreen()).toBe('debrief');
-    expect(game.getRunTime()).toBeCloseTo(60_000, 1);
+    expect(game.getState().screen).toBe('debrief');
+    expect(game.getState().runTime).toBeCloseTo(60_000, 1);
 
     game.step(600);
-    expect(game.getRunTime()).toBeCloseTo(60_000, 1);
+    expect(game.getState().runTime).toBeCloseTo(60_000, 1);
   });
 
   it('does not move before a Run has started', () => {
     const game = newGame();
     game.step(600);
-    expect(game.getRunTime()).toBe(0);
+    expect(game.getState().runTime).toBe(0);
   });
 
   it('starts again from 0 with the next Run', () => {
@@ -116,10 +116,10 @@ describe('Run Time', () => {
     clearStage(game, { seconds: 60 });
 
     game.send({ type: 'PRESS_REPLAY' });
-    expect(game.getPhase()).toBe('running');
-    expect(game.getRunTime()).toBe(0);
+    expect(game.getState().phase).toBe('running');
+    expect(game.getState().runTime).toBe(0);
     game.step(30);
-    expect(game.getRunTime()).toBeCloseTo(500, 3);
+    expect(game.getState().runTime).toBeCloseTo(500, 3);
   });
 
   it('is not moved by keystrokes, only by steps', () => {
@@ -127,7 +127,7 @@ describe('Run Time', () => {
     game.step(30);
     game.pressKey(targetKey(game));
     game.pressKey('x');
-    expect(game.getRunTime()).toBeCloseTo(500, 3);
+    expect(game.getState().runTime).toBeCloseTo(500, 3);
   });
 
   it('is not the wall clock: time passing outside the steps changes nothing', () => {
@@ -137,7 +137,7 @@ describe('Run Time', () => {
     game.step(60);
 
     vi.setSystemTime(new Date('2026-01-01T12:10:00Z'));
-    expect(game.getRunTime()).toBeCloseTo(1000, 3);
+    expect(game.getState().runTime).toBeCloseTo(1000, 3);
 
     // The whole Run is judged on its 60 steps a second, not on what the
     // wall clock says: 77 keys in a minute of Run Time is 15 WPM.
@@ -226,7 +226,10 @@ describe('a pause in the middle of a Run leaves WPM, accuracy and cadence unchan
       cadenceConsistency: 70,
     });
     expect(readings(paused)).toEqual(readings(straight));
-    expect(paused.getRunTime()).toBeCloseTo(straight.getRunTime(), 3);
+    expect(paused.getState().runTime).toBeCloseTo(
+      straight.getState().runTime,
+      3,
+    );
   });
 
   it('gives the same final WPM, accuracy, Stars and Credits on the Debrief', () => {
@@ -238,7 +241,7 @@ describe('a pause in the middle of a Run leaves WPM, accuracy and cadence unchan
       hitPerfect(game, 36);
       game.step(60 * 60 - 76 * 30);
       game.pressKey(targetKey(game));
-      expect(game.getScreen()).toBe('debrief');
+      expect(game.getState().screen).toBe('debrief');
       return game.getState().debrief;
     }
 

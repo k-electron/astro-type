@@ -43,7 +43,7 @@ describe('the Sector unlock notice in the Debrief', () => {
     // 5 Stars so far: any Star from a Free Flight reaches 6.
     const game = clearFreeFlight(clearedStages({ 's1-l1': 3, 's1-l2': 2 }));
 
-    expect(game.getScreen()).toBe('debrief');
+    expect(game.getState().screen).toBe('debrief');
     expect(game.getState().debrief?.starsEarned).toBeGreaterThan(0);
     expect(game.getState().debrief?.unlockedSector).toBe(true);
   });
@@ -69,7 +69,7 @@ describe('the Sector unlock notice in the Debrief', () => {
   it('is absent after a Free Flight clear that opens nothing', () => {
     const game = clearFreeFlight();
 
-    expect(game.getScreen()).toBe('debrief');
+    expect(game.getState().screen).toBe('debrief');
     expect(game.getState().debrief?.unlockedSector).toBe(false);
   });
 });
