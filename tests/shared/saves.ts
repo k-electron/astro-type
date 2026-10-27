@@ -5,6 +5,7 @@
  * defaults, as they do for a real one. This imports from no test runner, so
  * every layer of tests can use it.
  */
+import { AudioSynthCoreSchema } from '../../src/store/schemas';
 
 /** One Stage's progress, cleared with `stars` Stars. `overrides` change any field. */
 export function stageProgress(
@@ -44,6 +45,12 @@ export function clearedStages(stars: Record<string, number>): {
 export const RETURNING_PLAYER = {
   totalCredits: 1234,
   ...clearedStages({ 's1-l1': 3, 's1-l2': 2 }),
+};
+
+/** RETURNING_PLAYER with every Synthesizer core owned, so any can be equipped. */
+export const OWNS_EVERY_AUDIO_CORE = {
+  ...RETURNING_PLAYER,
+  upgrades: { unlockedAudioCores: [...AudioSynthCoreSchema.options] },
 };
 
 /**
