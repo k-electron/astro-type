@@ -28,7 +28,6 @@ import type { Judgement } from './rules';
 import {
   createGameStore,
   type GameStoreState,
-  type UpgradeKind,
   type VictoryResult,
 } from './gameStore';
 import type { CatalogItemId } from './catalog';
@@ -40,7 +39,7 @@ export type { MemorySaveStorage, SaveStorage } from './save';
 export type { Clock } from './clock';
 export type { GameEffects } from './effects';
 export type { Judgement } from './rules';
-export type { GameStoreState, UpgradeKind, VictoryResult } from './gameStore';
+export type { GameStoreState, VictoryResult } from './gameStore';
 export type { PlayerEvent } from '../store/gameMachine';
 export type { RunPhase, Screen } from '../types/game';
 
@@ -163,8 +162,6 @@ export interface Game {
    * Credits fall short.
    */
   buy(itemId: CatalogItemId): boolean;
-  /** Same as `buy` for an Upgrade. Temporary: `buy` replaces it. */
-  buyUpgrade(kind: UpgradeKind): boolean;
   /** Replace the Profile with a Backup's, if it passes the Save's checks. */
   importBackup(text: string): BackupImport;
   /** Wipe Stars and Stage progress; Credits and Upgrades stay. */
@@ -399,7 +396,6 @@ export function createGame(options: GameOptions): Game {
     getProfile: () => store.getState().profile,
     changeSettings: (patch) => move(() => actions().changeSettings(patch)),
     buy: (itemId) => move(() => actions().buy(itemId)),
-    buyUpgrade: (kind) => move(() => actions().buy(kind)),
     importBackup: (text) => move(() => actions().importProfile(text)),
     wipeAchievements: () => move(() => actions().wipeCurriculumAchievements()),
     resetProgress: () => move(() => actions().resetProgress()),

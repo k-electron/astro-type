@@ -14,7 +14,7 @@ import {
   settingsAfter,
   unlocksSector,
 } from './profile';
-import { type CatalogItemId, catalogEntry, type UpgradeId } from './catalog';
+import { type CatalogItemId, catalogEntry } from './catalog';
 import {
   type BackupImport,
   createSave,
@@ -55,8 +55,6 @@ export interface VictoryResult {
   unlockedSector: boolean;
   cadenceConsistency?: number;
 }
-
-export type UpgradeKind = UpgradeId;
 
 export interface GameStoreState {
   // The live Run, the Debrief and the Profile. The screen and the Run phase
@@ -99,9 +97,6 @@ export interface GameStoreState {
    * (an Upgrade) or unaffordable.
    */
   buy: (itemId: CatalogItemId) => boolean;
-  toggleGlobalMute: () => void;
-  setMusicVolume: (vol: number) => void;
-  buyUpgrade: (kind: UpgradeKind) => boolean;
   /**
    * Replaces the Profile with a Backup's, and saves it. A Backup that fails
    * the Save's checks is refused: the Profile and the Save are left as they were.
@@ -529,11 +524,6 @@ export function createGameStore({
         else effects.setCore(entry.id);
         return true;
       },
-
-      toggleGlobalMute: () =>
-        get().changeSettings({ globalMuted: !get().profile.globalMuted }),
-      setMusicVolume: (vol) => get().changeSettings({ musicVolume: vol }),
-      buyUpgrade: (kind) => get().buy(kind),
 
       importProfile: (text: string): BackupImport => {
         const backup = parseBackup(text);
