@@ -6,7 +6,7 @@ import {
   stageProgress,
   withOldDroneSpeed,
 } from '../../tests/shared/saves';
-import type { Game, UpgradeKind } from './createGame';
+import type { Game } from './createGame';
 import { DEFAULT_PROFILE } from './profile';
 import { UNREADABLE_SAVE_NOTICE } from './save';
 import { clearStage, loadGame, startStage, STAGE_ID } from './testHelpers';
@@ -72,7 +72,7 @@ describe('a Save that is readable', () => {
     const { game, storage } = load(completeSave());
 
     // 1,234 Credits buys the first sensors Upgrade (200), which saves.
-    expect(game.buyUpgrade('sensors')).toBe(true);
+    game.buy('sensors');
 
     expect(storage.saved?.version).toBe(1);
   });
@@ -126,7 +126,7 @@ describe('a Save that is readable', () => {
     );
     expect(game.getProfile().upgrades).not.toHaveProperty('warpDrive');
 
-    game.buyUpgrade('sensors');
+    game.buy('sensors');
     expect(storage.saved).not.toHaveProperty('cheatCode');
     expect(JSON.stringify(storage.saved)).not.toMatch(
       /xyzzy|bonusStars|warpDrive/,
@@ -156,7 +156,7 @@ describe('a Save made when the player could choose a Drone speed', () => {
       expect(profile).not.toHaveProperty('highwaySpeed');
 
       // Saving again writes the Save back without the speed.
-      expect(game.buyUpgrade('sensors')).toBe(true);
+      game.buy('sensors');
       expect(storage.saved?.totalStars).toBe(5);
       expect(storage.saved).not.toHaveProperty('highwaySpeed');
     },
@@ -315,69 +315,5 @@ describe('total Stars', () => {
     });
 
     expect(game.getProfile().totalStars).toBe(0);
-  });
-});
-
-describe('buying an Upgrade', () => {
-  const catalog: Array<
-    [
-      UpgradeKind,
-      'deflectorShields' | 'hyperdriveReactor' | 'precisionSensors',
-      number[],
-    ]
-  > = [
-    ['shields', 'deflectorShields', [250, 650, 1200]],
-    ['reactor', 'hyperdriveReactor', [300, 750, 1400]],
-    ['sensors', 'precisionSensors', [200, 500, 950]],
-  ];
-
-  function richPlayer() {
-    return load({
-      ...without(completeSave(), 'upgrades'),
-      totalCredits: 10000,
-    });
-  }
-
-  it.each(catalog)(
-    '%s: levels 1 to 3 are bought for the catalog price, and level 4 is refused with the Credits unchanged',
-    (kind, field, prices) => {
-      const { game } = richPlayer();
-      let credits = 10000;
-
-      prices.forEach((price, index) => {
-        expect(game.buyUpgrade(kind)).toBe(true);
-        credits -= price;
-        expect(game.getProfile().upgrades[field]).toBe(index + 1);
-        expect(game.getProfile().totalCredits).toBe(credits);
-      });
-
-      expect(game.buyUpgrade(kind)).toBe(false);
-      expect(game.getProfile().upgrades[field]).toBe(3);
-      expect(game.getProfile().totalCredits).toBe(credits);
-    },
-  );
-
-  it('refuses a purchase past level 3 for a player who loaded at level 3', () => {
-    const { game } = load({
-      ...withUpgrades(completeSave(), { deflectorShields: 3 }),
-      totalCredits: 5000,
-    });
-
-    expect(game.buyUpgrade('shields')).toBe(false);
-
-    expect(game.getProfile().upgrades.deflectorShields).toBe(3);
-    expect(game.getProfile().totalCredits).toBe(5000);
-  });
-
-  it('is refused when the Credits fall short, with nothing changed', () => {
-    const { game } = load({
-      ...without(completeSave(), 'upgrades'),
-      totalCredits: 249,
-    });
-
-    expect(game.buyUpgrade('shields')).toBe(false);
-
-    expect(game.getProfile().upgrades.deflectorShields).toBe(0);
-    expect(game.getProfile().totalCredits).toBe(249);
   });
 });

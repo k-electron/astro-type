@@ -1,6 +1,7 @@
 import type React from 'react';
-import { Check, Music, Volume2, VolumeX } from 'lucide-react';
-import type { AudioSynthCore, BeatTheme } from '../types/game';
+import { Check, Lock, Music, Volume2, VolumeX } from 'lucide-react';
+import type { BeatTheme } from '../types/game';
+import { entriesOf } from '../game/catalog';
 import { useGame } from '../store/gameContext';
 import { useGameState } from '../store/useGameState';
 
@@ -10,13 +11,6 @@ const BEAT_OPTIONS: { id: BeatTheme; name: string; bpm: number }[] = [
   { id: 'COSMIC_LOFI', name: 'Cosmic Lo-Fi', bpm: 84 },
 ];
 
-const CORE_OPTIONS: { id: AudioSynthCore; name: string; desc: string }[] = [
-  { id: 'CYBER_SYNTH', name: 'Cyber Synth', desc: 'Sine Chime' },
-  { id: 'RETRO_8BIT', name: 'Retro 8-Bit', desc: 'Arcade Pulse' },
-  { id: 'DEEP_SPACE', name: 'Deep Space', desc: 'Warm Sub' },
-  { id: 'NEO_ACOUSTIC', name: 'Neo Acoustic', desc: 'Kalimba' },
-];
-
 /**
  * The audio settings: master mute, volume for the laser sounds and for the
  * rhythm beats (each with its own mute), the Synthesizer core and the beat
@@ -24,16 +18,7 @@ const CORE_OPTIONS: { id: AudioSynthCore; name: string; desc: string }[] = [
  * it (today the header's popover) owns the box and the place on the page.
  */
 export const AudioPanel: React.FC = () => {
-  const game = useGame();
-  const {
-    toggleGlobalMute: onToggleGlobalMute,
-    toggleSound: onToggleSound,
-    toggleMusic: onToggleMusic,
-    setSoundVolume: onSetSoundVolume,
-    setMusicVolume: onSetMusicVolume,
-    setBeatTheme: onSetBeatTheme,
-    unlockOrEquipAudio,
-  } = game.profileActions;
+  const { changeSettings, buy } = useGame();
   const {
     isMuted,
     soundEnabled,
@@ -42,6 +27,7 @@ export const AudioPanel: React.FC = () => {
     musicVolume,
     beatTheme,
     audioCore,
+    ownedCores,
   } = useGameState((state) => ({
     isMuted: Boolean(state.profile.globalMuted),
     soundEnabled: state.profile.soundEnabled,
@@ -50,6 +36,7 @@ export const AudioPanel: React.FC = () => {
     musicVolume: state.profile.musicVolume ?? 0.4,
     beatTheme: state.profile.beatTheme || 'NEON_SYNTHWAVE',
     audioCore: state.profile.upgrades.equippedAudioCore ?? 'CYBER_SYNTH',
+    ownedCores: state.profile.upgrades.unlockedAudioCores,
   }));
 
   return (
@@ -68,7 +55,7 @@ export const AudioPanel: React.FC = () => {
         {/* Master Audio Toggle Switch */}
         <button
           type="button"
-          onClick={onToggleGlobalMute}
+          onClick={() => changeSettings({ globalMuted: !isMuted })}
           className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-mono font-medium border transition-all cursor-pointer ${
             isMuted
               ? 'border-rose-500/60 bg-rose-950/70 text-rose-300 shadow-sm'
@@ -90,7 +77,7 @@ export const AudioPanel: React.FC = () => {
           <span>Global Mute is active. All audio output is silenced.</span>
           <button
             type="button"
-            onClick={onToggleGlobalMute}
+            onClick={() => changeSettings({ globalMuted: !isMuted })}
             className="underline text-xs font-bold hover:text-rose-200 cursor-pointer ml-2 shrink-0"
           >
             Unmute
@@ -107,7 +94,7 @@ export const AudioPanel: React.FC = () => {
             <button
               type="button"
               disabled={isMuted}
-              onClick={onToggleSound}
+              onClick={() => changeSettings({ soundEnabled: !soundEnabled })}
               title={soundEnabled ? 'Mute Laser SFX' : 'Enable Laser SFX'}
               className="p-1 rounded hover:bg-slate-800 text-cyan-400 cursor-pointer disabled:cursor-not-allowed"
             >
@@ -141,7 +128,9 @@ export const AudioPanel: React.FC = () => {
             step="0.05"
             disabled={isMuted}
             value={soundEnabled && !isMuted ? soundVolume : 0}
-            onChange={(e) => onSetSoundVolume(parseFloat(e.target.value))}
+            onChange={(e) =>
+              changeSettings({ soundVolume: parseFloat(e.target.value) })
+            }
             className="flex-1 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-400 disabled:cursor-not-allowed"
           />
         </div>
@@ -152,14 +141,15 @@ export const AudioPanel: React.FC = () => {
             Synthesizer Voice
           </span>
           <div className="grid grid-cols-2 gap-1.5">
-            {CORE_OPTIONS.map((c) => {
-              const isEquipped = audioCore === c.id;
+            {entriesOf('core').map((core) => {
+              const isEquipped = audioCore === core.id;
+              const isOwned = ownedCores.includes(core.id);
               return (
                 <button
                   type="button"
-                  key={c.id}
-                  disabled={isMuted || !soundEnabled}
-                  onClick={() => unlockOrEquipAudio(c.id, 0)}
+                  key={core.id}
+                  disabled={isMuted || !soundEnabled || !isOwned}
+                  onClick={() => buy(core.id)}
                   className={`p-1.5 rounded-lg border text-left transition-all cursor-pointer ${
                     isEquipped && !isMuted && soundEnabled
                       ? 'border-cyan-500/60 bg-cyan-950/50 text-cyan-200'
@@ -168,14 +158,17 @@ export const AudioPanel: React.FC = () => {
                 >
                   <div className="flex items-center justify-between">
                     <span className="text-[11px] font-bold block truncate">
-                      {c.name}
+                      {core.shortName}
                     </span>
                     {isEquipped && (
                       <Check className="w-3 h-3 text-cyan-400 shrink-0" />
                     )}
+                    {!isOwned && (
+                      <Lock className="w-3 h-3 text-slate-500 shrink-0" />
+                    )}
                   </div>
                   <span className="text-[9px] font-mono text-slate-500 block truncate">
-                    {c.desc}
+                    {isOwned ? core.character : `Locked · ${core.price} Cr`}
                   </span>
                 </button>
               );
@@ -193,7 +186,7 @@ export const AudioPanel: React.FC = () => {
             <button
               type="button"
               disabled={isMuted}
-              onClick={onToggleMusic}
+              onClick={() => changeSettings({ musicEnabled: !musicEnabled })}
               title={musicEnabled ? 'Mute Rhythm Beats' : 'Enable Rhythm Beats'}
               className="p-1 rounded hover:bg-slate-800 text-fuchsia-400 cursor-pointer disabled:cursor-not-allowed"
             >
@@ -227,7 +220,9 @@ export const AudioPanel: React.FC = () => {
             step="0.05"
             disabled={isMuted}
             value={musicEnabled && !isMuted ? musicVolume : 0}
-            onChange={(e) => onSetMusicVolume(parseFloat(e.target.value))}
+            onChange={(e) =>
+              changeSettings({ musicVolume: parseFloat(e.target.value) })
+            }
             className="flex-1 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-fuchsia-400 disabled:cursor-not-allowed"
           />
         </div>
@@ -245,7 +240,7 @@ export const AudioPanel: React.FC = () => {
                   type="button"
                   key={opt.id}
                   disabled={isMuted || !musicEnabled}
-                  onClick={() => onSetBeatTheme(opt.id)}
+                  onClick={() => changeSettings({ beatTheme: opt.id })}
                   className={`p-1.5 rounded-lg border text-left transition-all cursor-pointer ${
                     isSelected && !isMuted && musicEnabled
                       ? 'border-fuchsia-500/60 bg-fuchsia-950/50 text-fuchsia-200 shadow-sm'

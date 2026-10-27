@@ -6,10 +6,10 @@ import {
   KEY_FINGER_MAP,
 } from '../../data/curriculum';
 import type { KeySpec } from '../../data/keyboardLayout';
+import { trailColor } from '../../game/catalog';
 import { STEP_MS } from '../../game/clock';
 import type { Judgement } from '../../game/createGame';
 import type { GameStoreState } from '../../game/gameStore';
-import type { TrailColorTheme } from '../../types/game';
 import { pulseOpacity } from './animation';
 import { DeckEffects } from './DeckEffects';
 import { DroneView } from './DroneView';
@@ -28,15 +28,6 @@ import {
   STAGE_HEIGHT,
   TRENCH_H,
 } from './layout';
-
-/** The beam's colour when the next character has no lane of its own: the equipped trail. */
-const THEME_ACCENTS: Record<TrailColorTheme, string> = {
-  CYAN: '#06b6d4',
-  AMBER: '#f59e0b',
-  EMERALD: '#10b981',
-  VIOLET: '#8b5cf6',
-  SUPERNOVA: '#f43f5e',
-};
 
 export interface DeckSceneOptions {
   resolution: number;
@@ -272,10 +263,10 @@ export class DeckScene {
     const activeChar = text[state.performance.currentCharIndex] || null;
     const rect = activeChar ? layout.keys.get(keyId(activeChar)) : undefined;
     const lane = activeChar ? getNoteLaneAndFinger(activeChar).lane : null;
+    // No lane for the next character: the beam takes the equipped trail's colour.
     const color =
       (lane !== null && FINGER_LANES[lane]?.color) ||
-      THEME_ACCENTS[state.profile.upgrades.equippedTrailTheme] ||
-      '#06b6d4';
+      trailColor(state.profile.upgrades.equippedTrailTheme);
     this.ship.update({
       targetX: rect ? rect.cx : null,
       color,

@@ -23,7 +23,7 @@ describe('importing a Backup', () => {
     expect(JSON.parse(backup).version).toBe(1);
 
     const { game, storage } = gameWith();
-    const outcome = game.store.getState().importProfile(backup);
+    const outcome = game.importBackup(backup);
 
     expect(outcome.ok).toBe(true);
     expect(game.getProfile().totalStars).toBe(3);
@@ -38,7 +38,7 @@ describe('importing a Backup', () => {
       ...clearedStages({ 's1-l1': 2 }),
     });
 
-    expect(game.store.getState().importProfile(unversioned).ok).toBe(true);
+    expect(game.importBackup(unversioned).ok).toBe(true);
     expect(game.getProfile().version).toBe(1);
     expect(game.getProfile().totalStars).toBe(2);
   });
@@ -49,9 +49,7 @@ describe('importing a Backup', () => {
       ...clearedStages({ 's1-l2': 1 }),
     });
 
-    const outcome = game.store
-      .getState()
-      .importProfile(JSON.stringify(OLD_LIVE_EXPORT));
+    const outcome = game.importBackup(JSON.stringify(OLD_LIVE_EXPORT));
 
     expect(outcome.ok).toBe(true);
     const profile = game.getProfile();
@@ -72,11 +70,9 @@ describe('importing a Backup', () => {
     (speed) => {
       const { game, storage } = gameWith();
 
-      const outcome = game.store
-        .getState()
-        .importProfile(
-          JSON.stringify(withOldDroneSpeed(OLD_LIVE_EXPORT, speed)),
-        );
+      const outcome = game.importBackup(
+        JSON.stringify(withOldDroneSpeed(OLD_LIVE_EXPORT, speed)),
+      );
 
       expect(outcome.ok).toBe(true);
       const profile = game.getProfile();
@@ -103,7 +99,7 @@ describe('importing a Backup', () => {
     );
 
     const { game, storage } = gameWith();
-    const outcome = game.store.getState().importProfile(JSON.stringify(backup));
+    const outcome = game.importBackup(JSON.stringify(backup));
 
     expect(outcome.ok).toBe(true);
     expect(backup.version).toBe(1);
@@ -123,9 +119,7 @@ describe('importing a Backup', () => {
     );
 
     const { game, storage } = gameWith();
-    const outcome = game.store
-      .getState()
-      .importProfile(JSON.stringify(oldExport));
+    const outcome = game.importBackup(JSON.stringify(oldExport));
 
     expect(outcome.ok).toBe(true);
     expect(game.getProfile().totalStars).toBe(5);
@@ -151,7 +145,7 @@ describe('importing a Backup', () => {
     });
     const before = game.getProfile();
 
-    const outcome = game.store.getState().importProfile(text);
+    const outcome = game.importBackup(text);
 
     expect(outcome.ok).toBe(false);
     expect(outcome.ok === false && outcome.message).toBe(
@@ -175,7 +169,7 @@ describe('importing a Backup', () => {
     });
     const before = game.getProfile();
 
-    const outcome = game.store.getState().importProfile(text);
+    const outcome = game.importBackup(text);
 
     expect(outcome.ok).toBe(false);
     expect(outcome.ok === false && outcome.message).toBeTruthy();

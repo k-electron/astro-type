@@ -1,12 +1,11 @@
-import type {
-  KeyAnalytics,
-  PlayerProfile,
-  StageProgress,
-  TrailColorTheme,
-  AudioSynthCore,
-} from '../types/game';
+import type { KeyAnalytics, PlayerProfile, StageProgress } from '../types/game';
 import { CURRICULUM_SECTORS } from '../data/curriculum';
-import { PlayerProfileSchema, totalStarsOf } from '../store/schemas';
+import {
+  PlayerProfileSchema,
+  type Settings,
+  totalStarsOf,
+} from '../store/schemas';
+import { type CatalogItemId, catalogEntry } from './catalog';
 
 /** The Profile a new player starts with: every field at its default. */
 export const DEFAULT_PROFILE: PlayerProfile = PlayerProfileSchema.parse({});
@@ -121,114 +120,70 @@ export function unlocksSector(
   );
 }
 
-export const UPGRADE_CATALOG = {
-  deflectorShields: [
-    {
-      level: 1,
-      cost: 250,
-      desc: 'Absorbs 1 typing error per stage without breaking your Streak',
+/**
+ * The Profile after the player changes some settings. Each setting's rules are
+ * here: a volume is kept between 0 and 1, and a volume of 0 turns its channel
+ * off while any volume above 0 turns it on (unless the patch says otherwise).
+ * Turning a channel off keeps its volume.
+ */
+export function settingsAfter(
+  profile: PlayerProfile,
+  patch: Partial<Settings>,
+): PlayerProfile {
+  const next = { ...profile, ...patch };
+  if (patch.soundVolume !== undefined) {
+    next.soundVolume = clampVolume(patch.soundVolume);
+    next.soundEnabled = patch.soundEnabled ?? next.soundVolume > 0;
+  }
+  if (patch.musicVolume !== undefined) {
+    next.musicVolume = clampVolume(patch.musicVolume);
+    next.musicEnabled = patch.musicEnabled ?? next.musicVolume > 0;
+  }
+  return next;
+}
+
+const clampVolume = (volume: number): number =>
+  Math.max(0, Math.min(1, volume));
+
+/** Where a Cosmetic's kind keeps what the player owns and what is equipped, in the Save. */
+const COSMETIC_FIELDS = {
+  trail: { owned: 'unlockedThemes', equipped: 'equippedTrailTheme' },
+  core: { owned: 'unlockedAudioCores', equipped: 'equippedAudioCore' },
+} as const;
+
+/**
+ * What the Profile becomes when the player buys an item: an Upgrade's next
+ * level at its price, or a Cosmetic bought and equipped (a Cosmetic already
+ * owned is equipped for nothing). Null when it changes nothing: an Upgrade at
+ * its last level, or Credits short of the price.
+ */
+export function purchaseOf(
+  profile: PlayerProfile,
+  itemId: CatalogItemId,
+): Pick<PlayerProfile, 'totalCredits' | 'upgrades'> | null {
+  const entry = catalogEntry(itemId);
+  const { upgrades, totalCredits } = profile;
+
+  if (entry.kind === 'upgrade') {
+    const level = upgrades[entry.field];
+    const price = entry.prices[level];
+    if (price === undefined || totalCredits < price) return null;
+    return {
+      totalCredits: totalCredits - price,
+      upgrades: { ...upgrades, [entry.field]: level + 1 },
+    };
+  }
+
+  const { owned, equipped } = COSMETIC_FIELDS[entry.kind];
+  const ownedIds: readonly string[] = upgrades[owned];
+  const isOwned = ownedIds.includes(entry.id);
+  if (!isOwned && totalCredits < entry.price) return null;
+  return {
+    totalCredits: isOwned ? totalCredits : totalCredits - entry.price,
+    upgrades: {
+      ...upgrades,
+      [equipped]: entry.id,
+      [owned]: isOwned ? ownedIds : [...ownedIds, entry.id],
     },
-    {
-      level: 2,
-      cost: 650,
-      desc: 'Absorbs 2 typing errors per stage without breaking your Streak',
-    },
-    {
-      level: 3,
-      cost: 1200,
-      desc: 'Absorbs 3 typing errors per stage without breaking your Streak',
-    },
-  ],
-  hyperdriveReactor: [
-    {
-      level: 1,
-      cost: 300,
-      desc: '+20% Overdrive meter fill rate',
-    },
-    {
-      level: 2,
-      cost: 750,
-      desc: '+40% Overdrive meter fill rate',
-    },
-    {
-      level: 3,
-      cost: 1400,
-      desc: '+60% Overdrive meter fill rate',
-    },
-  ],
-  precisionSensors: [
-    {
-      level: 1,
-      cost: 200,
-      desc: '+15% wider strike timing window for PERFECT scores',
-    },
-    {
-      level: 2,
-      cost: 500,
-      desc: '+30% wider strike timing window for PERFECT scores',
-    },
-    {
-      level: 3,
-      cost: 950,
-      desc: '+45% wider strike timing window for PERFECT scores',
-    },
-  ],
-  themes: [
-    {
-      id: 'CYAN' as TrailColorTheme,
-      name: 'Cyan Nebula',
-      cost: 0,
-      color: '#06b6d4',
-    },
-    {
-      id: 'AMBER' as TrailColorTheme,
-      name: 'Solar Flare',
-      cost: 350,
-      color: '#f59e0b',
-    },
-    {
-      id: 'EMERALD' as TrailColorTheme,
-      name: 'Ion Emerald',
-      cost: 450,
-      color: '#10b981',
-    },
-    {
-      id: 'VIOLET' as TrailColorTheme,
-      name: 'Pulsar Violet',
-      cost: 600,
-      color: '#8b5cf6',
-    },
-    {
-      id: 'SUPERNOVA' as TrailColorTheme,
-      name: 'Supernova Prism',
-      cost: 900,
-      color: '#f43f5e',
-    },
-  ],
-  audioCores: [
-    {
-      id: 'CYBER_SYNTH' as AudioSynthCore,
-      name: 'Cyber Synth (Default)',
-      cost: 0,
-      desc: 'Harmonic dual-oscillator space synth',
-    },
-    {
-      id: 'RETRO_8BIT' as AudioSynthCore,
-      name: '8-Bit Retro Arcade',
-      cost: 300,
-      desc: 'Classic chiptune square wave blasters',
-    },
-    {
-      id: 'DEEP_SPACE' as AudioSynthCore,
-      name: 'Deep Space Drone',
-      cost: 450,
-      desc: 'Smooth sine-wave bass resonant chimes',
-    },
-    {
-      id: 'NEO_ACOUSTIC' as AudioSynthCore,
-      name: 'Neo Acoustic Harp',
-      cost: 600,
-      desc: 'Warm triangular bells and melodic tones',
-    },
-  ],
-};
+  };
+}

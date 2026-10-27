@@ -1,28 +1,132 @@
 import type React from 'react';
-import { Shield, Zap, Sparkles, Volume2, Palette, Check } from 'lucide-react';
+import {
+  Shield,
+  Zap,
+  Sparkles,
+  Volume2,
+  Palette,
+  Check,
+  type LucideIcon,
+} from 'lucide-react';
 import {
   OverlayCloseButton,
   OverlayFlightDeckButton,
   OverlayShell,
 } from './OverlayShell';
-import { UPGRADE_CATALOG } from '../game/profile';
+import {
+  entriesOf,
+  type UpgradeEntry,
+  type UpgradeIcon,
+  type UpgradeTone,
+} from '../game/catalog';
 import { useGame } from '../store/gameContext';
 import { useGameState } from '../store/useGameState';
 
+const UPGRADE_ICONS: Record<UpgradeIcon, LucideIcon> = {
+  shield: Shield,
+  zap: Zap,
+  sparkles: Sparkles,
+};
+
+// Whole class names, so Tailwind finds them.
+const UPGRADE_TONES: Record<
+  UpgradeTone,
+  { text: string; bar: string; buy: string; border: string; wash: string }
+> = {
+  cyan: {
+    text: 'text-cyan-400',
+    bar: 'bg-cyan-500',
+    buy: 'bg-cyan-500 hover:bg-cyan-400',
+    border: 'border-cyan-500/30',
+    wash: 'bg-cyan-950/20',
+  },
+  amber: {
+    text: 'text-amber-400',
+    bar: 'bg-amber-500',
+    buy: 'bg-amber-500 hover:bg-amber-400',
+    border: 'border-amber-500/30',
+    wash: 'bg-amber-950/20',
+  },
+  emerald: {
+    text: 'text-emerald-400',
+    bar: 'bg-emerald-500',
+    buy: 'bg-emerald-500 hover:bg-emerald-400',
+    border: 'border-emerald-500/30',
+    wash: 'bg-emerald-950/20',
+  },
+};
+
+/** One Upgrade's card: its level, and the button for the next level at its catalog price. */
+const UpgradeCard: React.FC<{
+  entry: UpgradeEntry;
+  level: number;
+  totalCredits: number;
+  onBuy: () => void;
+}> = ({ entry, level, totalCredits, onBuy }) => {
+  const Icon = UPGRADE_ICONS[entry.icon];
+  const tone = UPGRADE_TONES[entry.tone];
+  const nextPrice = entry.prices[level];
+  const levels = entry.prices.length;
+
+  return (
+    <div className="p-4 rounded-xl border border-slate-800 bg-slate-950/60 flex flex-col justify-between">
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <div className={`flex items-center gap-2 ${tone.text}`}>
+            <Icon className="w-4 h-4" />
+            <span className="font-bold text-sm text-white">{entry.name}</span>
+          </div>
+          <span className={`text-xs font-mono ${tone.text}`}>
+            Tier {level}/{levels}
+          </span>
+        </div>
+        <p className="text-xs text-slate-400 mb-3">{entry.description}</p>
+        <div className="flex items-center gap-1.5 mb-4">
+          {entry.prices.map((_, index) => {
+            const tier = index + 1;
+            return (
+              <div
+                key={tier}
+                className={`h-2 flex-1 rounded ${
+                  tier <= level ? tone.bar : 'bg-slate-800'
+                }`}
+              />
+            );
+          })}
+        </div>
+      </div>
+
+      {nextPrice !== undefined ? (
+        <button
+          type="button"
+          disabled={totalCredits < nextPrice}
+          onClick={onBuy}
+          className={`w-full py-2 px-3 rounded-lg text-xs font-medium font-mono flex items-center justify-between transition-colors ${
+            totalCredits >= nextPrice
+              ? `${tone.buy} text-slate-950 font-bold`
+              : 'bg-slate-800 text-slate-500 cursor-not-allowed'
+          }`}
+        >
+          <span>Upgrade Tier {level + 1}</span>
+          <span>{nextPrice} Cr</span>
+        </button>
+      ) : (
+        <div
+          className={`w-full py-2 text-center text-xs font-mono ${tone.text} border ${tone.border} rounded-lg ${tone.wash}`}
+        >
+          Max Tier Installed
+        </div>
+      )}
+    </div>
+  );
+};
+
 export const HangarUpgradesModal: React.FC = () => {
-  const game = useGame();
-  const { buyUpgrade } = game;
-  const { unlockOrEquipTheme, unlockOrEquipAudio } = game.profileActions;
+  const { buy } = useGame();
   const { upgrades, totalCredits } = useGameState((state) => ({
     upgrades: state.profile.upgrades,
     totalCredits: state.profile.totalCredits,
   }));
-  const nextShield =
-    UPGRADE_CATALOG.deflectorShields[upgrades.deflectorShields];
-  const nextReactor =
-    UPGRADE_CATALOG.hyperdriveReactor[upgrades.hyperdriveReactor];
-  const nextSensor =
-    UPGRADE_CATALOG.precisionSensors[upgrades.precisionSensors];
 
   return (
     <OverlayShell variant="window" width="4xl" labelledBy="hangar-title">
@@ -68,164 +172,15 @@ export const HangarUpgradesModal: React.FC = () => {
           </h3>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Deflector Shields */}
-            <div className="p-4 rounded-xl border border-slate-800 bg-slate-950/60 flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2 text-cyan-400">
-                    <Shield className="w-4 h-4" />
-                    <span className="font-bold text-sm text-white">
-                      Deflector Shields
-                    </span>
-                  </div>
-                  <span className="text-xs font-mono text-cyan-400">
-                    Tier {upgrades.deflectorShields}/3
-                  </span>
-                </div>
-                <p className="text-xs text-slate-400 mb-3">
-                  Absorbs typing error keystrokes without breaking your Streak
-                  or Multiplier.
-                </p>
-                <div className="flex items-center gap-1.5 mb-4">
-                  {[1, 2, 3].map((lvl) => (
-                    <div
-                      key={lvl}
-                      className={`h-2 flex-1 rounded ${
-                        lvl <= upgrades.deflectorShields
-                          ? 'bg-cyan-500'
-                          : 'bg-slate-800'
-                      }`}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              {nextShield ? (
-                <button
-                  type="button"
-                  disabled={totalCredits < nextShield.cost}
-                  onClick={() => buyUpgrade('shields')}
-                  className={`w-full py-2 px-3 rounded-lg text-xs font-medium font-mono flex items-center justify-between transition-colors ${
-                    totalCredits >= nextShield.cost
-                      ? 'bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold'
-                      : 'bg-slate-800 text-slate-500 cursor-not-allowed'
-                  }`}
-                >
-                  <span>Upgrade Tier {nextShield.level}</span>
-                  <span>{nextShield.cost} Cr</span>
-                </button>
-              ) : (
-                <div className="w-full py-2 text-center text-xs font-mono text-cyan-400 border border-cyan-500/30 rounded-lg bg-cyan-950/20">
-                  Max Tier Installed
-                </div>
-              )}
-            </div>
-
-            {/* Overdrive Reactor */}
-            <div className="p-4 rounded-xl border border-slate-800 bg-slate-950/60 flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2 text-amber-400">
-                    <Zap className="w-4 h-4" />
-                    <span className="font-bold text-sm text-white">
-                      Overdrive Reactor
-                    </span>
-                  </div>
-                  <span className="text-xs font-mono text-amber-400">
-                    Tier {upgrades.hyperdriveReactor}/3
-                  </span>
-                </div>
-                <p className="text-xs text-slate-400 mb-3">
-                  Speeds up how fast the Overdrive meter fills, so Overdrive
-                  starts sooner.
-                </p>
-                <div className="flex items-center gap-1.5 mb-4">
-                  {[1, 2, 3].map((lvl) => (
-                    <div
-                      key={lvl}
-                      className={`h-2 flex-1 rounded ${
-                        lvl <= upgrades.hyperdriveReactor
-                          ? 'bg-amber-500'
-                          : 'bg-slate-800'
-                      }`}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              {nextReactor ? (
-                <button
-                  type="button"
-                  disabled={totalCredits < nextReactor.cost}
-                  onClick={() => buyUpgrade('reactor')}
-                  className={`w-full py-2 px-3 rounded-lg text-xs font-medium font-mono flex items-center justify-between transition-colors ${
-                    totalCredits >= nextReactor.cost
-                      ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold'
-                      : 'bg-slate-800 text-slate-500 cursor-not-allowed'
-                  }`}
-                >
-                  <span>Upgrade Tier {nextReactor.level}</span>
-                  <span>{nextReactor.cost} Cr</span>
-                </button>
-              ) : (
-                <div className="w-full py-2 text-center text-xs font-mono text-amber-400 border border-amber-500/30 rounded-lg bg-amber-950/20">
-                  Max Tier Installed
-                </div>
-              )}
-            </div>
-
-            {/* Precision Sensors */}
-            <div className="p-4 rounded-xl border border-slate-800 bg-slate-950/60 flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2 text-emerald-400">
-                    <Sparkles className="w-4 h-4" />
-                    <span className="font-bold text-sm text-white">
-                      Precision Sensors
-                    </span>
-                  </div>
-                  <span className="text-xs font-mono text-emerald-400">
-                    Tier {upgrades.precisionSensors}/3
-                  </span>
-                </div>
-                <p className="text-xs text-slate-400 mb-3">
-                  Expands the rhythm highway strike timing window for PERFECT
-                  score multipliers.
-                </p>
-                <div className="flex items-center gap-1.5 mb-4">
-                  {[1, 2, 3].map((lvl) => (
-                    <div
-                      key={lvl}
-                      className={`h-2 flex-1 rounded ${
-                        lvl <= upgrades.precisionSensors
-                          ? 'bg-emerald-500'
-                          : 'bg-slate-800'
-                      }`}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              {nextSensor ? (
-                <button
-                  type="button"
-                  disabled={totalCredits < nextSensor.cost}
-                  onClick={() => buyUpgrade('sensors')}
-                  className={`w-full py-2 px-3 rounded-lg text-xs font-medium font-mono flex items-center justify-between transition-colors ${
-                    totalCredits >= nextSensor.cost
-                      ? 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold'
-                      : 'bg-slate-800 text-slate-500 cursor-not-allowed'
-                  }`}
-                >
-                  <span>Upgrade Tier {nextSensor.level}</span>
-                  <span>{nextSensor.cost} Cr</span>
-                </button>
-              ) : (
-                <div className="w-full py-2 text-center text-xs font-mono text-emerald-400 border border-emerald-500/30 rounded-lg bg-emerald-950/20">
-                  Max Tier Installed
-                </div>
-              )}
-            </div>
+            {entriesOf('upgrade').map((entry) => (
+              <UpgradeCard
+                key={entry.id}
+                entry={entry}
+                level={upgrades[entry.field]}
+                totalCredits={totalCredits}
+                onBuy={() => buy(entry.id)}
+              />
+            ))}
           </div>
         </div>
 
@@ -239,7 +194,7 @@ export const HangarUpgradesModal: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-            {UPGRADE_CATALOG.themes.map((theme) => {
+            {entriesOf('trail').map((theme) => {
               const isUnlocked = upgrades.unlockedThemes.includes(theme.id);
               const isEquipped = upgrades.equippedTrailTheme === theme.id;
 
@@ -271,14 +226,14 @@ export const HangarUpgradesModal: React.FC = () => {
 
                   <button
                     type="button"
-                    disabled={!isUnlocked && totalCredits < theme.cost}
-                    onClick={() => unlockOrEquipTheme(theme.id, theme.cost)}
+                    disabled={!isUnlocked && totalCredits < theme.price}
+                    onClick={() => buy(theme.id)}
                     className={`w-full py-1.5 px-2 rounded-lg text-[11px] font-mono transition-colors ${
                       isEquipped
                         ? 'bg-cyan-950/60 text-cyan-300 border border-cyan-800 cursor-default'
                         : isUnlocked
                           ? 'bg-slate-800 hover:bg-slate-700 text-slate-200'
-                          : totalCredits >= theme.cost
+                          : totalCredits >= theme.price
                             ? 'bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold'
                             : 'bg-slate-800/40 text-slate-600 cursor-not-allowed'
                     }`}
@@ -287,7 +242,7 @@ export const HangarUpgradesModal: React.FC = () => {
                       ? 'Active'
                       : isUnlocked
                         ? 'Equip'
-                        : `${theme.cost} Cr`}
+                        : `${theme.price} Cr`}
                   </button>
                 </div>
               );
@@ -305,7 +260,7 @@ export const HangarUpgradesModal: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            {UPGRADE_CATALOG.audioCores.map((core) => {
+            {entriesOf('core').map((core) => {
               const isUnlocked = upgrades.unlockedAudioCores.includes(core.id);
               const isEquipped = upgrades.equippedAudioCore === core.id;
 
@@ -330,20 +285,20 @@ export const HangarUpgradesModal: React.FC = () => {
                       )}
                     </div>
                     <p className="text-[11px] text-slate-400 mb-3">
-                      {core.desc}
+                      {core.description}
                     </p>
                   </div>
 
                   <button
                     type="button"
-                    disabled={!isUnlocked && totalCredits < core.cost}
-                    onClick={() => unlockOrEquipAudio(core.id, core.cost)}
+                    disabled={!isUnlocked && totalCredits < core.price}
+                    onClick={() => buy(core.id)}
                     className={`w-full py-1.5 px-2 rounded-lg text-[11px] font-mono transition-colors ${
                       isEquipped
                         ? 'bg-cyan-950/60 text-cyan-300 border border-cyan-800 cursor-default'
                         : isUnlocked
                           ? 'bg-slate-800 hover:bg-slate-700 text-slate-200'
-                          : totalCredits >= core.cost
+                          : totalCredits >= core.price
                             ? 'bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold'
                             : 'bg-slate-800/40 text-slate-600 cursor-not-allowed'
                     }`}
@@ -352,7 +307,7 @@ export const HangarUpgradesModal: React.FC = () => {
                       ? 'Active'
                       : isUnlocked
                         ? 'Equip'
-                        : `${core.cost} Cr`}
+                        : `${core.price} Cr`}
                   </button>
                 </div>
               );

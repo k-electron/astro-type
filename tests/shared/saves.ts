@@ -54,6 +54,16 @@ export const OWNS_EVERY_AUDIO_CORE = {
 };
 
 /**
+ * RETURNING_PLAYER who has bought the 8-Bit Retro core (300 Cr) and so owns
+ * two Synthesizer cores, Cyber Synth and 8-Bit Retro; Deep Space and Neo
+ * Acoustic are still the Hangar's to sell. The Credits are left as they were.
+ */
+export const OWNS_RETRO_AUDIO_CORE = {
+  ...RETURNING_PLAYER,
+  upgrades: { unlockedAudioCores: ['CYBER_SYNTH', 'RETRO_8BIT'] },
+};
+
+/**
  * A complete Save in today's format (no `version`): RETURNING_PLAYER's 5 Stars
  * and 1,234 Credits, plus every other field, each set to something other than
  * its default so a load that dropped it would show.

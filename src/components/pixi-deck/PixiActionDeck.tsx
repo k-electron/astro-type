@@ -22,7 +22,8 @@ export const PixiActionDeck = memo(function PixiActionDeck() {
       currentStreak: state.run.currentStreak,
       handsVisible: state.profile.handsVisible,
     }));
-  const onToggleHands = game.profileActions.toggleHands;
+  const onToggleHands = () =>
+    game.changeSettings({ handsVisible: !handsVisible });
   const stageRef = useRef<HTMLDivElement>(null);
 
   useLayoutEffect(() => {

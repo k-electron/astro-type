@@ -65,6 +65,22 @@ export const KeyAnalyticsSchema = z.object({
 });
 
 /**
+ * The settings the player changes in the header: sound, music, the beat, and
+ * what the Action Deck shows. One group, spread into the Save below, so a new
+ * setting is one line here and `Settings` follows from it.
+ */
+export const SettingsSchema = z.object({
+  soundEnabled: z.boolean().default(true),
+  soundVolume: z.number().min(0).max(1).default(0.7),
+  keyboardVisible: z.boolean().default(true),
+  handsVisible: z.boolean().default(true),
+  musicEnabled: z.boolean().default(true),
+  musicVolume: z.number().min(0).max(1).default(0.4),
+  beatTheme: BeatThemeSchema.default('NEON_SYNTHWAVE'),
+  globalMuted: z.boolean().default(false),
+});
+
+/**
  * The Save: the only definition of what a Profile is. Unknown fields are
  * dropped, a missing field takes its default, and a field that is present but
  * wrong fails the parse (the Save module then treats the Save as unreadable).
@@ -82,15 +98,8 @@ export const SaveFieldsSchema = z.object({
   stagesProgress: z.record(z.string(), StageProgressSchema).default({}),
   keyAnalytics: z.record(z.string(), KeyAnalyticsSchema).default({}),
   upgrades: UpgradesSchema.prefault({}),
-  soundEnabled: z.boolean().default(true),
-  soundVolume: z.number().min(0).max(1).default(0.7),
   ambientMusicVolume: z.number().min(0).max(1).default(0.25),
-  keyboardVisible: z.boolean().default(true),
-  handsVisible: z.boolean().default(true),
-  musicEnabled: z.boolean().default(true),
-  musicVolume: z.number().min(0).max(1).default(0.4),
-  beatTheme: BeatThemeSchema.default('NEON_SYNTHWAVE'),
-  globalMuted: z.boolean().default(false),
+  ...SettingsSchema.shape,
 });
 
 /** Total Stars are the sum of the Stars earned on each Stage. */
@@ -173,3 +182,4 @@ export type KeyAnalytics = z.output<typeof KeyAnalyticsSchema>;
 export type TrailColorTheme = z.output<typeof TrailColorThemeSchema>;
 export type AudioSynthCore = z.output<typeof AudioSynthCoreSchema>;
 export type BeatTheme = z.output<typeof BeatThemeSchema>;
+export type Settings = z.output<typeof SettingsSchema>;

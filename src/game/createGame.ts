@@ -31,7 +31,9 @@ import {
   type UpgradeKind,
   type VictoryResult,
 } from './gameStore';
+import type { CatalogItemId } from './catalog';
 import type { BackupImport, SaveStorage } from './save';
+import type { Settings } from '../store/schemas';
 
 export { createMemoryStorage } from './save';
 export type { MemorySaveStorage, SaveStorage } from './save';
@@ -105,24 +107,6 @@ export interface GameState {
   runTime: number;
 }
 
-/**
- * The Profile moves a screen can make, as the store has them today. A stand-in
- * for the Profile commands (`changeSettings`, `buy`) that replace it.
- */
-export type ProfileActions = Pick<
-  GameStoreState,
-  | 'toggleGlobalMute'
-  | 'toggleSound'
-  | 'toggleMusic'
-  | 'setSoundVolume'
-  | 'setMusicVolume'
-  | 'setBeatTheme'
-  | 'toggleKeyboard'
-  | 'toggleHands'
-  | 'unlockOrEquipTheme'
-  | 'unlockOrEquipAudio'
->;
-
 export interface Game {
   /** Begin a Run of a Stage (or a curriculum Stage id). Sends PICK_STAGE for an id, LAUNCH_FREE_FLIGHT for a Stage. */
   startStage(stageOrId: Stage | string): void;
@@ -167,9 +151,19 @@ export interface Game {
   getDebrief(): VictoryResult | null;
   getProfile(): PlayerProfile;
   /**
-   * Buy the next level of an Upgrade at its catalog cost. False, with the
-   * Credits unchanged, when the Upgrade is at level 3 or the Credits fall short.
+   * Change some settings: the patch's fields change, and each one's rules
+   * apply (a volume of 0 turns its channel off). Saved at once.
    */
+  changeSettings(patch: Partial<Settings>): void;
+  /**
+   * Buy an item from the catalog at its catalog price: an Upgrade's next
+   * level, or a Cosmetic (bought and equipped, or just equipped when it is
+   * already owned). True when it bought or equipped something; false, with
+   * the Profile unchanged, when the Upgrade is at its last level or the
+   * Credits fall short.
+   */
+  buy(itemId: CatalogItemId): boolean;
+  /** Same as `buy` for an Upgrade. Temporary: `buy` replaces it. */
   buyUpgrade(kind: UpgradeKind): boolean;
   /** Replace the Profile with a Backup's, if it passes the Save's checks. */
   importBackup(text: string): BackupImport;
@@ -177,11 +171,6 @@ export interface Game {
   wipeAchievements(): void;
   /** Back to a fresh Profile. */
   resetProgress(): void;
-  /**
-   * The settings and purchases screens make, as the store has them today.
-   * Temporary: the Profile commands (`changeSettings`, `buy`) replace it.
-   */
-  readonly profileActions: ProfileActions;
   /** Why the Save was set aside and the player started fresh, or null. */
   getLoadNotice(): string | null;
   /** The vanilla store. The Action Deck and tests still read it directly. */
@@ -355,20 +344,6 @@ export function createGame(options: GameOptions): Game {
   const send = (event: PlayerEvent) => move(() => deliver(event));
 
   const actions = () => store.getState();
-  const profileActions: ProfileActions = {
-    toggleGlobalMute: () => move(() => actions().toggleGlobalMute()),
-    toggleSound: () => move(() => actions().toggleSound()),
-    toggleMusic: () => move(() => actions().toggleMusic()),
-    setSoundVolume: (vol) => move(() => actions().setSoundVolume(vol)),
-    setMusicVolume: (vol) => move(() => actions().setMusicVolume(vol)),
-    setBeatTheme: (theme) => move(() => actions().setBeatTheme(theme)),
-    toggleKeyboard: () => move(() => actions().toggleKeyboard()),
-    toggleHands: () => move(() => actions().toggleHands()),
-    unlockOrEquipTheme: (theme, cost) =>
-      move(() => actions().unlockOrEquipTheme(theme, cost)),
-    unlockOrEquipAudio: (core, cost) =>
-      move(() => actions().unlockOrEquipAudio(core, cost)),
-  };
 
   return {
     startStage(stageOrId) {
@@ -422,11 +397,12 @@ export function createGame(options: GameOptions): Game {
     getRun: () => buildRun(store.getState()),
     getDebrief: () => store.getState().victoryResult,
     getProfile: () => store.getState().profile,
-    buyUpgrade: (kind) => move(() => actions().buyUpgrade(kind)),
+    changeSettings: (patch) => move(() => actions().changeSettings(patch)),
+    buy: (itemId) => move(() => actions().buy(itemId)),
+    buyUpgrade: (kind) => move(() => actions().buy(kind)),
     importBackup: (text) => move(() => actions().importProfile(text)),
     wipeAchievements: () => move(() => actions().wipeCurriculumAchievements()),
     resetProgress: () => move(() => actions().resetProgress()),
-    profileActions,
     getLoadNotice: () => store.getState().loadNotice,
     store,
   };

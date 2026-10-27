@@ -22,7 +22,6 @@ export const HeaderNav: React.FC<{ ref?: React.Ref<HTMLElement> }> = ({
 }) => {
   const game = useGame();
   const { send } = game;
-  const { toggleGlobalMute: onToggleGlobalMute } = game.profileActions;
   const { totalStars, totalCredits, isMuted, isPlaying } = useGameState(
     (state) => ({
       totalStars: state.profile.totalStars,
@@ -164,7 +163,7 @@ export const HeaderNav: React.FC<{ ref?: React.Ref<HTMLElement> }> = ({
             {/* 1-Click Fast Master Mute Button */}
             <button
               type="button"
-              onClick={onToggleGlobalMute}
+              onClick={() => game.changeSettings({ globalMuted: !isMuted })}
               title={
                 isMuted
                   ? 'All Audio is MUTED (Click to unmute)'

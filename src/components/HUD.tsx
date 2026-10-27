@@ -30,7 +30,8 @@ export const HUD: React.FC = () => {
     cadence: state.run.cadenceConsistency ?? 100,
     keyboardVisible: state.profile.keyboardVisible,
   }));
-  const onToggleKeyboard = game.profileActions.toggleKeyboard;
+  const onToggleKeyboard = () =>
+    game.changeSettings({ keyboardVisible: !keyboardVisible });
   const onPause = () => game.send({ type: 'PRESS_PAUSE' });
 
   return (
