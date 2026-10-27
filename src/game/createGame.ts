@@ -31,7 +31,7 @@ import {
   type UpgradeKind,
   type VictoryResult,
 } from './gameStore';
-import type { SaveStorage } from './save';
+import type { BackupImport, SaveStorage } from './save';
 
 export { createMemoryStorage } from './save';
 export type { MemorySaveStorage, SaveStorage } from './save';
@@ -80,7 +80,48 @@ export type Run = LivePerformance & {
   /** Today's falling notes. The lead Drone is first; the Strike Line is y=84. */
   drones: FallingNote[];
   currentStage: Stage;
+  /** The positions in the text where a wrong key was pressed: the Miss marks. */
+  errorIndices: ReadonlySet<number>;
 };
+
+/**
+ * Everything a screen shows, settled: the machine and the store have both
+ * finished the move that made it. It is replaced, never changed in place, and
+ * only when one of its fields changed; `run` is rebuilt only when the Run did.
+ */
+export interface GameState {
+  screen: Screen;
+  phase: RunPhase;
+  /** The screen that opened this one (what Close returns to), or null when nothing did. */
+  opener: Screen | null;
+  /** The parameter the screen was opened with. Always null until a screen takes one. */
+  screenParams: null;
+  run: Run;
+  debrief: VictoryResult | null;
+  profile: PlayerProfile;
+  /** Why the Save was set aside and the player started fresh, or null. */
+  loadNotice: string | null;
+  /** Run Time in milliseconds: how long the Run has been running, pauses left out. */
+  runTime: number;
+}
+
+/**
+ * The Profile moves a screen can make, as the store has them today. A stand-in
+ * for the Profile commands (`changeSettings`, `buy`) that replace it.
+ */
+export type ProfileActions = Pick<
+  GameStoreState,
+  | 'toggleGlobalMute'
+  | 'toggleSound'
+  | 'toggleMusic'
+  | 'setSoundVolume'
+  | 'setMusicVolume'
+  | 'setBeatTheme'
+  | 'toggleKeyboard'
+  | 'toggleHands'
+  | 'unlockOrEquipTheme'
+  | 'unlockOrEquipAudio'
+>;
 
 export interface Game {
   /** Begin a Run of a Stage (or a curriculum Stage id). Sends PICK_STAGE for an id, LAUNCH_FREE_FLIGHT for a Stage. */
@@ -112,8 +153,16 @@ export interface Game {
   getPhase(): RunPhase;
   /** The screen that opened this one (what Close returns to), or null when nothing did. */
   getOpener(): Screen | null;
-  /** Call `listener` after every move. Returns the unsubscribe function. */
+  /** The settled snapshot. The same object until a move changes something in it. */
+  getState(): GameState;
+  /**
+   * Call `listener` once per change to the snapshot, after the machine and the
+   * store have both settled. A move that changes nothing does not call it.
+   * Returns the unsubscribe function.
+   */
   subscribe(listener: () => void): () => void;
+  /** Let go of a key: the Action Deck's pressed keycap lifts. No key lets go of any. */
+  releaseKey(key?: string): void;
   getRun(): Run;
   getDebrief(): VictoryResult | null;
   getProfile(): PlayerProfile;
@@ -122,9 +171,20 @@ export interface Game {
    * Credits unchanged, when the Upgrade is at level 3 or the Credits fall short.
    */
   buyUpgrade(kind: UpgradeKind): boolean;
+  /** Replace the Profile with a Backup's, if it passes the Save's checks. */
+  importBackup(text: string): BackupImport;
+  /** Wipe Stars and Stage progress; Credits and Upgrades stay. */
+  wipeAchievements(): void;
+  /** Back to a fresh Profile. */
+  resetProgress(): void;
+  /**
+   * The settings and purchases screens make, as the store has them today.
+   * Temporary: the Profile commands (`changeSettings`, `buy`) replace it.
+   */
+  readonly profileActions: ProfileActions;
   /** Why the Save was set aside and the player started fresh, or null. */
   getLoadNotice(): string | null;
-  /** The vanilla store, for the app's React hook. */
+  /** The vanilla store. The Action Deck and tests still read it directly. */
   readonly store: StoreApi<GameStoreState>;
 }
 
@@ -204,7 +264,111 @@ export function createGame(options: GameOptions): Game {
     actor.send(event);
   }
 
-  const send = (event: PlayerEvent) => deliver(event);
+  const getOpener = (): Screen | null => {
+    const { openers } = actor.getSnapshot().context;
+    return openers[openers.length - 1] ?? null;
+  };
+
+  // The Run is made of four things in the store; it is rebuilt only when one
+  // of them is a different object.
+  let builtFrom: Pick<
+    GameStoreState,
+    'performance' | 'fallingNotes' | 'currentStage' | 'errorIndices'
+  > | null = null;
+  let builtRun: Run | null = null;
+  const buildRun = (state: GameStoreState): Run => {
+    if (
+      builtRun &&
+      builtFrom?.performance === state.performance &&
+      builtFrom.fallingNotes === state.fallingNotes &&
+      builtFrom.currentStage === state.currentStage &&
+      builtFrom.errorIndices === state.errorIndices
+    ) {
+      return builtRun;
+    }
+    const { performance, fallingNotes, currentStage, errorIndices } = state;
+    builtFrom = { performance, fallingNotes, currentStage, errorIndices };
+    builtRun = {
+      ...performance,
+      drones: fallingNotes,
+      currentStage,
+      errorIndices,
+    };
+    return builtRun;
+  };
+
+  // The settled snapshot. A move can touch the machine and the store several
+  // times (a clear starts in the store, goes through the machine, and ends in
+  // the store again), so every move runs inside `move`: the snapshot is only
+  // built when the outermost move ends, and listeners hear it once.
+  const listeners = new Set<() => void>();
+  let depth = 0;
+
+  const snapshotNow = (previous: GameState | null): GameState => {
+    const state = store.getState();
+    const next: GameState = {
+      screen: getScreen(),
+      phase: getPhase(),
+      opener: getOpener(),
+      screenParams: null,
+      run: buildRun(state),
+      debrief: state.victoryResult,
+      profile: state.profile,
+      loadNotice: state.loadNotice,
+      runTime: runClock.runTimeMs(),
+    };
+    const unchanged =
+      previous &&
+      next.screen === previous.screen &&
+      next.phase === previous.phase &&
+      next.opener === previous.opener &&
+      next.run === previous.run &&
+      next.debrief === previous.debrief &&
+      next.profile === previous.profile &&
+      next.loadNotice === previous.loadNotice &&
+      next.runTime === previous.runTime;
+    return unchanged ? previous : next;
+  };
+  let snapshot = snapshotNow(null);
+
+  function settle() {
+    if (depth > 0) return;
+    const next = snapshotNow(snapshot);
+    if (next === snapshot) return;
+    snapshot = next;
+    for (const listener of [...listeners]) listener();
+  }
+
+  function move<T>(change: () => T): T {
+    depth++;
+    try {
+      return change();
+    } finally {
+      depth--;
+      settle();
+    }
+  }
+
+  // A change made on the store itself, outside any move, still settles.
+  store.subscribe(settle);
+
+  const send = (event: PlayerEvent) => move(() => deliver(event));
+
+  const actions = () => store.getState();
+  const profileActions: ProfileActions = {
+    toggleGlobalMute: () => move(() => actions().toggleGlobalMute()),
+    toggleSound: () => move(() => actions().toggleSound()),
+    toggleMusic: () => move(() => actions().toggleMusic()),
+    setSoundVolume: (vol) => move(() => actions().setSoundVolume(vol)),
+    setMusicVolume: (vol) => move(() => actions().setMusicVolume(vol)),
+    setBeatTheme: (theme) => move(() => actions().setBeatTheme(theme)),
+    toggleKeyboard: () => move(() => actions().toggleKeyboard()),
+    toggleHands: () => move(() => actions().toggleHands()),
+    unlockOrEquipTheme: (theme, cost) =>
+      move(() => actions().unlockOrEquipTheme(theme, cost)),
+    unlockOrEquipAudio: (core, cost) =>
+      move(() => actions().unlockOrEquipAudio(core, cost)),
+  };
 
   return {
     startStage(stageOrId) {
@@ -219,9 +383,9 @@ export function createGame(options: GameOptions): Game {
     },
     send,
     canSend,
-    pressKey(key, pressOptions) {
-      store.getState().processKeystroke(key, pressOptions);
-    },
+    pressKey: (key, pressOptions) =>
+      move(() => actions().processKeystroke(key, pressOptions)),
+    releaseKey: (key) => move(() => actions().releaseKeystroke(key)),
     onJudgement(listener) {
       judgementListeners.add(listener);
       return () => {
@@ -229,41 +393,40 @@ export function createGame(options: GameOptions): Game {
       };
     },
     step(count = 1) {
-      for (let i = 0; i < count; i++) {
-        // A step can end the phase (nothing in a step does today, but the
-        // phase is the machine's to say), so ask before each one.
-        if (getPhase() !== 'running') return;
-        clock.step(1);
-        runClock.advance(1);
-        store.getState().updateFallingNotesOnTick();
-        // Telemetry follows Run Time, so a pause doesn't shift its rhythm.
-        if (runClock.steps() % TELEMETRY_EVERY_STEPS === 0) {
-          store.getState().updateTelemetryOnInterval();
+      move(() => {
+        for (let i = 0; i < count; i++) {
+          // A step can end the phase (nothing in a step does today, but the
+          // phase is the machine's to say), so ask before each one.
+          if (getPhase() !== 'running') return;
+          clock.step(1);
+          runClock.advance(1);
+          store.getState().updateFallingNotesOnTick();
+          // Telemetry follows Run Time, so a pause doesn't shift its rhythm.
+          if (runClock.steps() % TELEMETRY_EVERY_STEPS === 0) {
+            store.getState().updateTelemetryOnInterval();
+          }
         }
-      }
+      });
     },
     getRunTime: () => runClock.runTimeMs(),
     getScreen,
     getPhase,
-    getOpener() {
-      const { openers } = actor.getSnapshot().context;
-      return openers[openers.length - 1] ?? null;
-    },
+    getOpener,
+    getState: () => snapshot,
     subscribe(listener) {
-      const subscription = actor.subscribe(listener);
-      return () => subscription.unsubscribe();
-    },
-    getRun() {
-      const state = store.getState();
-      return {
-        ...state.performance,
-        drones: state.fallingNotes,
-        currentStage: state.currentStage,
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
       };
     },
+    getRun: () => buildRun(store.getState()),
     getDebrief: () => store.getState().victoryResult,
     getProfile: () => store.getState().profile,
-    buyUpgrade: (kind) => store.getState().buyUpgrade(kind),
+    buyUpgrade: (kind) => move(() => actions().buyUpgrade(kind)),
+    importBackup: (text) => move(() => actions().importProfile(text)),
+    wipeAchievements: () => move(() => actions().wipeCurriculumAchievements()),
+    resetProgress: () => move(() => actions().resetProgress()),
+    profileActions,
     getLoadNotice: () => store.getState().loadNotice,
     store,
   };
