@@ -10,7 +10,7 @@ import { getDeckSession } from './deckSession';
  * The Action Deck: a card with a header bar around a stage that the session's
  * PixiJS Application draws.
  *
- * React reads only what the header bar shows. The deck itself reads the game
+ * React reads only what the header bar shows. The deck itself reads the store
  * on the Run clock, so React never re-renders it per frame.
  */
 export const PixiActionDeck = memo(function PixiActionDeck() {
