@@ -1,6 +1,6 @@
 import { Award, Flame, Hand, Sparkles } from 'lucide-react';
 import { memo, useLayoutEffect, useRef } from 'react';
-import { useGame } from '../../store/gameContext';
+import { useGame, useOnFrame } from '../../store/gameContext';
 import { FINGER_COLOR_MAP } from '../../data/curriculum';
 import { overdriveScoreFactor } from '../../game/rules';
 import { useGameState } from '../../store/useGameState';
@@ -10,11 +10,12 @@ import { getDeckSession } from './deckSession';
  * The Action Deck: a card with a header bar around a stage that the session's
  * PixiJS Application draws.
  *
- * React reads only what the header bar shows. The deck itself reads the store
- * on the Run clock, so React never re-renders it per frame.
+ * React reads only what the header bar shows. The deck itself reads the
+ * game's snapshot on the Run clock, so React never re-renders it per frame.
  */
 export const PixiActionDeck = memo(function PixiActionDeck() {
   const game = useGame();
+  const onFrame = useOnFrame();
   const { hyperspaceActive, multiplier, currentStreak, handsVisible } =
     useGameState((state) => ({
       hyperspaceActive: state.run.hyperspaceActive,
@@ -29,10 +30,10 @@ export const PixiActionDeck = memo(function PixiActionDeck() {
   useLayoutEffect(() => {
     const stage = stageRef.current;
     if (!stage) return;
-    const session = getDeckSession();
+    const session = getDeckSession({ game, onFrame });
     session.attach(stage);
     return () => session.detach();
-  }, []);
+  }, [game, onFrame]);
 
   return (
     <div className="w-full flex flex-col rounded-2xl border border-slate-800 bg-slate-950/80 shadow-2xl overflow-hidden backdrop-blur-md relative">

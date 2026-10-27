@@ -6,8 +6,6 @@
  * storage or the sound engine. Sound is attached from outside as `sound`.
  */
 import { createActor } from 'xstate';
-import type { StoreApi } from 'zustand/vanilla';
-import { getStageById } from '../data/curriculum';
 import {
   createGameMachine,
   type GameMachineEvent,
@@ -22,8 +20,8 @@ import type {
   Stage,
 } from '../types/game';
 import { type Clock, createRunClock, createSteppedClock } from './clock';
-import type { Judgement, KeyOptions } from './rules';
-import { isJudgement, type Moment } from './moments';
+import type { KeyOptions } from './rules';
+import type { Moment } from './moments';
 import {
   cueFor,
   type Sound,
@@ -46,7 +44,7 @@ export type { Clock } from './clock';
 export type { Cue, Sound, SoundState } from './sound';
 export type { Judgement, KeyOptions } from './rules';
 export type { Moment } from './moments';
-export type { GameStoreState, VictoryResult } from './gameStore';
+export type { VictoryResult } from './gameStore';
 export type { PlayerEvent } from '../store/gameMachine';
 export type { RunPhase, Screen } from '../types/game';
 
@@ -90,6 +88,8 @@ export type Run = LivePerformance & {
   currentStage: Stage;
   /** The positions in the text where a wrong key was pressed: the Miss marks. */
   errorIndices: ReadonlySet<number>;
+  /** The key the player has down (the Action Deck's pressed keycap), or null. */
+  lastPressedKey: string | null;
 };
 
 /**
@@ -114,12 +114,8 @@ export interface GameState {
 }
 
 export interface Game {
-  /** Begin a Run of a Stage (or a curriculum Stage id). Sends PICK_STAGE for an id, LAUNCH_FREE_FLIGHT for a Stage. */
-  startStage(stageOrId: Stage | string): void;
   /** Send what the player did. A refused move changes nothing and goes to `onRefusedMove`. */
   send(event: PlayerEvent): void;
-  /** Would the machine accept this event now? */
-  canSend(event: PlayerEvent): boolean;
   /**
    * Press a key, as a keydown does; `key` is a `KeyboardEvent.key` value and
    * `options` are the keydown's `repeat`, `ctrlKey`, `metaKey` and `altKey`.
@@ -129,11 +125,6 @@ export interface Game {
    * nothing.
    */
   pressKey(key: string, options?: KeyOptions): void;
-  /**
-   * Hear each Judgement as it happens: exactly one per keystroke that counts.
-   * Returns the way to stop listening.
-   */
-  onJudgement(listener: (judgement: Judgement) => void): () => void;
   /**
    * Hear what just happened: each Judgement (a hit names its Drone, lane and
    * finger), Overdrive catching fire, the Stage clear and a purchase. A moment
@@ -147,12 +138,6 @@ export interface Game {
    * Run phase is running: Run Time, the Drones and the telemetry stand still.
    */
   step(count?: number): void;
-  /** Run Time in milliseconds: how long the Run has been running, pauses left out. */
-  getRunTime(): number;
-  getScreen(): Screen;
-  getPhase(): RunPhase;
-  /** The screen that opened this one (what Close returns to), or null when nothing did. */
-  getOpener(): Screen | null;
   /** The settled snapshot. The same object until a move changes something in it. */
   getState(): GameState;
   /**
@@ -163,9 +148,6 @@ export interface Game {
   subscribe(listener: () => void): () => void;
   /** Let go of a key: the Action Deck's pressed keycap lifts. No key lets go of any. */
   releaseKey(key?: string): void;
-  getRun(): Run;
-  getDebrief(): VictoryResult | null;
-  getProfile(): PlayerProfile;
   /**
    * Change some settings: the patch's fields change, and each one's rules
    * apply (a volume of 0 turns its channel off). Saved at once.
@@ -185,10 +167,6 @@ export interface Game {
   wipeAchievements(): void;
   /** Back to a fresh Profile. */
   resetProgress(): void;
-  /** Why the Save was set aside and the player started fresh, or null. */
-  getLoadNotice(): string | null;
-  /** The vanilla store. The Action Deck and tests still read it directly. */
-  readonly store: StoreApi<GameStoreState>;
 }
 
 /** The telemetry tick: every 30 steps, which is 500 ms at 60 steps a second. */
@@ -241,8 +219,6 @@ export function createGame(options: GameOptions): Game {
 
   actor.start();
 
-  const canSend = (event: PlayerEvent) => actor.getSnapshot().can(event);
-
   // Every event, the store's "Run cleared" included, goes through the same
   // check: a move the machine refuses changes nothing and is reported.
   function deliver(event: GameMachineEvent) {
@@ -258,11 +234,15 @@ export function createGame(options: GameOptions): Game {
     return openers[openers.length - 1] ?? null;
   };
 
-  // The Run is made of four things in the store; it is rebuilt only when one
+  // The Run is made of five things in the store; it is rebuilt only when one
   // of them is a different object.
   let builtFrom: Pick<
     GameStoreState,
-    'performance' | 'fallingNotes' | 'currentStage' | 'errorIndices'
+    | 'performance'
+    | 'fallingNotes'
+    | 'currentStage'
+    | 'errorIndices'
+    | 'lastPressedKey'
   > | null = null;
   let builtRun: Run | null = null;
   const buildRun = (state: GameStoreState): Run => {
@@ -271,17 +251,31 @@ export function createGame(options: GameOptions): Game {
       builtFrom?.performance === state.performance &&
       builtFrom.fallingNotes === state.fallingNotes &&
       builtFrom.currentStage === state.currentStage &&
-      builtFrom.errorIndices === state.errorIndices
+      builtFrom.errorIndices === state.errorIndices &&
+      builtFrom.lastPressedKey === state.lastPressedKey
     ) {
       return builtRun;
     }
-    const { performance, fallingNotes, currentStage, errorIndices } = state;
-    builtFrom = { performance, fallingNotes, currentStage, errorIndices };
+    const {
+      performance,
+      fallingNotes,
+      currentStage,
+      errorIndices,
+      lastPressedKey,
+    } = state;
+    builtFrom = {
+      performance,
+      fallingNotes,
+      currentStage,
+      errorIndices,
+      lastPressedKey,
+    };
     builtRun = {
       ...performance,
       drones: fallingNotes,
       currentStage,
       errorIndices,
+      lastPressedKey,
     };
     return builtRun;
   };
@@ -380,37 +374,10 @@ export function createGame(options: GameOptions): Game {
   const actions = () => store.getState();
 
   return {
-    startStage(stageOrId) {
-      if (typeof stageOrId !== 'string') {
-        send({ type: 'LAUNCH_FREE_FLIGHT', stage: stageOrId });
-        return;
-      }
-      if (!getStageById(stageOrId)) {
-        throw new Error(`Unknown Stage: ${stageOrId}`);
-      }
-      send({ type: 'PICK_STAGE', stageId: stageOrId });
-    },
     send,
-    canSend,
     pressKey: (key, pressOptions) =>
       move(() => actions().processKeystroke(key, pressOptions)),
     releaseKey: (key) => move(() => actions().releaseKeystroke(key)),
-    onJudgement(listener) {
-      return onMoment((moment) => {
-        if (!isJudgement(moment)) return;
-        listener(
-          moment.type === 'hit'
-            ? {
-                type: 'hit',
-                grade: moment.grade,
-                key: moment.key,
-                points: moment.points,
-                overdrive: moment.overdrive,
-              }
-            : moment,
-        );
-      });
-    },
     onMoment,
     step(count = 1) {
       move(() => {
@@ -428,10 +395,6 @@ export function createGame(options: GameOptions): Game {
         }
       });
     },
-    getRunTime: () => runClock.runTimeMs(),
-    getScreen,
-    getPhase,
-    getOpener,
     getState: () => snapshot,
     subscribe(listener) {
       listeners.add(listener);
@@ -439,15 +402,10 @@ export function createGame(options: GameOptions): Game {
         listeners.delete(listener);
       };
     },
-    getRun: () => buildRun(store.getState()),
-    getDebrief: () => store.getState().victoryResult,
-    getProfile: () => store.getState().profile,
     changeSettings: (patch) => move(() => actions().changeSettings(patch)),
     buy: (itemId) => move(() => actions().buy(itemId)),
     importBackup: (text) => move(() => actions().importProfile(text)),
     wipeAchievements: () => move(() => actions().wipeCurriculumAchievements()),
     resetProgress: () => move(() => actions().resetProgress()),
-    getLoadNotice: () => store.getState().loadNotice,
-    store,
   };
 }

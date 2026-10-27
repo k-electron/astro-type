@@ -10,7 +10,7 @@ import { trailColor } from '../../game/catalog';
 import { STEP_MS } from '../../game/clock';
 import type { JudgementMoment } from '../../game/moments';
 import { STRIKE_LINE_Y } from '../../game/rules';
-import type { GameStoreState } from '../../game/gameStore';
+import type { GameState } from '../../game/createGame';
 import { pulseOpacity } from './animation';
 import { DeckEffects } from './DeckEffects';
 import { DroneView } from './DroneView';
@@ -32,8 +32,8 @@ import {
 
 export interface DeckSceneOptions {
   resolution: number;
-  /** The live game, read straight from the store. */
-  getState: () => GameStoreState;
+  /** The game's settled snapshot, read each time the deck is drawn. */
+  getState: () => GameState;
   /** A keycap was clicked. */
   onPressKey: (key: KeySpec) => void;
 }
@@ -41,7 +41,8 @@ export interface DeckSceneOptions {
 /**
  * The Action Deck's drawing: the keyboard, the hands, the trench and the
  * Drones. A plain object outside React, drawn into the PixiJS stage it is
- * given. It reads the store each time it is drawn and keeps no copy of the game.
+ * given. It reads the game's snapshot each time it is drawn and keeps no copy
+ * of the game.
  *
  * Layers, bottom to top, as the DOM deck stacks them: the guidance beam,
  * chassis, hands, keycaps, trench, Drones, the ship, and the effects (lasers,
@@ -72,7 +73,7 @@ export class DeckScene {
   /** Effect time, in milliseconds: what the looping decoration is a function of. */
   private timeMs = 0;
   private stateKey = '';
-  private stage: GameStoreState['currentStage'] | null = null;
+  private stage: GameState['run']['currentStage'] | null = null;
   private size = { width: 0, height: STAGE_HEIGHT };
 
   constructor(private readonly options: DeckSceneOptions) {
@@ -259,9 +260,9 @@ export class DeckScene {
     this.effects.draw();
   }
 
-  private updateShip(state: GameStoreState, layout: Layout, d: number): void {
-    const text = state.currentStage.sampleText;
-    const activeChar = text[state.performance.currentCharIndex] || null;
+  private updateShip(state: GameState, layout: Layout, d: number): void {
+    const text = state.run.currentStage.sampleText;
+    const activeChar = text[state.run.currentCharIndex] || null;
     const rect = activeChar ? layout.keys.get(keyId(activeChar)) : undefined;
     const lane = activeChar ? getNoteLaneAndFinger(activeChar).lane : null;
     // No lane for the next character: the beam takes the equipped trail's colour.
@@ -334,8 +335,8 @@ export class DeckScene {
     // A Miss, or a shield that took it: the ship fires at the key that was struck.
     const pressed = judgement.key;
     const pressedRect = layout.keys.get(keyId(pressed));
-    const text = state.currentStage.sampleText;
-    const activeChar = text[state.performance.currentCharIndex] || null;
+    const text = state.run.currentStage.sampleText;
+    const activeChar = text[state.run.currentCharIndex] || null;
     const expected = activeChar
       ? layout.keys.get(keyId(activeChar))
       : undefined;
@@ -367,16 +368,17 @@ export class DeckScene {
     });
   }
 
-  private updateKeysAndHands(state: GameStoreState, layout: Layout): void {
-    const { performance, currentStage, lastPressedKey } = state;
+  private updateKeysAndHands(state: GameState, layout: Layout): void {
+    const { run } = state;
+    const { currentStage, lastPressedKey } = run;
     const keyboardVisible = state.profile.keyboardVisible;
     const text = currentStage.sampleText;
-    const stateKey = `${currentStage.id}|${performance.currentCharIndex}|${lastPressedKey}|${keyboardVisible}|${text.length}`;
+    const stateKey = `${currentStage.id}|${run.currentCharIndex}|${lastPressedKey}|${keyboardVisible}|${text.length}`;
     if (stateKey === this.stateKey && currentStage === this.stage) return;
     this.stateKey = stateKey;
     this.stage = currentStage;
 
-    const index = performance.currentCharIndex;
+    const index = run.currentCharIndex;
     const activeChar = text[index] || null;
     const previousChar = index > 0 ? text[index - 1] : null;
     const nextChar = index + 1 < text.length ? text[index + 1] : null;
@@ -439,14 +441,14 @@ export class DeckScene {
   }
 
   private updateDrones(
-    state: GameStoreState,
+    state: GameState,
     layout: Layout,
     motion: DroneMotion,
     fraction: number,
   ): void {
     const { resolution } = this.options;
     const seen = new Set<string>();
-    state.fallingNotes.forEach((note, index) => {
+    state.run.drones.forEach((note, index) => {
       if (note.status === 'PROCESSED') return;
       const rect = layout.keys.get(keyId(note.char));
       // A character with no keycap of its own (a shifted symbol) has no Drone,

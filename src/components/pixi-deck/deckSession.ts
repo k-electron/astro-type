@@ -1,7 +1,8 @@
 import { Application } from 'pixi.js';
-import { game, onFrame } from '../../appGame';
 import type { KeySpec } from '../../data/keyboardLayout';
 import { STEP_MS } from '../../game/clock';
+import type { Game } from '../../game/createGame';
+import type { OnFrame } from '../../game/frameLoop';
 import { isJudgement } from '../../game/moments';
 import { DeckScene } from './DeckScene';
 import { resetPlumeGradients } from './DroneView';
@@ -32,7 +33,7 @@ const MODIFIER_KEYS = new Set([
  * moment later, as a keyboard's keydown and keyup would, so it goes through
  * the game's own Judgement.
  */
-function pressKeycap(spec: KeySpec): void {
+function pressKeycap(game: Game, spec: KeySpec): void {
   if (MODIFIER_KEYS.has(spec.key)) return;
   game.pressKey(spec.key);
   setTimeout(() => game.releaseKey(spec.key), 100);
@@ -55,6 +56,9 @@ async function fontsReady(): Promise<void> {
  * The one PixiJS Application for the whole session. It is made on the first
  * Flight Deck and kept; on Academy Home its wrapper is taken out of the page
  * and nothing is drawn.
+ *
+ * The composition root attaches it: it is given the game it draws, and the
+ * Run clock's frames to draw on.
  *
  * It draws from the Run clock's frame loop: every frame while the Run is
  * running, and while the Run is paused (or cleared) only when something the
@@ -79,7 +83,10 @@ class DeckSession {
   private holdFraction: number | null = null;
   private lastRunTime = 0;
 
-  constructor() {
+  constructor(
+    private readonly game: Game,
+    onFrame: OnFrame,
+  ) {
     this.wrapper.style.cssText = 'position:absolute;inset:0;overflow:hidden;';
     this.wrapper.appendChild(this.canvas);
     this.canvas.style.display = 'block';
@@ -92,27 +99,29 @@ class DeckSession {
     });
     this.resizeObserver.observe(this.wrapper);
 
-    game.store.subscribe((state, previous) => {
-      if (state.fallingNotes !== previous.fallingNotes) {
+    let previous = game.getState();
+    game.subscribe(() => {
+      const state = game.getState();
+      const { run } = state;
+      if (run.drones !== previous.run.drones) {
         // A step moves the Run clock; a hit or a new Run does not.
-        const runTime = game.getRunTime();
-        const stepped = runTime !== this.lastRunTime;
-        this.lastRunTime = runTime;
-        this.motion.update(state.fallingNotes, stepped);
+        const stepped = state.runTime !== this.lastRunTime;
+        this.lastRunTime = state.runTime;
+        this.motion.update(run.drones, stepped);
         if (stepped) this.holdFraction = null;
       }
       // While nothing is drawing on its own, redraw when what the deck shows changes.
       if (
-        state.fallingNotes !== previous.fallingNotes ||
-        state.lastPressedKey !== previous.lastPressedKey ||
-        state.currentStage !== previous.currentStage ||
-        state.performance.currentCharIndex !==
-          previous.performance.currentCharIndex ||
+        run.drones !== previous.run.drones ||
+        run.lastPressedKey !== previous.run.lastPressedKey ||
+        run.currentStage !== previous.run.currentStage ||
+        run.currentCharIndex !== previous.run.currentCharIndex ||
         state.profile.handsVisible !== previous.profile.handsVisible ||
         state.profile.keyboardVisible !== previous.profile.keyboardVisible
       ) {
         this.dirty = true;
       }
+      previous = state;
     });
     // Each Judgement fires the ship exactly once, in the lane it landed on.
     game.onMoment((moment) => {
@@ -158,8 +167,8 @@ class DeckSession {
     this.app = app;
     this.scene = new DeckScene({
       resolution: app.renderer.resolution,
-      getState: () => game.store.getState(),
-      onPressKey: pressKeycap,
+      getState: () => this.game.getState(),
+      onPressKey: (spec) => pressKeycap(this.game, spec),
     });
     app.stage.addChild(this.scene.root);
     if (this.size) this.setSize(this.size.width, this.size.height);
@@ -193,7 +202,8 @@ class DeckSession {
 
   private frame(stepFraction: number): void {
     const { app, scene } = this;
-    const phase = game.getPhase();
+    const { game } = this;
+    const { phase, runTime } = game.getState();
     const running = phase === 'running';
     if (running && !this.wasRunning) this.holdFraction = this.lastFraction;
     this.wasRunning = running;
@@ -201,7 +211,7 @@ class DeckSession {
     // Effects run on the Run clock: none of it passes while the Run is paused.
     const reading = this.fxClock.advance({
       phase,
-      runSteps: game.getRunTime() / STEP_MS,
+      runSteps: runTime / STEP_MS,
       fraction: stepFraction,
       wallMs: performance.now(),
     });
@@ -234,8 +244,17 @@ class DeckSession {
 
 let session: DeckSession | null = null;
 
-/** The session's deck, made on first use. */
-export function getDeckSession(): DeckSession {
-  session ??= new DeckSession();
+/**
+ * The session's deck, made on first use from what the composition root hands
+ * the Flight Deck: the game to draw and the Run clock's frames to draw on.
+ */
+export function getDeckSession({
+  game,
+  onFrame,
+}: {
+  game: Game;
+  onFrame: OnFrame;
+}): DeckSession {
+  session ??= new DeckSession(game, onFrame);
   return session;
 }

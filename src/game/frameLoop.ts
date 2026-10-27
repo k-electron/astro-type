@@ -10,6 +10,9 @@ export interface FrameEnvironment {
   cancel(handle: number): void;
 }
 
+/** Hear every frame of the loop, with how far it is into the next step. Returns the way to stop. */
+export type OnFrame = (listener: (stepFraction: number) => void) => () => void;
+
 /**
  * The Run's frame loop, outside React and PixiJS. Each frame it works out how
  * much real time has passed since the last frame it ran, caps that at
@@ -25,7 +28,7 @@ export interface FrameEnvironment {
  * Returns the function that stops the loop.
  */
 export function startFrameLoop(
-  game: { step(count: number): void; getPhase(): RunPhase },
+  game: { step(count: number): void; getState(): { phase: RunPhase } },
   env: FrameEnvironment,
   onFrame?: (stepFraction: number) => void,
 ): () => void {
@@ -38,7 +41,7 @@ export function startFrameLoop(
     if (stopped) return;
     handle = env.request(frame);
 
-    if (game.getPhase() !== 'running') {
+    if (game.getState().phase !== 'running') {
       lastFrame = null;
       owed = 0;
       onFrame?.(0);
@@ -55,7 +58,9 @@ export function startFrameLoop(
     const steps = Math.floor(owed / STEP_MS);
     if (steps > 0) {
       owed -= steps * STEP_MS;
-      game.step(steps);
+      // One step at a time, so a listener drawing between steps (the Action
+      // Deck's glide) sees each step the Run clock took, not only the last.
+      for (let i = 0; i < steps; i++) game.step(1);
     }
     onFrame?.(owed / STEP_MS);
   };
