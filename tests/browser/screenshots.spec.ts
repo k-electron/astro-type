@@ -67,11 +67,14 @@ const COMPARE = {
   animations: 'disabled',
   caret: 'hide',
   scale: 'css',
-  // Rendering is identical from run to run in one image, so this is only a
-  // little room for anti-aliasing. A visual change that matters (a colour, a
+  // `threshold` is the per-pixel colour tolerance: 0, so any pixel whose
+  // colour differs at all counts. It is the strictest value that stays green
+  // over 10 runs in a row in CI's image (#64): rendering is identical from run
+  // to run there, so no tolerance is needed. `maxDiffPixelRatio` is the share
+  // of pixels allowed to differ; a visual change that matters (a colour, a
   // shape, a position) moves far more pixels than this.
   maxDiffPixelRatio: 0.001,
-  threshold: 0.2,
+  threshold: 0,
 } as const;
 
 // Six different letters, so each Drone is easy to tell apart. The lead ("a")
