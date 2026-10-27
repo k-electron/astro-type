@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
-  freeFlightStage,
   type Game,
   newGame,
+  startFreeFlight,
   typeText,
   WRONG_KEY,
 } from './testHelpers';
@@ -19,7 +19,7 @@ const TEXT = 'abcdef';
 
 function flyingOn(text: string, save?: Record<string, unknown>): Game {
   const game = newGame(save);
-  game.startStage(freeFlightStage(text));
+  startFreeFlight(game, text);
   return game;
 }
 

@@ -1,29 +1,40 @@
 /**
- * Saves a returning player might already have, for `renderGame({ profile })`
- * and the browser tests' `seedSave`. Fields left out of a Save take their
+ * The one place a test builds a Save. Every layer starts from these: the unit
+ * tests (`createMemoryStorage(save)`), the DOM tests (`renderGame({ profile })`)
+ * and the browser tests (`seedSave`). Fields left out of a Save take their
  * defaults, as they do for a real one. This imports from no test runner, so
  * every layer of tests can use it.
  */
 
-/** A Profile's Stage progress: each Stage id cleared with that many Stars. */
-export function clearedStages(
-  stars: Record<string, number>,
+/** One Stage's progress, cleared with `stars` Stars. `overrides` change any field. */
+export function stageProgress(
+  stageId: string,
+  stars: number,
+  overrides: Record<string, unknown> = {},
 ): Record<string, unknown> {
+  return {
+    stageId,
+    completed: true,
+    starsEarned: stars,
+    highScore: 22150,
+    bestWpm: 31,
+    bestAccuracy: 100,
+    bestStreak: 40,
+    timesPlayed: 2,
+    lastPlayedAt: 1792904921385,
+    ...overrides,
+  };
+}
+
+/** A Profile's Stage progress: each Stage id cleared with that many Stars. */
+export function clearedStages(stars: Record<string, number>): {
+  stagesProgress: Record<string, Record<string, unknown>>;
+} {
   return {
     stagesProgress: Object.fromEntries(
       Object.entries(stars).map(([stageId, starsEarned]) => [
         stageId,
-        {
-          stageId,
-          completed: true,
-          starsEarned,
-          highScore: 22150,
-          bestWpm: 31,
-          bestAccuracy: 100,
-          bestStreak: 40,
-          timesPlayed: 2,
-          lastPlayedAt: 1792904921385,
-        },
+        stageProgress(stageId, starsEarned),
       ]),
     ),
   };
@@ -33,4 +44,92 @@ export function clearedStages(
 export const RETURNING_PLAYER = {
   totalCredits: 1234,
   ...clearedStages({ 's1-l1': 3, 's1-l2': 2 }),
+};
+
+/**
+ * A complete Save in today's format (no `version`): RETURNING_PLAYER's 5 Stars
+ * and 1,234 Credits, plus every other field, each set to something other than
+ * its default so a load that dropped it would show.
+ */
+export function completeSave() {
+  return {
+    ...RETURNING_PLAYER,
+    totalStars: 5,
+    totalKeystrokes: 154,
+    totalErrors: 3,
+    totalWordsTyped: 30,
+    totalPracticeSeconds: 120,
+    highestWpmAllTime: 31,
+    keyAnalytics: {
+      f: { hits: 48, misses: 1 },
+      j: { hits: 48, misses: 2 },
+      ' ': { hits: 58, misses: 0 },
+    },
+    upgrades: {
+      deflectorShields: 1,
+      hyperdriveReactor: 2,
+      precisionSensors: 0,
+      equippedTrailTheme: 'CYAN',
+      equippedAudioCore: 'CYBER_SYNTH',
+      unlockedThemes: ['CYAN'],
+      unlockedAudioCores: ['CYBER_SYNTH'],
+    },
+    soundEnabled: false,
+    soundVolume: 0.3,
+    ambientMusicVolume: 0.1,
+    highwaySpeed: 'FAST',
+    keyboardVisible: false,
+    handsVisible: false,
+    musicEnabled: false,
+    musicVolume: 0.2,
+    beatTheme: 'COSMIC_LOFI',
+    globalMuted: true,
+  };
+}
+
+/**
+ * A Backup exactly as the live game exported it before versions existed: the
+ * file from Analytics after clearing Stage 1 with 3 Stars (trimmed to the
+ * parts the tests look at). It has no `version`, and it carries a stored
+ * `totalStars`, which the game now computes instead. This is a fixture on
+ * purpose, not a builder: its historical shape is what is under test.
+ */
+export const OLD_LIVE_EXPORT = {
+  totalCredits: 491,
+  totalStars: 3,
+  totalKeystrokes: 77,
+  totalErrors: 0,
+  totalWordsTyped: 15,
+  totalPracticeSeconds: 11,
+  highestWpmAllTime: 82,
+  stagesProgress: {
+    's1-l1': stageProgress('s1-l1', 3, {
+      highScore: 33275,
+      bestWpm: 82,
+      bestAccuracy: 100,
+      bestStreak: 77,
+      timesPlayed: 1,
+      lastPlayedAt: 1792937667247,
+    }),
+  },
+  keyAnalytics: { f: { hits: 24, misses: 0 }, ' ': { hits: 29, misses: 0 } },
+  upgrades: {
+    deflectorShields: 0,
+    hyperdriveReactor: 0,
+    precisionSensors: 0,
+    equippedTrailTheme: 'CYAN',
+    equippedAudioCore: 'CYBER_SYNTH',
+    unlockedThemes: ['CYAN'],
+    unlockedAudioCores: ['CYBER_SYNTH'],
+  },
+  soundEnabled: true,
+  soundVolume: 0.7,
+  ambientMusicVolume: 0.25,
+  highwaySpeed: 'NORMAL',
+  keyboardVisible: true,
+  handsVisible: true,
+  musicEnabled: true,
+  musicVolume: 0.4,
+  beatTheme: 'NEON_SYNTHWAVE',
+  globalMuted: false,
 };

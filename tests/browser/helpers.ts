@@ -109,64 +109,9 @@ export async function startFirstStage(page: Page) {
   );
 }
 
-// ---------------------------------------------------------------------------
-// Menus: the header's four screen buttons, and how a menu is closed.
-// ---------------------------------------------------------------------------
-
-/** The header's screen buttons, and the heading of the screen each one opens. */
-export const MENUS = {
-  'Galaxy Map': { header: 'Sectors', heading: 'Flight Sectors & Missions' },
-  Hangar: { header: 'Hangar', heading: 'Starship Hangar Upgrades' },
-  Analytics: { header: 'Analytics', heading: 'Typing Analytics & Heatmap' },
-  'Free Flight': { header: 'Free Flight', heading: 'Custom Typing Practice' },
-} as const;
-
-export type MenuName = keyof typeof MENUS;
-
-export const headerButton = (page: Page, name: string): Locator =>
-  page.getByRole('navigation').getByRole('button', { name, exact: true });
-
-/** A menu's heading: present while that screen is showing. */
-export const menuHeading = (page: Page, menu: MenuName): Locator =>
-  page.getByRole('heading', { name: MENUS[menu].heading });
-
 /** The Pause Menu's heading: present while the Run is paused behind it. */
 export const pauseMenu = (page: Page): Locator =>
   page.getByRole('heading', { name: 'Mission Paused' });
-
-/**
- * What each way of leaving a menu is called: "Back to" and the name of the
- * screen it returns to, as the player reads that screen's name today.
- */
-export const BACK_TO = {
-  academy: 'Back to Academy',
-  pauseMenu: 'Back to Pause Menu',
-  debriefing: 'Back to Debriefing',
-  galaxyMap: 'Back to Sectors',
-  hangar: 'Back to Hangar',
-  analytics: 'Back to Analytics',
-  freeFlight: 'Back to Free Flight',
-} as const;
-
-/**
- * The button that closes a menu. The spec calls it Close; the player sees it
- * read "Back to <the screen it returns to>" (decided in #35). This accepts
- * every one of those, so the journeys that only need to get out of a menu do
- * not depend on which opener they came from. `back-labels.spec.ts` is where
- * each label is pinned to its opener.
- */
-export const closeButton = (page: Page): Locator =>
-  page.getByRole('button', {
-    name: new RegExp(`^(${Object.values(BACK_TO).join('|')})$`),
-  });
-
-/** The Debrief's heading line, present while a cleared Run is being shown. */
-export const debriefHeading = (page: Page): Locator =>
-  page.getByText(/Mission Debriefing/);
-
-/** The notice a Debrief shows when the Run just cleared opened a new Sector. */
-export const sectorUnlockedBanner = (page: Page): Locator =>
-  page.getByText(/New Sector Unlocked/);
 
 /**
  * Starts the game with a Save the player already has (see
@@ -183,15 +128,6 @@ export async function seedSave(page: Page, save: unknown): Promise<void> {
     },
     { key: 'astrotype_profile_v1', value: JSON.stringify(save) },
   );
-}
-
-export async function openMenu(page: Page, menu: MenuName) {
-  await headerButton(page, MENUS[menu].header).click();
-  await expect(menuHeading(page, menu)).toBeVisible();
-}
-
-export async function closeMenu(page: Page) {
-  await closeButton(page).click();
 }
 
 /** Types the first Stage to its last character; the Debrief follows. */

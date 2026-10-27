@@ -1,60 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { z } from 'zod';
 import { CURRICULUM_SECTORS, FINGER_LANES, KEY_FINGER_MAP } from './curriculum';
 
 // The curriculum is checked here, not at load (#11, #27). Every rule below
-// fails only when a Stage would break for the player.
-
-const StarThresholdsSchema = z.object({
-  oneStarAccuracy: z.number().min(0).max(100),
-  twoStarWpm: z.number().positive(),
-  twoStarAccuracy: z.number().min(0).max(100),
-  threeStarWpm: z.number().positive(),
-  threeStarAccuracy: z.number().min(0).max(100),
-  threeStarMinStreak: z.number().int().positive(),
-});
-
-const StageSchema = z.object({
-  id: z.string().min(1),
-  sectorId: z.string().min(1),
-  stageNumber: z.number().int().positive(),
-  title: z.string().min(1),
-  subtitle: z.string(),
-  description: z.string(),
-  targetKeys: z.array(z.string().min(1)),
-  sampleText: z.string().min(1),
-  difficulty: z.enum(['Beginner', 'Intermediate', 'Advanced', 'Expert']),
-  targetWpm: z.number().positive(),
-  starThresholds: StarThresholdsSchema,
-  timeLimitSeconds: z.number().positive().optional(),
-  focusFingers: z.string().optional(),
-  techniqueTip: z.string().optional(),
-  drillPatternType: z
-    .enum([
-      'ANCHOR_CALIBRATION',
-      'FINGER_EXPANSION',
-      'ANCHOR_REACH_RETURN',
-      'HAND_ALTERNATION',
-      'VOWEL_REACH',
-      'CADENCE_FLOW',
-      'SHIFT_DISCIPLINE',
-    ])
-    .optional(),
-});
-
-const SectorSchema = z.object({
-  id: z.string().min(1),
-  name: z.string().min(1),
-  codenick: z.string(),
-  curriculumCategory: z.string(),
-  description: z.string(),
-  requiredStarsToUnlock: z.number().int().min(0),
-  stages: z.array(StageSchema).min(1),
-  accentColor: z.string(),
-  themeSymbol: z.string(),
-});
-
-const CurriculumSchema = z.array(SectorSchema).min(1);
+// fails only when a Stage would break for the player. The shape of a Sector
+// and a Stage is the `Sector` and `Stage` types in src/types/game.ts, which
+// `CURRICULUM_SECTORS` is declared with, so the typecheck already holds it;
+// what a type cannot say is checked here.
 
 const sectors = CURRICULUM_SECTORS;
 const stages = sectors.flatMap((sector) => sector.stages);
@@ -71,9 +22,34 @@ function keyFor(char: string) {
 }
 
 describe('curriculum', () => {
-  it('matches the schema', () => {
-    const result = CurriculumSchema.safeParse(sectors);
-    expect(result.error?.issues ?? []).toEqual([]);
+  it('gives every Sector Stages, and every Stage something to type at a bar a player can reach', () => {
+    const problems: string[] = [];
+    for (const sector of sectors) {
+      if (sector.stages.length === 0)
+        problems.push(`${sector.id} has no Stages`);
+    }
+    for (const { id, sampleText, targetWpm, starThresholds: t } of stages) {
+      if (sampleText.length === 0) problems.push(`${id}: no text to type`);
+      if (!(targetWpm > 0)) problems.push(`${id}: target WPM is not positive`);
+      for (const accuracy of [
+        t.oneStarAccuracy,
+        t.twoStarAccuracy,
+        t.threeStarAccuracy,
+      ]) {
+        if (!(accuracy >= 0 && accuracy <= 100)) {
+          problems.push(`${id}: accuracy ${accuracy} is not a percentage`);
+        }
+      }
+      if (!(t.twoStarWpm > 0 && t.threeStarWpm > 0)) {
+        problems.push(`${id}: a star WPM is not positive`);
+      }
+      if (
+        !(Number.isInteger(t.threeStarMinStreak) && t.threeStarMinStreak > 0)
+      ) {
+        problems.push(`${id}: the 3-star Streak is not a whole number above 0`);
+      }
+    }
+    expect(problems).toEqual([]);
   });
 
   it('puts every Stage in the Sector that lists it', () => {

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { clearedStages } from '../shared/saves';
 import { renderGame, screen } from './harness';
 
 describe('Academy Home', () => {
@@ -25,23 +26,7 @@ describe('Academy Home', () => {
   });
 
   it('shows the Stars of a player who has already cleared a Stage', () => {
-    renderGame({
-      profile: {
-        stagesProgress: {
-          's1-l1': {
-            stageId: 's1-l1',
-            completed: true,
-            starsEarned: 2,
-            highScore: 22150,
-            bestWpm: 31,
-            bestAccuracy: 100,
-            bestStreak: 40,
-            timesPlayed: 2,
-            lastPlayedAt: 1792904921385,
-          },
-        },
-      },
-    });
+    renderGame({ profile: clearedStages({ 's1-l1': 2 }) });
 
     expect(screen.getByText(/2 Stars Earned/)).toBeTruthy();
   });

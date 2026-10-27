@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
+import { clearedStages } from '../../tests/shared/saves';
 import {
   clearStage,
-  freeFlightStage,
   newGame,
   STAGE_ID,
+  startFreeFlight,
+  startStage,
   typeText,
 } from './testHelpers';
 
@@ -13,39 +15,17 @@ import {
  * Stars: Sector 02 needs 6. Free Flight Stars count toward the fleet too.
  */
 
-/** A Save with these Stages cleared at these Stars, the way the game stores it. */
-function savedStars(stars: Record<string, number>) {
-  return {
-    stagesProgress: Object.fromEntries(
-      Object.entries(stars).map(([stageId, starsEarned]) => [
-        stageId,
-        {
-          stageId,
-          completed: true,
-          starsEarned,
-          highScore: 22150,
-          bestWpm: 31,
-          bestAccuracy: 100,
-          bestStreak: 40,
-          timesPlayed: 2,
-          lastPlayedAt: 1792904921385,
-        },
-      ]),
-    ),
-  };
-}
-
 /** Clear Stage 1 in a minute, no Misses: 3 Stars. */
 function clearStage1(save?: Record<string, unknown>) {
   const game = newGame(save);
-  game.startStage(STAGE_ID);
+  startStage(game, STAGE_ID);
   clearStage(game, { seconds: 60 });
   return game;
 }
 
 function clearFreeFlight(save?: Record<string, unknown>) {
   const game = newGame(save);
-  game.startStage(freeFlightStage('ab'));
+  startFreeFlight(game, 'ab');
   typeText(game, 'ab');
   return game;
 }
@@ -53,7 +33,7 @@ function clearFreeFlight(save?: Record<string, unknown>) {
 describe('the Sector unlock notice in the Debrief', () => {
   it('shows when the Run just cleared took the fleet to 6 Stars', () => {
     // 3 Stars so far: clearing Stage 1 for 3 Stars takes the fleet to 6.
-    const game = clearStage1(savedStars({ 's1-l2': 3 }));
+    const game = clearStage1(clearedStages({ 's1-l2': 3 }));
 
     expect(game.getDebrief()?.starsEarned).toBe(3);
     expect(game.getDebrief()?.unlockedSector).toBe(true);
@@ -61,7 +41,7 @@ describe('the Sector unlock notice in the Debrief', () => {
 
   it('shows when a Free Flight clear is what took the fleet to 6 Stars', () => {
     // 5 Stars so far: any Star from a Free Flight reaches 6.
-    const game = clearFreeFlight(savedStars({ 's1-l1': 3, 's1-l2': 2 }));
+    const game = clearFreeFlight(clearedStages({ 's1-l1': 3, 's1-l2': 2 }));
 
     expect(game.getScreen()).toBe('debrief');
     expect(game.getDebrief()?.starsEarned).toBeGreaterThan(0);
@@ -80,7 +60,7 @@ describe('the Sector unlock notice in the Debrief', () => {
   it('is absent when the Sector the Stars would open was already open', () => {
     // 6 Stars already open Sector 02. Replaying Stage 1 for 3 Stars adds
     // nothing new, and a Sector open before the Run is not unlocked by it.
-    const game = clearStage1(savedStars({ 's1-l1': 3, 's1-l2': 3 }));
+    const game = clearStage1(clearedStages({ 's1-l1': 3, 's1-l2': 3 }));
 
     expect(game.getDebrief()?.starsEarned).toBe(3);
     expect(game.getDebrief()?.unlockedSector).toBe(false);

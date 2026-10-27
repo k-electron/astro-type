@@ -1,7 +1,13 @@
 import { expect, it } from 'vitest';
 import { createRecordingSound } from '../../tests/shared/recordingSound';
-import { createGame, createMemoryStorage } from './createGame';
-import { hitPerfect, miss, SAMPLE_TEXT, STAGE_ID } from './testHelpers';
+import {
+  hitPerfect,
+  loadGame,
+  miss,
+  SAMPLE_TEXT,
+  STAGE_ID,
+  startStage,
+} from './testHelpers';
 
 /**
  * What the player hears, moment by moment through one scripted Run: whether
@@ -19,10 +25,7 @@ const hits = (count: number) => Array.from({ length: count }, () => HIT);
 
 it('sounds right at every moment of a Run', () => {
   const sound = createRecordingSound();
-  const game = createGame({
-    storage: createMemoryStorage({ totalCredits: 5000 }),
-    effects: sound.effects,
-  });
+  const { game } = loadGame({ totalCredits: 5000 }, sound.effects);
   const settings = () => game.store.getState();
 
   /** Assert the moment: is the beat sounding, is the Overdrive layer on, and which cues just fired. */
@@ -66,7 +69,7 @@ it('sounds right at every moment of a Run', () => {
   heard('menu, muted and unmuted', { beat: false, overdrive: false });
 
   // Start: the beat comes in, Overdrive off.
-  game.startStage(STAGE_ID);
+  startStage(game, STAGE_ID);
   heard('Run started', { beat: true, overdrive: false });
 
   // Misses at the start: a cue each, the beat plays on.

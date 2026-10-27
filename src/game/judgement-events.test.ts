@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { Judgement } from './createGame';
 import {
   type Game,
   hitPerfect,
@@ -13,25 +14,17 @@ import {
  * event, and a key that doesn't count (or an auto-repeat keydown) produces none
  * and changes nothing.
  *
- * Distances are the ones in judgement.test.ts: on the first Stage at normal
- * speed the lead Drone starts 22 from the Strike Line and closes 1.5 a step.
+ * The grade a keystroke gets is by its distance to the Strike Line (y = 84).
+ * On the first Stage at normal speed the lead Drone starts 22 from it and
+ * closes 1.5 a step. The windows are 8 for Perfect and 16 for Great, and each
+ * level of Precision Sensors widens both by 3.5. This file holds the one table
+ * of those windows.
  */
-
-type Judgement =
-  | {
-      type: 'hit';
-      grade: 'perfect' | 'great' | 'good';
-      key: string;
-      points: number;
-      overdrive: boolean;
-    }
-  | { type: 'miss'; key: string }
-  | { type: 'shield'; key: string };
 
 /** Collects every Judgement event the game announces from now on. */
 function listen(game: Game): Judgement[] {
   const events: Judgement[] = [];
-  game.onJudgement((event) => events.push(event as Judgement));
+  game.onJudgement((event) => events.push(event));
   return events;
 }
 
@@ -39,11 +32,18 @@ describe('a hit', () => {
   it.each([
     // [Sensors level, steps before pressing, distance, grade, points at x1]
     [0, 0, 22, 'good', 50],
+    [0, 3, 17.5, 'good', 50],
     [0, 4, 16, 'great', 75], // the Great window's edge is inclusive
+    [0, 9, 8.5, 'great', 75],
     [0, 10, 7, 'perfect', 100],
-    [0, 40, 0, 'perfect', 100], // the Drone waits on the Strike Line
+    [0, 15, 0, 'perfect', 100], // waiting on the Strike Line
+    [0, 40, 0, 'perfect', 100], // the Drone waits; there is no timeout
     [1, 0, 22, 'good', 50],
-    [2, 0, 22, 'great', 75], // Sensors widen the windows
+    [1, 6, 13, 'great', 75],
+    [1, 7, 11.5, 'perfect', 100], // Perfect window is 8 + 3.5, inclusive
+    [2, 0, 22, 'great', 75], // Great window is 16 + 7 = 23
+    [3, 0, 22, 'great', 75],
+    [3, 2, 19, 'great', 75], // Perfect window is 18.5
     [3, 3, 17.5, 'perfect', 100],
   ] as const)(
     'with Sensors level %i, %i steps in (%s from the line) is %s',
@@ -208,10 +208,8 @@ describe('one event per counted keystroke', () => {
     const game = startedGame();
     const first: Judgement[] = [];
     const second: Judgement[] = [];
-    const stopFirst = game.onJudgement((event) =>
-      first.push(event as Judgement),
-    );
-    game.onJudgement((event) => second.push(event as Judgement));
+    const stopFirst = game.onJudgement((event) => first.push(event));
+    game.onJudgement((event) => second.push(event));
 
     game.pressKey('x');
     stopFirst();

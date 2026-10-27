@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CURRICULUM_SECTORS } from '../data/curriculum';
-import { RefusedMoveError } from './createGame';
+import { type PlayerEvent, RefusedMoveError, type Screen } from './createGame';
 import {
   clearStage,
   type Game,
@@ -8,6 +8,7 @@ import {
   newGame,
   STAGE_ID,
   startedGame,
+  startStage,
   targetKey,
 } from './testHelpers';
 
@@ -17,8 +18,6 @@ import {
  * ends up and what happens to the Run, never a copy of the transition table.
  */
 
-type PlayerEvent = Parameters<Game['send']>[0];
-type Screen = ReturnType<Game['getScreen']>;
 type Opener = 'galaxy-map' | 'hangar' | 'analytics' | 'free-flight';
 
 const OPENERS: Opener[] = ['galaxy-map', 'hangar', 'analytics', 'free-flight'];
@@ -398,7 +397,7 @@ describe('Next Stage on the Debrief', () => {
   /** A game that has just cleared this Stage, so its Debrief is showing. */
   function clearedStage(stageId: string): Game {
     const game = newGame();
-    game.startStage(stageId);
+    startStage(game, stageId);
     finishRun(game);
     expect(game.getScreen(), stageId).toBe('debrief');
     return game;

@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { clearStage, newGame, STAGE_ID, startedGame } from './testHelpers';
+import { stageProgress } from '../../tests/shared/saves';
+import {
+  clearStage,
+  newGame,
+  STAGE_ID,
+  startedGame,
+  startStage,
+} from './testHelpers';
 
 /**
  * Stars, Credits and the Profile after clearing Stage 1 (s1-l1), read from the Debrief.
@@ -113,7 +120,7 @@ describe('Stars from WPM, accuracy and Streak', () => {
     };
 
     const game = newGame();
-    game.startStage(strictStage);
+    game.send({ type: 'LAUNCH_FREE_FLIGHT', stage: strictStage });
     clearStage(game, { seconds: 60 });
     const debrief = debriefOf(game);
     expect(debrief.wpm).toBe(15);
@@ -125,19 +132,15 @@ describe('Stars from WPM, accuracy and Streak', () => {
   it('a worse replay keeps the best result and awards no new Stars', () => {
     const game = newGame({
       stagesProgress: {
-        [STAGE_ID]: {
-          stageId: STAGE_ID,
-          completed: true,
-          starsEarned: 3,
+        [STAGE_ID]: stageProgress(STAGE_ID, 3, {
           highScore: 50000,
           bestWpm: 20,
-          bestAccuracy: 100,
           bestStreak: 77,
           timesPlayed: 1,
-        },
+        }),
       },
     });
-    game.startStage(STAGE_ID);
+    startStage(game, STAGE_ID);
     clearStage(game, { seconds: 90 }); // 2 Stars
 
     const debrief = debriefOf(game);

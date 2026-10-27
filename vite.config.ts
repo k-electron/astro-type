@@ -18,7 +18,7 @@ export default defineConfig({
       },
       {
         // React screens, in a DOM with no browser and no WebGL. See
-        // docs/agents/dom-tests.md.
+        // docs/agents/testing.md.
         extends: true,
         test: {
           name: 'dom',

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { type FrameEnvironment, startFrameLoop } from './frameLoop';
-import { newGame, startedGame } from './testHelpers';
+import { newGame, STAGE_ID, startedGame, startStage } from './testHelpers';
 
 /**
  * The frame loop turns the browser's frames into Run clock steps. These tests
@@ -148,7 +148,7 @@ describe('the frame loop reporting each frame', () => {
     browser.frame(100);
     expect(reported).toEqual([0]);
 
-    game.startStage('s1-l1');
+    startStage(game, STAGE_ID);
     browser.frame(0); // the frame that starts the count
     browser.frame(25);
     reported.length = 0;

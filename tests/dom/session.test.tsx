@@ -1,34 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { renderGame, screen } from './harness';
 
-describe('leaving the page mid-Run', () => {
-  it('pauses the Run when the window loses focus', () => {
-    const player = renderGame({ text: 'ff jj' });
-    player.type('f');
-
-    player.blur();
-
-    expect(screen.getByRole('dialog', { name: 'Mission Paused' })).toBeTruthy();
-  });
-
-  it('pauses the Run when the tab is hidden', () => {
-    const player = renderGame({ text: 'ff jj' });
-
-    player.hideTab();
-
-    expect(screen.getByRole('dialog', { name: 'Mission Paused' })).toBeTruthy();
-  });
-
-  it('does not pause on Academy Home', () => {
-    const player = renderGame();
-
-    player.blur();
-    player.hideTab();
-
-    expect(screen.queryByRole('dialog')).toBeNull();
-  });
-});
-
 describe('reloading the page', () => {
   it('brings back what the game saved and drops the Run', () => {
     const player = renderGame({ text: 'ff jj' });

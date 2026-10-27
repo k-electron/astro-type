@@ -1,11 +1,10 @@
 import { describe, expect, it } from 'vitest';
+import {
+  REFUSED_BACKUP_MESSAGE,
+  UNREADABLE_SAVE_NOTICE,
+} from '../../src/game/save';
 import { type Player, renderGame, screen } from './harness';
-import { clearedStages, RETURNING_PLAYER } from '../shared/saves';
-
-const NOTICE =
-  "Your saved progress couldn't be read, so you're starting fresh.";
-const REFUSAL =
-  "That file isn't a Backup this game can read, so your progress was left as it was.";
+import { OLD_LIVE_EXPORT, RETURNING_PLAYER } from '../shared/saves';
 
 const stars = (count: number) =>
   screen.getByRole('button', { name: new RegExp(`^${count}\\s*★$`) });
@@ -26,7 +25,7 @@ describe('a returning player', () => {
 
     expect(stars(5)).toBeTruthy();
     expect(credits('1,234')).toBeTruthy();
-    expect(screen.queryByText(NOTICE)).toBeNull();
+    expect(screen.queryByText(UNREADABLE_SAVE_NOTICE)).toBeNull();
     expect(sectorOneStars(player)).toContain('5/12');
   });
 
@@ -50,7 +49,7 @@ describe('a returning player', () => {
 
     expect(stars(5)).toBeTruthy();
     expect(credits('0')).toBeTruthy();
-    expect(screen.queryByText(NOTICE)).toBeNull();
+    expect(screen.queryByText(UNREADABLE_SAVE_NOTICE)).toBeNull();
     // Audio is not muted by default, so the header offers to mute it.
     expect(screen.getByRole('button', { name: 'Mute All Audio' })).toBeTruthy();
     player.click('Start Mission');
@@ -80,7 +79,7 @@ describe('a first visit and a Save that cannot be read', () => {
       profile: { ...RETURNING_PLAYER, totalCredits: 'lots' },
     });
 
-    expect(screen.getByText(NOTICE)).toBeTruthy();
+    expect(screen.getByText(UNREADABLE_SAVE_NOTICE)).toBeTruthy();
     expect(
       screen.getByRole('heading', { name: /AstroType/, level: 1 }),
     ).toBeTruthy();
@@ -93,21 +92,11 @@ describe('a first visit and a Save that cannot be read', () => {
 });
 
 describe('Import Backup and Factory Reset', () => {
-  /** A Backup exported before versions existed: no `version` at all. */
-  const OLD_EXPORT = {
-    totalCredits: 491,
-    totalStars: 3,
-    totalKeystrokes: 77,
-    stagesProgress: clearedStages({ 's1-l1': 3 }).stagesProgress,
-    soundEnabled: true,
-    globalMuted: false,
-  };
-
   it('replaces the Profile with an old Backup that has no version', async () => {
     const player = renderGame({ profile: RETURNING_PLAYER });
     player.openHeader('Analytics');
 
-    player.importBackup(JSON.stringify(OLD_EXPORT));
+    player.importBackup(JSON.stringify(OLD_LIVE_EXPORT));
 
     expect(await screen.findByRole('button', { name: /^3\s*★$/ })).toBeTruthy();
     expect(credits('491')).toBeTruthy();
@@ -136,7 +125,9 @@ describe('Import Backup and Factory Reset', () => {
 
     player.importBackup('{}');
 
-    expect((await screen.findByRole('alert')).textContent).toBe(REFUSAL);
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      REFUSED_BACKUP_MESSAGE,
+    );
     expect(stars(5)).toBeTruthy();
     expect(credits('1,234')).toBeTruthy();
   });

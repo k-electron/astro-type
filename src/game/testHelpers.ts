@@ -1,12 +1,30 @@
+/**
+ * The one test-helpers module: it sets up a `Game` through `send` and a Save
+ * seeded from `tests/shared/saves.ts`, and plays it by `pressKey` and `step`.
+ * It imports from no test runner and no React, so a headless test and the DOM
+ * harness both use it.
+ */
+import { getStageById } from '../data/curriculum';
 import type { Stage } from '../types/game';
-import { createGame, createMemoryStorage } from './createGame';
+import {
+  createGame,
+  createMemoryStorage,
+  type Game,
+  type GameEffects,
+  type MemorySaveStorage,
+} from './createGame';
+
+export type { Game } from './createGame';
 
 /** Stage 1 of Sector 1. Its Stars thresholds: 85% / 10 WPM + 92% / 14 WPM + 97% + Streak 14. */
 export const STAGE_ID = 's1-l1';
 
 /** The Stage's sample text (77 characters). The tests type it key by key. */
-export const SAMPLE_TEXT =
-  'f j f j ff jj fff jjj fj jf f j f j ff jj fj jf f f j j f j fj jf ff jj fj jf';
+export const SAMPLE_TEXT = (() => {
+  const stage = getStageById(STAGE_ID);
+  if (!stage) throw new Error(`No Stage has the id ${STAGE_ID}`);
+  return stage.sampleText;
+})();
 
 /** A key that is never a target on this Stage, so pressing it is always a Miss. */
 export const WRONG_KEY = 'x';
@@ -18,18 +36,39 @@ export const WRONG_KEY = 'x';
  */
 const STEPS_TO_REACH_LINE = 30;
 
-export type Game = ReturnType<typeof createGame>;
-type SaveSeed = Parameters<typeof createMemoryStorage>[0];
-
 export interface Upgrades {
   deflectorShields?: number;
   hyperdriveReactor?: number;
   precisionSensors?: number;
 }
 
+/**
+ * A game over an in-memory Save, with the Save's storage to look at. `seed` is
+ * the Save the player already has (any value, even an unreadable one on
+ * purpose); fields left out take their defaults. `effects` is how sound is
+ * attached.
+ */
+export function loadGame(
+  seed?: unknown,
+  effects?: Partial<GameEffects>,
+): { game: Game; storage: MemorySaveStorage } {
+  const storage = createMemoryStorage(seed);
+  return { game: createGame({ storage, effects }), storage };
+}
+
 /** A fresh game over an in-memory Save, optionally seeded (merged over a fresh Profile). */
-export function newGame(seed?: Record<string, unknown>): Game {
-  return createGame({ storage: createMemoryStorage(seed as SaveSeed) });
+export function newGame(seed?: unknown): Game {
+  return loadGame(seed).game;
+}
+
+/** Begin a Run of a curriculum Stage, as the Galaxy Map's Launch Mission does. */
+export function startStage(game: Game, stageId: string): void {
+  game.send({ type: 'PICK_STAGE', stageId });
+}
+
+/** Begin a Free Flight Run of the player's own text, as Launch Custom Flight does. */
+export function startFreeFlight(game: Game, text: string): void {
+  game.send({ type: 'LAUNCH_FREE_FLIGHT', stage: freeFlightStage(text) });
 }
 
 /** A fresh game with the given Upgrade levels, with Stage 1 started. */
@@ -38,7 +77,7 @@ export function startedGame(
   extraSave: Record<string, unknown> = {},
 ): Game {
   const game = newGame({ ...extraSave, upgrades });
-  game.startStage(STAGE_ID);
+  startStage(game, STAGE_ID);
   return game;
 }
 

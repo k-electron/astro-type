@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { CURRICULUM_SECTORS } from '../../src/data/curriculum';
+import { fireEvent } from '@testing-library/react';
 import { MENU_HEADINGS } from '../shared/screens';
 import { type HeaderButton, type Player, renderGame, screen } from './harness';
 
@@ -136,6 +138,25 @@ describe('the Back button of a menu', () => {
   );
 });
 
+describe('the Galaxy Map', () => {
+  it('Launch Mission on a Stage starts that Stage', () => {
+    const [sector] = CURRICULUM_SECTORS;
+    const player = renderGame();
+    player.openHeader('Sectors');
+    player.click(new RegExp(sector.codenick));
+
+    // The Stages are listed in curriculum order, one Launch Mission each.
+    fireEvent.click(
+      screen.getAllByRole('button', { name: 'Launch Mission' })[1],
+    );
+
+    expect(screen.getByRole('button', { name: 'Pause' })).toBeTruthy();
+    expect(screen.getByRole('main').textContent).toContain(
+      sector.stages[1].title,
+    );
+  });
+});
+
 describe('the header buttons', () => {
   const cases = MENU_BUTTONS.flatMap((button) => [
     { button, from: 'the Pause Menu' },
@@ -176,6 +197,9 @@ describe('the header buttons', () => {
       player.openHeader(button);
       player.openHeader(button);
       expect(menuHeading(button)).not.toBeNull();
+      expect(screen.getAllByRole('button', { name: /^Back to / })).toHaveLength(
+        1,
+      );
       closeMenu(player);
 
       expect(menuHeading(button)).toBeNull();

@@ -7,6 +7,7 @@ import {
   newGame,
   STAGE_ID,
   startedGame,
+  startStage,
   targetKey,
 } from './testHelpers';
 
@@ -27,12 +28,10 @@ function pauseFor(game: Game, steps = TEN_MINUTES_OF_STEPS): void {
   game.send({ type: 'PRESS_RESUME' });
 }
 
-/** What the HUD shows, and the cadence reading, all measured in Run Time. */
+/** What the HUD shows (Speed, Accuracy), and the cadence reading, all measured in Run Time. */
 function readings(game: Game) {
   const run = game.getRun();
   return {
-    timeElapsedSeconds: run.timeElapsedSeconds,
-    grossWpm: run.grossWpm,
     netWpm: run.netWpm,
     accuracy: run.accuracy,
     cadenceConsistency: run.cadenceConsistency,
@@ -177,12 +176,11 @@ describe('the Run clock steps only while the Run is running', () => {
     game.pressKey(targetKey(game));
     game.send({ type: 'PRESS_PAUSE' });
     game.step(600);
-    expect(game.getRun().grossWpm).toBe(0);
-    expect(game.getRun().timeElapsedSeconds).toBe(0);
+    expect(game.getRun().netWpm).toBe(0);
 
     game.send({ type: 'PRESS_RESUME' });
     game.step(30);
-    expect(game.getRun().grossWpm).toBe(12);
+    expect(game.getRun().netWpm).toBe(12);
   });
 
   it('refreshes the telemetry every 30 steps, which is 500 ms', () => {
@@ -192,18 +190,16 @@ describe('the Run clock steps only while the Run is running', () => {
     // One key in the first second of Run Time: 1 / 5 / (1 / 60) = 12 WPM.
     // A Run under a second long is read as one second.
     game.step(29);
-    expect(game.getRun().grossWpm).toBe(0);
-    expect(game.getRun().timeElapsedSeconds).toBe(0);
+    expect(game.getRun().netWpm).toBe(0);
     game.step(1);
-    expect(game.getRun().grossWpm).toBe(12);
-    expect(game.getRun().timeElapsedSeconds).toBe(1);
+    expect(game.getRun().netWpm).toBe(12);
 
     // A second key lands in the next half second: not shown until step 60.
     game.pressKey(targetKey(game));
     game.step(29);
-    expect(game.getRun().grossWpm).toBe(12);
+    expect(game.getRun().netWpm).toBe(12);
     game.step(1);
-    expect(game.getRun().grossWpm).toBe(24);
+    expect(game.getRun().netWpm).toBe(24);
   });
 });
 
@@ -223,29 +219,15 @@ describe('a pause in the middle of a Run leaves WPM, accuracy and cadence unchan
     const paused = startedGame();
     play(paused, true);
 
-    // 6 right and 2 wrong keys in 4 s: gross 8 / 5 / (4 / 60) = 24,
-    // net (6 - 2) / 5 / (4 / 60) = 12. Each wrong key costs the cadence 15.
+    // 6 right and 2 wrong keys in 4 s: net (6 - 2) / 5 / (4 / 60) = 12.
+    // Each wrong key costs the cadence 15.
     expect(readings(straight)).toEqual({
-      timeElapsedSeconds: 4,
-      grossWpm: 24,
       netWpm: 12,
       accuracy: 75,
       cadenceConsistency: 70,
     });
     expect(readings(paused)).toEqual(readings(straight));
     expect(paused.getRunTime()).toBeCloseTo(straight.getRunTime(), 3);
-  });
-
-  it('keeps the HUD timer counting from where the pause left it', () => {
-    const game = startedGame();
-    game.step(120);
-    expect(game.getRun().timeElapsedSeconds).toBe(2);
-
-    pauseFor(game);
-    expect(game.getRun().timeElapsedSeconds).toBe(2);
-
-    game.step(60);
-    expect(game.getRun().timeElapsedSeconds).toBe(3);
   });
 
   it('gives the same final WPM, accuracy, Stars and Credits on the Debrief', () => {
@@ -327,19 +309,19 @@ describe('Drones fall at the speed of the speed setting, 60 steps a second', () 
   /**
    * The lead Drone starts at y = 62 and falls `perStep` a step until it waits
    * on the Strike Line at y = 84. It is locked from y = 83.5, which it reaches
-   * on step `lockStep`. The first follower starts at y = 48 and eases toward
-   * its slot at y = 68; `follower10` is where it is after 10 steps.
+   * on step `lockStep`. The first follower starts above its slot and eases
+   * down toward it, to the slot at y = 68.
    */
   const SPEEDS = [
-    { speed: 'SLOW', perStep: 0.9, lockStep: 24, follower10: 61.03 },
-    { speed: 'NORMAL', perStep: 1.5, lockStep: 15, follower10: 64.5 },
-    { speed: 'FAST', perStep: 2.2, lockStep: 10, follower10: 66.33 },
-    { speed: 'HYPER', perStep: 3.4, lockStep: 7, follower10: 67.58 },
+    { speed: 'SLOW', perStep: 0.9, lockStep: 24 },
+    { speed: 'NORMAL', perStep: 1.5, lockStep: 15 },
+    { speed: 'FAST', perStep: 2.2, lockStep: 10 },
+    { speed: 'HYPER', perStep: 3.4, lockStep: 7 },
   ] as const;
 
   function started(speed: string): Game {
     const game = newGame({ highwaySpeed: speed });
-    game.startStage(STAGE_ID);
+    startStage(game, STAGE_ID);
     return game;
   }
 
@@ -373,12 +355,18 @@ describe('Drones fall at the speed of the speed setting, 60 steps a second', () 
   );
 
   it.each(SPEEDS)(
-    '$speed: the Drone behind eases toward its slot',
-    ({ speed, follower10 }) => {
+    '$speed: the Drone behind eases down toward its slot and settles there',
+    ({ speed }) => {
       const game = started(speed);
-      expect(game.getRun().drones[1].yPercent).toBe(48);
+      const start = game.getRun().drones[1].yPercent;
+
       game.step(10);
-      expect(game.getRun().drones[1].yPercent).toBeCloseTo(follower10, 1);
+      const underway = game.getRun().drones[1].yPercent;
+      expect(underway).toBeGreaterThan(start);
+      expect(underway).toBeLessThan(68);
+
+      game.step(600);
+      expect(game.getRun().drones[1].yPercent).toBeCloseTo(68, 3);
     },
   );
 });

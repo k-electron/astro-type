@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createGame } from '../game/createGame';
-import { clearStage, STAGE_ID } from '../game/testHelpers';
+import { UNREADABLE_SAVE_NOTICE } from '../game/save';
+import { clearStage, STAGE_ID, startStage } from '../game/testHelpers';
 import { createLocalStorageSave } from './storage';
 
 /**
@@ -12,8 +13,6 @@ import { createLocalStorageSave } from './storage';
 
 const SAVE_KEY = 'astrotype_profile_v1';
 const UNREADABLE_KEY = 'astrotype_profile_v1_unreadable';
-const NOTICE =
-  "Your saved progress couldn't be read, so you're starting fresh.";
 
 /** What localStorage does, in a Map. */
 function memoryLocalStorage() {
@@ -52,7 +51,7 @@ describe('a Save that cannot be read', () => {
 
     const game = openGame();
 
-    expect(game.getLoadNotice()).toBe(NOTICE);
+    expect(game.getLoadNotice()).toBe(UNREADABLE_SAVE_NOTICE);
     expect(game.getProfile().totalCredits).toBe(0);
     expect(browserStorage.getItem(UNREADABLE_KEY)).toBe(raw);
     expect(browserStorage.getItem(SAVE_KEY)).toBeNull();
@@ -73,7 +72,7 @@ describe('a Save that cannot be read', () => {
     const raw = 'garbage';
     browserStorage.setItem(SAVE_KEY, raw);
     const game = openGame();
-    game.startStage(STAGE_ID);
+    startStage(game, STAGE_ID);
     clearStage(game, { seconds: 60 });
 
     const nextVisit = openGame();
@@ -96,7 +95,7 @@ describe('a first visit', () => {
 describe('a Save that can be read', () => {
   it('brings back what the last visit saved', () => {
     const game = openGame();
-    game.startStage(STAGE_ID);
+    startStage(game, STAGE_ID);
     clearStage(game, { seconds: 60 });
 
     const nextVisit = openGame();

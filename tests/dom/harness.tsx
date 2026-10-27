@@ -1,6 +1,6 @@
 /**
  * The DOM test harness: the real <App /> against a headless game, driven the
- * way a player drives it. Read docs/agents/dom-tests.md before using it.
+ * way a player drives it. Read docs/agents/testing.md ("DOM tests") before using it.
  *
  *   const player = renderGame({ text: 'ff jj' });
  *   player.type('ff jj');
@@ -28,7 +28,6 @@ import {
 } from '@testing-library/react';
 import { afterEach } from 'vitest';
 import App from '../../src/App';
-import { CURRICULUM_SECTORS } from '../../src/data/curriculum';
 import {
   createGame,
   createMemoryStorage,
@@ -36,6 +35,7 @@ import {
   type MemorySaveStorage,
   type RefusedMoveError,
 } from '../../src/game/createGame';
+import { startStage as sendStartStage } from '../../src/game/testHelpers';
 import { GameProvider } from '../../src/store/gameContext';
 
 export { screen, within };
@@ -101,9 +101,12 @@ export interface Player {
    */
   reload(): void;
   /**
-   * Open the Galaxy Map, pick the Sector that holds the Stage, and press its
-   * Launch Mission (or Replay Mission) button, as a player does. The Sector
-   * must be open in the Save. Throws if no Stage has that id.
+   * Begin a Run of a curriculum Stage by id, through the game, as the Galaxy
+   * Map's Launch Mission button does. It does not click through the Galaxy
+   * Map (a Stage's card has no name of its own to find it by), and it does not
+   * check that the Stage's Sector is open: a test that needs to see the
+   * Launch button work clicks it. An id that is no Stage is a refused move,
+   * which fails the test.
    */
   startStage(stageId: string): void;
   /**
@@ -240,36 +243,7 @@ export function renderGame(options: RenderGameOptions = {}): Player {
       mount();
     },
     startStage(stageId) {
-      const sector = CURRICULUM_SECTORS.find((candidate) =>
-        candidate.stages.some((stage) => stage.id === stageId),
-      );
-      const stage = sector?.stages.find(
-        (candidate) => candidate.id === stageId,
-      );
-      if (!sector || !stage) throw new Error(`No Stage has the id ${stageId}`);
-      player.openHeader('Sectors');
-      fireEvent.click(
-        screen.getByRole('button', { name: new RegExp(sector.codenick) }),
-      );
-      // A card has no name of its own to query by. Each Stage shows its title
-      // heading and then its launch button, so the Stage's button is the first
-      // one that comes after its title on the page.
-      const title = screen.getByRole('heading', {
-        level: 4,
-        name: stage.title,
-      });
-      const button = screen
-        .getAllByRole('button', { name: /^(Launch|Replay) Mission$/ })
-        .find(
-          (launch) =>
-            title.compareDocumentPosition(launch) &
-            Node.DOCUMENT_POSITION_FOLLOWING,
-        );
-      if (!button) throw new Error(`No Launch Mission button for ${stageId}`);
-      if ((button as HTMLButtonElement).disabled) {
-        throw new Error(`${stageId} is in a Sector that is still locked`);
-      }
-      fireEvent.click(button);
+      act(() => sendStartStage(game, stageId));
     },
     typePrompt(typeOptions = {}) {
       // Each character of the text is a one-character element of the prompt

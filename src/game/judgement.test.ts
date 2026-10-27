@@ -1,75 +1,39 @@
 import { describe, expect, it } from 'vitest';
+import { multiplierAt } from '../../tests/shared/multiplier';
 import {
   hitPerfect,
   miss,
   newGame,
   STAGE_ID,
   startedGame,
+  startStage,
   targetKey,
 } from './testHelpers';
 
 /**
- * Judgement of one keystroke, read from the points it scores.
- * A first hit on a fresh Run is at Multiplier x1 with Overdrive off, so
- * Perfect = 100, Great = 75, Good = 50.
+ * The rules of scoring, Streak, Multiplier, Overdrive and shields, read from
+ * the Run. The grade a keystroke gets at each distance (and with each level of
+ * Precision Sensors) is in judgement-events.test.ts.
  *
- * The lead Drone starts at y = 62 and falls 1.5 per step at NORMAL speed; the
- * Strike Line is y = 84. After n steps its distance to the line is 22 - 1.5n.
+ * A first hit on a fresh Run is at Multiplier x1 with Overdrive off, so
+ * Perfect = 100, Great = 75, Good = 50. The lead Drone starts at y = 62 and
+ * the Strike Line is y = 84; the speed setting decides how far it falls a step.
  */
 const PERFECT = 100;
 const GREAT = 75;
-const GOOD = 50;
 
 function pointsForFirstHit(opts: {
   stepsBeforePress: number;
-  precisionSensors?: number;
-  highwaySpeed?: string;
+  highwaySpeed: string;
 }): number {
-  const game = newGame({
-    ...(opts.highwaySpeed ? { highwaySpeed: opts.highwaySpeed } : {}),
-    upgrades: { precisionSensors: opts.precisionSensors ?? 0 },
-  });
-  game.startStage(STAGE_ID);
+  const game = newGame({ highwaySpeed: opts.highwaySpeed });
+  startStage(game, STAGE_ID);
   game.step(opts.stepsBeforePress);
   game.pressKey(targetKey(game));
   return game.getRun().score;
 }
 
-describe('Judgement by distance to the Strike Line', () => {
-  it.each([
-    // [steps, distance, expected]
-    [0, 22, GOOD],
-    [3, 17.5, GOOD],
-    [4, 16, GREAT], // exactly on the Great window's edge: inclusive
-    [9, 8.5, GREAT],
-    [10, 7, PERFECT],
-    [15, 0, PERFECT], // waiting on the Strike Line
-    [40, 0, PERFECT], // Drones wait; there is no timeout
-  ])(
-    'without Upgrades, %i steps in (%s from the line) scores %i',
-    (steps, _distance, points) => {
-      expect(pointsForFirstHit({ stepsBeforePress: steps })).toBe(points);
-    },
-  );
-
-  it.each([
-    // [level, steps, distance, expected]
-    [1, 0, 22, GOOD],
-    [1, 6, 13, GREAT],
-    [1, 7, 11.5, PERFECT], // Perfect window is 8 + 3.5 = 11.5, inclusive
-    [2, 0, 22, GREAT], // Great window is 16 + 7 = 23
-    [3, 0, 22, GREAT],
-    [3, 2, 19, GREAT], // Perfect window is 18.5
-    [3, 3, 17.5, PERFECT],
-  ])(
-    'with Precision Sensors level %i, %i steps in (%s from the line) scores %i',
-    (level, steps, _distance, points) => {
-      expect(
-        pointsForFirstHit({ stepsBeforePress: steps, precisionSensors: level }),
-      ).toBe(points);
-    },
-  );
-
+describe('Judgement at each speed', () => {
   it.each([
     // Different speeds put the Drone in a different place after the same steps.
     ['SLOW', 15, GREAT],
@@ -165,6 +129,36 @@ describe('Overdrive', () => {
     expect(run.hyperspaceEnergy).toBe(75);
     expect(run.currentStreak).toBe(0);
     expect(run.multiplier).toBe(1);
+  });
+});
+
+describe('Overdrive after a Miss', () => {
+  it('lights again from the energy the Miss left, and holds through the climb, doubling every hit after the one that lights it', () => {
+    const game = startedGame();
+    hitPerfect(game, 29);
+    miss(game);
+    // A Miss costs 25 of the 100 energy, and each hit fills 3.5.
+    expect(game.getRun().hyperspaceActive).toBe(false);
+    expect(game.getRun().hyperspaceEnergy).toBe(75);
+
+    hitPerfect(game, 7); // 75 + 7 x 3.5 = 99.5: one short
+    expect(game.getRun().hyperspaceActive).toBe(false);
+    hitPerfect(game, 1);
+    expect(game.getRun().hyperspaceActive).toBe(true);
+    expect(game.getRun().currentStreak).toBe(8);
+
+    // From the next hit, 100 x Multiplier x 2, all the way up the Streak.
+    while (game.getRun().currentStreak < 31) {
+      const before = game.getRun().score;
+      hitPerfect(game, 1);
+      const { currentStreak, hyperspaceActive, score } = game.getRun();
+      expect(hyperspaceActive, `Overdrive at Streak ${currentStreak}`).toBe(
+        true,
+      );
+      expect(score - before, `points at Streak ${currentStreak}`).toBe(
+        100 * multiplierAt(currentStreak) * 2,
+      );
+    }
   });
 });
 

@@ -205,6 +205,15 @@ describe('Free Flight', () => {
     expect(debriefCard().textContent).toMatch(/Accuracy\s*100%/);
   });
 
+  it('does not clear the Run one character short', () => {
+    const player = renderGame({ text: 'ff jj' });
+
+    player.type('ff j');
+
+    expect(screen.queryByText(/Mission Debriefing/)).toBeNull();
+    expect(screen.getByRole('button', { name: 'Pause' })).toBeTruthy();
+  });
+
   it('disables Launch for a character that has no key, and names it', () => {
     const player = renderGame();
     player.openHeader('Free Flight');
