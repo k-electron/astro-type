@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { multiplierAt } from '../shared/multiplier';
+import { HUD_NAME } from '../shared/screens';
 import { type Player, renderGame, screen, within } from './harness';
 
 // The Flight Deck as the player reads it: the HUD, the text prompt and its
@@ -11,7 +12,7 @@ const TEXT = 'abcdef';
 
 /** The HUD as one string: "Score0 Speed0WPM Accuracy100% Streak3 ...". */
 const hudText = () =>
-  screen.getByRole('region', { name: 'HUD' }).textContent ?? '';
+  screen.getByRole('region', { name: HUD_NAME }).textContent ?? '';
 
 /** The HUD's Streak readout shows exactly this number. */
 const expectStreak = (streak: number) =>
@@ -35,7 +36,7 @@ const currentCharacters = () =>
 
 /** The "x<n>" tags in the HUD: the Multiplier's, then the shields' if any. */
 const hudTags = () =>
-  within(screen.getByRole('region', { name: 'HUD' }))
+  within(screen.getByRole('region', { name: HUD_NAME }))
     .queryAllByText(/^x\d$/)
     .map((element) => element.textContent);
 
@@ -43,7 +44,7 @@ describe('the HUD and the text prompt', () => {
   it('is a labelled region with the score, speed, accuracy and Streak, and not the text', () => {
     renderGame({ text: TEXT });
 
-    const region = screen.getByRole('region', { name: 'HUD' });
+    const region = screen.getByRole('region', { name: HUD_NAME });
     for (const label of ['Score', 'Speed', 'Accuracy', 'Streak']) {
       expect(within(region).getByText(label)).toBeTruthy();
     }

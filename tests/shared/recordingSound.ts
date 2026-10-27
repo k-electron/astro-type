@@ -2,6 +2,7 @@
 // hear. It imports from no test runner, so any layer of tests can use it.
 
 import type { GameEffects } from '../../src/game/effects';
+import { DEFAULT_PROFILE } from '../../src/game/profile';
 
 /** What is sounding right now. */
 export interface Heard {
@@ -29,9 +30,9 @@ export interface RecordingSound {
 export function createRecordingSound(): RecordingSound {
   let beat = false;
   let overdrive = false;
-  let muted = false;
-  let musicEnabled = true;
-  let musicVolume = 0.4;
+  let muted = DEFAULT_PROFILE.globalMuted;
+  let musicEnabled = DEFAULT_PROFILE.musicEnabled;
+  let musicVolume = DEFAULT_PROFILE.musicVolume;
   let cues: string[] = [];
   const cue = (name: string) => cues.push(name);
 

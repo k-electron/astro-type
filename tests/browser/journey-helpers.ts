@@ -1,6 +1,6 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 import { BANNED_NAME } from '../shared/names';
-import { drone, hud, launchFreeFlight } from './helpers';
+import { drone, hud, launchFreeFlight, pauseMenu } from './helpers';
 
 // Helpers shared by the journeys, CI's and the local-only ones. Like
 // helpers.ts, they find things the way a player sees them: by role and visible
@@ -62,17 +62,13 @@ export const resumeButton = (page: Page): Locator =>
  */
 export async function waitForDeck(page: Page, first: string) {
   await pauseButton(page).click();
-  await expect(
-    page.getByRole('heading', { name: 'Mission Paused' }),
-  ).toBeVisible();
+  await expect(pauseMenu(page)).toBeVisible();
   await expect(async () => {
     await page.clock.runFor(50);
     await expect(drone(page, first)).toBeVisible({ timeout: 250 });
   }).toPass({ timeout: 20_000 });
   await resumeButton(page).click();
-  await expect(
-    page.getByRole('heading', { name: 'Mission Paused' }),
-  ).toBeHidden();
+  await expect(pauseMenu(page)).toBeHidden();
 }
 
 /**

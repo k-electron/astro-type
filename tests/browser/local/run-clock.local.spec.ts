@@ -1,5 +1,6 @@
 import { expect, type Page, test } from '@playwright/test';
-import { debrief, promptProgress } from '../helpers';
+import { debrief, pauseMenu, promptProgress } from '../helpers';
+import { DEBRIEF_TITLE } from '../../shared/screens';
 import {
   hudScore,
   hudSpeed,
@@ -58,16 +59,12 @@ async function speedStillNear(page: Page, before: number, drop: number) {
 
 async function pause(page: Page) {
   await pauseButton(page).click();
-  await expect(
-    page.getByRole('heading', { name: 'Mission Paused' }),
-  ).toBeVisible();
+  await expect(pauseMenu(page)).toBeVisible();
 }
 
 async function resume(page: Page) {
   await resumeButton(page).click();
-  await expect(
-    page.getByRole('heading', { name: 'Mission Paused' }),
-  ).toBeHidden();
+  await expect(pauseMenu(page)).toBeHidden();
 }
 
 /** Type one key after `ms` of Run time has gone by. */
@@ -91,7 +88,7 @@ test('a pause in the middle of a Run does not drag the final Speed or the Rhythm
   for (const key of 'def') await pressAfter(page, 1000, key);
 
   const result = debrief(page);
-  await expect(result).toContainText(/Mission Debriefing/i);
+  await expect(result).toContainText(DEBRIEF_TITLE);
   // Counting the pause it would be 6 / 5 / (306 / 60) = 0 WPM and a 30% rhythm.
   await expect(result).toContainText(/Speed\s*12\s*WPM/i);
   await expect(result).toContainText(/Rhythm:\s*\d+% \(Steady\)/i);

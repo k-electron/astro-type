@@ -15,7 +15,7 @@ A test that restates the code is a change detector: delete it. That covers check
 ## Starting a test
 
 Every layer starts from the same two modules, so no test builds a Save or sets up a `Game` of its own:
-- **`tests/shared/saves.ts`** builds every Save. `stageProgress(id, stars, overrides?)` is one Stage's entry; `clearedStages({ 's1-l1': 3 })` is a Profile's Stage progress; `RETURNING_PLAYER` is 5 Stars in all and 1,234 Credits; `completeSave()` is a complete Save in today's format with every field set off its default; `OLD_LIVE_EXPORT` is a fixture, the Backup the game exported before versions existed. Pass one to `createMemoryStorage` or `loadGame` (unit), `renderGame({ profile })` (DOM) or `seedSave` from `tests/browser/helpers.ts` (browser). Add a Save here, never as a local copy. The folder also holds `names.ts` (the words the game never says), `multiplier.ts` (the Multiplier steps) and `screens.ts` (the heading of each menu). It imports from no test runner, so every layer can use it.
+- **`tests/shared/saves.ts`** builds every Save. `stageProgress(id, stars, overrides?)` is one Stage's entry; `clearedStages({ 's1-l1': 3 })` is a Profile's Stage progress; `RETURNING_PLAYER` is 5 Stars in all and 1,234 Credits; `completeSave()` is a complete Save in today's format with every field set off its default; `OLD_LIVE_EXPORT` is a fixture, the Backup the game exported before versions existed. Pass one to `createMemoryStorage` or `loadGame` (unit), `renderGame({ profile })` (DOM) or `seedSave` from `tests/browser/helpers.ts` (browser). Add a Save here, never as a local copy. The folder also holds `names.ts` (the words the game never says), `multiplier.ts` (the Multiplier steps) and `screens.ts` (the heading of each menu, and the names of the Pause Menu, the Debrief, Academy Home and the HUD). It imports from no test runner, so every layer can use it.
 - **`src/game/testHelpers.ts`** is the one test-helpers module. It sets up a `Game` through `send` over a seeded Save, and plays it by `pressKey` and `step`: `newGame(seed)`, `loadGame(seed, effects)` (which also gives the Save's storage), `startedGame({ upgrades })`, `startStage(game, id)`, `startFreeFlight(game, text)`, `hitPerfect`, `miss`, `typeText` and `clearStage`. It imports from no test runner and no React, so a headless test and the DOM harness both use it (the harness's `player.startStage` is its `startStage` over the harness's own game).
 
 ## Unit tests (headless)
@@ -39,12 +39,13 @@ Vitest with happy-dom, in `tests/dom/*.test.tsx`, run by `pnpm check` (the `dom`
 
 ```tsx
 import { expect, it } from 'vitest';
+import { DEBRIEF_TITLE } from '../shared/screens';
 import { renderGame, screen } from './harness';
 
 it('shows the Debrief when the text is typed to the end', () => {
   const player = renderGame({ text: 'ff jj' });
   player.type('ff jj');
-  expect(screen.getByText(/Mission Debriefing/)).toBeTruthy();
+  expect(screen.getByText(DEBRIEF_TITLE)).toBeTruthy();
 });
 ```
 

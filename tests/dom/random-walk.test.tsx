@@ -1,7 +1,13 @@
 import { cleanup, fireEvent } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { MENU_HEADINGS } from '../shared/screens';
 import { RETURNING_PLAYER } from '../shared/saves';
+import {
+  ACADEMY_HOME_HEADING,
+  DEBRIEF_TITLE,
+  HUD_NAME,
+  MENU_HEADINGS,
+  PAUSE_MENU_NAME,
+} from '../shared/screens';
 import { expectNoRefusedMove, renderGame, screen } from './harness';
 
 // The machine promises that a move a screen offers is never refused. This
@@ -13,17 +19,7 @@ import { expectNoRefusedMove, renderGame, screen } from './harness';
 // A failing walk names its seed and step. Replay one seed with
 //   WALK_SEED=7 pnpm exec vitest run tests/dom/random-walk.test.tsx
 
-type ScreenName =
-  | 'Academy Home'
-  | 'Flight Deck'
-  | 'Pause Menu'
-  | 'Galaxy Map'
-  | 'Hangar'
-  | 'Analytics'
-  | 'Free Flight'
-  | 'Debrief';
-
-const ALL_SCREENS: ScreenName[] = [
+const ALL_SCREENS = [
   'Academy Home',
   'Flight Deck',
   'Pause Menu',
@@ -32,16 +28,20 @@ const ALL_SCREENS: ScreenName[] = [
   'Analytics',
   'Free Flight',
   'Debrief',
-];
+] as const;
+
+type ScreenName = (typeof ALL_SCREENS)[number];
 
 const SEEDS = Array.from({ length: 30 }, (_, index) => index + 1);
 const STEPS = 60;
 /** The chance, on the Flight Deck, that the player types instead of clicking. */
-const TYPING = 0.3;
-const PRESSING_ESC = 0.1;
-const LEAVING_THE_PAGE = 0.03;
+const CHANCE_OF_TYPING = 0.3;
+/** The chance, on any screen, that the player presses Esc. */
+const CHANCE_OF_PRESSING_ESC = 0.1;
+/** The chance, on any screen, that the player leaves the page and comes back. */
+const CHANCE_OF_LEAVING_THE_PAGE = 0.03;
 /** How much likelier a button not yet pressed on this screen is than one that was. */
-const NEW_BUTTON = 5;
+const UNPRESSED_BUTTON_WEIGHT = 5;
 /**
  * The time allowed for all the seeds together (about 10 seconds on a quiet
  * machine). It is room for a loaded one, not a speed the walk is held to.
@@ -66,7 +66,7 @@ function mulberry32(seed: number): () => number {
  */
 function screensShowing(): ScreenName[] {
   const showing: ScreenName[] = [];
-  if (screen.queryByRole('dialog', { name: 'Mission Paused' }))
+  if (screen.queryByRole('dialog', { name: PAUSE_MENU_NAME }))
     showing.push('Pause Menu');
   if (screen.queryByRole('heading', { name: MENU_HEADINGS.Sectors }))
     showing.push('Galaxy Map');
@@ -76,10 +76,10 @@ function screensShowing(): ScreenName[] {
     showing.push('Analytics');
   if (screen.queryByRole('heading', { name: MENU_HEADINGS['Free Flight'] }))
     showing.push('Free Flight');
-  if (screen.queryByText(/Mission Debriefing/)) showing.push('Debrief');
-  if (screen.queryByRole('heading', { name: /Cosmic Touch Typing/ }))
+  if (screen.queryByText(DEBRIEF_TITLE)) showing.push('Debrief');
+  if (screen.queryByRole('heading', { name: ACADEMY_HOME_HEADING }))
     showing.push('Academy Home');
-  if (showing.length === 0 && screen.queryByRole('region', { name: 'HUD' }))
+  if (showing.length === 0 && screen.queryByRole('region', { name: HUD_NAME }))
     showing.push('Flight Deck');
   return showing;
 }
@@ -114,7 +114,7 @@ const nameOf = (button: HTMLElement) =>
 function walk(seed: number): Set<ScreenName> {
   const random = mulberry32(seed);
   // A button this walk has not pressed on this screen yet is likelier to be
-  // picked (NEW_BUTTON). Without that a walk spends most of its steps on the
+  // picked (UNPRESSED_BUTTON_WEIGHT). Without that a walk spends most of its steps on the
   // header's audio settings and the Hangar's shop, and rarely gets round to
   // the button that closes a menu or restarts a Run.
   const pressed = new Set<string>();
@@ -125,7 +125,7 @@ function walk(seed: number): Set<ScreenName> {
     const keyOf = (button: HTMLElement) =>
       `${onScreen}: ${nameOf(button).replace(/[\d,]+/g, '#')}`;
     const weights = buttons.map((button) =>
-      pressed.has(keyOf(button)) ? 1 : NEW_BUTTON,
+      pressed.has(keyOf(button)) ? 1 : UNPRESSED_BUTTON_WEIGHT,
     );
     let roll = random() * weights.reduce((total, weight) => total + weight, 0);
     let index = 0;
@@ -155,16 +155,19 @@ function walk(seed: number): Set<ScreenName> {
     const current = screensShowing()[0];
     const roll = random();
     let action: string;
-    if (current === 'Flight Deck' && roll < TYPING) {
+    if (current === 'Flight Deck' && roll < CHANCE_OF_TYPING) {
       // Without typing a Run to its end, a walk of clicks never reaches a Debrief.
       const characters =
         random() < 0.4 ? undefined : 1 + Math.floor(random() * 8);
       action = `on the ${current}, typed ${characters ?? 'the rest of the'} characters`;
       player.typePrompt({ characters });
-    } else if (roll < TYPING + PRESSING_ESC) {
+    } else if (roll < CHANCE_OF_TYPING + CHANCE_OF_PRESSING_ESC) {
       action = `on ${current}, pressed Esc`;
       player.press('Escape');
-    } else if (roll < TYPING + PRESSING_ESC + LEAVING_THE_PAGE) {
+    } else if (
+      roll <
+      CHANCE_OF_TYPING + CHANCE_OF_PRESSING_ESC + CHANCE_OF_LEAVING_THE_PAGE
+    ) {
       action = `on ${current}, left the page`;
       player.blur();
       player.focus();

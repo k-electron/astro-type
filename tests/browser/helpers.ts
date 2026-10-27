@@ -1,4 +1,5 @@
 import { expect, type Locator, type Page } from '@playwright/test';
+import { DEBRIEF_TITLE, HUD_NAME, PAUSE_MENU_NAME } from '../shared/screens';
 
 // Shared by the browser journeys. Everything here finds things the way a
 // player sees them: by role and visible text, and, inside the Action Deck's
@@ -12,11 +13,12 @@ export const FIRST_STAGE_TEXT =
 export const flightDeck = (page: Page): Locator => page.getByRole('main');
 
 /**
- * The accessible names a screen reader user hears on the Flight Deck. They
- * are the only place the tests spell them out.
+ * The accessible names a screen reader user hears on the Flight Deck. The
+ * HUD's comes from `tests/shared/screens.ts`; the others are spelled out only
+ * here.
  */
 export const LABELS = {
-  hud: 'HUD',
+  hud: HUD_NAME,
   textPrompt: 'Text prompt',
   promptProgress: 'Progress',
 } as const;
@@ -111,7 +113,7 @@ export async function startFirstStage(page: Page) {
 
 /** The Pause Menu's heading: present while the Run is paused behind it. */
 export const pauseMenu = (page: Page): Locator =>
-  page.getByRole('heading', { name: 'Mission Paused' });
+  page.getByRole('heading', { name: PAUSE_MENU_NAME });
 
 /**
  * Starts the game with a Save the player already has (see
@@ -133,5 +135,5 @@ export async function seedSave(page: Page, save: unknown): Promise<void> {
 /** Types the first Stage to its last character; the Debrief follows. */
 export async function clearFirstStage(page: Page) {
   await typeText(page, FIRST_STAGE_TEXT);
-  await expect(page.getByText(/Mission Debriefing/)).toBeVisible();
+  await expect(page.getByText(DEBRIEF_TITLE)).toBeVisible();
 }

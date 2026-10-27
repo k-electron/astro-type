@@ -32,7 +32,7 @@ ADR-0001 sets the split between the store and the machine.
 ## Shipping
 
 - Commit only when the project owner asks. Commits go straight to `main`, with messages written as `type: summary` (`feat`, `fix`, `docs`, `ci`, `chore`, `refactor`, `style`).
-- **Every push to `main` goes to production.** CI runs the same checks as `pnpm verify`, deploys the built `dist/` to https://astro-type.k-electron.workers.dev, then smoke-tests it there. If a check fails, the deploy stops. There are no preview deploys.
+- **Every push to `main` goes to production.** CI runs `pnpm verify --no-screenshots` in one job and the screenshots in a parallel one, deploys the built `dist/` to https://astro-type.k-electron.workers.dev, then smoke-tests it there. If a check fails, the deploy stops. There are no preview deploys.
 - **To roll back,** `git revert` the commit and push it. In an emergency, the project owner runs `pnpm exec wrangler rollback`, which needs their Cloudflare login.
 - **Dependabot** opens grouped PRs every week. CI checks them, and the project owner merges them by hand.
 

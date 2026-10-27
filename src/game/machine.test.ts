@@ -3,6 +3,7 @@ import { CURRICULUM_SECTORS } from '../data/curriculum';
 import { type PlayerEvent, RefusedMoveError, type Screen } from './createGame';
 import {
   clearStage,
+  freeFlightStage,
   type Game,
   hitPerfect,
   newGame,
@@ -43,8 +44,6 @@ const pickStage = (stageId: string): PlayerEvent => ({
   stageId,
 });
 
-const FREE_FLIGHT_ID = 'custom-practice';
-
 /**
  * The tests that walk many games take 1 to 2 seconds on a quiet machine, so
  * under load (a full `pnpm check` beside the browser tests) they overran
@@ -53,19 +52,9 @@ const FREE_FLIGHT_ID = 'custom-practice';
  */
 const SLOW_WALK_TIMEOUT = 30_000;
 
-/** A Free Flight Stage: Stage 1's shape with the player's own short text. */
+/** A Free Flight launch of the player's own short text. */
 function freeFlightLaunch(): PlayerEvent {
-  const template = startedGame().getRun().currentStage;
-  return {
-    type: 'LAUNCH_FREE_FLIGHT',
-    stage: {
-      ...template,
-      id: FREE_FLIGHT_ID,
-      title: 'Free Flight Drill',
-      sampleText: 'ab ba',
-      targetKeys: ['a', 'b', ' '],
-    },
-  };
+  return { type: 'LAUNCH_FREE_FLIGHT', stage: freeFlightStage('ab ba') };
 }
 
 // ---------------------------------------------------------------------------

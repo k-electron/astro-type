@@ -3,7 +3,8 @@
  * Multiplier, Overdrive, shields, Drone movement, telemetry, Stars and
  * Credits. No React, PixiJS, DOM or sound in here.
  *
- * Every number and window is the one the game has always used.
+ * The numbers and windows are the original game's, except that every Run now
+ * falls at one Drone speed (`DRONE_SPEED`).
  */
 import { getNoteLaneAndFinger } from '../data/curriculum';
 import type { FallingNote, LivePerformance, Stage } from '../types/game';

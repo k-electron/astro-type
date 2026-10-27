@@ -2,6 +2,7 @@
 import { readFile } from 'node:fs/promises';
 import { expect, type Page, test } from '@playwright/test';
 import { RETURNING_PLAYER } from '../shared/saves';
+import { DEBRIEF_TITLE } from '../shared/screens';
 import { launchFreeFlight, seedSave, typeText } from './helpers';
 
 // J5: the Save in real localStorage, across reloads. Whether a Save is read
@@ -85,7 +86,7 @@ test('the Save outlives a reload: Stars, a Backup round trip, a new clear, and a
   await test.step('clearing a Free Flight earns Stars, and they are kept after a reload', async () => {
     await launchFreeFlight(page, 'ab');
     await typeText(page, 'ab');
-    await expect(page.getByText(/Mission Debriefing/)).toBeVisible();
+    await expect(page.getByText(DEBRIEF_TITLE)).toBeVisible();
     const after = await headerStars(page);
     expect(after, 'the clear added Stars to the fleet').toBeGreaterThan(5);
     const creditsAfter = await headerCredits(page);

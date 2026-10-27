@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { ACADEMY_HOME_HEADING } from '../shared/screens';
 import { renderGame, screen } from './harness';
 
 describe('reloading the page', () => {
@@ -12,7 +13,7 @@ describe('reloading the page', () => {
 
     expect(screen.getByTitle(/Starship Credits/).textContent).toBe(credits);
     expect(
-      screen.getByRole('heading', { name: /Cosmic Touch Typing/ }),
+      screen.getByRole('heading', { name: ACADEMY_HOME_HEADING }),
     ).toBeTruthy();
   });
 });

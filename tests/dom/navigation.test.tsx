@@ -1,8 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import { CURRICULUM_SECTORS } from '../../src/data/curriculum';
 import { fireEvent } from '@testing-library/react';
-import { MENU_HEADINGS } from '../shared/screens';
-import { type HeaderButton, type Player, renderGame, screen } from './harness';
+import {
+  ACADEMY_HOME_HEADING,
+  HUD_NAME,
+  MENU_HEADINGS,
+  PAUSE_MENU_NAME,
+} from '../shared/screens';
+import {
+  type HeaderButton,
+  type Player,
+  renderGame,
+  screen,
+  within,
+} from './harness';
 
 // Navigation: where each menu's Back button leads, the header on every screen,
 // the Pause Menu, Esc, and leaving the page. Every test drives the real App
@@ -10,22 +21,21 @@ import { type HeaderButton, type Player, renderGame, screen } from './harness';
 
 type MenuButton = Exclude<HeaderButton, 'Home'>;
 
-const MENUS: Record<MenuButton, string> = MENU_HEADINGS;
-const MENU_BUTTONS = Object.keys(MENUS) as MenuButton[];
+const MENU_BUTTONS = Object.keys(MENU_HEADINGS) as MenuButton[];
 
 const menuHeading = (button: MenuButton) =>
-  screen.queryByRole('heading', { name: MENUS[button] });
-const pauseMenu = () =>
-  screen.queryByRole('dialog', { name: 'Mission Paused' });
+  screen.queryByRole('heading', { name: MENU_HEADINGS[button] });
+const pauseMenu = () => screen.queryByRole('dialog', { name: PAUSE_MENU_NAME });
 const academyHome = () =>
-  screen.queryByRole('heading', { name: /Cosmic Touch Typing/ });
+  screen.queryByRole('heading', { name: ACADEMY_HOME_HEADING });
 const debriefHeading = () =>
   screen.queryByRole('heading', { name: 'Free Flight Drill', level: 2 });
 const progress = () =>
   screen
     .getByRole('progressbar', { name: 'Progress' })
     .getAttribute('aria-valuetext');
-const hudText = () => screen.getByRole('region', { name: 'HUD' }).textContent;
+const hudText = () =>
+  screen.getByRole('region', { name: HUD_NAME }).textContent;
 const hudReading = (label: string, value: RegExp) => {
   const found = new RegExp(`${label}(${value.source})`).exec(hudText() ?? '');
   return found?.[1];
@@ -145,9 +155,20 @@ describe('the Galaxy Map', () => {
     player.openHeader('Sectors');
     player.click(new RegExp(sector.codenick));
 
-    // The Stages are listed in curriculum order, one Launch Mission each.
+    // Each Stage's card has its own Launch Mission button; find the card by
+    // the Stage's title, then the button inside it.
+    const title = screen.getByRole('heading', { name: sector.stages[1].title });
+    let card = title.parentElement;
+    while (
+      card &&
+      within(card).queryAllByRole('button', { name: 'Launch Mission' })
+        .length === 0
+    ) {
+      card = card.parentElement;
+    }
+    if (!card) throw new Error('the Stage has no Launch Mission button');
     fireEvent.click(
-      screen.getAllByRole('button', { name: 'Launch Mission' })[1],
+      within(card).getByRole('button', { name: 'Launch Mission' }),
     );
 
     expect(screen.getByRole('button', { name: 'Pause' })).toBeTruthy();

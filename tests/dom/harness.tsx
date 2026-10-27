@@ -4,7 +4,7 @@
  *
  *   const player = renderGame({ text: 'ff jj' });
  *   player.type('ff jj');
- *   expect(screen.getByText(/Mission Debriefing/)).toBeTruthy();
+ *   expect(screen.getByText(DEBRIEF_TITLE)).toBeTruthy();
  *
  * Assert on what is on screen, with Testing Library's role and text queries
  * (re-exported here as `screen` and `within`). The player is given no handle

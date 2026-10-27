@@ -22,6 +22,7 @@ const RATINGS = [
 
 describe('the popup of a hit', () => {
   it('ends with the points the hit scored, and is one of the prepared texts, in its own colour, for every hit the rules can score', () => {
+    // The deck caches a popup by its text and colour, so both must be prepared.
     const prepared = new Set(
       hitPopupsToPrepare().map(({ label, color }) => `${label}|${color}`),
     );

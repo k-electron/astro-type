@@ -7,6 +7,7 @@ import {
   promptProgress,
   typeText,
 } from './helpers';
+import { DEBRIEF_TITLE } from '../shared/screens';
 
 // Three screenshot checks on the PixiJS Action Deck: the Flight Deck at Run
 // start, the deck frozen mid-explosion, and the Debrief. A screenshot is the
@@ -206,7 +207,7 @@ test('the Debrief of a cleared Run', async ({ page }) => {
     }
     await page.clock.runFor(400);
   }
-  await expect(page.getByText(/Mission Debriefing/)).toBeVisible();
+  await expect(page.getByText(DEBRIEF_TITLE)).toBeVisible();
   // Let the card settle (its numbers and its fade-in).
   await page.clock.runFor(3000);
   await hideBackdropCanvases(page, true);

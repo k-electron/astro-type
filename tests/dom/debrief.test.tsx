@@ -1,12 +1,13 @@
 import { fireEvent } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { CURRICULUM_SECTORS } from '../../src/data/curriculum';
-import { type Player, renderGame, screen, within } from './harness';
 import { clearedStages } from '../shared/saves';
+import { DEBRIEF_TITLE, HUD_NAME } from '../shared/screens';
+import { type Player, renderGame, screen, within } from './harness';
 
 /** The card the Debrief shows over the Flight Deck. */
 function debriefCard(): HTMLElement {
-  const card = screen.getByText(/Mission Debriefing/).parentElement;
+  const card = screen.getByText(DEBRIEF_TITLE).parentElement;
   if (!card) throw new Error('The Debrief has no card');
   return card;
 }
@@ -22,7 +23,7 @@ const stars = (count: number) =>
   screen.getByRole('button', { name: new RegExp(`^${count}\\s*★$`) });
 
 const hudText = () =>
-  screen.getByRole('region', { name: 'HUD' }).textContent ?? '';
+  screen.getByRole('region', { name: HUD_NAME }).textContent ?? '';
 /** The HUD of a Run that has scored nothing yet. */
 const FRESH_SCORE = /Score\s*0\s*x1/;
 const progress = () =>
@@ -66,7 +67,7 @@ describe('Replay and Next Mission', () => {
 
     player.click('Replay');
 
-    expect(screen.queryByText(/Mission Debriefing/)).toBeNull();
+    expect(screen.queryByText(DEBRIEF_TITLE)).toBeNull();
     expect(screen.getByRole('main').textContent).toContain(
       'The Tactile Anchors',
     );
@@ -83,7 +84,7 @@ describe('Replay and Next Mission', () => {
 
     player.click('Next Mission');
 
-    expect(screen.queryByText(/Mission Debriefing/)).toBeNull();
+    expect(screen.queryByText(DEBRIEF_TITLE)).toBeNull();
     expect(screen.getByRole('main').textContent).toContain(
       'Middle Finger Expansion',
     );
@@ -210,7 +211,7 @@ describe('Free Flight', () => {
 
     player.type('ff j');
 
-    expect(screen.queryByText(/Mission Debriefing/)).toBeNull();
+    expect(screen.queryByText(DEBRIEF_TITLE)).toBeNull();
     expect(screen.getByRole('button', { name: 'Pause' })).toBeTruthy();
   });
 

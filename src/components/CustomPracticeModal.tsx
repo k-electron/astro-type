@@ -1,6 +1,10 @@
 import type React from 'react';
 import { useState } from 'react';
 import { Play } from 'lucide-react';
+import {
+  buildFreeFlightStage,
+  DEFAULT_FREE_FLIGHT_WPM,
+} from '../game/freeFlight';
 import { FreeFlightTextSchema } from '../store/schemas';
 import type { Screen, Stage } from '../types/game';
 import { closeLabel } from './closeLabel';
@@ -41,7 +45,7 @@ export const CustomPracticeModal: React.FC<CustomPracticeModalProps> = ({
   opener,
 }) => {
   const [customText, setCustomText] = useState<string>(PRESET_TEXTS[0].text);
-  const [targetWpm, setTargetWpm] = useState<number>(40);
+  const [targetWpm, setTargetWpm] = useState<number>(DEFAULT_FREE_FLIGHT_WPM);
 
   // Free Flight text is checked as it is typed, so Launch is disabled (with
   // the reason) before the player can start a Run that would get stuck.
@@ -55,35 +59,11 @@ export const CustomPracticeModal: React.FC<CustomPracticeModalProps> = ({
     if (!checked.success) return;
     const cleanText = checked.data;
 
-    const customStage: Stage = {
-      id: `custom-${Date.now()}`,
-      sectorId: 'sector-custom',
-      stageNumber: 0,
-      title: 'Free Flight Drill',
-      subtitle: 'Custom Practice Mission',
-      description: 'Player tailored free-form typing session.',
-      targetKeys: Array.from(new Set(cleanText.toLowerCase().split(''))),
-      sampleText: cleanText,
-      difficulty:
-        targetWpm > 50
-          ? 'Expert'
-          : targetWpm > 35
-            ? 'Advanced'
-            : 'Intermediate',
+    const customStage = buildFreeFlightStage(
+      `custom-${Date.now()}`,
+      cleanText,
       targetWpm,
-      focusFingers: 'Free Flight Custom Selection',
-      techniqueTip:
-        'Maintain relaxed posture and steady keystroke cadence across your custom text.',
-      drillPatternType: 'CADENCE_FLOW',
-      starThresholds: {
-        oneStarAccuracy: 75,
-        twoStarWpm: targetWpm,
-        twoStarAccuracy: 90,
-        threeStarWpm: Math.round(targetWpm * 1.3),
-        threeStarAccuracy: 96,
-        threeStarMinStreak: 20,
-      },
-    };
+    );
 
     onStartCustom(customStage);
   };

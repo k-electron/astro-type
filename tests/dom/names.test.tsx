@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { type Player, renderGame, screen, within } from './harness';
 import { BANNED_NAME } from '../shared/names';
 import { clearedStages } from '../shared/saves';
+import { DEBRIEF_TITLE, HUD_NAME, PAUSE_MENU_NAME } from '../shared/screens';
+import { type Player, renderGame, screen, within } from './harness';
 
 // One name for each thing: the game says Streak and Overdrive, never combo,
 // hyperspace or warp (GLOSSARY.md: Streak, Multiplier and Overdrive each list
@@ -63,7 +64,7 @@ function startOverdrive(player: Player) {
   // The "Overdrive Meter" is always there; the badge reads OVERDRIVE x2 only
   // while Overdrive is on.
   expect(
-    within(screen.getByRole('region', { name: 'HUD' })).getByText(
+    within(screen.getByRole('region', { name: HUD_NAME })).getByText(
       /^OVERDRIVE x\d+$/,
     ),
   ).toBeTruthy();
@@ -81,7 +82,7 @@ describe('the glossary names', () => {
     player.click('Start Mission');
     player.typePrompt({ characters: 6 });
 
-    const hud = within(screen.getByRole('region', { name: 'HUD' }));
+    const hud = within(screen.getByRole('region', { name: HUD_NAME }));
     expect(hud.getByText(/^Streak$/i)).toBeTruthy();
     expect(hud.getByText(/^Streak$/i).parentElement?.textContent).toMatch(
       /Streak\s*6/i,
@@ -96,7 +97,7 @@ describe('the glossary names', () => {
     player.press('z');
     player.step(30);
 
-    expect(screen.getByRole('region', { name: 'HUD' }).textContent).toMatch(
+    expect(screen.getByRole('region', { name: HUD_NAME }).textContent).toMatch(
       /Streak\s*0/i,
     );
     expectNoBannedNames('Pause');
@@ -108,7 +109,7 @@ describe('the glossary names', () => {
     startOverdrive(player);
 
     expect(
-      within(screen.getByRole('region', { name: 'HUD' })).getByText(
+      within(screen.getByRole('region', { name: HUD_NAME })).getByText(
         /^Streak$/i,
       ),
     ).toBeTruthy();
@@ -121,8 +122,8 @@ describe('the glossary names', () => {
 
     player.click('Pause');
 
-    expect(screen.getByRole('dialog', { name: 'Mission Paused' })).toBeTruthy();
-    expectNoBannedNames('Mission Paused');
+    expect(screen.getByRole('dialog', { name: PAUSE_MENU_NAME })).toBeTruthy();
+    expectNoBannedNames(PAUSE_MENU_NAME);
   });
 
   it('the Galaxy Map uses them', () => {
@@ -174,7 +175,7 @@ describe('the glossary names', () => {
     player.typePrompt();
 
     expect(screen.getByText(/New Sector Unlocked/)).toBeTruthy();
-    expectNoBannedNames(/Mission Debriefing/);
+    expectNoBannedNames(DEBRIEF_TITLE);
   });
 
   it('the Debrief of a Free Flight, cleared with Misses, uses them', () => {
@@ -183,8 +184,8 @@ describe('the glossary names', () => {
     player.press('y');
     player.typePrompt();
 
-    expect(screen.getByText(/Mission Debriefing/)).toBeTruthy();
-    expectNoBannedNames(/Mission Debriefing/);
+    expect(screen.getByText(DEBRIEF_TITLE)).toBeTruthy();
+    expectNoBannedNames(DEBRIEF_TITLE);
   });
 
   it('the Hangar opened from the Flight Deck uses them', () => {

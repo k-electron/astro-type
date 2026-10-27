@@ -13,6 +13,7 @@ import {
   type GameEffects,
   type MemorySaveStorage,
 } from './createGame';
+import { buildFreeFlightStage, DEFAULT_FREE_FLIGHT_WPM } from './freeFlight';
 
 export type { Game } from './createGame';
 
@@ -31,9 +32,9 @@ export const WRONG_KEY = 'x';
 
 /**
  * Steps (1/60 s each) that are enough for the lead Drone to reach the Strike Line
- * from wherever it starts, at the Drone speed every Run uses (FAST: 2.2 a step, so 10 steps
- * for the lead Drone and 8 for the next one to come down from its slot). Pressing after this many steps is
- * always a Perfect.
+ * from wherever it starts, at the Drone speed every Run uses (`DRONE_SPEED`:
+ * the lead Drone falls `leadStep` a step, and the Drones behind it close in on
+ * their slots). Pressing after this many steps is always a Perfect.
  */
 const STEPS_TO_REACH_LINE = 30;
 
@@ -122,32 +123,16 @@ export function clearStage(
 }
 
 /**
- * A Free Flight Stage of the player's own text. Its literals ('Free Flight
- * Drill', 'sector-custom') are copied from `handleLaunch` in
- * `CustomPracticeModal.tsx`, which builds the real one inline in a click
- * handler, so there is no constructor to import. Change both together.
+ * A Free Flight Stage of the player's own text, built by the same function the
+ * Free Flight screen's Launch Custom Flight uses. `targetWpm` is the Target
+ * Cadence (the screen's default unless a test sets one); the Star thresholds
+ * follow from it.
  */
-export function freeFlightStage(text: string): Stage {
-  return {
-    id: 'custom-test',
-    sectorId: 'sector-custom',
-    stageNumber: 0,
-    title: 'Free Flight Drill',
-    subtitle: 'Custom Practice Mission',
-    description: 'Player tailored free-form typing session.',
-    targetKeys: Array.from(new Set(text.toLowerCase().split(''))),
-    sampleText: text,
-    difficulty: 'Intermediate',
-    targetWpm: 20,
-    starThresholds: {
-      oneStarAccuracy: 75,
-      twoStarWpm: 20,
-      twoStarAccuracy: 90,
-      threeStarWpm: 26,
-      threeStarAccuracy: 96,
-      threeStarMinStreak: 20,
-    },
-  };
+export function freeFlightStage(
+  text: string,
+  targetWpm = DEFAULT_FREE_FLIGHT_WPM,
+): Stage {
+  return buildFreeFlightStage('custom-test', text, targetWpm);
 }
 
 /** Type `text` key by key, each key after the lead Drone has reached the Strike Line. */

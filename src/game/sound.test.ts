@@ -1,5 +1,6 @@
 import { expect, it } from 'vitest';
 import { createRecordingSound } from '../../tests/shared/recordingSound';
+import { RETURNING_PLAYER } from '../../tests/shared/saves';
 import {
   hitPerfect,
   loadGame,
@@ -25,7 +26,7 @@ const hits = (count: number) => Array.from({ length: count }, () => HIT);
 
 it('sounds right at every moment of a Run', () => {
   const sound = createRecordingSound();
-  const { game } = loadGame({ totalCredits: 5000 }, sound.effects);
+  const { game } = loadGame(RETURNING_PLAYER, sound.effects);
   const settings = () => game.store.getState();
 
   /** Assert the moment: is the beat sounding, is the Overdrive layer on, and which cues just fired. */

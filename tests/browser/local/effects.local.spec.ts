@@ -4,7 +4,7 @@ import {
   type Page,
   test as base,
 } from '@playwright/test';
-import { drone, keycap } from '../helpers';
+import { drone, keycap, pauseMenu } from '../helpers';
 import { launchOnStoppedClock } from '../journey-helpers';
 
 // LOCAL ONLY (run by `pnpm verify`, not in CI; docs/agents/testing.md): hundreds of drawn
@@ -332,9 +332,7 @@ test('the paused deck is frozen mid-explosion, and the explosion carries on from
   const midExplosion = await look(page, deck, pixels);
 
   await page.getByRole('button', { name: 'Pause', exact: true }).click();
-  await expect(
-    page.getByRole('heading', { name: 'Mission Paused' }),
-  ).toBeVisible();
+  await expect(pauseMenu(page)).toBeVisible();
 
   // The Pause Menu fades in on the real clock. Once it has settled, the
   // explosion's lane behind it is what is being compared.
@@ -357,9 +355,7 @@ test('the paused deck is frozen mid-explosion, and the explosion carries on from
 
   // Back in the Run, it picks up from the very frame it stopped on...
   await page.getByRole('button', { name: 'Resume Flight' }).click();
-  await expect(
-    page.getByRole('heading', { name: 'Mission Paused' }),
-  ).toBeHidden();
+  await expect(pauseMenu(page)).toBeHidden();
   await page.clock.runFor(16);
   const resumed = await look(page, deck, pixels);
   // ...and plays on to the end.

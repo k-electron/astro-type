@@ -50,7 +50,7 @@ The other scripts are in `package.json`. The browser tests need Chromium, which 
 
 ## Deploying
 
-Every push to `main` runs the same checks as `pnpm verify` in GitHub Actions. If it passes, the build is deployed to https://astro-type.k-electron.workers.dev and smoke-tested there. Pull requests run the checks without deploying.
+Every push to `main` runs `pnpm verify --no-screenshots` in one GitHub Actions job and the screenshot checks in a parallel one. If both pass, the build is deployed to https://astro-type.k-electron.workers.dev and smoke-tested there. Pull requests run the checks without deploying.
 
 ## License
 
