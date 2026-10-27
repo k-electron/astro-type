@@ -32,9 +32,9 @@ import {
   createGame,
   createMemoryStorage,
   type Game,
-  type GameEffects,
   type MemorySaveStorage,
   type RefusedMoveError,
+  type Sound,
 } from '../../src/game/createGame';
 import { startStage as sendStartStage } from '../../src/game/testHelpers';
 import { GameProvider } from '../../src/store/gameContext';
@@ -60,10 +60,10 @@ export interface RenderGameOptions {
   /** Start a Free Flight Run of this text, through the Free Flight screen. */
   text?: string;
   /**
-   * How sound is attached to the game, when a test listens to it (the
-   * recording sound adapter's `effects`). Left out, the game is silent.
+   * Where the game's sound goes, when a test listens to it (the recording
+   * sound adapter's `effects`). Left out, the game is silent.
    */
-  effects?: Partial<GameEffects>;
+  effects?: Sound;
 }
 
 export interface PressOptions {
@@ -177,7 +177,7 @@ export function renderGame(options: RenderGameOptions = {}): Player {
   const mount = () => {
     game = createGame({
       storage,
-      effects: options.effects,
+      sound: options.effects,
       // A throw inside a React click handler would not reliably reach the
       // test, so a refused move is collected and fails the test when it ends.
       onRefusedMove: (error) => refusals.push(error),

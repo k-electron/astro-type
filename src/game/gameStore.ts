@@ -23,7 +23,6 @@ import {
 } from './save';
 import type { Settings } from '../store/schemas';
 import type { Clock, RunClock } from './clock';
-import type { GameEffects } from './effects';
 import {
   advanceDroneQueue,
   applyMiss,
@@ -41,6 +40,7 @@ import {
   seedDrones,
   telemetry,
 } from './rules';
+import type { JustHappened } from './sound';
 
 export interface VictoryResult {
   score: number;
@@ -75,7 +75,7 @@ export interface GameStoreState {
   recentKeystrokeTimes: number[];
 
   // Run moves: the machine calls these, once per accepted move. Each one is
-  // the data change and the sound that goes with the move.
+  // the move's data change.
   beginRun: (stage: Stage) => void;
   pauseRun: () => void;
   resumeRun: () => void;
@@ -116,15 +116,16 @@ export interface GameStoreDeps {
   clock: Clock;
   /** Run Time: what WPM, Stars, cadence and keystroke intervals are measured in. */
   runClock: RunClock;
-  effects: GameEffects;
+  /** Told of what happens that has a sound of its own: Overdrive catching fire, a clear, a purchase. */
+  onHappened: (happened: JustHappened) => void;
   /** Told of each Judgement as it happens, after the Run has changed. */
   onJudgement: (judgement: Judgement) => void;
 }
 
 /**
  * Builds the vanilla store for one game: the live Run, the Debrief result and
- * the Profile, with the rules in `./rules`. Time, Save storage and sound all
- * come in through `deps`.
+ * the Profile, with the rules in `./rules`. Time and Save storage come in
+ * through `deps`, and so does the way out for what happened that sounds.
  */
 export function createGameStore({
   getPhase,
@@ -132,7 +133,7 @@ export function createGameStore({
   storage,
   clock,
   runClock,
-  effects,
+  onHappened,
   onJudgement,
 }: GameStoreDeps): StoreApi<GameStoreState> {
   const save = createSave(storage);
@@ -142,8 +143,6 @@ export function createGameStore({
     getPhase() === 'none' || getPhase() === 'abandoned'
       ? { currentStage: CURRICULUM_SECTORS[0].stages[0], victoryResult: null }
       : {};
-  const beatAllowed = (profile: PlayerProfile) =>
-    profile.musicEnabled && !profile.globalMuted && profile.musicVolume > 0;
 
   return createStore<GameStoreState>((set, get) => {
     // Load initial validated profile
@@ -174,14 +173,7 @@ export function createGameStore({
       recentKeystrokeTimes: [],
 
       beginRun: (stage: Stage) => {
-        effects.init();
         const { profile } = get();
-        // A fresh Run starts with Overdrive off, so its beat does too.
-        effects.setOverdrive(false);
-        if (beatAllowed(profile)) {
-          effects.startBeat();
-        }
-
         runClock.reset();
         const now = clock.now();
 
@@ -199,23 +191,16 @@ export function createGameStore({
       },
 
       pauseRun: () => {
-        effects.stopBeat();
-        effects.setOverdrive(false);
         // Streak, Multiplier and Overdrive stay exactly as they were.
         set({ lastPressedKey: null });
       },
 
       resumeRun: () => {
-        if (beatAllowed(get().profile)) {
-          effects.startBeat();
-        }
-        // Overdrive was kept through the pause, so its beat comes back with it.
-        effects.setOverdrive(get().performance.hyperspaceActive);
+        // Nothing to change: the Run's numbers were kept through the pause,
+        // and the sound follows the Run phase.
       },
 
       abandonRun: () => {
-        effects.stopBeat();
-        effects.setOverdrive(false);
         runClock.reset();
         set({
           performance: freshPerformance(
@@ -348,8 +333,7 @@ export function createGameStore({
           });
           // Overdrive catching fire is its own sound, after the hit's.
           if (charge.ignites) {
-            effects.setOverdrive(true);
-            effects.playHyperspaceIgnition();
+            onHappened({ type: 'ignition' });
           }
 
           // Stage completed check
@@ -371,10 +355,6 @@ export function createGameStore({
             sessionKeyStats: updatedKeyStats,
             performance: perf,
           });
-          // A Miss no shield absorbs ends Overdrive, and its beat with it.
-          if (!perf.hyperspaceActive) {
-            effects.setOverdrive(false);
-          }
           onJudgement({
             type: shielded ? 'shield' : 'miss',
             key: pressedKey,
@@ -409,9 +389,6 @@ export function createGameStore({
 
       recordResult: () => {
         const state = get();
-        effects.stopBeat();
-        effects.setOverdrive(false);
-        effects.playStageVictory();
 
         const now = clock.now();
         const elapsedSeconds = Math.max(1, runClock.runTimeMs() / 1000);
@@ -427,7 +404,7 @@ export function createGameStore({
           state.currentStage.starThresholds,
         );
 
-        effects.playStarChimes(starsEarned);
+        onHappened({ type: 'clear', stars: starsEarned });
 
         const { updatedProfile, newStarsAwarded, isNewHighScore } =
           recordStageResult(
@@ -477,41 +454,7 @@ export function createGameStore({
       },
 
       changeSettings: (patch) => {
-        const before = get().profile;
-        const after = settingsAfter(before, patch);
-        updateProfile(after);
-
-        // Tell the sound what moved: a channel's flag before its volume.
-        if (after.globalMuted !== before.globalMuted) {
-          effects.setGlobalMute(after.globalMuted);
-        }
-        if (after.soundEnabled !== before.soundEnabled) {
-          effects.setSoundEnabled(after.soundEnabled);
-        }
-        if (after.soundVolume !== before.soundVolume) {
-          effects.setSoundVolume(after.soundVolume);
-        }
-        if (after.musicEnabled !== before.musicEnabled) {
-          effects.setMusicEnabled(after.musicEnabled);
-        }
-        if (after.musicVolume !== before.musicVolume) {
-          effects.setMusicVolume(after.musicVolume);
-        }
-        if (after.beatTheme !== before.beatTheme) {
-          effects.setBeatTheme(after.beatTheme);
-        }
-
-        // The beat follows the music's switches: it starts when the Run is
-        // running and sound allows it, and stops when music is turned off.
-        // Muting is the sound's own business, and a pause already stopped it.
-        const changesMusic = 'musicEnabled' in patch || 'musicVolume' in patch;
-        if (changesMusic || 'globalMuted' in patch) {
-          if (beatAllowed(after) && getPhase() === 'running') {
-            effects.startBeat();
-          } else if (changesMusic && !after.musicEnabled) {
-            effects.stopBeat();
-          }
-        }
+        updateProfile(settingsAfter(get().profile, patch));
       },
 
       buy: (itemId) => {
@@ -519,9 +462,7 @@ export function createGameStore({
         if (!purchase) return false;
         updateProfile(purchase);
         const entry = catalogEntry(itemId);
-        if (entry.kind === 'upgrade') effects.playShieldUpgrade();
-        else if (entry.kind === 'trail') effects.playEquipCosmetic();
-        else effects.setCore(entry.id);
+        onHappened({ type: 'purchase', kind: entry.kind });
         return true;
       },
 

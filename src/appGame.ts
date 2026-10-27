@@ -16,7 +16,7 @@ import { createLocalStorageSave } from './utils/storage';
 export const game = createGame({
   storage: createLocalStorageSave(),
   clock: createRealtimeClock(),
-  effects: soundEffects,
+  sound: soundEffects,
   onRefusedMove: (error) => {
     if (import.meta.env.DEV) console.warn(error.message);
   },

@@ -3,7 +3,7 @@
  * The app builds one at startup and each test builds its own.
  *
  * Nothing in this module's imports touches React, PixiJS, the DOM, browser
- * storage or the sound engine. Sound is attached from outside as `effects`.
+ * storage or the sound engine. Sound is attached from outside as `sound`.
  */
 import { createActor } from 'xstate';
 import type { StoreApi } from 'zustand/vanilla';
@@ -22,9 +22,15 @@ import type {
   Stage,
 } from '../types/game';
 import { type Clock, createRunClock, createSteppedClock } from './clock';
-import { getNoteLaneAndFinger } from '../data/curriculum';
-import { type GameEffects, silentEffects } from './effects';
 import type { Judgement } from './rules';
+import {
+  cueFor,
+  type JustHappened,
+  type Sound,
+  sameSound,
+  silentSound,
+  soundStateOf,
+} from './sound';
 import {
   createGameStore,
   type GameStoreState,
@@ -37,7 +43,7 @@ import type { Settings } from '../store/schemas';
 export { createMemoryStorage } from './save';
 export type { MemorySaveStorage, SaveStorage } from './save';
 export type { Clock } from './clock';
-export type { GameEffects } from './effects';
+export type { Cue, Sound, SoundState } from './sound';
 export type { Judgement } from './rules';
 export type { GameStoreState, VictoryResult } from './gameStore';
 export type { PlayerEvent } from '../store/gameMachine';
@@ -60,8 +66,8 @@ export class RefusedMoveError extends Error {
 export interface GameOptions {
   /** Where the Save lives. Memory in tests, localStorage in the app. */
   storage: SaveStorage;
-  /** Sound and other outside effects. Absent means silent. */
-  effects?: Partial<GameEffects>;
+  /** Where the game's sound goes. Absent means silent. */
+  sound?: Sound;
   /**
    * The wall clock, for timestamps only (when a Stage was last played). Run
    * Time doesn't come from it. Defaults to a hand-stepped one; the app passes
@@ -177,29 +183,10 @@ export interface Game {
 /** The telemetry tick: every 30 steps, which is 500 ms at 60 steps a second. */
 const TELEMETRY_EVERY_STEPS = 30;
 
-/** Each Judgement plays exactly one sound. */
-function soundFor(judgement: Judgement, effects: GameEffects): void {
-  if (judgement.type === 'hit') {
-    effects.playLaneHit(
-      getNoteLaneAndFinger(judgement.key).lane,
-      judgement.grade === 'perfect'
-        ? 'PERFECT'
-        : judgement.grade === 'great'
-          ? 'GREAT'
-          : 'GOOD',
-      judgement.key === ' ',
-    );
-  } else if (judgement.type === 'shield') {
-    effects.playShieldAbsorb();
-  } else {
-    effects.playMiss();
-  }
-}
-
 export function createGame(options: GameOptions): Game {
   const clock = options.clock ?? createSteppedClock();
   const runClock = createRunClock();
-  const effects: GameEffects = { ...silentEffects, ...options.effects };
+  const sound = options.sound ?? silentSound;
   const onRefusedMove =
     options.onRefusedMove ??
     ((error: RefusedMoveError) => {
@@ -221,6 +208,13 @@ export function createGame(options: GameOptions): Game {
   const getPhase = (): RunPhase => actor.getSnapshot().context.phase;
   const getScreen = (): Screen => actor.getSnapshot().value as Screen;
 
+  // What just happened plays its cues, at once. The continuous sound (the
+  // beat, its Overdrive layer, mute, volumes, theme, voice) is not played from
+  // here: it is derived from the snapshot and synced when that changes.
+  function hear(happened: JustHappened) {
+    for (const cue of cueFor(happened)) sound.play(cue);
+  }
+
   const judgementListeners = new Set<(judgement: Judgement) => void>();
   const store = createGameStore({
     getPhase,
@@ -228,10 +222,10 @@ export function createGame(options: GameOptions): Game {
     storage: options.storage,
     clock,
     runClock,
-    effects,
+    onHappened: hear,
     onJudgement(judgement) {
       // Sound answers the Judgement first, once, then everyone else hears it.
-      soundFor(judgement, effects);
+      hear({ type: 'judgement', judgement });
       for (const listener of [...judgementListeners]) listener(judgement);
     },
   });
@@ -317,11 +311,21 @@ export function createGame(options: GameOptions): Game {
   };
   let snapshot = snapshotNow(null);
 
+  const soundOf = (state: GameState) =>
+    soundStateOf(state.profile, state.phase, state.run);
+  let heardSound = soundOf(snapshot);
+  sound.sync(heardSound);
+
   function settle() {
     if (depth > 0) return;
     const next = snapshotNow(snapshot);
     if (next === snapshot) return;
     snapshot = next;
+    const nextSound = soundOf(next);
+    if (!sameSound(nextSound, heardSound)) {
+      heardSound = nextSound;
+      sound.sync(nextSound);
+    }
     for (const listener of [...listeners]) listener();
   }
 

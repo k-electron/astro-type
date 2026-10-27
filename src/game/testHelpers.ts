@@ -10,7 +10,7 @@ import {
   createGame,
   createMemoryStorage,
   type Game,
-  type GameEffects,
+  type Sound,
   type MemorySaveStorage,
 } from './createGame';
 import { buildFreeFlightStage, DEFAULT_FREE_FLIGHT_WPM } from './freeFlight';
@@ -47,15 +47,15 @@ export interface Upgrades {
 /**
  * A game over an in-memory Save, with the Save's storage to look at. `seed` is
  * the Save the player already has (any value, even an unreadable one on
- * purpose); fields left out take their defaults. `effects` is how sound is
- * attached.
+ * purpose); fields left out take their defaults. `sound` is where the game's
+ * sound goes.
  */
 export function loadGame(
   seed?: unknown,
-  effects?: Partial<GameEffects>,
+  sound?: Sound,
 ): { game: Game; storage: MemorySaveStorage } {
   const storage = createMemoryStorage(seed);
-  return { game: createGame({ storage, effects }), storage };
+  return { game: createGame({ storage, sound }), storage };
 }
 
 /** A fresh game over an in-memory Save, optionally seeded (merged over a fresh Profile). */

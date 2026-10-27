@@ -1,30 +1,71 @@
-import type { GameEffects } from '../game/effects';
+import type { Sound } from '../game/sound';
 import { soundEngine } from './soundEngine';
 
-/** Plays the game's effects through the sound engine. The app attaches this. */
-export const soundEffects: GameEffects = {
-  init: () => soundEngine.init(),
-  startBeat: () => soundEngine.startBeat(),
-  stopBeat: () => soundEngine.stopBeat(),
-  setOverdrive: (active) => soundEngine.setOverdrive(active),
-  playLaneHit: (lane, rating, isSpace) =>
-    soundEngine.playLaneHit(lane, rating, isSpace),
-  playHyperspaceIgnition: () => soundEngine.playHyperspaceIgnition(),
-  playShieldAbsorb: () => soundEngine.playShieldAbsorb(),
-  playMiss: () => soundEngine.playMiss(),
-  playStageVictory: () => soundEngine.playStageVictory(),
-  playStarChimes: (stars) => {
-    if (stars >= 1) setTimeout(() => soundEngine.playStarChime(1), 300);
-    if (stars >= 2) setTimeout(() => soundEngine.playStarChime(2), 700);
-    if (stars >= 3) setTimeout(() => soundEngine.playStarChime(3), 1100);
+/** The pause after the fanfare, then between chimes, in milliseconds. */
+const CHIME_AT_MS = [300, 700, 1100] as const;
+
+/**
+ * Plays the game's sound through the sound engine. The app attaches this.
+ * `sync` makes the engine match the state; `play` turns a cue into the
+ * engine's own sound.
+ */
+export const soundEffects: Sound = {
+  sync(state) {
+    // Settings first, so that the beat sees the mute and the volumes it needs.
+    soundEngine.setGlobalMute(state.muted);
+    soundEngine.setSoundEnabled(state.sfxOn);
+    soundEngine.setSoundVolume(state.sfxVolume);
+    soundEngine.setMusicEnabled(state.musicOn);
+    soundEngine.setMusicVolume(state.musicVolume);
+    soundEngine.setBeatTheme(state.theme);
+    soundEngine.setCore(state.core);
+    soundEngine.setOverdrive(state.overdrive);
+    if (state.beat) soundEngine.startBeat();
+    else soundEngine.stopBeat();
   },
-  playShieldUpgrade: () => soundEngine.playShieldUpgrade(),
-  playEquipCosmetic: () => soundEngine.playEquipCosmetic(),
-  setGlobalMute: (muted) => soundEngine.setGlobalMute(muted),
-  setSoundEnabled: (enabled) => soundEngine.setSoundEnabled(enabled),
-  setSoundVolume: (volume) => soundEngine.setSoundVolume(volume),
-  setMusicEnabled: (enabled) => soundEngine.setMusicEnabled(enabled),
-  setMusicVolume: (volume) => soundEngine.setMusicVolume(volume),
-  setBeatTheme: (theme) => soundEngine.setBeatTheme(theme),
-  setCore: (core) => soundEngine.setCore(core),
+
+  play(cue) {
+    switch (cue.type) {
+      case 'hit':
+        soundEngine.playLaneHit(
+          cue.lane,
+          cue.grade === 'perfect'
+            ? 'PERFECT'
+            : cue.grade === 'great'
+              ? 'GREAT'
+              : 'GOOD',
+          cue.space,
+        );
+        return;
+      case 'shield':
+        soundEngine.playShieldAbsorb();
+        return;
+      case 'miss':
+        soundEngine.playMiss();
+        return;
+      case 'ignition':
+        soundEngine.playHyperspaceIgnition();
+        return;
+      case 'victory':
+        soundEngine.playStageVictory();
+        return;
+      case 'stars':
+        // One chime per Star, a beat after the fanfare.
+        CHIME_AT_MS.forEach((delay, i) => {
+          if (cue.count > i) {
+            setTimeout(
+              () => soundEngine.playStarChime((i + 1) as 1 | 2 | 3),
+              delay,
+            );
+          }
+        });
+        return;
+      case 'upgrade':
+        soundEngine.playShieldUpgrade();
+        return;
+      case 'equip':
+        soundEngine.playEquipCosmetic();
+        return;
+    }
+  },
 };
