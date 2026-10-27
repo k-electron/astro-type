@@ -9,7 +9,7 @@ const CHIME_AT_MS = [300, 700, 1100] as const;
  * `sync` makes the engine match the state; `play` turns a cue into the
  * engine's own sound.
  */
-export const soundEffects: Sound = {
+export const engineSound: Sound = {
   sync(state) {
     // Settings first, so that the beat sees the mute and the volumes it needs.
     soundEngine.setGlobalMute(state.muted);

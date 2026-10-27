@@ -1,6 +1,5 @@
 import type { ComponentType } from 'react';
 import { useEffect } from 'react';
-import { soundEngine } from './audio/soundEngine';
 import { AcademyHome } from './components/AcademyHome';
 import { PauseMenu } from './components/PauseMenu';
 import { HeaderNav } from './components/HeaderNav';
@@ -64,33 +63,13 @@ export default function App() {
   // App selects only what it shows itself. The Run's moving fields (Drones,
   // score, Streak, the typed index) belong to the deck, the HUD and the text
   // prompt, which select them on their own.
-  const { screen, phase, profile } = useGameState((state) => ({
+  const { screen, phase } = useGameState((state) => ({
     screen: state.screen,
     phase: state.phase,
-    profile: state.profile,
   }));
   // The screen on top, if one covers the page. The Flight Deck behind it can't
   // be reached by key, click or screen reader until it goes.
   const Overlay = overlayFor(screen);
-
-  // Synchronize audio engine with current profile settings
-  useEffect(() => {
-    soundEngine.setGlobalMute(Boolean(profile.globalMuted));
-    soundEngine.setSoundEnabled(profile.soundEnabled);
-    soundEngine.setSoundVolume(profile.soundVolume);
-    soundEngine.setMusicEnabled(profile.musicEnabled !== false);
-    soundEngine.setMusicVolume(profile.musicVolume ?? 0.4);
-    soundEngine.setBeatTheme(profile.beatTheme || 'NEON_SYNTHWAVE');
-    soundEngine.setCore(profile.upgrades.equippedAudioCore);
-  }, [
-    profile.globalMuted,
-    profile.soundEnabled,
-    profile.soundVolume,
-    profile.musicEnabled,
-    profile.musicVolume,
-    profile.beatTheme,
-    profile.upgrades.equippedAudioCore,
-  ]);
 
   // Main Keystroke Handler (Active touch-typing listener with down/up press duration tracking)
   useEffect(() => {

@@ -20,7 +20,7 @@ ADR-0001 sets the split between the store and the machine.
 - **Action Deck:** PixiJS, in `src/components/pixi-deck/` (`PixiActionDeck.tsx` mounts it). Its accessibility layer is what browser tests read.
 - **Curriculum:** `src/data/curriculum.ts`.
 - **Save and Backup:** `src/game/save.ts` is the Save module, `src/utils/storage.ts` is the localStorage adapter, and the schemas are in `src/store/schemas.ts`.
-- **Sound:** `src/audio/soundEngine.ts`, attached to the game through the effects port in `src/audio/soundEffects.ts`.
+- **Sound:** `src/game/sound.ts` derives the continuous sound (`soundStateOf`) and the one-shot cues (`cueFor`) and defines the two-method sound port (`sync`, `play`). `src/audio/soundEngine.ts` is the engine; `src/audio/engineSound.ts` is the real adapter, attached in `src/appGame.ts`.
 - **Tests:** headless unit tests in `src/**/*.test.ts`, screen tests in `tests/dom/*.test.tsx` (through `tests/dom/harness.tsx`), CI browser journeys in `tests/browser/*.spec.ts`, and the local-only suite in `tests/browser/local/`. ADR-0002 sets the layers.
 
 ## Ground rules

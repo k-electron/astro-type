@@ -99,14 +99,6 @@ class SoundEngine {
     return next;
   }
 
-  public getBeatTheme(): BeatTheme {
-    return this.beatTheme;
-  }
-
-  public getBpm(): number {
-    return this.tempoBpm;
-  }
-
   public setGlobalMute(muted: boolean) {
     this.globalMuted = muted;
     if (this.ctx && this.masterGain) {
@@ -115,10 +107,6 @@ class SoundEngine {
     if (muted && this.beatIntervalId) {
       this.stopBeat();
     }
-  }
-
-  public isGlobalMuted(): boolean {
-    return this.globalMuted;
   }
 
   public setSoundVolume(vol: number) {
@@ -143,18 +131,6 @@ class SoundEngine {
       const fx = !enabled ? 0 : this.soundVolume;
       this.sfxGain.gain.setValueAtTime(fx, this.ctx.currentTime);
     }
-  }
-
-  public isSoundEnabled(): boolean {
-    return this.soundEnabled;
-  }
-
-  public isMusicEnabled(): boolean {
-    return this.musicEnabled;
-  }
-
-  public isBeatPlaying(): boolean {
-    return this.beatIntervalId !== null;
   }
 
   public setMusicEnabled(enabled: boolean) {

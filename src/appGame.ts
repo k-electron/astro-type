@@ -1,4 +1,4 @@
-import { soundEffects } from './audio/soundEffects';
+import { engineSound } from './audio/engineSound';
 import { createRealtimeClock } from './game/clock';
 import { createGame } from './game/createGame';
 import { browserFrameEnvironment, startFrameLoop } from './game/frameLoop';
@@ -16,7 +16,7 @@ import { createLocalStorageSave } from './utils/storage';
 export const game = createGame({
   storage: createLocalStorageSave(),
   clock: createRealtimeClock(),
-  sound: soundEffects,
+  sound: engineSound,
   onRefusedMove: (error) => {
     if (import.meta.env.DEV) console.warn(error.message);
   },

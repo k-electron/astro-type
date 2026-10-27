@@ -1,6 +1,6 @@
 import { afterEach, expect, it, vi } from 'vitest';
 import { RETURNING_PLAYER } from '../../tests/shared/saves';
-import { soundEffects } from '../audio/soundEffects';
+import { engineSound } from '../audio/engineSound';
 import { clearStage, loadGame, STAGE_ID, startStage } from './testHelpers';
 
 /**
@@ -44,7 +44,7 @@ it.each([
   'plays the fanfare, then $stars chime(s) one after the other',
   ({ stars, missesFirst }) => {
     vi.useFakeTimers();
-    const { game } = loadGame(RETURNING_PLAYER, soundEffects);
+    const { game } = loadGame(RETURNING_PLAYER, engineSound);
     startStage(game, STAGE_ID);
 
     clearStage(game, { seconds: 60, missesFirst });
