@@ -1,11 +1,13 @@
 /**
- * One game, built fresh: the machine, the store, the clock and Save storage.
- * The app builds one at startup and each test builds its own.
+ * One game, built fresh: the machine, the one store (the Run and the Profile),
+ * the clock and Save storage. The app builds one at startup and each test
+ * builds its own.
  *
  * Nothing in this module's imports touches React, PixiJS, the DOM, browser
  * storage or the sound engine. Sound is attached from outside as `sound`.
  */
 import { createActor } from 'xstate';
+import { createStore } from 'zustand/vanilla';
 import {
   type GameMachineEvent,
   gameMachine,
@@ -22,7 +24,7 @@ import type {
   Stage,
 } from '../types/game';
 import { type Clock, createRunClock, createSteppedClock } from './clock';
-import type { KeyOptions } from './rules';
+import type { KeyOptions, RunState } from './rules';
 import type { Moment } from './moments';
 import {
   cueFor,
@@ -31,11 +33,8 @@ import {
   silentSound,
   soundStateOf,
 } from './sound';
-import {
-  createGameStore,
-  type GameStoreState,
-  type VictoryResult,
-} from './gameStore';
+import { createProfileSlice, loadoutOf, type ProfileSlice } from './profile';
+import { createRunSlice, type RunSlice, type VictoryResult } from './run';
 import type { CatalogItemId } from './catalog';
 import type { BackupImport, SaveStorage } from './save';
 import type { Settings } from '../store/schemas';
@@ -46,7 +45,7 @@ export type { Clock } from './clock';
 export type { Cue, Sound, SoundState } from './sound';
 export type { Judgement, KeyOptions } from './rules';
 export type { Moment } from './moments';
-export type { VictoryResult } from './gameStore';
+export type { VictoryResult } from './run';
 export type { PlayerEvent } from '../store/gameMachine';
 export type { RunPhase, Screen } from '../types/game';
 
@@ -176,8 +175,8 @@ export interface Game {
   resetProgress(): void;
 }
 
-/** The telemetry tick: every 30 steps, which is 500 ms at 60 steps a second. */
-const TELEMETRY_EVERY_STEPS = 30;
+/** The game's one store: the Run's part and the Profile's, side by side. */
+type GameStoreState = RunSlice & ProfileSlice;
 
 export function createGame(options: GameOptions): Game {
   const clock = options.clock ?? createSteppedClock();
@@ -196,18 +195,17 @@ export function createGame(options: GameOptions): Game {
     actions: {
       beginRun: (_, { stage }) => store.getState().beginRun(stage),
       beginCurrentStage: () =>
-        store.getState().beginRun(store.getState().currentStage),
+        store.getState().beginRun(store.getState().run.stage),
       beginNextStage: () => {
-        const next = nextStageOf(store.getState().currentStage);
+        const next = nextStageOf(store.getState().run.stage);
         if (next) store.getState().beginRun(next);
       },
       abandonRun: () => store.getState().abandonRun(),
       recordResult: () => store.getState().recordResult(),
-      releasePressedKey: () => store.getState().releaseKeystroke(),
+      releasePressedKey: () => store.getState().releaseKey(),
     },
     guards: {
-      hasNextStage: () =>
-        nextStageOf(store.getState().currentStage) !== undefined,
+      hasNextStage: () => nextStageOf(store.getState().run.stage) !== undefined,
     },
   });
   const actor = createActor(machine);
@@ -222,17 +220,34 @@ export function createGame(options: GameOptions): Game {
   // from the snapshot and synced when that changes.
   const momentListeners = new Set<(moment: Moment) => void>();
   const happened: Moment[] = [];
-  const store = createGameStore({
-    getPhase,
-    reportRunCleared: () => deliver({ type: 'RUN_CLEARED' }),
-    storage: options.storage,
-    clock,
-    runClock,
-    emit: (moment) => {
-      happened.push(moment);
-      // A change on the store itself, outside any move, is heard at once.
-      if (depth === 0) heardAfter();
-    },
+  const emit = (moment: Moment) => {
+    happened.push(moment);
+    // A change on the store itself, outside any move, is heard at once.
+    if (depth === 0) heardAfter();
+  };
+  // One store, built from the Profile's part and the Run's. The Run reads the
+  // Profile (its Loadout, and handing it a cleared Stage's result); the
+  // Profile reads nothing of the Run. The Run starts with the Loadout of the
+  // Profile the Save gave.
+  const store = createStore<GameStoreState>()((set, get) => {
+    const profile = createProfileSlice(
+      { storage: options.storage, emit },
+      set,
+      get,
+    );
+    const run = createRunSlice(
+      {
+        getPhase,
+        reportRunCleared: () => deliver({ type: 'RUN_CLEARED' }),
+        clock,
+        runClock,
+        emit,
+      },
+      set,
+      get,
+      loadoutOf(profile.profile),
+    );
+    return { ...profile, ...run };
   });
 
   actor.start();
@@ -252,46 +267,35 @@ export function createGame(options: GameOptions): Game {
     return openers[openers.length - 1]?.screen ?? null;
   };
 
-  // The Run is made of five things in the store; it is rebuilt only when one
-  // of them is a different object.
+  // The public Run is made of five things in the store's Run; it is rebuilt
+  // only when one of them is a different object.
   let builtFrom: Pick<
-    GameStoreState,
-    | 'performance'
-    | 'fallingNotes'
-    | 'currentStage'
-    | 'errorIndices'
-    | 'lastPressedKey'
+    RunState,
+    'performance' | 'drones' | 'stage' | 'errorIndices' | 'lastPressedKey'
   > | null = null;
   let builtRun: Run | null = null;
-  const buildRun = (state: GameStoreState): Run => {
+  const buildRun = ({
+    performance,
+    drones,
+    stage,
+    errorIndices,
+    lastPressedKey,
+  }: RunState): Run => {
     if (
       builtRun &&
-      builtFrom?.performance === state.performance &&
-      builtFrom.fallingNotes === state.fallingNotes &&
-      builtFrom.currentStage === state.currentStage &&
-      builtFrom.errorIndices === state.errorIndices &&
-      builtFrom.lastPressedKey === state.lastPressedKey
+      builtFrom?.performance === performance &&
+      builtFrom.drones === drones &&
+      builtFrom.stage === stage &&
+      builtFrom.errorIndices === errorIndices &&
+      builtFrom.lastPressedKey === lastPressedKey
     ) {
       return builtRun;
     }
-    const {
-      performance,
-      fallingNotes,
-      currentStage,
-      errorIndices,
-      lastPressedKey,
-    } = state;
-    builtFrom = {
-      performance,
-      fallingNotes,
-      currentStage,
-      errorIndices,
-      lastPressedKey,
-    };
+    builtFrom = { performance, drones, stage, errorIndices, lastPressedKey };
     builtRun = {
       ...performance,
-      drones: fallingNotes,
-      currentStage,
+      drones,
+      currentStage: stage,
       errorIndices,
       lastPressedKey,
     };
@@ -313,9 +317,9 @@ export function createGame(options: GameOptions): Game {
       phase: getPhase(),
       opener: getOpener(),
       screenParams: actor.getSnapshot().context.screenParams,
-      hasNextStage: nextStageOf(state.currentStage) !== undefined,
-      run: buildRun(state),
-      debrief: state.victoryResult,
+      hasNextStage: nextStageOf(state.run.stage) !== undefined,
+      run: buildRun(state.run),
+      debrief: state.debrief,
       profile: state.profile,
       loadNotice: state.loadNotice,
       runTime: runClock.runTimeMs(),
@@ -394,28 +398,23 @@ export function createGame(options: GameOptions): Game {
 
   const actions = () => store.getState();
 
+  // The one step that crosses from the Profile to the Run: wiping or resetting
+  // sends the player back to the first Stage, unless a Run is still on show
+  // (paused, or cleared with its Debrief to come back to). The Profile never
+  // reads the phase, so the Game, which holds both, decides.
+  const backToFirstStageUnlessRun = () => {
+    if (getPhase() === 'none' || getPhase() === 'abandoned') {
+      actions().showFirstStage();
+    }
+  };
+
   return {
     send,
     pressKey: (key, pressOptions) =>
-      move(() => actions().processKeystroke(key, pressOptions)),
-    releaseKey: (key) => move(() => actions().releaseKeystroke(key)),
+      move(() => actions().pressKey(key, pressOptions)),
+    releaseKey: (key) => move(() => actions().releaseKey(key)),
     onMoment,
-    step(count = 1) {
-      move(() => {
-        for (let i = 0; i < count; i++) {
-          // A step can end the phase (nothing in a step does today, but the
-          // phase is the machine's to say), so ask before each one.
-          if (getPhase() !== 'running') return;
-          clock.step(1);
-          runClock.advance(1);
-          store.getState().updateFallingNotesOnTick();
-          // Telemetry follows Run Time, so a pause doesn't shift its rhythm.
-          if (runClock.steps() % TELEMETRY_EVERY_STEPS === 0) {
-            store.getState().updateTelemetryOnInterval();
-          }
-        }
-      });
-    },
+    step: (count = 1) => move(() => actions().step(count)),
     getState: () => snapshot,
     subscribe(listener) {
       listeners.add(listener);
@@ -426,7 +425,15 @@ export function createGame(options: GameOptions): Game {
     changeSettings: (patch) => move(() => actions().changeSettings(patch)),
     buy: (itemId) => move(() => actions().buy(itemId)),
     importBackup: (text) => move(() => actions().importProfile(text)),
-    wipeAchievements: () => move(() => actions().wipeCurriculumAchievements()),
-    resetProgress: () => move(() => actions().resetProgress()),
+    wipeAchievements: () =>
+      move(() => {
+        actions().wipeCurriculumAchievements();
+        backToFirstStageUnlessRun();
+      }),
+    resetProgress: () =>
+      move(() => {
+        actions().resetProgress();
+        backToFirstStageUnlessRun();
+      }),
   };
 }

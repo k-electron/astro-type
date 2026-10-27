@@ -3,11 +3,19 @@
  * Multiplier, Overdrive, shields, Drone movement, telemetry, Stars and
  * Credits. No React, PixiJS, DOM or sound in here.
  *
+ * The whole keystroke is one function, `strike`, and the whole step is
+ * another, `tick`, both over one `RunState`. The Run module applies their
+ * results; everything else in this file is a helper of those two, Stars and
+ * Credits, or something the HUD and the deck read.
+ *
  * The numbers and windows are the original game's, except that every Run now
  * falls at one Drone speed (`DRONE_SPEED`).
  */
 import { getNoteLaneAndFinger } from '../data/curriculum';
 import type { FallingNote, LivePerformance, Stage } from '../types/game';
+import { STEP_MS } from './clock';
+import type { Moment } from './moments';
+import type { Loadout } from './profile';
 
 export type Rating = 'PERFECT' | 'GREAT' | 'GOOD';
 
@@ -55,7 +63,62 @@ export function countsAsKeystroke(
   return Array.from(key).length === 1;
 }
 
-export function freshPerformance(shields: number): LivePerformance {
+// ---- The Run's state ----------------------------------------------------
+
+/** What the rules read of the Run's key stats: how often a character was hit or missed. */
+export type KeyStats = Record<string, { hits: number; misses: number }>;
+
+/**
+ * Everything a Run is, as one value: the live numbers, the Drones, the Stage,
+ * the typed position (`performance.currentCharIndex`), the per-key stats, the
+ * last ten keystroke times and the Miss marks. `strike` and `tick` take one
+ * and give the next; nothing in it is changed in place.
+ */
+export interface RunState {
+  performance: LivePerformance;
+  /** The lead Drone is first; the Strike Line is y=84. */
+  drones: FallingNote[];
+  stage: Stage;
+  /** The positions in the text where a wrong key was pressed: the Miss marks. */
+  errorIndices: ReadonlySet<number>;
+  keyStats: KeyStats;
+  /** Run Time (ms) of the last ten hits, for cadence. */
+  recentKeystrokeTimes: number[];
+  /** The key the player has down, or null. */
+  lastPressedKey: string | null;
+}
+
+/** When a rule runs: the Run's step count, and the wall clock for a Drone's id. */
+export interface RunTime {
+  /** Steps of 1/60 s the Run has run for, this one included. */
+  steps: number;
+  /** Milliseconds on the wall clock. Only names Drones. */
+  now: number;
+}
+
+/** A Run with nothing in flight: no Drones, no marks, the numbers at their start. */
+export function idleRun(stage: Stage, loadout: Loadout): RunState {
+  return {
+    performance: freshPerformance(loadout.shields),
+    drones: [],
+    stage,
+    errorIndices: new Set<number>(),
+    keyStats: {},
+    recentKeystrokeTimes: [],
+    lastPressedKey: null,
+  };
+}
+
+/** A fresh Run of `stage`, with its first Drones seeded. */
+export function startRun(
+  stage: Stage,
+  loadout: Loadout,
+  now: number,
+): RunState {
+  return { ...idleRun(stage, loadout), drones: seedDrones(stage, now) };
+}
+
+function freshPerformance(shields: number): LivePerformance {
   return {
     score: 0,
     currentStreak: 0,
@@ -99,7 +162,7 @@ function makeDrone(
 }
 
 /** The first seven Drones of a Run. */
-export function seedDrones(stage: Stage, now: number): FallingNote[] {
+function seedDrones(stage: Stage, now: number): FallingNote[] {
   const text = stage.sampleText.slice(0, 7);
   const drones: FallingNote[] = [];
   for (let i = 0; i < text.length; i++) {
@@ -121,7 +184,7 @@ export function seedDrones(stage: Stage, now: number): FallingNote[] {
  * The Drones after the lead one is hit: the hit Drone leaves, a new one
  * enters at the top for the character six ahead, and the new lead is locked.
  */
-export function advanceDroneQueue(
+function advanceDroneQueue(
   drones: FallingNote[],
   hit: FallingNote | undefined,
   nextCharIndex: number,
@@ -145,10 +208,10 @@ export function advanceDroneQueue(
  * (a percentage of the Action Deck) every 1/60 s, and each Drone behind it
  * closes `followerEasing` of its way to its slot.
  */
-export const DRONE_SPEED = { leadStep: 2.2, followerEasing: 0.22 } as const;
+const DRONE_SPEED = { leadStep: 2.2, followerEasing: 0.22 } as const;
 
 /** One 60 Hz step of Drone movement. */
-export function moveDrones(drones: FallingNote[]): FallingNote[] {
+function moveDrones(drones: FallingNote[]): FallingNote[] {
   const { leadStep, followerEasing } = DRONE_SPEED;
 
   return drones.map((note, idx) => {
@@ -182,10 +245,7 @@ export function moveDrones(drones: FallingNote[]): FallingNote[] {
  * Perfect, Great or Good by distance from the Strike Line. Precision sensor
  * Upgrades widen the windows. With no Drone to measure, a hit is Great.
  */
-export function judge(
-  droneY: number | undefined,
-  precisionSensors: number,
-): Rating {
+function judge(droneY: number | undefined, precisionSensors: number): Rating {
   if (droneY === undefined) return 'GREAT';
   const sensorBonus = precisionSensors * 3.5;
   const diff = Math.abs(droneY - STRIKE_LINE_Y);
@@ -194,7 +254,7 @@ export function judge(
   return 'GOOD';
 }
 
-export function multiplierForStreak(streak: number): number {
+function multiplierForStreak(streak: number): number {
   if (streak >= 30) return 4;
   if (streak >= 20) return 3;
   if (streak >= 10) return 2;
@@ -220,7 +280,7 @@ export function scoreForHit(
 }
 
 /** Overdrive energy after a hit, and whether this hit ignites it. */
-export function chargeOverdrive(
+function chargeOverdrive(
   energy: number,
   active: boolean,
   reactorLevel: number,
@@ -232,7 +292,7 @@ export function chargeOverdrive(
 }
 
 /** Rhythm regularity from the last ten keystroke times. */
-export function cadenceAfterHit(times: number[], previous: number): number {
+function cadenceAfterHit(times: number[], previous: number): number {
   if (times.length < 4) return previous;
   const intervals: number[] = [];
   for (let i = 1; i < times.length; i++) {
@@ -248,12 +308,12 @@ export function cadenceAfterHit(times: number[], previous: number): number {
   return previous;
 }
 
-export function cadenceAfterMiss(previous: number): number {
+function cadenceAfterMiss(previous: number): number {
   return Math.max(25, previous - 15);
 }
 
 /** The Run's numbers after a Miss: shields absorb it, otherwise the Streak breaks. */
-export function applyMiss(
+function applyMiss(
   perf: LivePerformance,
   cadence: number,
 ): { perf: LivePerformance; shielded: boolean } {
@@ -285,9 +345,190 @@ export function applyMiss(
   };
 }
 
+// ---- The keystroke and the step -----------------------------------------
+
+/** What striking a key did. */
+export interface StrikeResult {
+  run: RunState;
+  /** What judging it produced, or null when there was nothing to judge (no character left to type). */
+  judgement: Judgement | null;
+  /** What happened, in order: the Judgement with its Drone, then Overdrive catching fire. */
+  moments: Moment[];
+  /** The last character was typed. */
+  cleared: boolean;
+}
+
+const GRADE_OF: Record<Rating, 'perfect' | 'great' | 'good'> = {
+  PERFECT: 'perfect',
+  GREAT: 'great',
+  GOOD: 'good',
+};
+
+/**
+ * The whole keystroke: the player strikes `key` against the character the Run
+ * is on. `key` is one that counts (see `countsAsKeystroke`). A right key is
+ * judged against the lead Drone for the character, scored, adds to the Streak
+ * and Overdrive's charge and moves the Run on; a wrong key is a Miss, which a
+ * shield absorbs or else breaks the Streak. The loadout is what the player's
+ * Upgrades give the Run: Sensors widen the windows, the Reactor charges
+ * Overdrive faster, and the shields were counted when the Run began.
+ */
+export function strike(
+  run: RunState,
+  key: string,
+  loadout: Loadout,
+  time: RunTime,
+): StrikeResult {
+  const { performance, stage } = run;
+  const index = performance.currentCharIndex;
+  const target = stage.sampleText[index];
+  if (!target) {
+    return {
+      run: { ...run, lastPressedKey: key },
+      judgement: null,
+      moments: [],
+      cleared: false,
+    };
+  }
+
+  const stats = run.keyStats[target] ?? { hits: 0, misses: 0 };
+
+  if (key !== target) {
+    const { perf, shielded } = applyMiss(
+      performance,
+      cadenceAfterMiss(performance.cadenceConsistency ?? 100),
+    );
+    const judgement = { type: shielded ? 'shield' : 'miss', key } as const;
+    return {
+      run: {
+        ...run,
+        performance: perf,
+        errorIndices: new Set(run.errorIndices).add(index),
+        keyStats: {
+          ...run.keyStats,
+          [target]: { ...stats, misses: stats.misses + 1 },
+        },
+        lastPressedKey: key,
+      },
+      judgement,
+      moments: [judgement],
+      cleared: false,
+    };
+  }
+
+  // Judge the Strike against the lead Drone for this character.
+  const drone = run.drones.find(
+    (d) => d.char === target && d.status === 'PENDING',
+  );
+  const rating = judge(drone?.yPercent, loadout.sensors);
+  const streak = performance.currentStreak + 1;
+  const multiplier = multiplierForStreak(streak);
+  const points = scoreForHit(rating, multiplier, performance.hyperspaceActive);
+  const charge = chargeOverdrive(
+    performance.hyperspaceEnergy,
+    performance.hyperspaceActive,
+    loadout.reactor,
+  );
+  const nextIndex = index + 1;
+
+  // Inter-keystroke intervals, for steady cadence and rhythm scoring.
+  const keystrokeTimes = [
+    ...run.recentKeystrokeTimes,
+    time.steps * STEP_MS,
+  ].slice(-10);
+
+  const judgement: Judgement = {
+    type: 'hit',
+    grade: GRADE_OF[rating],
+    key,
+    points,
+    overdrive: performance.hyperspaceActive,
+  };
+  // The Drone carries its lane and finger. The Run always keeps a Drone for
+  // the next character; the key table is the fallback.
+  const fallback = getNoteLaneAndFinger(target);
+  const moments: Moment[] = [
+    {
+      ...judgement,
+      droneId: drone?.id ?? '',
+      lane: drone?.lane ?? fallback.lane,
+      finger: drone?.finger ?? fallback.finger,
+    },
+  ];
+  // Overdrive catching fire comes right after the hit that lit it.
+  if (charge.ignites) moments.push({ type: 'ignition' });
+
+  return {
+    run: {
+      ...run,
+      performance: {
+        ...performance,
+        score: performance.score + points,
+        currentStreak: streak,
+        maxStreak: Math.max(performance.maxStreak, streak),
+        multiplier,
+        hyperspaceActive: charge.ignites ? true : performance.hyperspaceActive,
+        hyperspaceEnergy: charge.energy,
+        correctKeystrokes: performance.correctKeystrokes + 1,
+        totalKeystrokes: performance.totalKeystrokes + 1,
+        currentCharIndex: nextIndex,
+        cadenceConsistency: cadenceAfterHit(
+          keystrokeTimes,
+          performance.cadenceConsistency ?? 100,
+        ),
+      },
+      drones: advanceDroneQueue(
+        run.drones,
+        drone,
+        nextIndex,
+        stage.sampleText,
+        time.now,
+      ),
+      keyStats: {
+        ...run.keyStats,
+        [target]: { ...stats, hits: stats.hits + 1 },
+      },
+      recentKeystrokeTimes: keystrokeTimes,
+      lastPressedKey: key,
+    },
+    judgement,
+    moments,
+    cleared: nextIndex >= stage.sampleText.length,
+  };
+}
+
+/** The telemetry tick: every 30 steps, which is 500 ms at 60 steps a second. */
+const TELEMETRY_EVERY_STEPS = 30;
+
+/**
+ * The whole step: the Drones move one step of 1/60 s, and every 30th step of
+ * Run Time WPM and elapsed time refresh. `steps` is the Run's step count, this
+ * step included, so a pause doesn't shift the rhythm.
+ */
+export function tick(run: RunState, steps: number): RunState {
+  const moved = { ...run, drones: moveDrones(run.drones) };
+  if (steps % TELEMETRY_EVERY_STEPS !== 0) return moved;
+  const elapsedSeconds = Math.max(1, (steps * STEP_MS) / 1000);
+  return {
+    ...moved,
+    performance: telemetry(run.performance, elapsedSeconds),
+  };
+}
+
+/** The Run's numbers once it is cleared: the Streak, Multiplier and Overdrive are over. */
+export function clearedPerformance(perf: LivePerformance): LivePerformance {
+  return {
+    ...perf,
+    hyperspaceActive: false,
+    hyperspaceEnergy: 0,
+    multiplier: 1,
+    currentStreak: 0,
+  };
+}
+
 // ---- Telemetry, Stars and Credits ---------------------------------------
 
-export function accuracyOf(perf: LivePerformance): number {
+function accuracyOf(perf: LivePerformance): number {
   return perf.totalKeystrokes > 0
     ? Math.max(
         0,
@@ -300,7 +541,7 @@ export function accuracyOf(perf: LivePerformance): number {
 }
 
 /** Live WPM and accuracy for the HUD. */
-export function telemetry(
+function telemetry(
   prev: LivePerformance,
   elapsedSeconds: number,
 ): LivePerformance {

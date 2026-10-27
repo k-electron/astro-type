@@ -1,9 +1,9 @@
 import {
+  DEFAULT_PROFILE,
   PlayerProfileSchema,
   SaveFieldsSchema,
   type PlayerProfile,
 } from '../store/schemas';
-import { DEFAULT_PROFILE } from './profile';
 
 /**
  * The Save module. It is the only code that reads or writes the Save: it

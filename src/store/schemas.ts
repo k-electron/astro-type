@@ -122,6 +122,9 @@ export const PlayerProfileSchema = SaveFieldsSchema.transform((save) => {
   };
 });
 
+/** The Profile a new player starts with: every field at its default. */
+export const DEFAULT_PROFILE: PlayerProfile = PlayerProfileSchema.parse({});
+
 // Free Flight text, checked at Launch. This schema is the only definition of
 // what Free Flight text is: look-alike characters become plain keys, and any
 // character the shown keyboard still can't type is reported.
