@@ -28,6 +28,7 @@ import {
 } from '@testing-library/react';
 import { afterEach } from 'vitest';
 import App from '../../src/App';
+import { attachKeyboard } from '../../src/app/attachKeyboard';
 import {
   createGame,
   createMemoryStorage,
@@ -81,8 +82,9 @@ export interface Player {
   /** Academy Home -> Free Flight -> type the text in -> Launch Custom Flight. */
   launchFreeFlight(text: string): void;
   /**
-   * Press one key through the App's own key listener: a keydown, then the
-   * keyup, on `window`. `key` is a `KeyboardEvent.key` value (' ' for Space).
+   * Press one key through the keys the harness attaches to the game
+   * (`attachKeyboard`): a keydown, then the keyup, on `window`. `key` is a
+   * `KeyboardEvent.key` value (' ' for Space).
    */
   press(key: string, options?: PressOptions): void;
   /**
@@ -135,7 +137,11 @@ const STEPS_BEFORE_A_KEY = 30;
 /** Moves the machine refused during the current test; any is a test failure. */
 let refusals: RefusedMoveError[] = [];
 
+/** Lets go of the keys of every game mounted since the last test ended. */
+const detachers: Array<() => void> = [];
+
 afterEach(() => {
+  for (const detach of detachers.splice(0)) detach();
   const refused = refusals;
   refusals = [];
   if (refused.length > 0) {
@@ -173,6 +179,7 @@ export function renderGame(options: RenderGameOptions = {}): Player {
   const storage = options.storage ?? createMemoryStorage(options.profile);
   let game: Game;
   let unmount: () => void;
+  let detachKeyboard: () => void;
 
   const mount = () => {
     game = createGame({
@@ -182,6 +189,10 @@ export function renderGame(options: RenderGameOptions = {}): Player {
       // test, so a refused move is collected and fails the test when it ends.
       onRefusedMove: (error) => refusals.push(error),
     });
+    // The harness is the composition root here, so it attaches the keys, as
+    // the app does: a keydown on `window` reaches this game.
+    detachKeyboard = attachKeyboard(game, window);
+    detachers.push(detachKeyboard);
     unmount = render(
       <GameProvider game={game}>
         <App />
@@ -246,6 +257,7 @@ export function renderGame(options: RenderGameOptions = {}): Player {
       fireEvent(document, new Event('visibilitychange'));
     },
     reload() {
+      detachKeyboard();
       unmount();
       mount();
     },

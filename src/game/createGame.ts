@@ -22,7 +22,7 @@ import type {
   Stage,
 } from '../types/game';
 import { type Clock, createRunClock, createSteppedClock } from './clock';
-import type { Judgement } from './rules';
+import type { Judgement, KeyOptions } from './rules';
 import { isJudgement, type Moment } from './moments';
 import {
   cueFor,
@@ -44,7 +44,7 @@ export { createMemoryStorage } from './save';
 export type { MemorySaveStorage, SaveStorage } from './save';
 export type { Clock } from './clock';
 export type { Cue, Sound, SoundState } from './sound';
-export type { Judgement } from './rules';
+export type { Judgement, KeyOptions } from './rules';
 export type { Moment } from './moments';
 export type { GameStoreState, VictoryResult } from './gameStore';
 export type { PlayerEvent } from '../store/gameMachine';
@@ -121,12 +121,14 @@ export interface Game {
   /** Would the machine accept this event now? */
   canSend(event: PlayerEvent): boolean;
   /**
-   * Press a key, as a keydown does; `key` is a `KeyboardEvent.key` value.
+   * Press a key, as a keydown does; `key` is a `KeyboardEvent.key` value and
+   * `options` are the keydown's `repeat`, `ctrlKey`, `metaKey` and `altKey`.
    * Only a key that types one character is judged. Everything else (Escape,
-   * Backspace, Enter, arrows, function keys, Tab, modifiers) and every
-   * auto-repeat keydown (`repeat: true`) is ignored and changes nothing.
+   * Backspace, Enter, arrows, function keys, Tab, modifiers), every
+   * auto-repeat keydown and every Cmd or Ctrl shortcut is ignored and changes
+   * nothing.
    */
-  pressKey(key: string, options?: { repeat?: boolean }): void;
+  pressKey(key: string, options?: KeyOptions): void;
   /**
    * Hear each Judgement as it happens: exactly one per keystroke that counts.
    * Returns the way to stop listening.

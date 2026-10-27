@@ -1,5 +1,4 @@
 import type { ComponentType } from 'react';
-import { useEffect } from 'react';
 import { AcademyHome } from './components/AcademyHome';
 import { PauseMenu } from './components/PauseMenu';
 import { HeaderNav } from './components/HeaderNav';
@@ -13,7 +12,6 @@ import { PixiActionDeck } from './components/pixi-deck/PixiActionDeck';
 import { CustomPracticeModal } from './components/CustomPracticeModal';
 import { LevelCompleteModal } from './components/LevelCompleteModal';
 import { GlobalCosmicBackground } from './components/GlobalCosmicBackground';
-import { useGame } from './store/gameContext';
 import { useGameState } from './store/useGameState';
 import type { Screen } from './types/game';
 
@@ -56,80 +54,15 @@ function overlayFor(screen: Screen): ComponentType | undefined {
 }
 
 export default function App() {
-  const game = useGame();
-  const { send } = game;
   const headerRef = useHeaderHeight();
 
   // App selects only what it shows itself. The Run's moving fields (Drones,
   // score, Streak, the typed index) belong to the deck, the HUD and the text
   // prompt, which select them on their own.
-  const { screen, phase } = useGameState((state) => ({
-    screen: state.screen,
-    phase: state.phase,
-  }));
+  const screen = useGameState((state) => state.screen);
   // The screen on top, if one covers the page. The Flight Deck behind it can't
   // be reached by key, click or screen reader until it goes.
   const Overlay = overlayFor(screen);
-
-  // Main Keystroke Handler (Active touch-typing listener with down/up press duration tracking)
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Esc is a player event on every screen; the machine decides what it
-      // means there. It is never a keystroke. A header dropdown that took the
-      // Esc to close itself has already marked it handled.
-      if (e.key === 'Escape') {
-        if (!e.repeat && !e.defaultPrevented) send({ type: 'PRESS_ESC' });
-        return;
-      }
-
-      if (phase !== 'running') return;
-
-      // Prevent Spacebar from scrolling the page
-      if (e.key === ' ') {
-        e.preventDefault();
-      }
-
-      // A shortcut such as Cmd+R types nothing. (Ctrl with Alt is how some
-      // layouts type AltGr characters, so that pair still counts.)
-      if (e.metaKey || (e.ctrlKey && !e.altKey)) return;
-
-      // Which keys count, and dropping auto-repeat, is the game's call.
-      game.pressKey(e.key, { repeat: e.repeat });
-    };
-
-    const handleKeyUp = (e: KeyboardEvent) => {
-      if (phase !== 'running') return;
-      game.releaseKey(e.key);
-    };
-
-    const handleBlur = () => {
-      game.releaseKey();
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('keyup', handleKeyUp);
-    window.addEventListener('blur', handleBlur);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('keyup', handleKeyUp);
-      window.removeEventListener('blur', handleBlur);
-    };
-  }, [phase, game, send]);
-
-  // Leaving the page (another window, another tab) is a player event: the
-  // machine pauses a running Run and ignores it anywhere else.
-  useEffect(() => {
-    const handleLostFocus = () => send({ type: 'LOST_FOCUS' });
-    const handleVisibility = () => {
-      if (document.visibilityState === 'hidden') handleLostFocus();
-    };
-    window.addEventListener('blur', handleLostFocus);
-    document.addEventListener('visibilitychange', handleVisibility);
-    return () => {
-      window.removeEventListener('blur', handleLostFocus);
-      document.removeEventListener('visibilitychange', handleVisibility);
-    };
-  }, [send]);
 
   return (
     <div className="relative min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-cyan-500/30 selection:text-cyan-200 overflow-x-hidden">

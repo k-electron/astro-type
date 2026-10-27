@@ -30,14 +30,29 @@ export type Judgement =
   | { type: 'miss'; key: string }
   | { type: 'shield'; key: string };
 
+/** What a keydown says besides its key: how it was pressed. */
+export interface KeyOptions {
+  /** An auto-repeat keydown, as when a key is held. */
+  repeat?: boolean;
+  ctrlKey?: boolean;
+  metaKey?: boolean;
+  altKey?: boolean;
+}
+
 /**
  * Whether a keydown can be a hit or a Miss: only a key that types one
  * character (a letter, digit, symbol or Space). Escape, Backspace, Enter, the
  * arrows, function keys, Tab, CapsLock and modifiers have longer names and
  * never count, and an auto-repeat keydown is dropped before it is judged.
+ * Neither does a shortcut such as Cmd+R or Ctrl+Z, which types nothing. (Ctrl
+ * with Alt is how some layouts type AltGr characters, so that pair counts.)
  */
-export function countsAsKeystroke(key: string, repeat = false): boolean {
-  return !repeat && Array.from(key).length === 1;
+export function countsAsKeystroke(
+  key: string,
+  { repeat, ctrlKey, metaKey, altKey }: KeyOptions = {},
+): boolean {
+  if (repeat || metaKey || (ctrlKey && !altKey)) return false;
+  return Array.from(key).length === 1;
 }
 
 export function freshPerformance(shields: number): LivePerformance {

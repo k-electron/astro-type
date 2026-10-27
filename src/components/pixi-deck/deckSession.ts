@@ -28,19 +28,14 @@ const MODIFIER_KEYS = new Set([
 ]);
 
 /**
- * A click on a keycap is a key press. It sends the same keydown and keyup the
- * keyboard would, so it goes through the game's own handling and Judgement.
+ * A click on a keycap is a key press: the game is pressed, and let go of a
+ * moment later, as a keyboard's keydown and keyup would, so it goes through
+ * the game's own Judgement.
  */
 function pressKeycap(spec: KeySpec): void {
   if (MODIFIER_KEYS.has(spec.key)) return;
-  window.dispatchEvent(
-    new KeyboardEvent('keydown', { key: spec.key, bubbles: true }),
-  );
-  setTimeout(() => {
-    window.dispatchEvent(
-      new KeyboardEvent('keyup', { key: spec.key, bubbles: true }),
-    );
-  }, 100);
+  game.pressKey(spec.key);
+  setTimeout(() => game.releaseKey(spec.key), 100);
 }
 
 async function fontsReady(): Promise<void> {

@@ -1,4 +1,5 @@
 import { engineSound } from './audio/engineSound';
+import { attachKeyboard } from './app/attachKeyboard';
 import { createRealtimeClock } from './game/clock';
 import { createGame } from './game/createGame';
 import { browserFrameEnvironment, startFrameLoop } from './game/frameLoop';
@@ -9,7 +10,8 @@ import { createLocalStorageSave } from './utils/storage';
  * the Save in localStorage, and sound attached from outside.
  *
  * The Run clock's frame loop starts here too: it steps the game while the Run
- * is running and does nothing otherwise.
+ * is running and does nothing otherwise. So does the keyboard: keys, Esc and
+ * the page losing focus reach the game from here, not from a component.
  *
  * A move the machine refuses changes nothing; dev builds say so in the console.
  */
@@ -44,4 +46,8 @@ const stopFrameLoop = startFrameLoop(
     for (const listener of frameListeners) listener(stepFraction);
   },
 );
-import.meta.hot?.dispose(stopFrameLoop);
+const detachKeyboard = attachKeyboard(game, window);
+import.meta.hot?.dispose(() => {
+  stopFrameLoop();
+  detachKeyboard();
+});

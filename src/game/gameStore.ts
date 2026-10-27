@@ -31,6 +31,7 @@ import {
   chargeOverdrive,
   freshPerformance,
   countsAsKeystroke,
+  type KeyOptions,
   judge,
   moveDrones,
   multiplierForStreak,
@@ -82,7 +83,7 @@ export interface GameStoreState {
   recordResult: () => void;
 
   // Player-driven actions
-  processKeystroke: (key: string, options?: { repeat?: boolean }) => void;
+  processKeystroke: (key: string, options?: KeyOptions) => void;
   releaseKeystroke: (key?: string) => void;
   updateFallingNotesOnTick: () => void;
   updateTelemetryOnInterval: () => void;
@@ -214,7 +215,7 @@ export function createGameStore({
         const state = get();
         if (getPhase() !== 'running') return;
 
-        if (!countsAsKeystroke(pressedKey, options?.repeat)) {
+        if (!countsAsKeystroke(pressedKey, options)) {
           return;
         }
 
