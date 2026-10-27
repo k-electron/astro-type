@@ -429,10 +429,7 @@ export default function App() {
       {/* Custom Practice / Free Flight Modal */}
       {screen === 'free-flight' && (
         <CustomPracticeModal
-          initialSpeed={profile.highwaySpeed}
-          onStartCustom={(stage, speed) =>
-            send({ type: 'LAUNCH_FREE_FLIGHT', stage, speed })
-          }
+          onStartCustom={(stage) => send({ type: 'LAUNCH_FREE_FLIGHT', stage })}
           opener={opener}
           onClose={() => send({ type: 'PRESS_CLOSE' })}
         />

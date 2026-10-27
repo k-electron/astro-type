@@ -10,9 +10,7 @@
  */
 import { assign, setup } from 'xstate';
 import { getNextStage, getStageById } from '../data/curriculum';
-import type { PlayerProfile, RunPhase, Screen, Stage } from '../types/game';
-
-type HighwaySpeed = PlayerProfile['highwaySpeed'];
+import type { RunPhase, Screen, Stage } from '../types/game';
 
 /** What the player did. Never where to go. */
 export type PlayerEvent =
@@ -27,7 +25,7 @@ export type PlayerEvent =
   | { type: 'OPEN_ANALYTICS' }
   | { type: 'OPEN_FREE_FLIGHT' }
   | { type: 'PICK_STAGE'; stageId: string }
-  | { type: 'LAUNCH_FREE_FLIGHT'; stage: Stage; speed?: HighwaySpeed }
+  | { type: 'LAUNCH_FREE_FLIGHT'; stage: Stage }
   | { type: 'PRESS_REPLAY' }
   | { type: 'PRESS_NEXT_STAGE' }
   | { type: 'LOST_FOCUS' };
@@ -38,7 +36,7 @@ export type GameMachineEvent = PlayerEvent | { type: 'RUN_CLEARED' };
 /** The named store actions the machine drives. Each one is a whole move's data and effects. */
 export interface RunActions {
   /** Set up a fresh Run of a Stage (and start the beat). */
-  beginRun(stage: Stage, speed?: HighwaySpeed): void;
+  beginRun(stage: Stage): void;
   /** Stop the beat and Overdrive soundtrack. Streak, Multiplier and Overdrive stay as they were. */
   pauseRun(): void;
   /** Start the beat again. */
@@ -109,7 +107,7 @@ export function createGameMachine(run: RunActions) {
       startFreeFlight: ({ context, event }) => {
         if (event.type !== 'LAUNCH_FREE_FLIGHT') return;
         if (isLive(context.phase)) run.abandonRun();
-        run.beginRun(event.stage, event.speed);
+        run.beginRun(event.stage);
       },
       startCurrentStage: ({ context }) => {
         if (isLive(context.phase)) run.abandonRun();

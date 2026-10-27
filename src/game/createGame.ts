@@ -56,8 +56,6 @@ export class RefusedMoveError extends Error {
   }
 }
 
-type HighwaySpeed = PlayerProfile['highwaySpeed'];
-
 export interface GameOptions {
   /** Where the Save lives. Memory in tests, localStorage in the app. */
   storage: SaveStorage;
@@ -85,8 +83,8 @@ export type Run = LivePerformance & {
 };
 
 export interface Game {
-  /** Begin a Run of a Stage (or a curriculum Stage id), at an optional speed. Sends PICK_STAGE or LAUNCH_FREE_FLIGHT. */
-  startStage(stageOrId: Stage | string, speed?: HighwaySpeed): void;
+  /** Begin a Run of a Stage (or a curriculum Stage id). Sends PICK_STAGE for an id, LAUNCH_FREE_FLIGHT for a Stage. */
+  startStage(stageOrId: Stage | string): void;
   /** Send what the player did. A refused move changes nothing and goes to `onRefusedMove`. */
   send(event: PlayerEvent): void;
   /** Would the machine accept this event now? */
@@ -165,7 +163,7 @@ export function createGame(options: GameOptions): Game {
   // The machine drives the store's named Run actions; the store reads the
   // phase and reports "Run cleared". They meet here.
   const machine = createGameMachine({
-    beginRun: (stage, speed) => store.getState().beginRun(stage, speed),
+    beginRun: (stage) => store.getState().beginRun(stage),
     pauseRun: () => store.getState().pauseRun(),
     resumeRun: () => store.getState().resumeRun(),
     abandonRun: () => store.getState().abandonRun(),
@@ -209,15 +207,15 @@ export function createGame(options: GameOptions): Game {
   const send = (event: PlayerEvent) => deliver(event);
 
   return {
-    startStage(stageOrId, speed) {
+    startStage(stageOrId) {
       if (typeof stageOrId !== 'string') {
-        send({ type: 'LAUNCH_FREE_FLIGHT', stage: stageOrId, speed });
+        send({ type: 'LAUNCH_FREE_FLIGHT', stage: stageOrId });
         return;
       }
-      const stage = getStageById(stageOrId);
-      if (!stage) throw new Error(`Unknown Stage: ${stageOrId}`);
-      if (speed) send({ type: 'LAUNCH_FREE_FLIGHT', stage, speed });
-      else send({ type: 'PICK_STAGE', stageId: stageOrId });
+      if (!getStageById(stageOrId)) {
+        throw new Error(`Unknown Stage: ${stageOrId}`);
+      }
+      send({ type: 'PICK_STAGE', stageId: stageOrId });
     },
     send,
     canSend,

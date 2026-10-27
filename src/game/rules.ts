@@ -6,15 +6,9 @@
  * Every number and window is the one the game has always used.
  */
 import { getNoteLaneAndFinger } from '../data/curriculum';
-import type {
-  FallingNote,
-  LivePerformance,
-  PlayerProfile,
-  Stage,
-} from '../types/game';
+import type { FallingNote, LivePerformance, Stage } from '../types/game';
 
 export type Rating = 'PERFECT' | 'GREAT' | 'GOOD';
-export type HighwaySpeed = PlayerProfile['highwaySpeed'];
 
 /** Where a Drone waits for the player, as a percentage down the Action Deck. */
 export const STRIKE_LINE_Y = 84;
@@ -130,27 +124,16 @@ export function advanceDroneQueue(
   );
 }
 
+/**
+ * The one Drone speed, FAST, for every Run: the lead Drone falls `leadStep`
+ * (a percentage of the Action Deck) every 1/60 s, and each Drone behind it
+ * closes `followerEasing` of its way to its slot.
+ */
+export const DRONE_SPEED = { leadStep: 2.2, followerEasing: 0.22 } as const;
+
 /** One 60 Hz step of Drone movement. */
-export function moveDrones(
-  drones: FallingNote[],
-  speed: HighwaySpeed,
-): FallingNote[] {
-  const speedStep =
-    speed === 'SLOW'
-      ? 0.9
-      : speed === 'FAST'
-        ? 2.2
-        : speed === 'HYPER'
-          ? 3.4
-          : 1.5;
-  const speedFactor =
-    speed === 'SLOW'
-      ? 0.1
-      : speed === 'FAST'
-        ? 0.22
-        : speed === 'HYPER'
-          ? 0.32
-          : 0.16;
+export function moveDrones(drones: FallingNote[]): FallingNote[] {
+  const { leadStep, followerEasing } = DRONE_SPEED;
 
   return drones.map((note, idx) => {
     if (note.status === 'PROCESSED') return note;
@@ -159,7 +142,7 @@ export function moveDrones(
       if (note.yPercent >= 83.5) {
         return { ...note, yPercent: STRIKE_LINE_Y, isTargetLocked: true };
       }
-      const nextY = Math.min(STRIKE_LINE_Y, note.yPercent + speedStep);
+      const nextY = Math.min(STRIKE_LINE_Y, note.yPercent + leadStep);
       return {
         ...note,
         yPercent: nextY,
@@ -168,7 +151,7 @@ export function moveDrones(
     }
 
     const slotY = Math.max(6, STRIKE_LINE_Y - idx * 16);
-    const nextY = note.yPercent + (slotY - note.yPercent) * speedFactor;
+    const nextY = note.yPercent + (slotY - note.yPercent) * followerEasing;
     return {
       ...note,
       yPercent: nextY,

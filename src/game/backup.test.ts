@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { clearedStages, OLD_LIVE_EXPORT } from '../../tests/shared/saves';
+import {
+  clearedStages,
+  OLD_DRONE_SPEEDS,
+  OLD_LIVE_EXPORT,
+  withOldDroneSpeed,
+} from '../../tests/shared/saves';
 import { exportBackup, REFUSED_BACKUP_MESSAGE } from './save';
 import { loadGame } from './testHelpers';
 
@@ -57,6 +62,54 @@ describe('importing a Backup', () => {
     expect(profile.stagesProgress['s1-l2']).toBeUndefined();
     expect(storage.saved?.version).toBe(1);
     expect(storage.saved?.totalCredits).toBe(491);
+  });
+
+  // Backups made when the player could choose a Drone speed carry it. Every
+  // Run now moves at one speed, so the Backup loads with its progress and the
+  // field is left behind, in the Save and in the next Backup.
+  it.each(OLD_DRONE_SPEEDS)(
+    'reads an old Backup carrying the %s speed, keeps its progress, and leaves the speed behind',
+    (speed) => {
+      const { game, storage } = gameWith();
+
+      const outcome = game.store
+        .getState()
+        .importProfile(
+          JSON.stringify(withOldDroneSpeed(OLD_LIVE_EXPORT, speed)),
+        );
+
+      expect(outcome.ok).toBe(true);
+      const profile = game.getProfile();
+      expect(profile.totalStars).toBe(3);
+      expect(profile.totalCredits).toBe(491);
+      expect(profile.stagesProgress['s1-l1']?.bestWpm).toBe(82);
+      expect(profile).not.toHaveProperty('highwaySpeed');
+      expect(storage.saved?.totalCredits).toBe(491);
+      expect(storage.saved).not.toHaveProperty('highwaySpeed');
+      expect(JSON.parse(exportBackup(profile))).not.toHaveProperty(
+        'highwaySpeed',
+      );
+    },
+  );
+
+  it('reads a versioned Backup carrying a speed the same way', () => {
+    const { game: playedGame } = gameWith({
+      totalCredits: 900,
+      ...clearedStages({ 's1-l1': 3, 's1-l2': 2 }),
+    });
+    const backup = withOldDroneSpeed(
+      JSON.parse(exportBackup(playedGame.getProfile())),
+      'HYPER',
+    );
+
+    const { game, storage } = gameWith();
+    const outcome = game.store.getState().importProfile(JSON.stringify(backup));
+
+    expect(outcome.ok).toBe(true);
+    expect(backup.version).toBe(1);
+    expect(game.getProfile().totalStars).toBe(5);
+    expect(game.getProfile().totalCredits).toBe(900);
+    expect(storage.saved).not.toHaveProperty('highwaySpeed');
   });
 
   it("reads this game's own Backup with the version taken off, as an old export", () => {

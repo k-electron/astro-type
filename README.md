@@ -12,7 +12,7 @@ A browser typing game that teaches touch typing. Drones fall down the Action Dec
 - **Debrief:** when a Run is cleared, it shows the result, the Stars earned and the Credits paid.
 - **Hangar:** spend Credits on Upgrades (shields, reactor, sensors) and Cosmetics (a trail theme or an audio core).
 - **Analytics:** lifetime totals (best speed, accuracy, words typed, practice time), hand balance and a per-key accuracy heatmap, with exporting and importing a Backup.
-- **Free Flight:** set up a Stage from your own text, a target speed and how fast the Drones fall.
+- **Free Flight:** set up a Stage from your own text and a target speed.
 - **Sound:** sound effects and music are synthesized with the Web Audio API. There are no audio files.
 - **Your data:** the Profile is saved in this browser's localStorage. There are no accounts and no analytics.
 

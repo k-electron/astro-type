@@ -6,14 +6,10 @@ import type { Screen, Stage } from '../types/game';
 import { closeLabel } from './closeLabel';
 
 interface CustomPracticeModalProps {
-  onStartCustom: (
-    customStage: Stage,
-    speed: 'SLOW' | 'NORMAL' | 'FAST' | 'HYPER',
-  ) => void;
+  onStartCustom: (customStage: Stage) => void;
   onClose: () => void;
   /** The screen Close returns to. */
   opener: Screen | null;
-  initialSpeed: 'SLOW' | 'NORMAL' | 'FAST' | 'HYPER';
 }
 
 const PRESET_TEXTS = [
@@ -43,13 +39,9 @@ export const CustomPracticeModal: React.FC<CustomPracticeModalProps> = ({
   onStartCustom,
   onClose,
   opener,
-  initialSpeed,
 }) => {
   const [customText, setCustomText] = useState<string>(PRESET_TEXTS[0].text);
   const [targetWpm, setTargetWpm] = useState<number>(40);
-  const [speed, setSpeed] = useState<'SLOW' | 'NORMAL' | 'FAST' | 'HYPER'>(
-    initialSpeed,
-  );
 
   // Free Flight text is checked as it is typed, so Launch is disabled (with
   // the reason) before the player can start a Run that would get stuck.
@@ -93,7 +85,7 @@ export const CustomPracticeModal: React.FC<CustomPracticeModalProps> = ({
       },
     };
 
-    onStartCustom(customStage, speed);
+    onStartCustom(customStage);
   };
 
   return (
@@ -170,8 +162,8 @@ export const CustomPracticeModal: React.FC<CustomPracticeModalProps> = ({
           </div>
         </div>
 
-        {/* Flight Parameters (Target WPM & Highway Drop Speed) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+        {/* Flight Parameters (Target WPM) */}
+        <div className="mb-6">
           <div className="p-3.5 rounded-xl border border-slate-800 bg-slate-950/60">
             <div className="flex justify-between items-center mb-2">
               <span className="text-xs font-mono uppercase text-slate-400">
@@ -190,38 +182,6 @@ export const CustomPracticeModal: React.FC<CustomPracticeModalProps> = ({
               onChange={(e) => setTargetWpm(Number(e.target.value))}
               className="w-full accent-cyan-400 cursor-pointer"
             />
-          </div>
-
-          <div className="p-3.5 rounded-xl border border-slate-800 bg-slate-950/60">
-            <div className="flex justify-between items-center mb-1">
-              <span className="text-xs font-mono uppercase text-slate-400">
-                Highway Note Speed
-              </span>
-              <span className="text-[10px] font-mono text-cyan-400/80">
-                {speed}
-              </span>
-            </div>
-            <p className="text-[10px] text-slate-500 mb-2">
-              Visual scroll & descent velocity of approaching notes (does not
-              alter target WPM).
-            </p>
-            <div className="grid grid-cols-4 gap-1">
-              {(['SLOW', 'NORMAL', 'FAST', 'HYPER'] as const).map((s) => (
-                <button
-                  type="button"
-                  key={s}
-                  onClick={() => setSpeed(s)}
-                  title={`${s === 'SLOW' ? 'Relaxed approach (0.9x)' : s === 'NORMAL' ? 'Standard rhythm (1.5x)' : s === 'FAST' ? 'High-speed tempo (2.2x)' : 'Hyper-velocity reflex (3.4x)'}`}
-                  className={`py-1.5 text-[11px] font-mono rounded font-medium transition-colors cursor-pointer ${
-                    speed === s
-                      ? 'bg-cyan-500 text-slate-950 font-bold'
-                      : 'bg-slate-800 text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
           </div>
         </div>
 

@@ -77,7 +77,6 @@ export function completeSave() {
     soundEnabled: false,
     soundVolume: 0.3,
     ambientMusicVolume: 0.1,
-    highwaySpeed: 'FAST',
     keyboardVisible: false,
     handsVisible: false,
     musicEnabled: false,
@@ -85,6 +84,21 @@ export function completeSave() {
     beatTheme: 'COSMIC_LOFI',
     globalMuted: true,
   };
+}
+
+/**
+ * The Drone speeds the game once let a player choose. Every Run now moves at
+ * one speed (FAST), but Saves and Backups made before that still carry the
+ * choice in a `highwaySpeed` field, which must load and then be left behind.
+ */
+export const OLD_DRONE_SPEEDS = ['SLOW', 'NORMAL', 'FAST', 'HYPER'] as const;
+
+/** A Save or Backup as it was before the speed choice went: carrying `highwaySpeed`. */
+export function withOldDroneSpeed<T extends object>(
+  save: T,
+  speed: string,
+): T & { highwaySpeed: string } {
+  return { ...save, highwaySpeed: speed };
 }
 
 /**

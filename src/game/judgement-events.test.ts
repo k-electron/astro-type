@@ -15,10 +15,11 @@ import {
  * and changes nothing.
  *
  * The grade a keystroke gets is by its distance to the Strike Line (y = 84).
- * On the first Stage at normal speed the lead Drone starts 22 from it and
- * closes 1.5 a step. The windows are 8 for Perfect and 16 for Great, and each
- * level of Precision Sensors widens both by 3.5. This file holds the one table
- * of those windows.
+ * Every Run moves at FAST: the lead Drone starts 22 from it and closes 2.2 a
+ * step, so it is 22 - 2.2 x steps away. The windows are 8 for Perfect and 16
+ * for Great, and each level of Precision Sensors widens both by 3.5. This file
+ * holds the one table of those windows (no step count lands exactly on a
+ * window's edge at this speed, so the table brackets each edge instead).
  */
 
 /** Collects every Judgement event the game announces from now on. */
@@ -32,19 +33,23 @@ describe('a hit', () => {
   it.each([
     // [Sensors level, steps before pressing, distance, grade, points at x1]
     [0, 0, 22, 'good', 50],
-    [0, 3, 17.5, 'good', 50],
-    [0, 4, 16, 'great', 75], // the Great window's edge is inclusive
-    [0, 9, 8.5, 'great', 75],
-    [0, 10, 7, 'perfect', 100],
-    [0, 15, 0, 'perfect', 100], // waiting on the Strike Line
+    [0, 2, 17.6, 'good', 50],
+    [0, 3, 15.4, 'great', 75],
+    [0, 6, 8.8, 'great', 75],
+    [0, 7, 6.6, 'perfect', 100],
+    [0, 10, 0, 'perfect', 100], // waiting on the Strike Line
     [0, 40, 0, 'perfect', 100], // the Drone waits; there is no timeout
     [1, 0, 22, 'good', 50],
-    [1, 6, 13, 'great', 75],
-    [1, 7, 11.5, 'perfect', 100], // Perfect window is 8 + 3.5, inclusive
+    [1, 1, 19.8, 'good', 50], // Great window is 16 + 3.5 = 19.5
+    [1, 2, 17.6, 'great', 75],
+    [1, 4, 13.2, 'great', 75], // Perfect window is 8 + 3.5 = 11.5
+    [1, 5, 11, 'perfect', 100],
     [2, 0, 22, 'great', 75], // Great window is 16 + 7 = 23
+    [2, 3, 15.4, 'great', 75], // Perfect window is 15
+    [2, 4, 13.2, 'perfect', 100],
     [3, 0, 22, 'great', 75],
-    [3, 2, 19, 'great', 75], // Perfect window is 18.5
-    [3, 3, 17.5, 'perfect', 100],
+    [3, 1, 19.8, 'great', 75], // Perfect window is 18.5
+    [3, 2, 17.6, 'perfect', 100],
   ] as const)(
     'with Sensors level %i, %i steps in (%s from the line) is %s',
     (sensors, steps, _distance, grade, points) => {

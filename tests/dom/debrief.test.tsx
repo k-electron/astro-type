@@ -214,6 +214,30 @@ describe('Free Flight', () => {
     expect(screen.getByRole('button', { name: 'Pause' })).toBeTruthy();
   });
 
+  it('offers no choice of Drone speed: every Run moves at one speed', () => {
+    const player = renderGame();
+    player.openHeader('Free Flight');
+
+    // The Free Flight screen is the panel that holds the text box and Launch.
+    let panel: HTMLElement | null = screen.getByRole('textbox');
+    while (
+      panel &&
+      !within(panel).queryByRole('button', { name: 'Launch Custom Flight' })
+    ) {
+      panel = panel.parentElement;
+    }
+    if (!panel) throw new Error('The Free Flight screen has no panel');
+
+    expect(
+      within(panel)
+        .queryAllByRole('button', { name: /^(slow|normal|fast|hyper)$/i })
+        .map((button) => button.textContent),
+    ).toEqual([]);
+    expect(panel.textContent).not.toMatch(/note speed/i);
+    // What stays: the text and the Target Cadence slider are still set here.
+    expect(within(panel).getByRole('slider')).toBeTruthy();
+  });
+
   it('disables Launch for a character that has no key, and names it', () => {
     const player = renderGame();
     player.openHeader('Free Flight');

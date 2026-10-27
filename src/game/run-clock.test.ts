@@ -7,7 +7,6 @@ import {
   newGame,
   STAGE_ID,
   startedGame,
-  startStage,
   targetKey,
 } from './testHelpers';
 
@@ -303,70 +302,4 @@ describe('a pause in the middle of a Run leaves WPM, accuracy and cadence unchan
     expect(unevenTyping(5).getRun().cadenceConsistency).toBe(straight);
     expect(unevenTyping(6).getRun().cadenceConsistency).toBe(straight);
   });
-});
-
-describe('Drones fall at the speed of the speed setting, 60 steps a second', () => {
-  /**
-   * The lead Drone starts at y = 62 and falls `perStep` a step until it waits
-   * on the Strike Line at y = 84. It is locked from y = 83.5, which it reaches
-   * on step `lockStep`. The first follower starts above its slot and eases
-   * down toward it, to the slot at y = 68.
-   */
-  const SPEEDS = [
-    { speed: 'SLOW', perStep: 0.9, lockStep: 24 },
-    { speed: 'NORMAL', perStep: 1.5, lockStep: 15 },
-    { speed: 'FAST', perStep: 2.2, lockStep: 10 },
-    { speed: 'HYPER', perStep: 3.4, lockStep: 7 },
-  ] as const;
-
-  function started(speed: string): Game {
-    const game = newGame({ highwaySpeed: speed });
-    startStage(game, STAGE_ID);
-    return game;
-  }
-
-  it.each(SPEEDS)(
-    '$speed: the lead Drone falls $perStep a step to the Strike Line and waits there',
-    ({ speed, perStep, lockStep }) => {
-      const game = started(speed);
-      expect(game.getRun().drones[0].yPercent).toBe(62);
-
-      for (const steps of [1, 2, 3]) {
-        const fresh = started(speed);
-        fresh.step(steps);
-        expect(fresh.getRun().drones[0].yPercent).toBeCloseTo(
-          62 + perStep * steps,
-          6,
-        );
-      }
-
-      game.step(lockStep - 1);
-      expect(game.getRun().drones[0].isTargetLocked).toBeFalsy();
-      expect(game.getRun().drones[0].yPercent).toBeLessThan(83.5);
-
-      game.step(1);
-      expect(game.getRun().drones[0].isTargetLocked).toBe(true);
-      expect(game.getRun().drones[0].yPercent).toBeGreaterThanOrEqual(83.5);
-
-      // It never falls past the line, however long it waits.
-      game.step(600);
-      expect(game.getRun().drones[0].yPercent).toBe(84);
-    },
-  );
-
-  it.each(SPEEDS)(
-    '$speed: the Drone behind eases down toward its slot and settles there',
-    ({ speed }) => {
-      const game = started(speed);
-      const start = game.getRun().drones[1].yPercent;
-
-      game.step(10);
-      const underway = game.getRun().drones[1].yPercent;
-      expect(underway).toBeGreaterThan(start);
-      expect(underway).toBeLessThan(68);
-
-      game.step(600);
-      expect(game.getRun().drones[1].yPercent).toBeCloseTo(68, 3);
-    },
-  );
 });

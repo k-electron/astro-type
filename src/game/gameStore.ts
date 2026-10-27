@@ -85,10 +85,7 @@ export interface GameStoreState {
 
   // Run moves: the machine calls these, once per accepted move. Each one is
   // the data change and the sound that goes with the move.
-  beginRun: (
-    stage: Stage,
-    customSpeed?: 'SLOW' | 'NORMAL' | 'FAST' | 'HYPER',
-  ) => void;
+  beginRun: (stage: Stage) => void;
   pauseRun: () => void;
   resumeRun: () => void;
   abandonRun: () => void;
@@ -185,20 +182,9 @@ export function createGameStore({
       sessionKeyStats: {},
       recentKeystrokeTimes: [],
 
-      beginRun: (
-        stage: Stage,
-        customSpeed?: 'SLOW' | 'NORMAL' | 'FAST' | 'HYPER',
-      ) => {
+      beginRun: (stage: Stage) => {
         effects.init();
         const { profile } = get();
-        if (customSpeed && customSpeed !== profile.highwaySpeed) {
-          const speedProfile = {
-            ...profile,
-            highwaySpeed: customSpeed,
-          };
-          set({ profile: speedProfile });
-          saveProfile(speedProfile);
-        }
         // A fresh Run starts with Overdrive off, so its beat does too.
         effects.setOverdrive(false);
         if (beatAllowed(profile)) {
@@ -417,10 +403,7 @@ export function createGameStore({
         if (getPhase() !== 'running') return;
 
         set({
-          fallingNotes: moveDrones(
-            state.fallingNotes,
-            state.profile.highwaySpeed,
-          ),
+          fallingNotes: moveDrones(state.fallingNotes),
         });
       },
 

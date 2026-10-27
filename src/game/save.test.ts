@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
   completeSave,
+  OLD_DRONE_SPEEDS,
   RETURNING_PLAYER,
   stageProgress,
+  withOldDroneSpeed,
 } from '../../tests/shared/saves';
 import type { Game, UpgradeKind } from './createGame';
 import { DEFAULT_PROFILE } from './profile';
@@ -45,7 +47,6 @@ describe('a Save that is readable', () => {
     expect(profile.stagesProgress['s1-l2'].starsEarned).toBe(2);
     expect(profile.upgrades.deflectorShields).toBe(1);
     expect(profile.upgrades.hyperdriveReactor).toBe(2);
-    expect(profile.highwaySpeed).toBe('FAST');
     expect(profile.globalMuted).toBe(true);
     expect(game.getLoadNotice()).toBeNull();
     expect(storage.movedAside).toBeUndefined();
@@ -133,6 +134,35 @@ describe('a Save that is readable', () => {
   });
 });
 
+describe('a Save made when the player could choose a Drone speed', () => {
+  // Every Run now moves at one speed, so a Save no longer has a speed setting.
+  // The old field is simply left behind: whatever it says, the Save loads.
+  it.each([
+    ...OLD_DRONE_SPEEDS,
+    'WARP', // not a speed the game ever had; nothing reads the field now
+  ])(
+    'with %s loads with its progress and settings, and saves without the speed',
+    (speed) => {
+      const { game, storage } = load(withOldDroneSpeed(completeSave(), speed));
+
+      const profile = game.getProfile();
+      expect(game.getLoadNotice()).toBeNull();
+      expect(storage.movedAside).toBeUndefined();
+      expect(profile.totalStars).toBe(5);
+      expect(profile.totalCredits).toBe(1234);
+      expect(profile.stagesProgress['s1-l1'].starsEarned).toBe(3);
+      expect(profile.upgrades.deflectorShields).toBe(1);
+      expect(profile.globalMuted).toBe(true);
+      expect(profile).not.toHaveProperty('highwaySpeed');
+
+      // Saving again writes the Save back without the speed.
+      expect(game.buyUpgrade('sensors')).toBe(true);
+      expect(storage.saved?.totalStars).toBe(5);
+      expect(storage.saved).not.toHaveProperty('highwaySpeed');
+    },
+  );
+});
+
 describe('a Save with a field missing', () => {
   // The settings the Save carries. `completeSave` sets each of them to
   // something other than its default.
@@ -140,7 +170,6 @@ describe('a Save with a field missing', () => {
     'soundEnabled',
     'soundVolume',
     'ambientMusicVolume',
-    'highwaySpeed',
     'keyboardVisible',
     'handsVisible',
     'musicEnabled',
@@ -217,10 +246,6 @@ describe('a Save that cannot be read', () => {
     [
       'an Upgrade level that is text',
       withUpgrades(completeSave(), { deflectorShields: '2' as never }),
-    ],
-    [
-      'a speed setting the game does not have',
-      { ...completeSave(), highwaySpeed: 'WARP' },
     ],
     [
       'a sound setting that is text',

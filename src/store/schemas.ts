@@ -16,8 +16,6 @@ export const AudioSynthCoreSchema = z.enum([
   'NEO_ACOUSTIC',
 ]);
 
-export const HighwaySpeedSchema = z.enum(['SLOW', 'NORMAL', 'FAST', 'HYPER']);
-
 export const BeatThemeSchema = z.enum([
   'NEON_SYNTHWAVE',
   'CYBER_PULSE',
@@ -87,7 +85,6 @@ export const SaveFieldsSchema = z.object({
   soundEnabled: z.boolean().default(true),
   soundVolume: z.number().min(0).max(1).default(0.7),
   ambientMusicVolume: z.number().min(0).max(1).default(0.25),
-  highwaySpeed: HighwaySpeedSchema.default('NORMAL'),
   keyboardVisible: z.boolean().default(true),
   handsVisible: z.boolean().default(true),
   musicEnabled: z.boolean().default(true),

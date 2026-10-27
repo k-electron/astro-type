@@ -1,14 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { multiplierAt } from '../../tests/shared/multiplier';
-import {
-  hitPerfect,
-  miss,
-  newGame,
-  STAGE_ID,
-  startedGame,
-  startStage,
-  targetKey,
-} from './testHelpers';
+import { hitPerfect, miss, startedGame } from './testHelpers';
 
 /**
  * The rules of scoring, Streak, Multiplier, Overdrive and shields, read from
@@ -16,36 +8,9 @@ import {
  * Precision Sensors) is in judgement-events.test.ts.
  *
  * A first hit on a fresh Run is at Multiplier x1 with Overdrive off, so
- * Perfect = 100, Great = 75, Good = 50. The lead Drone starts at y = 62 and
- * the Strike Line is y = 84; the speed setting decides how far it falls a step.
+ * Perfect = 100, Great = 75, Good = 50. How far a Drone is when a key lands,
+ * and so the grade, is in drone-speed.test.ts.
  */
-const PERFECT = 100;
-const GREAT = 75;
-
-function pointsForFirstHit(opts: {
-  stepsBeforePress: number;
-  highwaySpeed: string;
-}): number {
-  const game = newGame({ highwaySpeed: opts.highwaySpeed });
-  startStage(game, STAGE_ID);
-  game.step(opts.stepsBeforePress);
-  game.pressKey(targetKey(game));
-  return game.getRun().score;
-}
-
-describe('Judgement at each speed', () => {
-  it.each([
-    // Different speeds put the Drone in a different place after the same steps.
-    ['SLOW', 15, GREAT],
-    ['SLOW', 16, PERFECT],
-    ['HYPER', 4, GREAT],
-    ['HYPER', 5, PERFECT],
-  ])('at %s speed, %i steps in scores %i', (highwaySpeed, steps, points) => {
-    expect(pointsForFirstHit({ stepsBeforePress: steps, highwaySpeed })).toBe(
-      points,
-    );
-  });
-});
 
 describe('Multiplier', () => {
   it('steps up at Streak 10, 20 and 30 and stops at x4', () => {

@@ -31,7 +31,8 @@ export const WRONG_KEY = 'x';
 
 /**
  * Steps (1/60 s each) that are enough for the lead Drone to reach the Strike Line
- * from wherever it starts, at the default speed. Pressing after this many steps is
+ * from wherever it starts, at the Drone speed every Run uses (FAST: 2.2 a step, so 10 steps
+ * for the lead Drone and 8 for the next one to come down from its slot). Pressing after this many steps is
  * always a Perfect.
  */
 const STEPS_TO_REACH_LINE = 30;

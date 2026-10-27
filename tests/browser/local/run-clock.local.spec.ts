@@ -103,15 +103,14 @@ test('catch-up after a long stall is capped: the Drones do not jump across the d
   await launchOnStoppedClock(page, 'abcdefghijklmnop');
 
   await test.step('a five-minute stall leaves the lead Drone a little way down, so the first key is a Great', async () => {
-    // One frame of flight, so the Run is under way and the lead Drone has come
-    // down a step from its starting height. The page then stalls for five
-    // minutes in one go (a frozen tab, a laptop asleep). A Drone that fell for
-    // all of it would be waiting on the Strike Line now and the first key would
-    // be a Perfect (100 points). Capped, the Run catches up by a fraction of a
-    // second: the Drone has come down a little, not all the way, and a key now
-    // is a Great (75 points). The Free Flight launch passes the speed the
-    // Profile has, and a fresh Save has NORMAL (1.5 a step: 7 steps leave the
-    // Drone 11.5 from the Strike Line, past the Perfect window of 8).
+    // One frame of flight, so the Run is under way. The page then stalls for
+    // five minutes in one go (a frozen tab, a laptop asleep). A Drone that fell
+    // for all of it would be waiting on the Strike Line now and the first key
+    // would be a Perfect (100 points). Capped, the Run catches up by 100 ms
+    // (6 steps): every Run moves at FAST, 2.2 a step from 22 away, so the Drone
+    // has come down to 8.8 from the Strike Line, just past the Perfect window of
+    // 8, and a key now is a Great (75 points). One more step of catch-up would
+    // make it a Perfect, so this holds the cap at 100 ms.
     await page.clock.runFor(20);
     await page.clock.fastForward(5 * MINUTE);
     await page.keyboard.press('a');

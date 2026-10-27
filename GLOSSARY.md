@@ -109,7 +109,7 @@ The screen showing the player's lifetime totals, hand balance and per-key stats.
 _Avoid_: Telemetry, stats screen
 
 **Free Flight**:
-The screen where the player sets up a Stage from their own text and speed.
+The screen where the player sets up a Stage from their own text and a target WPM.
 _Avoid_: Custom practice, free flight drill
 
 **Debrief**:
