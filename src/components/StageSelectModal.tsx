@@ -18,7 +18,11 @@ import {
   OverlayFlightDeckButton,
   OverlayShell,
 } from './OverlayShell';
-import { CURRICULUM_SECTORS, type Stage } from '../data/curriculum';
+import {
+  CURRICULUM_SECTORS,
+  CURRICULUM_TOTALS,
+  type Stage,
+} from '../data/curriculum';
 import { isSectorUnlocked } from '../game/profile';
 
 export const StageSelectModal: React.FC = () => {
@@ -74,7 +78,8 @@ export const StageSelectModal: React.FC = () => {
 
         <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800 text-[11px] font-mono text-left mb-6 space-y-1.5">
           <div className="text-rose-400 font-bold flex items-center gap-1.5">
-            <span>•</span> All 28 Stage Star Ratings reset to 0 ★
+            <span>•</span> All {CURRICULUM_TOTALS.stages} Stage Star Ratings
+            reset to 0 ★
           </div>
           <div className="text-rose-400 font-bold flex items-center gap-1.5">
             <span>•</span> Interstellar Sectors relocked to Gate 0
@@ -146,7 +151,9 @@ export const StageSelectModal: React.FC = () => {
                 <span className="text-lg font-bold text-amber-300 tabular-nums">
                   {totalStars}
                 </span>
-                <span className="text-xs text-amber-500">/ 84 Stars</span>
+                <span className="text-xs text-amber-500">
+                  / {CURRICULUM_TOTALS.stars} Stars
+                </span>
               </div>
             </div>
 

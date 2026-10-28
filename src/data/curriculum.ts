@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { MAX_STARS_PER_STAGE } from '../store/schemas';
 import { type FingerZone, KEYBOARD_ROWS } from './keyboardLayout';
 
 export interface FingerLaneInfo {
@@ -1492,6 +1493,22 @@ export const CURRICULUM_SECTORS: Sector[] = SECTOR_DEFINITIONS.map(
     })),
   }),
 );
+
+/**
+ * What the curriculum adds up to, for the screens that quote it: its Sectors,
+ * its Stages, and the most Stars all of them can give.
+ */
+export const CURRICULUM_TOTALS = (() => {
+  const stages = CURRICULUM_SECTORS.reduce(
+    (count, sector) => count + sector.stages.length,
+    0,
+  );
+  return {
+    sectors: CURRICULUM_SECTORS.length,
+    stages,
+    stars: stages * MAX_STARS_PER_STAGE,
+  };
+})();
 
 export function getStageById(stageId: string): Stage | undefined {
   for (const sector of CURRICULUM_SECTORS) {

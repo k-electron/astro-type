@@ -41,6 +41,9 @@ export const UpgradesSchema = z.object({
   unlockedAudioCores: z.array(AudioSynthCoreSchema).default(['CYBER_SYNTH']),
 });
 
+/** The most Stars one Stage gives. The star rules, the Save and the curriculum's totals stop here. */
+export const MAX_STARS_PER_STAGE = 3;
+
 /**
  * One Stage's progress. Only the shape is checked: the id is not looked up in
  * the curriculum, so Free Flight entries stay valid. A missing `stageId` is
@@ -49,7 +52,7 @@ export const UpgradesSchema = z.object({
 export const StageProgressSchema = z.object({
   stageId: z.string().default(''),
   completed: z.boolean().default(false),
-  starsEarned: z.number().int().min(0).max(3).default(0),
+  starsEarned: z.number().int().min(0).max(MAX_STARS_PER_STAGE).default(0),
   highScore: z.number().int().min(0).default(0),
   bestWpm: z.number().min(0).default(0),
   bestAccuracy: z.number().min(0).max(100).default(0),

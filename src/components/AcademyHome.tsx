@@ -1,6 +1,6 @@
 import type React from 'react';
 import { Play } from 'lucide-react';
-import { CURRICULUM_SECTORS } from '../data/curriculum';
+import { CURRICULUM_SECTORS, CURRICULUM_TOTALS } from '../data/curriculum';
 import { useGame } from '../store/gameContext';
 import { useGameState } from '../store/useGameState';
 
@@ -50,7 +50,7 @@ export const AcademyHome: React.FC = () => {
           onClick={() => send({ type: 'OPEN_GALAXY_MAP' })}
           className="px-6 py-3.5 rounded-xl border border-slate-700 bg-slate-900/80 hover:bg-slate-800 text-slate-200 font-medium text-sm sm:text-base transition-colors cursor-pointer"
         >
-          View Galaxy Sectors (7 Sectors)
+          {`View Galaxy Sectors (${CURRICULUM_TOTALS.sectors} Sectors)`}
         </button>
       </div>
 
