@@ -1,6 +1,6 @@
 import { Container, Graphics, Sprite } from 'pixi.js';
 import { pulseOpacity } from './animation';
-import { STEP_MS } from '../../game/clock';
+import { STEP_MS } from '../game/clock';
 import {
   BEAM_AURA_WIDTH,
   beamAuraTexture,

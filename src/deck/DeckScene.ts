@@ -4,13 +4,13 @@ import {
   FINGER_LANES,
   getNoteLaneAndFinger,
   KEY_FINGER_MAP,
-} from '../../curriculum/curriculum';
-import type { KeySpec } from '../../curriculum/keyboardLayout';
-import { trailColor } from '../../game/catalog';
-import { STEP_MS } from '../../game/clock';
-import type { JudgementMoment } from '../../game/moments';
-import { STRIKE_LINE_Y } from '../../game/rules';
-import type { GameState } from '../../game/game';
+} from '../curriculum/curriculum';
+import type { KeySpec } from '../curriculum/keyboardLayout';
+import { trailColor } from '../game/catalog';
+import { STEP_MS } from '../game/clock';
+import type { JudgementMoment } from '../game/moments';
+import { STRIKE_LINE_Y } from '../game/rules';
+import type { GameState } from '../game/game';
 import { pulseOpacity } from './animation';
 import { DeckEffects } from './DeckEffects';
 import { DroneView } from './DroneView';

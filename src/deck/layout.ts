@@ -1,5 +1,5 @@
-import { KEYBOARD_ROWS, type KeySpec } from '../../curriculum/keyboardLayout';
-import { STRIKE_LINE_Y } from '../../game/rules';
+import { KEYBOARD_ROWS, type KeySpec } from '../curriculum/keyboardLayout';
+import { STRIKE_LINE_Y } from '../game/rules';
 
 /**
  * Where everything on the PixiJS Action Deck goes. Computed from the stage

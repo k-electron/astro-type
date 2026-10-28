@@ -8,7 +8,7 @@ import { TextPromptStream } from './TextPromptStream';
 import { GalaxyMap } from './GalaxyMap';
 import { Hangar } from './Hangar';
 import { Analytics } from './Analytics';
-import { PixiActionDeck } from '../components/pixi-deck/PixiActionDeck';
+import { PixiActionDeck } from '../deck/PixiActionDeck';
 import { FreeFlight } from './FreeFlight';
 import { Debrief } from './Debrief';
 import { GlobalCosmicBackground } from './GlobalCosmicBackground';

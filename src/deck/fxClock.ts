@@ -1,5 +1,5 @@
-import type { RunPhase } from '../../game/machine';
-import { MAX_CATCH_UP_MS, STEP_MS } from '../../game/clock';
+import type { RunPhase } from '../game/machine';
+import { MAX_CATCH_UP_MS, STEP_MS } from '../game/clock';
 
 /** What the effect clock reads each frame. */
 export interface FxClockInput {

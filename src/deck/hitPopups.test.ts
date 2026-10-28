@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { scoreForHit } from '../../game/rules';
-import { BANNED_NAME } from '../../../tests/shared/names';
+import { scoreForHit } from '../game/rules';
+import { BANNED_NAME } from '../../tests/shared/names';
 import {
   type HitKind,
   hitPopupColor,

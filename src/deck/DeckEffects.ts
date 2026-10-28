@@ -1,5 +1,5 @@
 import { Container, Graphics, Rectangle, Sprite, Text } from 'pixi.js';
-import type { Grade } from '../../game/rules';
+import type { Grade } from '../game/rules';
 import { hitPopupLabel, hitPopupsToPrepare, hitPopupStems } from './hitPopups';
 import { Pool } from './pool';
 import {

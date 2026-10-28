@@ -1,4 +1,4 @@
-import { type Grade, scoreForHit } from '../../game/rules';
+import { type Grade, scoreForHit } from '../game/rules';
 
 /**
  * What the deck's popup for a hit says: a few words, then "+" and the points

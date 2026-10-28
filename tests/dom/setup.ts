@@ -30,7 +30,7 @@ vi.mock('../../src/app/appGame', () => {
 //    with WebGL, which a DOM cannot do. The Action Deck's own React header bar
 //    (the Overdrive and Streak badges, the Hands toggle) stays real; only the
 //    canvas under it is missing, and attaching to it does nothing.
-vi.mock('../../src/components/pixi-deck/deckSession', () => ({
+vi.mock('../../src/deck/deckSession', () => ({
   getDeckSession: () => ({ attach() {}, detach() {} }),
 }));
 

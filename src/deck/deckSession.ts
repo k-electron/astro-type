@@ -1,9 +1,9 @@
 import { Application } from 'pixi.js';
-import type { KeySpec } from '../../curriculum/keyboardLayout';
-import { STEP_MS } from '../../game/clock';
-import type { Game } from '../../game/game';
-import type { OnFrame } from '../../game/frameLoop';
-import { isJudgement } from '../../game/moments';
+import type { KeySpec } from '../curriculum/keyboardLayout';
+import { STEP_MS } from '../game/clock';
+import type { Game } from '../game/game';
+import type { OnFrame } from '../game/frameLoop';
+import { isJudgement } from '../game/moments';
 import { DeckScene } from './DeckScene';
 import { resetPlumeGradients } from './DroneView';
 import { DroneMotion } from './droneMotion';
