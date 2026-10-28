@@ -200,8 +200,8 @@ export function createGame(options: GameOptions): Game {
   const machine = gameMachine.provide({
     actions: {
       beginRun: (_, { stage }) => store.getState().beginRun(stage),
-      beginFreeFlight: (_, { text, targetWpm, stage }) =>
-        store.getState().beginRun(stage ?? freeFlightStage(text, targetWpm)),
+      beginFreeFlight: (_, { text, targetWpm }) =>
+        store.getState().beginRun(freeFlightStage(text, targetWpm)),
       beginCurrentStage: () =>
         store.getState().beginRun(store.getState().run.stage),
       beginNextStage: () => {

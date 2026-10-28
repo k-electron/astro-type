@@ -57,8 +57,6 @@ export type PlayerEvent =
   | { type: 'PICK_STAGE'; stageId: string }
   /** The player's own text (already checked as typeable) at a Target Cadence. */
   | { type: 'LAUNCH_FREE_FLIGHT'; text: string; targetWpm: number }
-  // TEMPORARY (#73): the old shape, until stars.test.ts stops sending it.
-  | { type: 'LAUNCH_FREE_FLIGHT'; stage: Stage }
   | { type: 'PRESS_REPLAY' }
   | { type: 'PRESS_NEXT_STAGE' }
   | { type: 'LOST_FOCUS' };
@@ -233,13 +231,11 @@ const freeFlightToBegin = ({
   event,
 }: {
   event: GameMachineEvent;
-}): { text: string; targetWpm: number; stage?: Stage } => {
+}): { text: string; targetWpm: number } => {
   if (event.type !== 'LAUNCH_FREE_FLIGHT') {
     throw new Error(`${event.type} is no Free Flight launch`);
   }
-  return 'stage' in event
-    ? { text: event.stage.sampleText, targetWpm: 0, stage: event.stage }
-    : { text: event.text, targetWpm: event.targetWpm };
+  return { text: event.text, targetWpm: event.targetWpm };
 };
 
 const ignore: Move = { actions: ['ignore'] };
