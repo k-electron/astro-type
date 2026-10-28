@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { PlayerEvent } from './createGame';
+import type { PlayerEvent } from './game';
 import {
   type Game,
   hitPerfect,

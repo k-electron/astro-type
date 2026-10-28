@@ -7,7 +7,7 @@ import {
   stageProgress,
   withOldDroneSpeed,
 } from '../../tests/shared/saves';
-import type { Game } from './createGame';
+import type { Game } from './game';
 import { totalStarsOf } from '../store/schemas';
 import { DEFAULT_PROFILE } from './profile';
 import { UNREADABLE_SAVE_NOTICE } from './save';

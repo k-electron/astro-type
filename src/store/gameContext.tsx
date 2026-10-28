@@ -1,5 +1,5 @@
 import { createContext, type ReactNode, useContext, useMemo } from 'react';
-import type { Game } from '../game/createGame';
+import type { Game } from '../game/game';
 import type { OnFrame } from '../game/frameLoop';
 
 interface GameContextValue {

@@ -1,4 +1,4 @@
-import type { Game } from '../game/createGame';
+import type { Game } from '../game/game';
 
 /**
  * The keyboard, attached to a game from outside: the composition root calls

@@ -5,7 +5,7 @@ import {
   RETURNING_PLAYER,
 } from '../../tests/shared/saves';
 import type { UpgradesSchema } from '../store/schemas';
-import type { Game } from './createGame';
+import type { Game } from './game';
 import { DEFAULT_PROFILE } from './profile';
 import {
   hitPerfect,

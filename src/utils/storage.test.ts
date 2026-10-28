@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createGame } from '../game/createGame';
+import { createGame } from '../game/game';
 import {
   SAVE_KEY,
   UNREADABLE_SAVE_KEY,

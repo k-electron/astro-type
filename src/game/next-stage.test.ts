@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { PlayerEvent } from './createGame';
+import type { PlayerEvent } from './game';
 import { newGame, startFreeFlight, typeText } from './testHelpers';
 
 const NEXT_STAGE: PlayerEvent = { type: 'PRESS_NEXT_STAGE' };

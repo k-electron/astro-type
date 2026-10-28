@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import type { GameState } from '../game/createGame';
+import type { GameState } from '../game/game';
 import { useGame } from './gameContext';
 
 /**

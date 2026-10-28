@@ -3,7 +3,7 @@ import {
   CURRICULUM_SECTORS,
   DEFAULT_FREE_FLIGHT_WPM,
 } from '../curriculum/curriculum';
-import { type PlayerEvent, RefusedMoveError, type Screen } from './createGame';
+import { type PlayerEvent, RefusedMoveError, type Screen } from './game';
 import {
   clearStage,
   type Game,

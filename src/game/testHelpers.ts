@@ -14,9 +14,9 @@ import {
   type Game,
   type Sound,
   type MemorySaveStorage,
-} from './createGame';
+} from './game';
 
-export type { Game } from './createGame';
+export type { Game } from './game';
 
 /** Stage 1 of Sector 1. Its Stars thresholds: 85% / 10 WPM + 92% / 14 WPM + 97% + Streak 14. */
 export const STAGE_ID = 's1-l1';

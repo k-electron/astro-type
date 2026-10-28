@@ -10,7 +10,7 @@ import { trailColor } from '../../game/catalog';
 import { STEP_MS } from '../../game/clock';
 import type { JudgementMoment } from '../../game/moments';
 import { STRIKE_LINE_Y } from '../../game/rules';
-import type { GameState } from '../../game/createGame';
+import type { GameState } from '../../game/game';
 import { pulseOpacity } from './animation';
 import { DeckEffects } from './DeckEffects';
 import { DroneView } from './DroneView';

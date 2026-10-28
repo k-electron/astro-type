@@ -36,7 +36,7 @@ import {
   type MemorySaveStorage,
   type RefusedMoveError,
   type Sound,
-} from '../../src/game/createGame';
+} from '../../src/game/game';
 import { startStage as sendStartStage } from '../../src/game/testHelpers';
 import { GameProvider } from '../../src/store/gameContext';
 
