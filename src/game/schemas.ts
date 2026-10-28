@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { MAX_STARS_PER_STAGE } from '../curriculum/curriculum';
 
 export const TrailColorThemeSchema = z.enum([
   'CYAN',
@@ -40,9 +41,6 @@ export const UpgradesSchema = z.object({
   unlockedThemes: z.array(TrailColorThemeSchema).default(['CYAN']),
   unlockedAudioCores: z.array(AudioSynthCoreSchema).default(['CYBER_SYNTH']),
 });
-
-/** The most Stars one Stage gives. The Save and the curriculum's totals stop here. */
-export const MAX_STARS_PER_STAGE = 3;
 
 /**
  * One Stage's progress. Only the shape is checked: the id is not looked up in

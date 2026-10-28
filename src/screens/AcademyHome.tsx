@@ -1,9 +1,6 @@
 import type React from 'react';
 import { Play } from 'lucide-react';
-import {
-  CURRICULUM_SECTORS,
-  CURRICULUM_TOTALS,
-} from '../curriculum/curriculum';
+import { CURRICULUM_TOTALS, FIRST_STAGE } from '../curriculum/curriculum';
 import { useGame } from './useGame';
 import { useGameState } from './useGameState';
 
@@ -39,7 +36,7 @@ export const AcademyHome: React.FC = () => {
           onClick={() =>
             send({
               type: 'PICK_STAGE',
-              stageId: CURRICULUM_SECTORS[0].stages[0].id,
+              stageId: FIRST_STAGE.id,
             })
           }
           className="px-6 py-3.5 rounded-xl text-sm sm:text-base flex items-center gap-2 font-bold transition-all cursor-pointer bg-cyan-400 hover:bg-cyan-300 text-slate-950 shadow-xl shadow-cyan-950"

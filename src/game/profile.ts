@@ -7,7 +7,7 @@
  * phase, no current Stage, no Drone. What a Run takes from the Profile is its
  * `Loadout`, derived on each call.
  */
-import { CURRICULUM_SECTORS } from '../curriculum/curriculum';
+import { unlocksSector } from '../curriculum/curriculum';
 import {
   DEFAULT_PROFILE,
   type KeyAnalytics,
@@ -126,33 +126,6 @@ export function recordStageResult(
   };
 
   return { updatedProfile, newStarsAwarded, isNewHighScore };
-}
-
-export function isSectorUnlocked(
-  sectorId: string,
-  currentStars: number,
-): { unlocked: boolean; starsRequired: number; starsRemaining: number } {
-  const sector = CURRICULUM_SECTORS.find((s) => s.id === sectorId);
-  if (!sector) return { unlocked: true, starsRequired: 0, starsRemaining: 0 };
-  const starsRequired = sector.requiredStarsToUnlock;
-  const unlocked = currentStars >= starsRequired;
-  return {
-    unlocked,
-    starsRequired,
-    starsRemaining: Math.max(0, starsRequired - currentStars),
-  };
-}
-
-/** Whether going from `previousStars` to `nextStars` takes the fleet past some Sector's gate. */
-export function unlocksSector(
-  previousStars: number,
-  nextStars: number,
-): boolean {
-  return CURRICULUM_SECTORS.some(
-    (sector) =>
-      !isSectorUnlocked(sector.id, previousStars).unlocked &&
-      isSectorUnlocked(sector.id, nextStars).unlocked,
-  );
 }
 
 /**

@@ -1,6 +1,8 @@
 import { z } from 'zod';
-import { MAX_STARS_PER_STAGE } from '../game/schemas';
 import { type FingerZone, KEYBOARD_ROWS } from './keyboardLayout';
+
+/** The most Stars one Stage gives. The Save and the curriculum's totals stop here. */
+export const MAX_STARS_PER_STAGE = 3;
 
 export interface FingerLaneInfo {
   laneIndex: number;
@@ -1494,6 +1496,9 @@ export const CURRICULUM_SECTORS: Sector[] = SECTOR_DEFINITIONS.map(
   }),
 );
 
+/** The first Stage of the first Sector: where a new player starts and where an idle Run sits. */
+export const FIRST_STAGE = CURRICULUM_SECTORS[0].stages[0];
+
 /**
  * What the curriculum adds up to, for the screens that quote it: its Sectors,
  * its Stages, and the most Stars all of them can give.
@@ -1516,6 +1521,34 @@ export function getStageById(stageId: string): Stage | undefined {
     if (stage) return stage;
   }
   return undefined;
+}
+
+/** Whether a Sector is open to a fleet with `currentStars`, and how far its gate is. */
+export function isSectorUnlocked(
+  sectorId: string,
+  currentStars: number,
+): { unlocked: boolean; starsRequired: number; starsRemaining: number } {
+  const sector = CURRICULUM_SECTORS.find((s) => s.id === sectorId);
+  if (!sector) return { unlocked: true, starsRequired: 0, starsRemaining: 0 };
+  const starsRequired = sector.requiredStarsToUnlock;
+  const unlocked = currentStars >= starsRequired;
+  return {
+    unlocked,
+    starsRequired,
+    starsRemaining: Math.max(0, starsRequired - currentStars),
+  };
+}
+
+/** Whether going from `previousStars` to `nextStars` takes the fleet past some Sector's gate. */
+export function unlocksSector(
+  previousStars: number,
+  nextStars: number,
+): boolean {
+  return CURRICULUM_SECTORS.some(
+    (sector) =>
+      !isSectorUnlocked(sector.id, previousStars).unlocked &&
+      isSectorUnlocked(sector.id, nextStars).unlocked,
+  );
 }
 
 function getNextStage(currentStageId: string): Stage | undefined {

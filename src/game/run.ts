@@ -9,7 +9,7 @@
  * by handing a cleared Stage's result to the Profile's command. The Profile
  * reads nothing of this module.
  */
-import { CURRICULUM_SECTORS } from '../curriculum/curriculum';
+import { FIRST_STAGE } from '../curriculum/curriculum';
 import type { Stage } from '../curriculum/curriculum';
 import type { RunPhase } from './machine';
 import type { Clock, RunClock } from './clock';
@@ -97,10 +97,9 @@ export function createRunSlice(
   // The Profile as the Run reads it, live on each call: a Sensors or Reactor
   // bought mid-Run counts at once, and a Shield only from the next Run.
   const currentLoadout = () => loadoutOf(get().profile);
-  const first = CURRICULUM_SECTORS[0].stages[0];
 
   return {
-    run: idleRun(first, loadout),
+    run: idleRun(FIRST_STAGE, loadout),
     debrief: null,
 
     beginRun: (stage) => {
@@ -117,7 +116,7 @@ export function createRunSlice(
     },
 
     showFirstStage: () => {
-      set({ run: { ...get().run, stage: first }, debrief: null });
+      set({ run: { ...get().run, stage: FIRST_STAGE }, debrief: null });
     },
 
     pressKey: (key, options) => {

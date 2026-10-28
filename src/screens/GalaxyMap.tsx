@@ -21,9 +21,9 @@ import {
 import {
   CURRICULUM_SECTORS,
   CURRICULUM_TOTALS,
+  isSectorUnlocked,
   type Stage,
 } from '../curriculum/curriculum';
-import { isSectorUnlocked } from '../game/profile';
 
 export const GalaxyMap: React.FC = () => {
   const game = useGame();
