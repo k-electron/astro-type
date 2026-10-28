@@ -18,7 +18,8 @@ import { clearStage, loadGame, startStage, STAGE_ID } from './testHelpers';
 const load = (save?: unknown) => loadGame(save);
 
 type ReturningSave = ReturnType<typeof completeSave>;
-type Profile = ReturnType<Game['getState']>['profile'];
+// What the Save and a Backup hold: the Profile without the derived total of Stars.
+type Profile = Omit<ReturnType<Game['getState']>['profile'], 'totalStars'>;
 
 function withUpgrades(
   save: ReturningSave,
@@ -35,7 +36,10 @@ function without(save: ReturningSave, ...fields: string[]) {
 }
 
 function expectFreshProfile(game: Game) {
-  expect(game.getState().profile).toEqual(DEFAULT_PROFILE);
+  expect(game.getState().profile).toEqual({
+    ...DEFAULT_PROFILE,
+    totalStars: 0,
+  });
 }
 
 describe('a Save that is readable', () => {
@@ -187,7 +191,7 @@ describe('a Save made when the player could choose a Drone speed', () => {
 
       // Saving again writes the Save back without the speed.
       game.buy('sensors');
-      expect(storage.saved?.totalStars).toBe(5);
+      expect(storage.saved?.stagesProgress['s1-l1'].starsEarned).toBe(3);
       expect(storage.saved).not.toHaveProperty('highwaySpeed');
     },
   );

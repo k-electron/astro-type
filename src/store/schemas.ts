@@ -83,7 +83,9 @@ export const SettingsSchema = z.object({
  * The Save: the only definition of what a Profile is. Unknown fields are
  * dropped, a missing field takes its default, and a field that is present but
  * wrong fails the parse (the Save module then treats the Save as unreadable).
- * `totalStars` is deliberately not a field here: it is computed, never read.
+ * `totalStars` is deliberately not a field here: the total of Stars is worked
+ * out from the Stages' Stars (`totalStarsOf`), never saved. A Save or Backup
+ * from before that still says it, and the field is dropped on read.
  * Backups (#25) reuse this schema.
  */
 export const SaveFieldsSchema = z.object({
@@ -114,11 +116,7 @@ export const PlayerProfileSchema = SaveFieldsSchema.transform((save) => {
       { ...progress, stageId: progress.stageId || id },
     ]),
   );
-  return {
-    ...save,
-    stagesProgress,
-    totalStars: totalStarsOf(stagesProgress),
-  };
+  return { ...save, stagesProgress };
 });
 
 /** The Profile a new player starts with: every field at its default. */

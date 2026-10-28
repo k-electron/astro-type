@@ -42,7 +42,7 @@ import { createProfileSlice, loadoutOf, type ProfileSlice } from './profile';
 import { createRunSlice, type RunSlice, type VictoryResult } from './run';
 import type { CatalogItemId } from './catalog';
 import type { BackupImport, SaveStorage } from './save';
-import type { Settings } from '../store/schemas';
+import { type Settings, totalStarsOf } from '../store/schemas';
 
 export { createMemoryStorage } from './save';
 export type { MemorySaveStorage, SaveStorage } from './save';
@@ -99,6 +99,13 @@ export type Run = LivePerformance & {
 };
 
 /**
+ * The Profile as a screen reads it: the Save's fields, and the total of Stars
+ * worked out from the Stages' Stars. The total is derived whenever the
+ * Profile changes, and is never saved.
+ */
+export type GameProfile = PlayerProfile & { totalStars: number };
+
+/**
  * Everything a screen shows, settled: the machine and the store have both
  * finished the move that made it. It is replaced, never changed in place, and
  * only when one of its fields changed; `run` is rebuilt only when the Run did.
@@ -118,7 +125,7 @@ export interface GameState {
   stageAhead: StageAhead;
   run: Run;
   debrief: VictoryResult | null;
-  profile: PlayerProfile;
+  profile: GameProfile;
   /** Why the Save was set aside and the player started fresh, or null. */
   loadNotice: string | null;
   /** Run Time in milliseconds: how long the Run has been running, pauses left out. */
@@ -318,6 +325,20 @@ export function createGame(options: GameOptions): Game {
   let depth = 0;
   let hearing = false;
 
+  // The Profile with its total of Stars, rebuilt only when the store's Profile
+  // is a different object, so the snapshot stays the same while it is.
+  let profileFrom: PlayerProfile | null = null;
+  let profileView: GameProfile | null = null;
+  const viewOf = (profile: PlayerProfile): GameProfile => {
+    if (profileView && profileFrom === profile) return profileView;
+    profileFrom = profile;
+    profileView = {
+      ...profile,
+      totalStars: totalStarsOf(profile.stagesProgress),
+    };
+    return profileView;
+  };
+
   const snapshotNow = (previous: GameState | null): GameState => {
     const state = store.getState();
     const next: GameState = {
@@ -328,7 +349,7 @@ export function createGame(options: GameOptions): Game {
       stageAhead: stageAheadOf(state.run.stage),
       run: buildRun(state.run),
       debrief: state.debrief,
-      profile: state.profile,
+      profile: viewOf(state.profile),
       loadNotice: state.loadNotice,
       runTime: runClock.runTimeMs(),
     };

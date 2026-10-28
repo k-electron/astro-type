@@ -13,7 +13,8 @@ import { type Game, loadGame } from './testHelpers';
 
 const gameWith = (save?: Record<string, unknown>) => loadGame(save);
 
-type Profile = ReturnType<Game['getState']>['profile'];
+// What the Save and a Backup hold: the Profile without the derived total of Stars.
+type Profile = Omit<ReturnType<Game['getState']>['profile'], 'totalStars'>;
 
 describe('importing a Backup', () => {
   it('brings back the Profile it was exported from, and saves it', () => {

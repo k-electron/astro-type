@@ -119,7 +119,6 @@ export function recordStageResult(
   const updatedProfile: PlayerProfile = {
     ...currentProfile,
     totalCredits: currentProfile.totalCredits + result.creditsEarned,
-    totalStars: totalStarsOf(newStagesProgress),
     totalKeystrokes: currentProfile.totalKeystrokes + result.keystrokesCount,
     totalErrors: currentProfile.totalErrors + result.errorsCount,
     totalWordsTyped:
@@ -327,7 +326,7 @@ export function createProfileSlice(
     },
 
     wipeCurriculumAchievements: () => {
-      updateProfile({ totalStars: 0, stagesProgress: {} });
+      updateProfile({ stagesProgress: {} });
     },
 
     resetProgress: () => {
@@ -343,8 +342,8 @@ export function createProfileSlice(
         newStarsAwarded,
         isNewHighScore,
         unlockedSector: unlocksSector(
-          before.totalStars,
-          updatedProfile.totalStars,
+          totalStarsOf(before.stagesProgress),
+          totalStarsOf(updatedProfile.stagesProgress),
         ),
       };
     },

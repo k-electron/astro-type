@@ -465,7 +465,10 @@ describe('resetProgress', () => {
 
     game.resetProgress();
 
-    expect(game.getState().profile).toEqual(DEFAULT_PROFILE);
+    expect(game.getState().profile).toEqual({
+      ...DEFAULT_PROFILE,
+      totalStars: 0,
+    });
     expect(storage.saved?.totalCredits).toBe(0);
     expect(storage.saved?.stagesProgress).toEqual({});
   });
