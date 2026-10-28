@@ -1,15 +1,15 @@
 import type React from 'react';
 import { Check, Lock, Music, Volume2, VolumeX } from 'lucide-react';
-import type { BeatTheme } from '../store/schemas';
 import { entriesOf } from '../game/catalog';
+import { BEAT_THEMES } from '../game/sound';
+import { BeatThemeSchema } from '../store/schemas';
 import { useGame } from '../store/gameContext';
 import { useGameState } from '../store/useGameState';
 
-const BEAT_OPTIONS: { id: BeatTheme; name: string; bpm: number }[] = [
-  { id: 'NEON_SYNTHWAVE', name: 'Synthwave', bpm: 106 },
-  { id: 'CYBER_PULSE', name: 'Cyber Pulse', bpm: 122 },
-  { id: 'COSMIC_LOFI', name: 'Cosmic Lo-Fi', bpm: 84 },
-];
+const BEAT_OPTIONS = BeatThemeSchema.options.map((id) => ({
+  id,
+  ...BEAT_THEMES[id],
+}));
 
 /**
  * The audio settings: master mute, volume for the laser sounds and for the
@@ -29,13 +29,13 @@ export const AudioPanel: React.FC = () => {
     audioCore,
     ownedCores,
   } = useGameState((state) => ({
-    isMuted: Boolean(state.profile.globalMuted),
+    isMuted: state.profile.globalMuted,
     soundEnabled: state.profile.soundEnabled,
-    musicEnabled: state.profile.musicEnabled !== false,
+    musicEnabled: state.profile.musicEnabled,
     soundVolume: state.profile.soundVolume,
-    musicVolume: state.profile.musicVolume ?? 0.4,
-    beatTheme: state.profile.beatTheme || 'NEON_SYNTHWAVE',
-    audioCore: state.profile.upgrades.equippedAudioCore ?? 'CYBER_SYNTH',
+    musicVolume: state.profile.musicVolume,
+    beatTheme: state.profile.beatTheme,
+    audioCore: state.profile.upgrades.equippedAudioCore,
     ownedCores: state.profile.upgrades.unlockedAudioCores,
   }));
 

@@ -85,8 +85,8 @@ export const StageSelectModal: React.FC = () => {
             <span>•</span> Interstellar Sectors relocked to Gate 0
           </div>
           <div className="text-emerald-400 flex items-center gap-1.5">
-            <span>•</span> Starship Credits (
-            {(totalCredits ?? 0).toLocaleString()} Cr) & Upgrades are preserved
+            <span>•</span> Starship Credits ({totalCredits.toLocaleString()} Cr)
+            & Upgrades are preserved
           </div>
         </div>
 
@@ -175,7 +175,7 @@ export const StageSelectModal: React.FC = () => {
             <Sparkles className="w-4 h-4 text-cyan-400" />
             <div className="flex items-baseline gap-1 font-mono">
               <span className="text-lg font-bold text-cyan-300 tabular-nums">
-                {(totalCredits ?? 0).toLocaleString()}
+                {totalCredits.toLocaleString()}
               </span>
               <span className="text-xs text-cyan-500">Credits</span>
             </div>
@@ -440,9 +440,7 @@ export const StageSelectModal: React.FC = () => {
                       <div className="flex items-center gap-4 py-2 px-3 rounded-lg bg-slate-900/80 border border-slate-800/80 text-xs font-mono mb-4 text-slate-400">
                         <div className="flex items-center gap-1">
                           <Trophy className="w-3.5 h-3.5 text-amber-400" />
-                          <span>
-                            {(progress.highScore ?? 0).toLocaleString()}
-                          </span>
+                          <span>{progress.highScore.toLocaleString()}</span>
                         </div>
                         <span aria-hidden="true">·</span>
                         <div>

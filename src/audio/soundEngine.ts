@@ -1,25 +1,32 @@
 import type { Grade } from '../game/rules';
-import type { AudioSynthCore, BeatTheme } from '../store/schemas';
+import { BEAT_THEMES } from '../game/sound';
+import {
+  type AudioSynthCore,
+  type BeatTheme,
+  DEFAULT_PROFILE,
+} from '../store/schemas';
 
 class SoundEngine {
   private ctx: AudioContext | null = null;
   private masterGain: GainNode | null = null; // Master node -> destination
   private sfxGain: GainNode | null = null; // SFX node -> masterGain
   private musicGain: GainNode | null = null; // Music node -> masterGain
-  private soundVolume: number = 0.7;
-  private musicVolume: number = 0.4;
-  private soundEnabled: boolean = true;
-  private musicEnabled: boolean = true;
-  private currentCore: AudioSynthCore = 'CYBER_SYNTH';
-  private beatTheme: BeatTheme = 'NEON_SYNTHWAVE';
-  private globalMuted: boolean = false;
+  // Until the game tells it otherwise, the engine plays what a new player has.
+  private soundVolume: number = DEFAULT_PROFILE.soundVolume;
+  private musicVolume: number = DEFAULT_PROFILE.musicVolume;
+  private soundEnabled: boolean = DEFAULT_PROFILE.soundEnabled;
+  private musicEnabled: boolean = DEFAULT_PROFILE.musicEnabled;
+  private currentCore: AudioSynthCore =
+    DEFAULT_PROFILE.upgrades.equippedAudioCore;
+  private beatTheme: BeatTheme = DEFAULT_PROFILE.beatTheme;
+  private globalMuted: boolean = DEFAULT_PROFILE.globalMuted;
 
   // Rhythm Beat Engine State
   private beatIntervalId: number | null = null;
   private nextBeatTime: number = 0;
   private currentStep: number = 0;
   private measureCount: number = 0;
-  private tempoBpm: number = 106;
+  private tempoBpm: number = BEAT_THEMES[DEFAULT_PROFILE.beatTheme].bpm;
   private isOverdrive: boolean = false;
 
   private laneFrequencies = [
@@ -79,25 +86,7 @@ class SoundEngine {
 
   public setBeatTheme(theme: BeatTheme) {
     this.beatTheme = theme;
-    if (theme === 'NEON_SYNTHWAVE') {
-      this.tempoBpm = 106;
-    } else if (theme === 'CYBER_PULSE') {
-      this.tempoBpm = 122;
-    } else {
-      this.tempoBpm = 84;
-    }
-  }
-
-  public cycleBeatTheme(): BeatTheme {
-    const themes: BeatTheme[] = [
-      'NEON_SYNTHWAVE',
-      'CYBER_PULSE',
-      'COSMIC_LOFI',
-    ];
-    const curIdx = themes.indexOf(this.beatTheme);
-    const next = themes[(curIdx + 1) % themes.length];
-    this.setBeatTheme(next);
-    return next;
+    this.tempoBpm = BEAT_THEMES[theme].bpm;
   }
 
   public setGlobalMute(muted: boolean) {
@@ -204,7 +193,7 @@ class SoundEngine {
     }
   }
 
-  // 1. NEON SYNTHWAVE PATTERN (106 BPM)
+  // 1. NEON SYNTHWAVE PATTERN
   private scheduleSynthwaveStep(step: number, measure: number, time: number) {
     // KICK on beat 0, beat 8, and syncopated beat 10
     const isKick =
@@ -246,7 +235,7 @@ class SoundEngine {
     }
   }
 
-  // 2. CYBER PULSE PATTERN (122 BPM)
+  // 2. CYBER PULSE PATTERN
   private scheduleCyberPulseStep(step: number, measure: number, time: number) {
     // Four-on-the-floor kick
     const isKick = step % 4 === 0;
@@ -281,7 +270,7 @@ class SoundEngine {
     }
   }
 
-  // 3. COSMIC LO-FI PATTERN (84 BPM)
+  // 3. COSMIC LO-FI PATTERN
   private scheduleLofiStep(step: number, measure: number, time: number) {
     // Boom-bap kick groove
     const isKick = step === 0 || step === 7 || step === 10;

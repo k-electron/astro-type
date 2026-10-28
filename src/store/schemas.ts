@@ -102,7 +102,6 @@ export const SaveFieldsSchema = z.object({
   stagesProgress: z.record(z.string(), StageProgressSchema).default({}),
   keyAnalytics: z.record(z.string(), KeyAnalyticsSchema).default({}),
   upgrades: UpgradesSchema.prefault({}),
-  ambientMusicVolume: z.number().min(0).max(1).default(0.25),
   ...SettingsSchema.shape,
 });
 

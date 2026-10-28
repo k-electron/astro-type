@@ -252,7 +252,6 @@ describe('a Save with a field missing', () => {
   const SETTINGS = [
     'soundEnabled',
     'soundVolume',
-    'ambientMusicVolume',
     'keyboardVisible',
     'handsVisible',
     'musicEnabled',

@@ -222,7 +222,7 @@ export const LevelCompleteModal: React.FC = () => {
             Score
           </span>
           <div className="flex items-center justify-center gap-1 font-mono font-bold text-white text-lg">
-            {(score ?? 0).toLocaleString()}
+            {score.toLocaleString()}
           </div>
           {isNewHighScore && (
             <span className="text-[9px] font-mono text-amber-400 uppercase font-semibold">

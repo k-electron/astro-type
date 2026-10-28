@@ -58,6 +58,17 @@ const noop = () => {};
 /** Does nothing. The default, and what tests get. */
 export const silentSound: Sound = { sync: noop, play: noop };
 
+/**
+ * The beat themes the player can pick from, by name, with the tempo each one
+ * plays at. The audio panel lists them and the sound engine plays at their
+ * tempo.
+ */
+export const BEAT_THEMES: Record<BeatTheme, { name: string; bpm: number }> = {
+  NEON_SYNTHWAVE: { name: 'Synthwave', bpm: 106 },
+  CYBER_PULSE: { name: 'Cyber Pulse', bpm: 122 },
+  COSMIC_LOFI: { name: 'Cosmic Lo-Fi', bpm: 84 },
+};
+
 /** What the Run contributes to the sound: only whether Overdrive is on. */
 type RunSound = Pick<LivePerformance, 'hyperspaceActive'>;
 

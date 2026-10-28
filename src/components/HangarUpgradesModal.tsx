@@ -149,7 +149,7 @@ export const HangarUpgradesModal: React.FC = () => {
             <Sparkles className="w-4 h-4 text-cyan-400" />
             <div className="flex items-baseline gap-1 font-mono">
               <span className="text-lg font-bold text-cyan-300 tabular-nums">
-                {(totalCredits ?? 0).toLocaleString()}
+                {totalCredits.toLocaleString()}
               </span>
               <span className="text-xs text-cyan-500">Credits</span>
             </div>

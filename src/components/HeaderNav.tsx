@@ -26,7 +26,7 @@ export const HeaderNav: React.FC<{ ref?: React.Ref<HTMLElement> }> = ({
     (state) => ({
       totalStars: state.profile.totalStars,
       totalCredits: state.profile.totalCredits,
-      isMuted: Boolean(state.profile.globalMuted),
+      isMuted: state.profile.globalMuted,
       isPlaying: state.screen === 'flight-deck',
     }),
   );
@@ -108,7 +108,7 @@ export const HeaderNav: React.FC<{ ref?: React.Ref<HTMLElement> }> = ({
           >
             <Sparkles className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
             <span className="font-bold tabular-nums text-sm text-cyan-200">
-              {(totalCredits ?? 0).toLocaleString()}
+              {totalCredits.toLocaleString()}
             </span>
             <span className="text-[10px] text-cyan-400/80 font-medium">Cr</span>
           </button>

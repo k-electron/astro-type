@@ -11,9 +11,11 @@ import { CURRICULUM_SECTORS } from '../data/curriculum';
 import {
   DEFAULT_PROFILE,
   type KeyAnalytics,
+  KeyAnalyticsSchema,
   type PlayerProfile,
   type Settings,
   type StageProgress,
+  StageProgressSchema,
   totalStarsOf,
 } from '../store/schemas';
 import { type CatalogItemId, catalogEntry } from './catalog';
@@ -72,16 +74,9 @@ export function recordStageResult(
   newStarsAwarded: number;
   isNewHighScore: boolean;
 } {
-  const prevProgress = currentProfile.stagesProgress[stageId] || {
-    stageId,
-    completed: false,
-    starsEarned: 0,
-    highScore: 0,
-    bestWpm: 0,
-    bestAccuracy: 0,
-    bestStreak: 0,
-    timesPlayed: 0,
-  };
+  const prevProgress =
+    currentProfile.stagesProgress[stageId] ??
+    StageProgressSchema.parse({ stageId });
 
   const isNewHighScore = result.score > prevProgress.highScore;
   const bestStars = Math.max(prevProgress.starsEarned, result.starsEarned);
@@ -109,7 +104,7 @@ export function recordStageResult(
     ...currentProfile.keyAnalytics,
   };
   Object.entries(result.keyStats).forEach(([char, stats]) => {
-    const existing = mergedKeyAnalytics[char] || { hits: 0, misses: 0 };
+    const existing = mergedKeyAnalytics[char] ?? KeyAnalyticsSchema.parse({});
     mergedKeyAnalytics[char] = {
       hits: existing.hits + stats.hits,
       misses: existing.misses + stats.misses,
