@@ -2,7 +2,8 @@ import { engineSound } from '../audio/engineSound';
 import { attachKeyboard } from './attachKeyboard';
 import { createRealtimeClock } from '../game/clock';
 import { createGame } from '../game/game';
-import { browserFrameEnvironment, startFrameLoop } from '../game/frameLoop';
+import { startFrameLoop } from '../game/frameLoop';
+import { browserFrameEnvironment } from './frameSource';
 import { createLocalStorageSave } from './localStorageSave';
 
 /**

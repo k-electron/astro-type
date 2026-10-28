@@ -71,12 +71,3 @@ export function startFrameLoop(
     env.cancel(handle);
   };
 }
-
-/** The browser's frame environment. */
-export function browserFrameEnvironment(): FrameEnvironment {
-  return {
-    now: () => performance.now(),
-    request: (callback) => requestAnimationFrame(callback),
-    cancel: (handle) => cancelAnimationFrame(handle),
-  };
-}
