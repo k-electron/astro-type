@@ -1,7 +1,12 @@
 import { afterEach, expect, it, vi } from 'vitest';
 import { RETURNING_PLAYER } from '../../tests/shared/saves';
-import { engineSound } from '../audio/engineSound';
-import { clearStage, loadGame, STAGE_ID, startStage } from './testHelpers';
+import { engineSound } from './engineSound';
+import {
+  clearStage,
+  loadGame,
+  STAGE_ID,
+  startStage,
+} from '../game/testHelpers';
 
 /**
  * Clearing a Stage plays the victory fanfare and then one chime per Star, one
@@ -14,7 +19,7 @@ import { clearStage, loadGame, STAGE_ID, startStage } from './testHelpers';
 
 const engine = vi.hoisted(() => ({ played: [] as string[] }));
 
-vi.mock('../audio/soundEngine', () => ({
+vi.mock('./soundEngine', () => ({
   soundEngine: new Proxy(
     {},
     {
