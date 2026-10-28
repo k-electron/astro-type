@@ -24,7 +24,6 @@ export type Grade = 'perfect' | 'great' | 'good';
 export interface FallingNote {
   id: string;
   char: string;
-  displayChar: string; // e.g. "␣" for space
   lane: number; // 0 to 8
   finger: FingerZone;
   yPercent: number; // 0 to 100 on canvas
@@ -43,12 +42,10 @@ export interface LivePerformance {
   correctKeystrokes: number;
   incorrectKeystrokes: number;
   totalKeystrokes: number;
-  grossWpm: number;
   netWpm: number;
   accuracy: number;
   /** The typed position: the index in the Stage's text of the character to type next. */
   currentCharIndex: number;
-  timeElapsedSeconds: number;
   cadenceConsistency: number; // 0 to 100% rhythm regularity between keystrokes
 }
 
@@ -163,11 +160,9 @@ function freshPerformance(shields: number): LivePerformance {
     correctKeystrokes: 0,
     incorrectKeystrokes: 0,
     totalKeystrokes: 0,
-    grossWpm: 0,
     netWpm: 0,
     accuracy: 100,
     currentCharIndex: 0,
-    timeElapsedSeconds: 0,
     cadenceConsistency: 100,
   };
 }
@@ -185,7 +180,6 @@ function makeDrone(
   return {
     id: `note-${index}-${char}-${now}`,
     char,
-    displayChar: char === ' ' ? '␣' : char,
     lane,
     finger,
     yPercent,
@@ -522,8 +516,8 @@ const TELEMETRY_EVERY_STEPS = 30;
 
 /**
  * The whole step: the Drones move one step of 1/60 s, and every 30th step of
- * Run Time WPM and elapsed time refresh. Accuracy is not on this cadence: a
- * keystroke refreshes it. `steps` is the Run's step count, this step included,
+ * Run Time WPM refreshes. Accuracy is not on this cadence: a keystroke
+ * refreshes it. `steps` is the Run's step count, this step included,
  * so a pause doesn't shift the rhythm.
  */
 export function tick(run: RunState, steps: number): RunState {
@@ -566,13 +560,12 @@ function accuracyOf(perf: LivePerformance): number {
     : 100;
 }
 
-/** Live WPM and elapsed time for the HUD. Accuracy follows every keystroke instead (see `strike`). */
+/** Live WPM for the HUD. Accuracy follows every keystroke instead (see `strike`). */
 function telemetry(
   prev: LivePerformance,
   elapsedSeconds: number,
 ): LivePerformance {
   const minutes = elapsedSeconds / 60;
-  const grossWpm = Math.round(prev.totalKeystrokes / 5 / minutes) || 0;
   const netWpm =
     Math.max(
       0,
@@ -580,12 +573,7 @@ function telemetry(
         (prev.correctKeystrokes - prev.incorrectKeystrokes) / 5 / minutes,
       ),
     ) || 0;
-  return {
-    ...prev,
-    timeElapsedSeconds: Math.round(elapsedSeconds),
-    grossWpm,
-    netWpm,
-  };
+  return { ...prev, netWpm };
 }
 
 export interface RunOutcome {
