@@ -10,7 +10,7 @@
  * changes nothing.
  */
 import { assign, setup } from 'xstate';
-import { getNextStage, getStageById } from '../data/curriculum';
+import { getStageById } from '../data/curriculum';
 import type { RunPhase, Screen, Stage } from '../types/game';
 
 /**
@@ -55,6 +55,9 @@ export type PlayerEvent =
   | { type: 'PRESS_FLIGHT_DECK' }
   | { type: 'PRESS_HOME' }
   | { type: 'PICK_STAGE'; stageId: string }
+  /** The player's own text (already checked as typeable) at a Target Cadence. */
+  | { type: 'LAUNCH_FREE_FLIGHT'; text: string; targetWpm: number }
+  // TEMPORARY (#73): the old shape, until stars.test.ts stops sending it.
   | { type: 'LAUNCH_FREE_FLIGHT'; stage: Stage }
   | { type: 'PRESS_REPLAY' }
   | { type: 'PRESS_NEXT_STAGE' }
@@ -75,16 +78,6 @@ export interface GameMachineContext {
   phase: RunPhase;
   /** What the current screen was opened with. */
   screenParams: ScreenParams;
-}
-
-/**
- * The Stage after `stage` that Next Stage starts, if there is one. A Free
- * Flight is no Stage of the curriculum, so it never has one, and the last
- * Stage has none either: Next Stage opens the Galaxy Map instead.
- */
-export function nextStageOf(stage: Stage): Stage | undefined {
-  if (getStageById(stage.id) === undefined) return undefined;
-  return getNextStage(stage.id);
 }
 
 /**
@@ -116,7 +109,7 @@ const { createMachine } = setup({
     isPaused: ({ context }) => context.phase === 'paused',
     knownStage: ({ event }) =>
       event.type === 'PICK_STAGE' && getStageById(event.stageId) !== undefined,
-    /** The one named crossing: reads the Stage the Run is of (see `nextStageOf`). */
+    /** The one named crossing: reads the Stage the Run is of (see the curriculum's `nextStageOf`). */
     hasNextStage: unprovidedGuard('hasNextStage'),
     openerIs: ({ context }, params: { screen: Screen }) =>
       context.openers[context.openers.length - 1]?.screen === params.screen,
@@ -128,6 +121,12 @@ const { createMachine } = setup({
     // ---- Effects: named here, provided by the Game ----
     /** Set up a fresh Run of `stage`, whatever Run was there. */
     beginRun: unprovided<{ stage: Stage }>('beginRun'),
+    /** Set up a fresh Run of a Free Flight of `text` at `targetWpm`; the Game builds its Stage. */
+    beginFreeFlight: unprovided<{
+      text: string;
+      targetWpm: number;
+      stage?: Stage;
+    }>('beginFreeFlight'),
     /** Set up a fresh Run of the Stage the last Run was of. */
     beginCurrentStage: unprovided('beginCurrentStage'),
     /** Set up a fresh Run of the Stage after the current one. */
@@ -197,7 +196,8 @@ type ActionRef =
   | 'clearOpeners'
   | 'popOpener'
   | { type: 'pushOpener'; params: { screen: Screen } }
-  | { type: 'beginRun'; params: typeof stageToBegin };
+  | { type: 'beginRun'; params: typeof stageToBegin }
+  | { type: 'beginFreeFlight'; params: typeof freeFlightToBegin };
 
 interface Move {
   target?: Screen;
@@ -215,7 +215,7 @@ const SCREENS: Screen[] = [
   ...MENUS,
 ];
 
-/** The Stage a picked Stage or a Free Flight launch begins. */
+/** The Stage a picked Stage begins. */
 const stageToBegin = ({
   event,
 }: {
@@ -225,8 +225,21 @@ const stageToBegin = ({
     const stage = getStageById(event.stageId);
     if (stage) return { stage };
   }
-  if (event.type === 'LAUNCH_FREE_FLIGHT') return { stage: event.stage };
   throw new Error(`${event.type} has no Stage to begin`);
+};
+
+/** What a Free Flight launch carries, for the Game to build the Stage from. */
+const freeFlightToBegin = ({
+  event,
+}: {
+  event: GameMachineEvent;
+}): { text: string; targetWpm: number; stage?: Stage } => {
+  if (event.type !== 'LAUNCH_FREE_FLIGHT') {
+    throw new Error(`${event.type} is no Free Flight launch`);
+  }
+  return 'stage' in event
+    ? { text: event.stage.sampleText, targetWpm: 0, stage: event.stage }
+    : { text: event.text, targetWpm: event.targetWpm };
 };
 
 const ignore: Move = { actions: ['ignore'] };
@@ -305,8 +318,8 @@ const everywhere = (from: Screen) => {
         target: 'flight-deck',
         actions: [
           {
-            type: 'beginRun',
-            params: stageToBegin,
+            type: 'beginFreeFlight',
+            params: freeFlightToBegin,
           },
           'markRunning',
         ],

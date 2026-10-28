@@ -10,21 +10,18 @@ import {
   Home,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { getStageById } from '../data/curriculum';
 import { useGame } from '../store/gameContext';
 import { useGameState } from '../store/useGameState';
 import { OverlayShell } from './OverlayShell';
 
 export const LevelCompleteModal: React.FC = () => {
   const { send } = useGame();
-  const { stage, hasNextStage, result, totalStars } = useGameState((state) => ({
+  const { stage, stageAhead, result, totalStars } = useGameState((state) => ({
     stage: state.run.currentStage,
-    hasNextStage: state.hasNextStage,
+    stageAhead: state.stageAhead,
     result: state.debrief,
     totalStars: state.profile.totalStars,
   }));
-  // A Free Flight is no Stage of the curriculum, so it is never the last one.
-  const isLastStage = getStageById(stage.id) !== undefined && !hasNextStage;
   const hasUnlockedNextSector = result?.unlockedSector ?? false;
   const onReplay = () => send({ type: 'PRESS_REPLAY' });
   const onNextStage = () => send({ type: 'PRESS_NEXT_STAGE' });
@@ -336,13 +333,17 @@ export const LevelCompleteModal: React.FC = () => {
         </button>
 
         {/* On the last Stage, Next Stage opens the Galaxy Map instead. */}
-        {(hasNextStage || isLastStage) && (
+        {stageAhead !== 'free-flight' && (
           <button
             type="button"
             onClick={onNextStage}
             className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-lg shadow-cyan-950/50 transition-all cursor-pointer"
           >
-            <span>{hasNextStage ? 'Next Mission' : 'Back to Galaxy Map'}</span>
+            <span>
+              {stageAhead === 'next-stage'
+                ? 'Next Mission'
+                : 'Back to Galaxy Map'}
+            </span>
             <ArrowRight className="w-4 h-4" />
           </button>
         )}

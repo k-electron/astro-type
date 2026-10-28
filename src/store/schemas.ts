@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { KEY_FINGER_MAP } from '../data/curriculum';
 
 export const TrailColorThemeSchema = z.enum([
   'CYAN',
@@ -124,58 +123,6 @@ export const PlayerProfileSchema = SaveFieldsSchema.transform((save) => {
 
 /** The Profile a new player starts with: every field at its default. */
 export const DEFAULT_PROFILE: PlayerProfile = PlayerProfileSchema.parse({});
-
-// Free Flight text, checked at Launch. This schema is the only definition of
-// what Free Flight text is: look-alike characters become plain keys, and any
-// character the shown keyboard still can't type is reported.
-const LOOK_ALIKES: [RegExp, string][] = [
-  [/[\u2018\u2019\u201B]/g, "'"], // curly single quotes
-  [/[\u201C\u201D\u201F]/g, '"'], // curly double quotes
-  [/[\u2010-\u2015\u2212]/g, '-'], // long dashes and the minus sign
-  [/\r\n|[\r\n\t\u2028\u2029]/g, ' '], // line breaks and tabs
-];
-
-/** A character has a key on the shown keyboard when the finger map has it. */
-const isTypeable = (character: string): boolean => character in KEY_FINGER_MAP;
-
-/** A character as itself, or as its code when it would be invisible. */
-const describeCharacter = (character: string): string =>
-  /[\p{C}\p{Z}]/u.test(character)
-    ? `U+${(character.codePointAt(0) ?? 0).toString(16).toUpperCase().padStart(4, '0')}`
-    : character;
-
-export const FreeFlightTextSchema = z
-  .string()
-  .transform((text) =>
-    LOOK_ALIKES.reduce(
-      (cleaned, [lookAlike, plain]) => cleaned.replace(lookAlike, plain),
-      text,
-    ).trim(),
-  )
-  .check((context) => {
-    if (context.value === '') {
-      context.issues.push({
-        code: 'custom',
-        message: 'Enter some text to type.',
-        input: context.value,
-      });
-      return;
-    }
-    const untypeable = [...new Set([...context.value])].filter(
-      (character) => !isTypeable(character),
-    );
-    if (untypeable.length > 0) {
-      const characters = untypeable.map(describeCharacter);
-      context.issues.push({
-        code: 'custom',
-        message: `These characters can't be typed on this keyboard: ${characters.join(' ')}`,
-        input: context.value,
-        params: { characters },
-      });
-    }
-  });
-
-export type FreeFlightText = z.infer<typeof FreeFlightTextSchema>;
 
 // The Profile and its parts. These are the only definitions of these types.
 export type PlayerProfile = z.output<typeof PlayerProfileSchema>;

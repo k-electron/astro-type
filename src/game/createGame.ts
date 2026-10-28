@@ -9,9 +9,14 @@
 import { createActor } from 'xstate';
 import { createStore } from 'zustand/vanilla';
 import {
+  freeFlightStage,
+  nextStageOf,
+  type StageAhead,
+  stageAheadOf,
+} from '../data/curriculum';
+import {
   type GameMachineEvent,
   gameMachine,
-  nextStageOf,
   type PlayerEvent,
   type ScreenParams,
 } from '../store/gameMachine';
@@ -106,10 +111,11 @@ export interface GameState {
   /** The parameter the screen was opened with, or null when it takes none (none does yet). */
   screenParams: ScreenParams;
   /**
-   * Whether Next Stage starts another Stage. False on the last Stage, where it
-   * opens the Galaxy Map instead, and on a Free Flight.
+   * What follows the Run's Stage: another Stage for Next Stage to start, the
+   * last Stage (Next Stage opens the Galaxy Map instead), or a Free Flight
+   * (there is no Next Stage).
    */
-  hasNextStage: boolean;
+  stageAhead: StageAhead;
   run: Run;
   debrief: VictoryResult | null;
   profile: PlayerProfile;
@@ -194,6 +200,8 @@ export function createGame(options: GameOptions): Game {
   const machine = gameMachine.provide({
     actions: {
       beginRun: (_, { stage }) => store.getState().beginRun(stage),
+      beginFreeFlight: (_, { text, targetWpm, stage }) =>
+        store.getState().beginRun(stage ?? freeFlightStage(text, targetWpm)),
       beginCurrentStage: () =>
         store.getState().beginRun(store.getState().run.stage),
       beginNextStage: () => {
@@ -317,7 +325,7 @@ export function createGame(options: GameOptions): Game {
       phase: getPhase(),
       opener: getOpener(),
       screenParams: actor.getSnapshot().context.screenParams,
-      hasNextStage: nextStageOf(state.run.stage) !== undefined,
+      stageAhead: stageAheadOf(state.run.stage),
       run: buildRun(state.run),
       debrief: state.debrief,
       profile: state.profile,
@@ -330,7 +338,7 @@ export function createGame(options: GameOptions): Game {
       next.phase === previous.phase &&
       next.opener === previous.opener &&
       next.screenParams === previous.screenParams &&
-      next.hasNextStage === previous.hasNextStage &&
+      next.stageAhead === previous.stageAhead &&
       next.run === previous.run &&
       next.debrief === previous.debrief &&
       next.profile === previous.profile &&

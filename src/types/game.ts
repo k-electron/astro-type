@@ -68,8 +68,12 @@ export interface StarRatingThresholds {
   threeStarMinStreak: number; // e.g. 25
 }
 
+/** Where a Stage comes from: a Sector of the curriculum, or the player's own Free Flight. */
+export type StageOrigin = 'sector' | 'free-flight';
+
 export interface Stage {
-  id: string; // e.g. "s1-l1"
+  id: string; // e.g. "s1-l1"; a Free Flight's is `custom-<launch time>`
+  origin: StageOrigin;
   sectorId: string; // e.g. "sector-1"
   stageNumber: number; // 1 to 4
   title: string;

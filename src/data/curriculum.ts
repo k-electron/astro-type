@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import type { FingerLaneInfo, FingerZone, Sector, Stage } from '../types/game';
 
 export const FINGER_COLOR_MAP: Record<FingerZone, string> = {
@@ -818,7 +819,11 @@ export function getNoteLaneAndFinger(char: string): {
   };
 }
 
-export const CURRICULUM_SECTORS: Sector[] = [
+/** A Stage as the Sectors below write it: every one of them is a Sector Stage. */
+type SectorStage = Omit<Stage, 'origin'>;
+type SectorDefinition = Omit<Sector, 'stages'> & { stages: SectorStage[] };
+
+const SECTOR_DEFINITIONS: SectorDefinition[] = [
   {
     id: 'sector-1',
     codenick: 'Sector 01',
@@ -2068,6 +2073,16 @@ export const CURRICULUM_SECTORS: Sector[] = [
   },
 ];
 
+export const CURRICULUM_SECTORS: Sector[] = SECTOR_DEFINITIONS.map(
+  (sector) => ({
+    ...sector,
+    stages: sector.stages.map((stage) => ({
+      ...stage,
+      origin: 'sector' as const,
+    })),
+  }),
+);
+
 export function getStageById(stageId: string): Stage | undefined {
   for (const sector of CURRICULUM_SECTORS) {
     const stage = sector.stages.find((s) => s.id === stageId);
@@ -2087,4 +2102,138 @@ export function getNextStage(currentStageId: string): Stage | undefined {
     }
   }
   return undefined;
+}
+
+/** What follows a cleared Stage: the Debrief offers Next Stage, or not. */
+export type StageAhead = 'next-stage' | 'last-stage' | 'free-flight';
+
+/**
+ * The Stage after `stage` that Next Stage starts, if there is one. A Free
+ * Flight is no Stage of a Sector, so it never has one, and the last Stage has
+ * none either.
+ */
+export function nextStageOf(stage: Stage): Stage | undefined {
+  return stage.origin === 'sector' ? getNextStage(stage.id) : undefined;
+}
+
+/** Which of the three the Debrief of a cleared `stage` is. */
+export function stageAheadOf(stage: Stage): StageAhead {
+  if (stage.origin === 'free-flight') return 'free-flight';
+  return getNextStage(stage.id) ? 'next-stage' : 'last-stage';
+}
+
+// ---------------------------------------------------------------------------
+// Free Flight: the player's own text, at the Target Cadence they choose
+// ---------------------------------------------------------------------------
+
+/** The Target Cadence the Free Flight screen opens on. */
+export const DEFAULT_FREE_FLIGHT_WPM = 40;
+
+/** Text the Free Flight screen offers to load, with the cadence that suits it. */
+export const FREE_FLIGHT_PRESETS = [
+  {
+    name: 'Cosmic Exploration Quotes',
+    text: 'Across the sea of space, the stars are other suns. We have entered the cosmic ocean, and the journey of discovery has only just begun.',
+    wpm: 40,
+  },
+  {
+    name: 'JavaScript / Web Tech Code',
+    text: 'const canvas = document.createElement("canvas"); const ctx = canvas.getContext("2d"); function animate() { requestAnimationFrame(animate); }',
+    wpm: 35,
+  },
+  {
+    name: 'Astral Number Coordinates',
+    text: 'Coordinate 398.24 bearing 072 sector 44 azimuth 189 velocity 24500 telemetry 8891 status nominal.',
+    wpm: 30,
+  },
+  {
+    name: 'Classic Pangram Marathon',
+    text: 'The quick brown fox jumps over the lazy dog. Sphinx of black quartz, judge my vow. How vexingly quick daft zebras jump!',
+    wpm: 45,
+  },
+];
+
+// Free Flight text, checked at Launch. This schema is the only definition of
+// what Free Flight text is: look-alike characters become plain keys, and any
+// character the shown keyboard still can't type is reported.
+const LOOK_ALIKES: [RegExp, string][] = [
+  [/[\u2018\u2019\u201B]/g, "'"], // curly single quotes
+  [/[\u201C\u201D\u201F]/g, '"'], // curly double quotes
+  [/[\u2010-\u2015\u2212]/g, '-'], // long dashes and the minus sign
+  [/\r\n|[\r\n\t\u2028\u2029]/g, ' '], // line breaks and tabs
+];
+
+/** A character has a key on the shown keyboard when the finger map has it. */
+const isTypeable = (character: string): boolean => character in KEY_FINGER_MAP;
+
+/** A character as itself, or as its code when it would be invisible. */
+const describeCharacter = (character: string): string =>
+  /[\p{C}\p{Z}]/u.test(character)
+    ? `U+${(character.codePointAt(0) ?? 0).toString(16).toUpperCase().padStart(4, '0')}`
+    : character;
+
+export const FreeFlightTextSchema = z
+  .string()
+  .transform((text) =>
+    LOOK_ALIKES.reduce(
+      (cleaned, [lookAlike, plain]) => cleaned.replace(lookAlike, plain),
+      text,
+    ).trim(),
+  )
+  .check((context) => {
+    if (context.value === '') {
+      context.issues.push({
+        code: 'custom',
+        message: 'Enter some text to type.',
+        input: context.value,
+      });
+      return;
+    }
+    const untypeable = [...new Set([...context.value])].filter(
+      (character) => !isTypeable(character),
+    );
+    if (untypeable.length > 0) {
+      const characters = untypeable.map(describeCharacter);
+      context.issues.push({
+        code: 'custom',
+        message: `These characters can't be typed on this keyboard: ${characters.join(' ')}`,
+        input: context.value,
+        params: { characters },
+      });
+    }
+  });
+
+/**
+ * The Stage a Free Flight Run flies: the player's own `text` (already checked
+ * as typeable) and Target Cadence, with Star thresholds worked out from the
+ * cadence. Its id is a new `custom-` one for each launch, which is how a Free
+ * Flight's result has always been keyed in the Save.
+ */
+export function freeFlightStage(text: string, targetWpm: number): Stage {
+  return {
+    id: `custom-${Date.now()}`,
+    origin: 'free-flight',
+    sectorId: 'sector-custom',
+    stageNumber: 0,
+    title: 'Free Flight Drill',
+    subtitle: 'Custom Practice Mission',
+    description: 'Player tailored free-form typing session.',
+    targetKeys: Array.from(new Set(text.toLowerCase().split(''))),
+    sampleText: text,
+    difficulty:
+      targetWpm > 50 ? 'Expert' : targetWpm > 35 ? 'Advanced' : 'Intermediate',
+    targetWpm,
+    focusFingers: 'Free Flight Custom Selection',
+    techniqueTip:
+      'Maintain relaxed posture and steady keystroke cadence across your custom text.',
+    drillPatternType: 'CADENCE_FLOW',
+    starThresholds: {
+      oneStarAccuracy: 75,
+      twoStarWpm: targetWpm,
+      twoStarAccuracy: 90,
+      threeStarWpm: Math.round(targetWpm * 1.3),
+      threeStarAccuracy: 96,
+      threeStarMinStreak: 20,
+    },
+  };
 }

@@ -2,39 +2,18 @@ import type React from 'react';
 import { useState } from 'react';
 import { Play } from 'lucide-react';
 import {
-  buildFreeFlightStage,
   DEFAULT_FREE_FLIGHT_WPM,
-} from '../game/freeFlight';
-import { FreeFlightTextSchema } from '../store/schemas';
+  FREE_FLIGHT_PRESETS,
+  FreeFlightTextSchema,
+} from '../data/curriculum';
 import { useGame } from '../store/gameContext';
 import { OverlayCloseButton, OverlayShell } from './OverlayShell';
 
-const PRESET_TEXTS = [
-  {
-    name: 'Cosmic Exploration Quotes',
-    text: 'Across the sea of space, the stars are other suns. We have entered the cosmic ocean, and the journey of discovery has only just begun.',
-    wpm: 40,
-  },
-  {
-    name: 'JavaScript / Web Tech Code',
-    text: 'const canvas = document.createElement("canvas"); const ctx = canvas.getContext("2d"); function animate() { requestAnimationFrame(animate); }',
-    wpm: 35,
-  },
-  {
-    name: 'Astral Number Coordinates',
-    text: 'Coordinate 398.24 bearing 072 sector 44 azimuth 189 velocity 24500 telemetry 8891 status nominal.',
-    wpm: 30,
-  },
-  {
-    name: 'Classic Pangram Marathon',
-    text: 'The quick brown fox jumps over the lazy dog. Sphinx of black quartz, judge my vow. How vexingly quick daft zebras jump!',
-    wpm: 45,
-  },
-];
-
 export const CustomPracticeModal: React.FC = () => {
   const { send } = useGame();
-  const [customText, setCustomText] = useState<string>(PRESET_TEXTS[0].text);
+  const [customText, setCustomText] = useState<string>(
+    FREE_FLIGHT_PRESETS[0].text,
+  );
   const [targetWpm, setTargetWpm] = useState<number>(DEFAULT_FREE_FLIGHT_WPM);
 
   // Free Flight text is checked as it is typed, so Launch is disabled (with
@@ -47,15 +26,7 @@ export const CustomPracticeModal: React.FC = () => {
 
   const handleLaunch = () => {
     if (!checked.success) return;
-    const cleanText = checked.data;
-
-    const customStage = buildFreeFlightStage(
-      `custom-${Date.now()}`,
-      cleanText,
-      targetWpm,
-    );
-
-    send({ type: 'LAUNCH_FREE_FLIGHT', stage: customStage });
+    send({ type: 'LAUNCH_FREE_FLIGHT', text: checked.data, targetWpm });
   };
 
   return (
@@ -83,7 +54,7 @@ export const CustomPracticeModal: React.FC = () => {
           Load Quick Presets
         </span>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          {PRESET_TEXTS.map((preset) => (
+          {FREE_FLIGHT_PRESETS.map((preset) => (
             <button
               type="button"
               key={preset.name}

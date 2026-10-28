@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { CURRICULUM_SECTORS, FINGER_LANES, KEY_FINGER_MAP } from './curriculum';
+import {
+  CURRICULUM_SECTORS,
+  FINGER_LANES,
+  FREE_FLIGHT_PRESETS,
+  FreeFlightTextSchema,
+  freeFlightStage,
+  KEY_FINGER_MAP,
+} from './curriculum';
 
 // The curriculum is checked here, not at load (#11, #27). Every rule below
 // fails only when a Stage would break for the player. The shape of a Sector
@@ -61,6 +68,11 @@ describe('curriculum', () => {
     expect(strays).toEqual([]);
   });
 
+  it('marks every Stage of a Sector as a Sector Stage', () => {
+    const notSector = stages.filter((stage) => stage.origin !== 'sector');
+    expect(notSector.map((stage) => stage.id)).toEqual([]);
+  });
+
   it('gives every Sector and every Stage its own id', () => {
     const duplicates = (ids: string[]) =>
       ids.filter((id, i) => ids.indexOf(id) !== i);
@@ -115,5 +127,103 @@ describe('curriculum', () => {
         : [],
     );
     expect(problems).toEqual([]);
+  });
+});
+
+// Free Flight is part of the curriculum (#73): the Stage it flies is built
+// here, from the player's text and Target Cadence, and judged by the same
+// rules as a Sector's.
+describe('a Free Flight Stage', () => {
+  const text = 'the quick fox';
+
+  it('is a Stage of the text it was built from, marked as Free Flight with a custom id', () => {
+    const stage = freeFlightStage(text, 30);
+    expect(stage.sampleText).toBe(text);
+    expect(stage.targetWpm).toBe(30);
+    expect(stage.origin).toBe('free-flight');
+    expect(stage.id).toMatch(/^custom-/);
+  });
+
+  it('has a lane and a finger for every character of the text, as a Sector Stage does', () => {
+    const stage = freeFlightStage(text, 30);
+    const chars = new Set([...stage.sampleText, ...stage.targetKeys]);
+    const problems = [...chars].filter((char) => !keyFor(char));
+    expect(problems).toEqual([]);
+  });
+
+  it.each([20, 40, 80])(
+    'asks for more at each star level at %i WPM',
+    (targetWpm) => {
+      const { starThresholds: t } = freeFlightStage(text, targetWpm);
+      expect(t.oneStarAccuracy).toBeLessThan(t.twoStarAccuracy);
+      expect(t.twoStarAccuracy).toBeLessThan(t.threeStarAccuracy);
+      expect(t.twoStarWpm).toBeLessThan(t.threeStarWpm);
+      expect(t.threeStarAccuracy).toBeLessThanOrEqual(100);
+    },
+  );
+
+  it('is offered by every preset as text that can be typed', () => {
+    expect(FREE_FLIGHT_PRESETS.length).toBeGreaterThan(0);
+    for (const preset of FREE_FLIGHT_PRESETS) {
+      const checked = FreeFlightTextSchema.safeParse(preset.text);
+      expect(checked.success, preset.name).toBe(true);
+      expect(freeFlightStage(preset.text, preset.wpm).sampleText).toBe(
+        preset.text,
+      );
+    }
+  });
+});
+
+// The characters the Free Flight text check is about, written as escapes so
+// they stay visible in the source.
+const LEFT_DOUBLE_QUOTE = '\u201C';
+const RIGHT_DOUBLE_QUOTE = '\u201D';
+const CURLY_APOSTROPHE = '\u2019';
+const EM_DASH = '\u2014';
+const EN_DASH = '\u2013';
+const NO_BREAK_SPACE = '\u00A0';
+
+const untypeableOf = (text: string): string[] | undefined => {
+  const result = FreeFlightTextSchema.safeParse(text);
+  if (result.success) return undefined;
+  for (const issue of result.error.issues) {
+    const { params } = issue as { params?: { characters?: string[] } };
+    if (params?.characters) return params.characters;
+  }
+  return undefined;
+};
+
+describe('Free Flight text', () => {
+  it('turns look-alike characters into plain keys', () => {
+    const pasted = `${LEFT_DOUBLE_QUOTE}It${CURLY_APOSTROPHE}s${RIGHT_DOUBLE_QUOTE} ${EM_DASH} she said.\r\nNext\tline${EN_DASH}ok`;
+    expect(FreeFlightTextSchema.parse(pasted)).toBe(
+      '"It\'s" - she said. Next line-ok',
+    );
+  });
+
+  it('accepts every plain key of the keyboard, shifted or not', () => {
+    const printableAscii = Array.from({ length: 95 }, (_, i) =>
+      String.fromCharCode(32 + i),
+    ).join('');
+    // Leading and trailing spaces are trimmed, so check the middle.
+    expect(FreeFlightTextSchema.parse(`a${printableAscii}a`)).toBe(
+      `a${printableAscii}a`,
+    );
+  });
+
+  it('lists each character that still has no key, once', () => {
+    const rocket = String.fromCodePoint(0x1f680);
+    expect(untypeableOf(`caf${'\u00E9'} ${rocket} and ${rocket}`)).toEqual([
+      '\u00E9',
+      rocket,
+    ]);
+  });
+
+  it('names an invisible character by its code', () => {
+    expect(untypeableOf(`no${NO_BREAK_SPACE}break`)).toEqual(['U+00A0']);
+  });
+
+  it('refuses text with nothing to type', () => {
+    expect(FreeFlightTextSchema.safeParse(' \n\t ').success).toBe(false);
   });
 });

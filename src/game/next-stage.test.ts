@@ -1,11 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { PlayerEvent } from './createGame';
-import {
-  freeFlightStage,
-  newGame,
-  startFreeFlight,
-  typeText,
-} from './testHelpers';
+import { newGame, startFreeFlight, typeText } from './testHelpers';
 
 const NEXT_STAGE: PlayerEvent = { type: 'PRESS_NEXT_STAGE' };
 
@@ -17,6 +12,7 @@ describe('Next Stage on a Free Flight Debrief', () => {
     typeText(game, text);
     expect(game.getState().screen).toBe('debrief');
     const result = game.getState().debrief;
+    const flown = game.getState().run.currentStage.id;
 
     game.send(NEXT_STAGE);
 
@@ -25,6 +21,6 @@ describe('Next Stage on a Free Flight Debrief', () => {
     // No Stage was started: the Free Flight's Debrief and Run are still there.
     expect(after.phase).toBe('cleared');
     expect(after.debrief).toEqual(result);
-    expect(after.run.currentStage.id).toBe(freeFlightStage(text).id);
+    expect(after.run.currentStage.id).toBe(flown);
   });
 });

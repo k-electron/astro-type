@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { CURRICULUM_SECTORS } from '../data/curriculum';
+import {
+  CURRICULUM_SECTORS,
+  DEFAULT_FREE_FLIGHT_WPM,
+} from '../data/curriculum';
 import { type PlayerEvent, RefusedMoveError, type Screen } from './createGame';
 import {
   clearStage,
-  freeFlightStage,
   type Game,
   hitPerfect,
   newGame,
@@ -54,7 +56,11 @@ const SLOW_WALK_TIMEOUT = 30_000;
 
 /** A Free Flight launch of the player's own short text. */
 function freeFlightLaunch(): PlayerEvent {
-  return { type: 'LAUNCH_FREE_FLIGHT', stage: freeFlightStage('ab ba') };
+  return {
+    type: 'LAUNCH_FREE_FLIGHT',
+    text: 'ab ba',
+    targetWpm: DEFAULT_FREE_FLIGHT_WPM,
+  };
 }
 
 // ---------------------------------------------------------------------------
