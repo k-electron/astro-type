@@ -42,6 +42,20 @@ describe('a returning player', () => {
     ).toBeTruthy();
   });
 
+  it('still shows the Stars the Stages earned after a reload, when the Save claimed more', () => {
+    const player = renderGame({
+      profile: { ...RETURNING_PLAYER, totalStars: 40 },
+    });
+    // Muting makes the game write the Save back; the reload reads that Save.
+    player.click('Mute All Audio');
+    player.reload();
+
+    expect(
+      screen.getByRole('button', { name: 'Unmute All Audio' }),
+    ).toBeTruthy();
+    expect(stars(5)).toBeTruthy();
+  });
+
   it('keeps what a Save with missing fields has, and plays on defaults', () => {
     // This Save has no Credits and none of the sound settings.
     const { totalCredits: _credits, ...gappy } = RETURNING_PLAYER;
@@ -101,6 +115,17 @@ describe('Import Backup and Factory Reset', () => {
     expect(await screen.findByRole('button', { name: /^3\s*★$/ })).toBeTruthy();
     expect(credits('491')).toBeTruthy();
     expect(screen.queryByRole('alert')).toBeNull();
+    player.click('Back to Academy');
+    expect(sectorOneStars(player)).toContain('3/12');
+  });
+
+  it('shows the Stars the Stages earned when an old Backup claims a different total', async () => {
+    const player = renderGame({ profile: RETURNING_PLAYER });
+    player.openHeader('Analytics');
+
+    player.importBackup(JSON.stringify({ ...OLD_LIVE_EXPORT, totalStars: 99 }));
+
+    expect(await screen.findByRole('button', { name: /^3\s*★$/ })).toBeTruthy();
     player.click('Back to Academy');
     expect(sectorOneStars(player)).toContain('3/12');
   });

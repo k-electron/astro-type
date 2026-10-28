@@ -18,6 +18,7 @@ import { clearStage, loadGame, startStage, STAGE_ID } from './testHelpers';
 const load = (save?: unknown) => loadGame(save);
 
 type ReturningSave = ReturnType<typeof completeSave>;
+type Profile = ReturnType<Game['getState']>['profile'];
 
 function withUpgrades(
   save: ReturningSave,
@@ -190,6 +191,55 @@ describe('a Save made when the player could choose a Drone speed', () => {
       expect(storage.saved).not.toHaveProperty('highwaySpeed');
     },
   );
+});
+
+describe('a Save with every key the game has since retired', () => {
+  // Saves from before: a stored `totalStars` (here one that is wrong),
+  // `ambientMusicVolume`, the Drone speed and the old Upgrade key names. None
+  // of them may cost the player their progress, Credits, Upgrades or settings.
+  const SETTINGS = [
+    'soundEnabled',
+    'soundVolume',
+    'keyboardVisible',
+    'handsVisible',
+    'musicEnabled',
+    'musicVolume',
+    'beatTheme',
+    'globalMuted',
+  ] as const;
+
+  it('loads with progress, Credits, Upgrades and settings intact, and keeps them through the next write', () => {
+    const save = withOldDroneSpeed(
+      { ...completeSave(), totalStars: 99, ambientMusicVolume: 0.9 },
+      'HYPER',
+    );
+    const { game, storage } = load(save);
+
+    const expectIntact = (
+      profile: Profile | null | undefined,
+      credits: number,
+    ) => {
+      expect(profile?.totalCredits).toBe(credits);
+      expect(profile?.stagesProgress).toEqual(save.stagesProgress);
+      expect(profile?.keyAnalytics).toEqual(save.keyAnalytics);
+      expect(profile?.upgrades.deflectorShields).toBe(
+        save.upgrades.deflectorShields,
+      );
+      expect(profile?.upgrades.hyperdriveReactor).toBe(
+        save.upgrades.hyperdriveReactor,
+      );
+      for (const field of SETTINGS) {
+        expect(profile?.[field], field).toEqual(save[field]);
+      }
+    };
+
+    expect(game.getState().loadNotice).toBeNull();
+    expect(storage.movedAside).toBeUndefined();
+    expectIntact(game.getState().profile, save.totalCredits);
+
+    game.buy('sensors'); // 200 Credits, and the game saves
+    expectIntact(storage.saved, save.totalCredits - 200);
+  });
 });
 
 describe('a Save with a field missing', () => {

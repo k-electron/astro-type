@@ -6,12 +6,14 @@ import {
   withOldDroneSpeed,
 } from '../../tests/shared/saves';
 import { exportBackup, REFUSED_BACKUP_MESSAGE } from './save';
-import { loadGame } from './testHelpers';
+import { type Game, loadGame } from './testHelpers';
 
 // A Backup is the Profile exported to a file (ticket #25). The browser journeys
 // check what the player sees; these check the Profile and the Save directly.
 
 const gameWith = (save?: Record<string, unknown>) => loadGame(save);
+
+type Profile = ReturnType<Game['getState']>['profile'];
 
 describe('importing a Backup', () => {
   it('brings back the Profile it was exported from, and saves it', () => {
@@ -87,6 +89,36 @@ describe('importing a Backup', () => {
       );
     },
   );
+
+  it('keeps the Credits, Upgrades, settings and key stats of an old export, and the next Save and Backup keep them', () => {
+    const { game, storage } = gameWith();
+
+    game.importBackup(JSON.stringify({ ...OLD_LIVE_EXPORT, totalStars: 99 }));
+
+    const SETTINGS = [
+      'soundEnabled',
+      'soundVolume',
+      'keyboardVisible',
+      'handsVisible',
+      'musicEnabled',
+      'musicVolume',
+      'beatTheme',
+      'globalMuted',
+    ] as const;
+    const expectIntact = (profile: Profile | null) => {
+      expect(profile?.totalCredits).toBe(OLD_LIVE_EXPORT.totalCredits);
+      expect(profile?.upgrades).toEqual(OLD_LIVE_EXPORT.upgrades);
+      expect(profile?.keyAnalytics).toEqual(OLD_LIVE_EXPORT.keyAnalytics);
+      expect(profile?.stagesProgress).toEqual(OLD_LIVE_EXPORT.stagesProgress);
+      for (const field of SETTINGS) {
+        expect(profile?.[field], field).toEqual(OLD_LIVE_EXPORT[field]);
+      }
+    };
+    expect(game.getState().loadNotice).toBeNull();
+    expectIntact(game.getState().profile);
+    expectIntact(storage.saved);
+    expectIntact(JSON.parse(exportBackup(game.getState().profile)));
+  });
 
   it('reads a versioned Backup carrying a speed the same way', () => {
     const { game: playedGame } = gameWith({
