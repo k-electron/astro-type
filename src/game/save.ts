@@ -3,7 +3,7 @@ import {
   PlayerProfileSchema,
   SaveFieldsSchema,
   type PlayerProfile,
-} from '../store/schemas';
+} from './schemas';
 
 /**
  * The Save module. It is the only code that reads or writes the Save: it

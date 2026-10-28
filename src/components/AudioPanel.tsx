@@ -2,7 +2,7 @@ import type React from 'react';
 import { Check, Lock, Music, Volume2, VolumeX } from 'lucide-react';
 import { entriesOf } from '../game/catalog';
 import { BEAT_THEMES } from '../game/sound';
-import { BeatThemeSchema } from '../store/schemas';
+import { BeatThemeSchema } from '../game/schemas';
 import { useGame } from '../store/gameContext';
 import { useGameState } from '../store/useGameState';
 

@@ -1,4 +1,4 @@
-import type { RunPhase } from '../store/gameMachine';
+import type { RunPhase } from './machine';
 import { MAX_CATCH_UP_MS, STEP_MS } from './clock';
 
 /** What the frame loop needs from the browser. Injected so it can be driven by hand. */

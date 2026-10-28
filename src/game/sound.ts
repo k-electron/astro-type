@@ -1,9 +1,5 @@
-import type { RunPhase } from '../store/gameMachine';
-import type {
-  AudioSynthCore,
-  BeatTheme,
-  PlayerProfile,
-} from '../store/schemas';
+import type { RunPhase } from './machine';
+import type { AudioSynthCore, BeatTheme, PlayerProfile } from './schemas';
 import type { Grade, LivePerformance } from './rules';
 import type { Moment } from './moments';
 

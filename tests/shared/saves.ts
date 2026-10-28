@@ -5,7 +5,7 @@
  * defaults, as they do for a real one. This imports from no test runner, so
  * every layer of tests can use it.
  */
-import { AudioSynthCoreSchema } from '../../src/store/schemas';
+import { AudioSynthCoreSchema } from '../../src/game/schemas';
 
 /** One Stage's progress, cleared with `stars` Stars. `overrides` change any field. */
 export function stageProgress(

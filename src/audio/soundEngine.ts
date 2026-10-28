@@ -4,7 +4,7 @@ import {
   type AudioSynthCore,
   type BeatTheme,
   DEFAULT_PROFILE,
-} from '../store/schemas';
+} from '../game/schemas';
 
 class SoundEngine {
   private ctx: AudioContext | null = null;

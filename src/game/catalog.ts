@@ -9,11 +9,7 @@
  * Nothing in this module's imports touches React: an icon or a tone is a name
  * that the screen draws.
  */
-import type {
-  AudioSynthCore,
-  ShipUpgrades,
-  TrailColorTheme,
-} from '../store/schemas';
+import type { AudioSynthCore, ShipUpgrades, TrailColorTheme } from './schemas';
 
 /** The Upgrades' ids, as `buy` takes them. */
 export type UpgradeId = 'shields' | 'reactor' | 'sensors';

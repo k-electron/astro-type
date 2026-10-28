@@ -17,7 +17,7 @@ import {
   type StageProgress,
   StageProgressSchema,
   totalStarsOf,
-} from '../store/schemas';
+} from './schemas';
 import { type CatalogItemId, catalogEntry } from './catalog';
 import type { Moment } from './moments';
 import {

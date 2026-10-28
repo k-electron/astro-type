@@ -21,7 +21,7 @@ import {
   type RunPhase,
   type Screen,
   type ScreenParams,
-} from '../store/gameMachine';
+} from './machine';
 import type { Stage } from '../curriculum/curriculum';
 import { type Clock, createRunClock, createSteppedClock } from './clock';
 import type {
@@ -42,11 +42,7 @@ import { createProfileSlice, loadoutOf, type ProfileSlice } from './profile';
 import { createRunSlice, type RunSlice, type VictoryResult } from './run';
 import type { CatalogItemId } from './catalog';
 import type { BackupImport, SaveStorage } from './save';
-import {
-  type PlayerProfile,
-  type Settings,
-  totalStarsOf,
-} from '../store/schemas';
+import { type PlayerProfile, type Settings, totalStarsOf } from './schemas';
 
 export { createMemoryStorage } from './save';
 export type { MemorySaveStorage, SaveStorage } from './save';
@@ -55,8 +51,8 @@ export type { Cue, Sound, SoundState } from './sound';
 export type { Judgement, KeyOptions } from './rules';
 export type { Moment } from './moments';
 export type { VictoryResult } from './run';
-export type { PlayerEvent } from '../store/gameMachine';
-export type { RunPhase, Screen } from '../store/gameMachine';
+export type { PlayerEvent } from './machine';
+export type { RunPhase, Screen } from './machine';
 
 /** The machine refused a move: the event doesn't apply on this screen. A bug in whoever sent it. */
 export class RefusedMoveError extends Error {

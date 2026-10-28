@@ -8,7 +8,7 @@ import {
   withOldDroneSpeed,
 } from '../../tests/shared/saves';
 import type { Game } from './game';
-import { totalStarsOf } from '../store/schemas';
+import { totalStarsOf } from './schemas';
 import { DEFAULT_PROFILE } from './profile';
 import { UNREADABLE_SAVE_NOTICE } from './save';
 import { clearStage, loadGame, startStage, STAGE_ID } from './testHelpers';

@@ -11,7 +11,7 @@
  */
 import { CURRICULUM_SECTORS } from '../curriculum/curriculum';
 import type { Stage } from '../curriculum/curriculum';
-import type { RunPhase } from '../store/gameMachine';
+import type { RunPhase } from './machine';
 import type { Clock, RunClock } from './clock';
 import type { Moment } from './moments';
 import { type Loadout, loadoutOf, type ProfileSlice } from './profile';

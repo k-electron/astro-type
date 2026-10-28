@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { MAX_STARS_PER_STAGE } from '../store/schemas';
+import { MAX_STARS_PER_STAGE } from '../game/schemas';
 import { type FingerZone, KEYBOARD_ROWS } from './keyboardLayout';
 
 export interface FingerLaneInfo {

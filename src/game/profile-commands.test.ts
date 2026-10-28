@@ -4,7 +4,7 @@ import {
   OLD_LIVE_EXPORT,
   RETURNING_PLAYER,
 } from '../../tests/shared/saves';
-import type { UpgradesSchema } from '../store/schemas';
+import type { UpgradesSchema } from './schemas';
 import type { Game } from './game';
 import { DEFAULT_PROFILE } from './profile';
 import {
