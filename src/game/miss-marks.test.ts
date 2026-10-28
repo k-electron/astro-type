@@ -11,7 +11,7 @@ import {
  * Spec story 30: a wrong character key marks the character in the text prompt
  * at once, without waiting for the right key to move the cursor on. The mark
  * stays behind on that character, and the cursor stays where it is. The prompt
- * draws every index the store lists in `errorIndices`.
+ * draws every index the Run lists in `errorIndices`.
  */
 
 // Six different letters, so every index is easy to tell apart.
@@ -24,8 +24,8 @@ function flyingOn(text: string, save?: Record<string, unknown>): Game {
 }
 
 const marked = (game: Game) =>
-  [...game.store.getState().errorIndices].sort((a, b) => a - b);
-const cursor = (game: Game) => game.getRun().currentCharIndex;
+  [...game.getState().run.errorIndices].sort((a, b) => a - b);
+const cursor = (game: Game) => game.getState().run.currentCharIndex;
 
 describe('the miss mark in the text prompt', () => {
   it('is on the current character at once, and the cursor stays on it', () => {
@@ -70,11 +70,11 @@ describe('the miss mark in the text prompt', () => {
     // The shield only spares the Streak. The player still typed the wrong key.
     const game = flyingOn(TEXT, { upgrades: { deflectorShields: 2 } });
     typeText(game, 'abc');
-    expect(game.getRun().currentStreak).toBe(3);
+    expect(game.getState().run.currentStreak).toBe(3);
 
     game.pressKey('z');
 
-    expect(game.getRun().currentStreak).toBe(3);
+    expect(game.getState().run.currentStreak).toBe(3);
     expect(marked(game)).toEqual([3]);
   });
 
@@ -89,7 +89,7 @@ describe('the miss mark in the text prompt', () => {
 
       expect(marked(game)).toEqual([]);
       expect(cursor(game)).toBe(4);
-      expect(game.getRun().incorrectKeystrokes).toBe(0);
+      expect(game.getState().run.incorrectKeystrokes).toBe(0);
     },
   );
 
@@ -107,7 +107,7 @@ describe('the miss mark in the text prompt', () => {
     game.pressKey(WRONG_KEY);
     for (let i = 0; i < 5; i++) game.pressKey(WRONG_KEY, { repeat: true });
     expect(marked(game)).toEqual([2]);
-    expect(game.getRun().incorrectKeystrokes).toBe(1);
+    expect(game.getState().run.incorrectKeystrokes).toBe(1);
   });
 
   it('is on a space too, when the space is the character to type', () => {

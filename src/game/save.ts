@@ -1,9 +1,9 @@
 import {
+  DEFAULT_PROFILE,
   PlayerProfileSchema,
   SaveFieldsSchema,
   type PlayerProfile,
-} from '../store/schemas';
-import { DEFAULT_PROFILE } from './profile';
+} from './schemas';
 
 /**
  * The Save module. It is the only code that reads or writes the Save: it
@@ -35,6 +35,12 @@ export interface SaveStorage {
   moveAside(): void;
 }
 
+/** Where the Save lives in the browser's localStorage. */
+export const SAVE_KEY = 'astrotype_profile_v1';
+
+/** Where an unreadable Save is moved to, untouched. */
+export const UNREADABLE_SAVE_KEY = 'astrotype_profile_v1_unreadable';
+
 export const UNREADABLE_SAVE_NOTICE =
   "Your saved progress couldn't be read, so you're starting fresh.";
 
@@ -51,13 +57,19 @@ export type BackupImport =
  * so it carries `version: 1`, and the same schema checks it on the way back.
  */
 export function exportBackup(profile: PlayerProfile): string {
-  return JSON.stringify({ ...profile, version: 1 }, null, 2);
+  // The schema keeps only the Save's own fields, so a Profile that carries
+  // more (the total of Stars a screen reads) exports as the Save would.
+  return JSON.stringify(
+    { ...SaveFieldsSchema.parse(profile), version: 1 },
+    null,
+    2,
+  );
 }
 
 /**
  * The names of the Profile's own fields. A Backup exported before versions
  * existed is the whole Profile as JSON, so it carries these (`totalStars`
- * included, which the Save computes but old exports wrote out).
+ * included, which the game no longer saves but old exports wrote out).
  */
 const PROFILE_FIELDS: ReadonlySet<string> = new Set([
   ...Object.keys(SaveFieldsSchema.shape).filter((field) => field !== 'version'),

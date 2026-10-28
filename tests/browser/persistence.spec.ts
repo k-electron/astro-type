@@ -1,6 +1,7 @@
 /// <reference types="node" />
 import { readFile } from 'node:fs/promises';
 import { expect, type Page, test } from '@playwright/test';
+import { UNREADABLE_SAVE_NOTICE } from '../../src/game/save';
 import { RETURNING_PLAYER } from '../shared/saves';
 import { DEBRIEF_TITLE } from '../shared/screens';
 import { launchFreeFlight, seedSave, typeText } from './helpers';
@@ -15,16 +16,14 @@ import { launchFreeFlight, seedSave, typeText } from './helpers';
 // A returning player's Save (5 Stars, 1,234 Credits) is put in localStorage
 // before the page loads, once, so a reload sees whatever the game left behind.
 
-const NOTICE =
-  "Your saved progress couldn't be read, so you're starting fresh.";
-
 const stars = (page: Page, count: number) =>
   page.getByRole('button', { name: `${count} ★`, exact: true });
 
 const credits = (page: Page, text: string) =>
   page.getByRole('button', { name: `${text} Cr`, exact: true });
 
-const notice = (page: Page) => page.getByText(NOTICE, { exact: true });
+const notice = (page: Page) =>
+  page.getByText(UNREADABLE_SAVE_NOTICE, { exact: true });
 
 async function headerStars(page: Page): Promise<number> {
   const button = page.getByRole('button', { name: /^\d+ ★$/ });

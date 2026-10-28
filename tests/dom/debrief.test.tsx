@@ -1,6 +1,6 @@
 import { fireEvent } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { CURRICULUM_SECTORS } from '../../src/data/curriculum';
+import { CURRICULUM_SECTORS } from '../../src/curriculum/curriculum';
 import { clearedStages } from '../shared/saves';
 import { DEBRIEF_TITLE, HUD_NAME } from '../shared/screens';
 import { type Player, renderGame, screen, within } from './harness';

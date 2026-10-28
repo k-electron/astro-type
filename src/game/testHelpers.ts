@@ -4,18 +4,19 @@
  * It imports from no test runner and no React, so a headless test and the DOM
  * harness both use it.
  */
-import { getStageById } from '../data/curriculum';
-import type { Stage } from '../types/game';
+import {
+  DEFAULT_FREE_FLIGHT_WPM,
+  getStageById,
+} from '../curriculum/curriculum';
 import {
   createGame,
   createMemoryStorage,
   type Game,
-  type GameEffects,
+  type Sound,
   type MemorySaveStorage,
-} from './createGame';
-import { buildFreeFlightStage, DEFAULT_FREE_FLIGHT_WPM } from './freeFlight';
+} from './game';
 
-export type { Game } from './createGame';
+export type { Game } from './game';
 
 /** Stage 1 of Sector 1. Its Stars thresholds: 85% / 10 WPM + 92% / 14 WPM + 97% + Streak 14. */
 export const STAGE_ID = 's1-l1';
@@ -47,15 +48,15 @@ export interface Upgrades {
 /**
  * A game over an in-memory Save, with the Save's storage to look at. `seed` is
  * the Save the player already has (any value, even an unreadable one on
- * purpose); fields left out take their defaults. `effects` is how sound is
- * attached.
+ * purpose); fields left out take their defaults. `sound` is where the game's
+ * sound goes.
  */
 export function loadGame(
   seed?: unknown,
-  effects?: Partial<GameEffects>,
+  sound?: Sound,
 ): { game: Game; storage: MemorySaveStorage } {
   const storage = createMemoryStorage(seed);
-  return { game: createGame({ storage, effects }), storage };
+  return { game: createGame({ storage, sound }), storage };
 }
 
 /** A fresh game over an in-memory Save, optionally seeded (merged over a fresh Profile). */
@@ -70,7 +71,11 @@ export function startStage(game: Game, stageId: string): void {
 
 /** Begin a Free Flight Run of the player's own text, as Launch Custom Flight does. */
 export function startFreeFlight(game: Game, text: string): void {
-  game.send({ type: 'LAUNCH_FREE_FLIGHT', stage: freeFlightStage(text) });
+  game.send({
+    type: 'LAUNCH_FREE_FLIGHT',
+    text,
+    targetWpm: DEFAULT_FREE_FLIGHT_WPM,
+  });
 }
 
 /** A fresh game with the given Upgrade levels, with Stage 1 started. */
@@ -85,7 +90,7 @@ export function startedGame(
 
 /** The character the player has to type next. */
 export function targetKey(game: Game): string {
-  return SAMPLE_TEXT[game.getRun().currentCharIndex];
+  return SAMPLE_TEXT[game.getState().run.currentCharIndex];
 }
 
 /** Press the target key `count` times, each time after the lead Drone has reached the Strike Line. */
@@ -120,19 +125,6 @@ export function clearStage(
   game.step(total - lastIndex * STEPS_TO_REACH_LINE);
   if (missBeforeLast) miss(game);
   game.pressKey(targetKey(game));
-}
-
-/**
- * A Free Flight Stage of the player's own text, built by the same function the
- * Free Flight screen's Launch Custom Flight uses. `targetWpm` is the Target
- * Cadence (the screen's default unless a test sets one); the Star thresholds
- * follow from it.
- */
-export function freeFlightStage(
-  text: string,
-  targetWpm = DEFAULT_FREE_FLIGHT_WPM,
-): Stage {
-  return buildFreeFlightStage('custom-test', text, targetWpm);
 }
 
 /** Type `text` key by key, each key after the lead Drone has reached the Strike Line. */

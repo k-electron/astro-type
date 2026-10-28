@@ -16,9 +16,8 @@ import {
  * fired. The recording sound adapter stands in for the speakers; the Run is
  * driven through the `Game` and nothing else is read.
  *
- * Mute and music volume have no method on the `Game` yet. They are the
- * Settings buttons' own Profile commands, so the script presses those, and
- * reads nothing back from the store.
+ * Mute and music volume are changed with the `Game`'s `changeSettings`, as
+ * the Settings buttons do, and nothing is read back from the store.
  */
 
 const HIT = 'hit:PERFECT';
@@ -27,7 +26,6 @@ const hits = (count: number) => Array.from({ length: count }, () => HIT);
 it('sounds right at every moment of a Run', () => {
   const sound = createRecordingSound();
   const { game } = loadGame(RETURNING_PLAYER, sound.effects);
-  const settings = () => game.store.getState();
 
   /** Assert the moment: is the beat sounding, is the Overdrive layer on, and which cues just fired. */
   const heard = (
@@ -43,7 +41,8 @@ it('sounds right at every moment of a Run', () => {
 
   /** Hit Perfects one at a time until Overdrive catches fire. Quiet until then. */
   const hitUntilOverdrive = (moment: string) => {
-    const budget = SAMPLE_TEXT.length - game.getRun().currentCharIndex - 2;
+    const budget =
+      SAMPLE_TEXT.length - game.getState().run.currentCharIndex - 2;
     for (let i = 0; i < budget; i++) {
       hitPerfect(game, 1);
       if (sound.heard().overdrive) {
@@ -65,8 +64,8 @@ it('sounds right at every moment of a Run', () => {
 
   // On the menu: no beat.
   heard('menu', { beat: false, overdrive: false });
-  settings().toggleGlobalMute();
-  settings().toggleGlobalMute();
+  game.changeSettings({ globalMuted: true });
+  game.changeSettings({ globalMuted: false });
   heard('menu, muted and unmuted', { beat: false, overdrive: false });
 
   // Start: the beat comes in, Overdrive off.
@@ -100,7 +99,7 @@ it('sounds right at every moment of a Run', () => {
   heard('paused', { beat: false, overdrive: false });
 
   // Settings changed while paused do not start the beat.
-  settings().setMusicVolume(0.6);
+  game.changeSettings({ musicVolume: 0.6 });
   heard('paused, music volume changed', { beat: false, overdrive: false });
 
   // Resume: the beat is back, with the Overdrive that was running.
@@ -108,27 +107,27 @@ it('sounds right at every moment of a Run', () => {
   heard('resumed', { beat: true, overdrive: true });
 
   // Mute in the Run silences the beat; unmute brings it back.
-  settings().toggleGlobalMute();
+  game.changeSettings({ globalMuted: true });
   heard('muted', { beat: false, overdrive: true });
-  settings().toggleGlobalMute();
+  game.changeSettings({ globalMuted: false });
   heard('unmuted', { beat: true, overdrive: true });
 
   // Music volume 0 silences the beat; raising it brings it back.
-  settings().setMusicVolume(0);
+  game.changeSettings({ musicVolume: 0 });
   heard('music volume 0', { beat: false, overdrive: true });
-  settings().setMusicVolume(0.6);
+  game.changeSettings({ musicVolume: 0.6 });
   heard('music volume raised', { beat: true, overdrive: true });
 
   // Resuming while muted stays quiet until unmuted.
   game.send({ type: 'PRESS_PAUSE' });
-  settings().toggleGlobalMute();
+  game.changeSettings({ globalMuted: true });
   game.send({ type: 'PRESS_RESUME' });
   heard('resumed while muted', { beat: false, overdrive: true });
-  settings().toggleGlobalMute();
+  game.changeSettings({ globalMuted: false });
   heard('unmuted after resuming', { beat: true, overdrive: true });
 
   // Typing on to the last character: a hit cue each, nothing else.
-  const left = SAMPLE_TEXT.length - 1 - game.getRun().currentCharIndex;
+  const left = SAMPLE_TEXT.length - 1 - game.getState().run.currentCharIndex;
   hitPerfect(game, left);
   heard('typed on to the last character', {
     beat: true,
@@ -139,7 +138,7 @@ it('sounds right at every moment of a Run', () => {
   // Clearing the Stage: the last hit, the fanfare, then the chimes for the
   // Stars the Debrief shows. Beat and Overdrive layer go.
   hitPerfect(game, 1);
-  const debrief = game.getDebrief();
+  const debrief = game.getState().debrief;
   expect(debrief, 'Debrief after the clear').not.toBeNull();
   heard('Stage cleared', {
     beat: false,
@@ -148,6 +147,6 @@ it('sounds right at every moment of a Run', () => {
   });
 
   // Buying an Upgrade in the Debrief: its own cue, and the music stays off.
-  expect(game.buyUpgrade('shields'), 'the Upgrade is bought').toBe(true);
+  expect(game.buy('shields'), 'the Upgrade is bought').toBe(true);
   heard('Upgrade bought', { beat: false, overdrive: false, cues: ['upgrade'] });
 });

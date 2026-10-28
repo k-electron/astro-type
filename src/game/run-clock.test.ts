@@ -29,7 +29,7 @@ function pauseFor(game: Game, steps = TEN_MINUTES_OF_STEPS): void {
 
 /** What the HUD shows (Speed, Accuracy), and the cadence reading, all measured in Run Time. */
 function readings(game: Game) {
-  const run = game.getRun();
+  const run = game.getState().run;
   return {
     netWpm: run.netWpm,
     accuracy: run.accuracy,
@@ -38,7 +38,7 @@ function readings(game: Game) {
 }
 
 const droneHeights = (game: Game) =>
-  game.getRun().drones.map((drone) => drone.yPercent);
+  game.getState().run.drones.map((drone) => drone.yPercent);
 
 afterEach(() => {
   vi.useRealTimers();
@@ -47,14 +47,14 @@ afterEach(() => {
 describe('Run Time', () => {
   it('starts at 0 with the Run and counts the steps taken while it runs', () => {
     const game = startedGame();
-    expect(game.getRunTime()).toBe(0);
+    expect(game.getState().runTime).toBe(0);
 
     game.step(60);
-    expect(game.getRunTime()).toBeCloseTo(1000, 3);
+    expect(game.getState().runTime).toBeCloseTo(1000, 3);
 
     game.step(30);
-    expect(game.getRunTime()).toBeCloseTo(1500, 3);
-    expect(game.getRunTime()).toBeCloseTo(90 * STEP_MS, 3);
+    expect(game.getState().runTime).toBeCloseTo(1500, 3);
+    expect(game.getState().runTime).toBeCloseTo(90 * STEP_MS, 3);
   });
 
   it('stands still during a pause and carries on after it', () => {
@@ -62,13 +62,13 @@ describe('Run Time', () => {
     game.step(60);
 
     game.send({ type: 'PRESS_PAUSE' });
-    expect(game.getPhase()).toBe('paused');
+    expect(game.getState().phase).toBe('paused');
     game.step(TEN_MINUTES_OF_STEPS);
-    expect(game.getRunTime()).toBeCloseTo(1000, 3);
+    expect(game.getState().runTime).toBeCloseTo(1000, 3);
 
     game.send({ type: 'PRESS_RESUME' });
     game.step(60);
-    expect(game.getRunTime()).toBeCloseTo(2000, 3);
+    expect(game.getState().runTime).toBeCloseTo(2000, 3);
   });
 
   it.each([
@@ -83,32 +83,32 @@ describe('Run Time', () => {
       game.step(60);
 
       game.send({ type: menu });
-      expect(game.getPhase()).toBe('paused');
+      expect(game.getState().phase).toBe('paused');
       game.step(600);
-      expect(game.getRunTime()).toBeCloseTo(1000, 3);
+      expect(game.getState().runTime).toBeCloseTo(1000, 3);
 
       // Closing back onto the Pause Menu: still paused, still standing still.
       game.send({ type: 'PRESS_CLOSE' });
-      expect(game.getScreen()).toBe('pause-menu');
+      expect(game.getState().screen).toBe('pause-menu');
       game.step(600);
-      expect(game.getRunTime()).toBeCloseTo(1000, 3);
+      expect(game.getState().runTime).toBeCloseTo(1000, 3);
     },
   );
 
   it('stands still once the Stage is cleared, on the Debrief', () => {
     const game = startedGame();
     clearStage(game, { seconds: 60 });
-    expect(game.getScreen()).toBe('debrief');
-    expect(game.getRunTime()).toBeCloseTo(60_000, 1);
+    expect(game.getState().screen).toBe('debrief');
+    expect(game.getState().runTime).toBeCloseTo(60_000, 1);
 
     game.step(600);
-    expect(game.getRunTime()).toBeCloseTo(60_000, 1);
+    expect(game.getState().runTime).toBeCloseTo(60_000, 1);
   });
 
   it('does not move before a Run has started', () => {
     const game = newGame();
     game.step(600);
-    expect(game.getRunTime()).toBe(0);
+    expect(game.getState().runTime).toBe(0);
   });
 
   it('starts again from 0 with the next Run', () => {
@@ -116,10 +116,10 @@ describe('Run Time', () => {
     clearStage(game, { seconds: 60 });
 
     game.send({ type: 'PRESS_REPLAY' });
-    expect(game.getPhase()).toBe('running');
-    expect(game.getRunTime()).toBe(0);
+    expect(game.getState().phase).toBe('running');
+    expect(game.getState().runTime).toBe(0);
     game.step(30);
-    expect(game.getRunTime()).toBeCloseTo(500, 3);
+    expect(game.getState().runTime).toBeCloseTo(500, 3);
   });
 
   it('is not moved by keystrokes, only by steps', () => {
@@ -127,7 +127,7 @@ describe('Run Time', () => {
     game.step(30);
     game.pressKey(targetKey(game));
     game.pressKey('x');
-    expect(game.getRunTime()).toBeCloseTo(500, 3);
+    expect(game.getState().runTime).toBeCloseTo(500, 3);
   });
 
   it('is not the wall clock: time passing outside the steps changes nothing', () => {
@@ -137,13 +137,13 @@ describe('Run Time', () => {
     game.step(60);
 
     vi.setSystemTime(new Date('2026-01-01T12:10:00Z'));
-    expect(game.getRunTime()).toBeCloseTo(1000, 3);
+    expect(game.getState().runTime).toBeCloseTo(1000, 3);
 
     // The whole Run is judged on its 60 steps a second, not on what the
     // wall clock says: 77 keys in a minute of Run Time is 15 WPM.
     clearStage(game, { seconds: 60 });
     vi.setSystemTime(new Date('2026-01-01T12:20:00Z'));
-    expect(game.getDebrief()?.wpm).toBe(15);
+    expect(game.getState().debrief?.wpm).toBe(15);
   });
 });
 
@@ -175,11 +175,11 @@ describe('the Run clock steps only while the Run is running', () => {
     game.pressKey(targetKey(game));
     game.send({ type: 'PRESS_PAUSE' });
     game.step(600);
-    expect(game.getRun().netWpm).toBe(0);
+    expect(game.getState().run.netWpm).toBe(0);
 
     game.send({ type: 'PRESS_RESUME' });
     game.step(30);
-    expect(game.getRun().netWpm).toBe(12);
+    expect(game.getState().run.netWpm).toBe(12);
   });
 
   it('refreshes the telemetry every 30 steps, which is 500 ms', () => {
@@ -189,16 +189,16 @@ describe('the Run clock steps only while the Run is running', () => {
     // One key in the first second of Run Time: 1 / 5 / (1 / 60) = 12 WPM.
     // A Run under a second long is read as one second.
     game.step(29);
-    expect(game.getRun().netWpm).toBe(0);
+    expect(game.getState().run.netWpm).toBe(0);
     game.step(1);
-    expect(game.getRun().netWpm).toBe(12);
+    expect(game.getState().run.netWpm).toBe(12);
 
     // A second key lands in the next half second: not shown until step 60.
     game.pressKey(targetKey(game));
     game.step(29);
-    expect(game.getRun().netWpm).toBe(12);
+    expect(game.getState().run.netWpm).toBe(12);
     game.step(1);
-    expect(game.getRun().netWpm).toBe(24);
+    expect(game.getState().run.netWpm).toBe(24);
   });
 });
 
@@ -226,7 +226,10 @@ describe('a pause in the middle of a Run leaves WPM, accuracy and cadence unchan
       cadenceConsistency: 70,
     });
     expect(readings(paused)).toEqual(readings(straight));
-    expect(paused.getRunTime()).toBeCloseTo(straight.getRunTime(), 3);
+    expect(paused.getState().runTime).toBeCloseTo(
+      straight.getState().runTime,
+      3,
+    );
   });
 
   it('gives the same final WPM, accuracy, Stars and Credits on the Debrief', () => {
@@ -238,8 +241,8 @@ describe('a pause in the middle of a Run leaves WPM, accuracy and cadence unchan
       hitPerfect(game, 36);
       game.step(60 * 60 - 76 * 30);
       game.pressKey(targetKey(game));
-      expect(game.getScreen()).toBe('debrief');
-      return game.getDebrief();
+      expect(game.getState().screen).toBe('debrief');
+      return game.getState().debrief;
     }
 
     const straight = clear(false);
@@ -266,10 +269,10 @@ describe('a pause in the middle of a Run leaves WPM, accuracy and cadence unchan
     game.step(60 * 60 - 76 * 30);
     game.pressKey(targetKey(game));
 
-    const debrief = game.getDebrief();
+    const debrief = game.getState().debrief;
     expect(debrief?.wpm).toBe(15);
     expect(debrief?.starsEarned).toBe(3);
-    expect(game.getProfile().stagesProgress[STAGE_ID]?.bestWpm).toBe(15);
+    expect(game.getState().profile.stagesProgress[STAGE_ID]?.bestWpm).toBe(15);
   });
 
   it('counts the time between keystrokes in Run Time, so a pause is not one slow keystroke', () => {
@@ -279,7 +282,7 @@ describe('a pause in the middle of a Run leaves WPM, accuracy and cadence unchan
     hitPerfect(game, 5);
 
     // Ten keystrokes 30 steps apart: perfectly even typing.
-    expect(game.getRun().cadenceConsistency).toBe(100);
+    expect(game.getState().run.cadenceConsistency).toBe(100);
   });
 
   it('measures the same cadence for uneven typing with or without a pause between keystrokes', () => {
@@ -294,12 +297,12 @@ describe('a pause in the middle of a Run leaves WPM, accuracy and cadence unchan
       return game;
     }
 
-    const straight = unevenTyping(null).getRun().cadenceConsistency;
+    const straight = unevenTyping(null).getState().run.cadenceConsistency;
     // Steady typing is 100; this alternates 4:1, so it reads well under.
     expect(straight).toBeLessThan(100);
     expect(straight).toBeGreaterThanOrEqual(30);
 
-    expect(unevenTyping(5).getRun().cadenceConsistency).toBe(straight);
-    expect(unevenTyping(6).getRun().cadenceConsistency).toBe(straight);
+    expect(unevenTyping(5).getState().run.cadenceConsistency).toBe(straight);
+    expect(unevenTyping(6).getState().run.cadenceConsistency).toBe(straight);
   });
 });

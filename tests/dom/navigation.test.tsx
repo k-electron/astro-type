@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { CURRICULUM_SECTORS } from '../../src/data/curriculum';
+import { CURRICULUM_SECTORS } from '../../src/curriculum/curriculum';
+import { flightDeckLabel } from '../../src/screens/closeLabel';
 import { fireEvent } from '@testing-library/react';
 import {
   ACADEMY_HOME_HEADING,
@@ -203,7 +204,7 @@ describe('the header buttons', () => {
         expect(debriefHeading()).not.toBeNull();
       } else {
         expectPausedHalfway();
-        player.click('Resume Flight');
+        player.click(flightDeckLabel(true));
         expect(progress()).toBe('50%');
       }
     },
@@ -238,7 +239,7 @@ describe('the header buttons', () => {
 
     expect(menuHeading('Hangar')).toBeNull();
     expectPausedHalfway();
-    player.click('Resume Flight');
+    player.click(flightDeckLabel(true));
     expect(progress()).toBe('50%');
   });
 
@@ -262,7 +263,7 @@ describe('menus opened in the middle of a Run', () => {
     expect(Number((scoreMidRun ?? '').replaceAll(',', ''))).toBeGreaterThan(0);
 
     const resume = () => {
-      player.click('Resume Flight');
+      player.click(flightDeckLabel(true));
       expect(pauseMenu()).toBeNull();
       expect(progress()).toBe('50%');
       expect(score()).toBe(scoreMidRun);
@@ -303,7 +304,7 @@ describe('the Pause Menu', () => {
 
     player.click('Pause');
     expectPausedHalfway();
-    player.click('Resume Flight');
+    player.click(flightDeckLabel(true));
 
     expect(pauseMenu()).toBeNull();
     expect(progress()).toBe('50%');
@@ -340,7 +341,7 @@ describe('the Pause Menu', () => {
 
     expect(menuHeading('Sectors')).toBeNull();
     expectPausedHalfway();
-    player.click('Resume Flight');
+    player.click(flightDeckLabel(true));
     expectCarriesOn(player);
   });
 
@@ -357,9 +358,11 @@ describe('the Pause Menu', () => {
     // There is no Run waiting to be resumed.
     player.openHeader('Sectors');
     expect(
-      screen.getByRole('button', { name: 'Enter Flight Deck' }),
+      screen.getByRole('button', { name: flightDeckLabel(false) }),
     ).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Resume Flight' })).toBeNull();
+    expect(
+      screen.queryByRole('button', { name: flightDeckLabel(true) }),
+    ).toBeNull();
     closeMenu(player);
     player.click('Start Mission');
 
@@ -431,7 +434,7 @@ describe('Esc', () => {
 
     expect(menuHeading('Sectors')).toBeNull();
     expectPausedHalfway();
-    player.click('Resume Flight');
+    player.click(flightDeckLabel(true));
     expectCarriesOn(player);
   });
 
@@ -522,7 +525,7 @@ describe('leaving the page mid-Run', () => {
 
     expectPausedHalfway();
     expect(accuracy()).toBe('100%');
-    player.click('Resume Flight');
+    player.click(flightDeckLabel(true));
     expectCarriesOn(player);
   });
 
@@ -538,7 +541,7 @@ describe('leaving the page mid-Run', () => {
 
       expectPausedHalfway();
       expect(accuracy()).toBe('100%');
-      player.click('Resume Flight');
+      player.click(flightDeckLabel(true));
       expectCarriesOn(player);
     },
   );
@@ -583,7 +586,7 @@ describe('leaving the page mid-Run', () => {
     player.hideTab();
 
     expectPausedHalfway();
-    player.click('Resume Flight');
+    player.click(flightDeckLabel(true));
     expectCarriesOn(player);
   });
 
@@ -600,7 +603,7 @@ describe('leaving the page mid-Run', () => {
     player.press(' ');
 
     expectPausedHalfway();
-    player.click('Resume Flight');
+    player.click(flightDeckLabel(true));
     expect(progress()).toBe('50%');
     expectCarriesOn(player);
     expect(accuracy()).toBe('100%');

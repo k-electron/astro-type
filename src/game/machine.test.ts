@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { CURRICULUM_SECTORS } from '../data/curriculum';
-import { type PlayerEvent, RefusedMoveError, type Screen } from './createGame';
+import {
+  CURRICULUM_SECTORS,
+  DEFAULT_FREE_FLIGHT_WPM,
+} from '../curriculum/curriculum';
+import { type PlayerEvent, RefusedMoveError, type Screen } from './game';
 import {
   clearStage,
-  freeFlightStage,
   type Game,
   hitPerfect,
   newGame,
@@ -54,17 +56,19 @@ const SLOW_WALK_TIMEOUT = 30_000;
 
 /** A Free Flight launch of the player's own short text. */
 function freeFlightLaunch(): PlayerEvent {
-  return { type: 'LAUNCH_FREE_FLIGHT', stage: freeFlightStage('ab ba') };
+  return {
+    type: 'LAUNCH_FREE_FLIGHT',
+    text: 'ab ba',
+    targetWpm: DEFAULT_FREE_FLIGHT_WPM,
+  };
 }
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
+/** Send an event the screen must accept: a refused move throws and fails the test. */
 function play(game: Game, event: PlayerEvent): void {
-  expect(game.canSend(event), `${event.type} on ${game.getScreen()}`).toBe(
-    true,
-  );
   game.send(event);
 }
 
@@ -90,7 +94,7 @@ function clearedGame(): Game {
 
 /** Type every remaining character: the last one clears the Run. */
 function finishRun(game: Game): void {
-  const { currentStage, currentCharIndex } = game.getRun();
+  const { currentStage, currentCharIndex } = game.getState().run;
   for (let i = currentCharIndex; i < currentStage.sampleText.length; i++) {
     game.step(30);
     game.pressKey(currentStage.sampleText[i]);
@@ -98,7 +102,7 @@ function finishRun(game: Game): void {
 }
 
 const progress = (game: Game) => {
-  const run = game.getRun();
+  const run = game.getState().run;
   return { index: run.currentCharIndex, score: run.score };
 };
 
@@ -173,13 +177,13 @@ describe('every chain of opened screens unwinds back to its start, one Close at 
         for (const chain of chainsOfOpenedScreens()) {
           const label = `${start} > ${chain.join(' > ')}`;
           const game = make();
-          expect(game.getScreen(), label).toBe(start);
+          expect(game.getState().screen, label).toBe(start);
           const before = progress(game);
-          const result = game.getDebrief();
+          const result = game.getState().debrief;
 
           for (const screen of chain) {
             play(game, OPEN[screen]);
-            expect(game.getScreen(), `${label}: opening ${screen}`).toBe(
+            expect(game.getState().screen, `${label}: opening ${screen}`).toBe(
               screen,
             );
           }
@@ -188,14 +192,14 @@ describe('every chain of opened screens unwinds back to its start, one Close at 
             play(game, CLOSE);
             const expected = depth === 0 ? landing : chain[depth - 1];
             expect(
-              game.getScreen(),
+              game.getState().screen,
               `${label}: Close back to ${expected}`,
             ).toBe(expected);
           }
 
           // Nothing was lost on the way: the same Run, the same Debrief.
           expect(progress(game), label).toEqual(before);
-          expect(game.getDebrief(), label).toEqual(result);
+          expect(game.getState().debrief, label).toEqual(result);
         }
       },
       SLOW_WALK_TIMEOUT,
@@ -210,17 +214,17 @@ describe('Close onto a paused Run lands on the Pause Menu', () => {
       const before = progress(game);
 
       play(game, OPEN[screen]);
-      expect(game.getScreen()).toBe(screen);
-      expect(game.getPhase()).toBe('paused');
+      expect(game.getState().screen).toBe(screen);
+      expect(game.getState().phase).toBe('paused');
 
       play(game, CLOSE);
-      expect(game.getScreen()).toBe('pause-menu');
-      expect(game.getPhase()).toBe('paused');
+      expect(game.getState().screen).toBe('pause-menu');
+      expect(game.getState().phase).toBe('paused');
 
       // The player chooses when to carry on, and it is the same Run.
       play(game, RESUME);
-      expect(game.getScreen()).toBe('flight-deck');
-      expect(game.getPhase()).toBe('running');
+      expect(game.getState().screen).toBe('flight-deck');
+      expect(game.getState().phase).toBe('running');
       expect(progress(game)).toEqual(before);
     });
   }
@@ -229,7 +233,7 @@ describe('Close onto a paused Run lands on the Pause Menu', () => {
     const game = pausedGame();
     play(game, OPEN.hangar);
     play(game, CLOSE);
-    expect(game.getScreen()).toBe('pause-menu');
+    expect(game.getState().screen).toBe('pause-menu');
   });
 });
 
@@ -238,8 +242,8 @@ describe('Play, Resume and Go to Flight Deck resume a paused Run straight away',
     const game = pausedGame();
     const before = progress(game);
     play(game, RESUME);
-    expect(game.getScreen()).toBe('flight-deck');
-    expect(game.getPhase()).toBe('running');
+    expect(game.getState().screen).toBe('flight-deck');
+    expect(game.getState().phase).toBe('running');
     expect(progress(game)).toEqual(before);
   });
 
@@ -249,21 +253,21 @@ describe('Play, Resume and Go to Flight Deck resume a paused Run straight away',
       const before = progress(game);
       play(game, OPEN[screen]);
       play(game, PLAY);
-      expect(game.getScreen()).toBe('flight-deck');
-      expect(game.getPhase()).toBe('running');
+      expect(game.getState().screen).toBe('flight-deck');
+      expect(game.getState().phase).toBe('running');
       expect(progress(game)).toEqual(before);
       // Carry on from the same character.
       game.step(30);
-      game.pressKey(game.getRun().currentStage.sampleText[before.index]);
-      expect(game.getRun().currentCharIndex).toBe(before.index + 1);
+      game.pressKey(game.getState().run.currentStage.sampleText[before.index]);
+      expect(game.getState().run.currentCharIndex).toBe(before.index + 1);
     });
   }
 
   it('Play on the Pause Menu', () => {
     const game = pausedGame();
     play(game, PLAY);
-    expect(game.getScreen()).toBe('flight-deck');
-    expect(game.getPhase()).toBe('running');
+    expect(game.getState().screen).toBe('flight-deck');
+    expect(game.getState().phase).toBe('running');
   });
 });
 
@@ -303,9 +307,9 @@ describe('every header button works on every screen', () => {
     it(`on ${name}`, () => {
       for (const target of OPENERS) {
         const game = make();
-        expect(game.getScreen()).toBe(screen);
+        expect(game.getState().screen).toBe(screen);
         play(game, OPEN[target]);
-        expect(game.getScreen(), `${screen} > ${target}`).toBe(target);
+        expect(game.getState().screen, `${screen} > ${target}`).toBe(target);
       }
     });
   }
@@ -332,21 +336,21 @@ describe('pressing a header button for the screen already open changes nothing, 
       it(`${screen} opened from ${name}, pressed again twice`, () => {
         const game = make();
         const before = progress(game);
-        const result = game.getDebrief();
+        const result = game.getState().debrief;
         play(game, OPEN[screen]);
-        const phase = game.getPhase();
+        const phase = game.getState().phase;
 
         // A press for the screen that is showing is accepted and does nothing.
         play(game, OPEN[screen]);
         play(game, OPEN[screen]);
-        expect(game.getScreen()).toBe(screen);
-        expect(game.getPhase()).toBe(phase);
+        expect(game.getState().screen).toBe(screen);
+        expect(game.getState().phase).toBe(phase);
 
         // So no copy of it was stacked: one Close goes back to where it was opened.
         play(game, CLOSE);
-        expect(game.getScreen()).toBe(landing);
+        expect(game.getState().screen).toBe(landing);
         expect(progress(game)).toEqual(before);
-        expect(game.getDebrief()).toEqual(result);
+        expect(game.getState().debrief).toEqual(result);
       });
     }
   }
@@ -357,9 +361,9 @@ describe('pressing a header button for the screen already open changes nothing, 
     play(game, OPEN.hangar);
     play(game, OPEN.hangar);
     play(game, CLOSE);
-    expect(game.getScreen()).toBe('galaxy-map');
+    expect(game.getState().screen).toBe('galaxy-map');
     play(game, CLOSE);
-    expect(game.getScreen()).toBe('academy-home');
+    expect(game.getState().screen).toBe('academy-home');
   });
 
   it('a menu pressed again after other menus were opened and closed over it still unwinds one Close at a time', () => {
@@ -368,11 +372,11 @@ describe('pressing a header button for the screen already open changes nothing, 
     play(game, OPEN.hangar);
     play(game, OPEN.hangar);
     play(game, CLOSE);
-    expect(game.getScreen()).toBe('analytics');
+    expect(game.getState().screen).toBe('analytics');
     play(game, OPEN.analytics);
     play(game, CLOSE);
-    expect(game.getScreen()).toBe('pause-menu');
-    expect(game.getPhase()).toBe('paused');
+    expect(game.getState().screen).toBe('pause-menu');
+    expect(game.getState().phase).toBe('paused');
   });
 });
 
@@ -388,7 +392,7 @@ describe('Next Stage on the Debrief', () => {
     const game = newGame();
     startStage(game, stageId);
     finishRun(game);
-    expect(game.getScreen(), stageId).toBe('debrief');
+    expect(game.getState().screen, stageId).toBe('debrief');
     return game;
   }
 
@@ -396,7 +400,7 @@ describe('Next Stage on the Debrief', () => {
     const last = curriculum[curriculum.length - 1];
     const game = clearedStage(last.id);
     play(game, NEXT_STAGE);
-    expect(game.getScreen()).toBe('galaxy-map');
+    expect(game.getState().screen).toBe('galaxy-map');
   });
 
   it('on every other Stage starts the next Stage in curriculum order, across Sectors too', () => {
@@ -405,8 +409,8 @@ describe('Next Stage on the Debrief', () => {
     for (const i of [0, firstSectorEnd, curriculum.length - 2]) {
       const game = clearedStage(curriculum[i].id);
       play(game, NEXT_STAGE);
-      expect(game.getScreen(), curriculum[i].id).toBe('flight-deck');
-      expect(game.getRun().currentStage.id, curriculum[i].id).toBe(
+      expect(game.getState().screen, curriculum[i].id).toBe('flight-deck');
+      expect(game.getState().run.currentStage.id, curriculum[i].id).toBe(
         curriculum[i + 1].id,
       );
     }
@@ -427,15 +431,15 @@ describe('only going to Academy Home and starting a Stage abandon a Run', () => 
     for (const make of [runningGame, pausedGame, fromMenu]) {
       const game = make();
       play(game, HOME);
-      expect(game.getScreen()).toBe('academy-home');
-      expect(game.getPhase()).toBe('abandoned');
+      expect(game.getState().screen).toBe('academy-home');
+      expect(game.getState().phase).toBe('abandoned');
     }
   });
 
   const freshRun = (game: Game) => {
-    expect(game.getScreen()).toBe('flight-deck');
-    expect(game.getPhase()).toBe('running');
-    const run = game.getRun();
+    expect(game.getState().screen).toBe('flight-deck');
+    expect(game.getState().phase).toBe('running');
+    const run = game.getState().run;
     expect(run.currentCharIndex).toBe(0);
     expect(run.score).toBe(0);
     expect(run.currentStreak).toBe(0);
@@ -447,7 +451,7 @@ describe('only going to Academy Home and starting a Stage abandon a Run', () => 
     play(game, OPEN['galaxy-map']);
     play(game, pickStage('s1-l2'));
     freshRun(game);
-    expect(game.getRun().currentStage.id).toBe('s1-l2');
+    expect(game.getState().run.currentStage.id).toBe('s1-l2');
   });
 
   it('launching Free Flight starts a fresh Run on the player’s text', () => {
@@ -455,28 +459,28 @@ describe('only going to Academy Home and starting a Stage abandon a Run', () => 
     play(game, OPEN['free-flight']);
     play(game, freeFlightLaunch());
     freshRun(game);
-    expect(game.getRun().currentStage.sampleText).toBe('ab ba');
+    expect(game.getState().run.currentStage.sampleText).toBe('ab ba');
   });
 
   it('Replay on the Pause Menu starts a fresh Run of the same Stage', () => {
     const game = pausedGame();
     play(game, REPLAY);
     freshRun(game);
-    expect(game.getRun().currentStage.id).toBe(STAGE_ID);
+    expect(game.getState().run.currentStage.id).toBe(STAGE_ID);
   });
 
   it('Replay on the Debrief starts a fresh Run of the same Stage', () => {
     const game = clearedGame();
     play(game, REPLAY);
     freshRun(game);
-    expect(game.getRun().currentStage.id).toBe(STAGE_ID);
+    expect(game.getState().run.currentStage.id).toBe(STAGE_ID);
   });
 
   it('Next Stage on the Debrief starts a fresh Run of the next Stage', () => {
     const game = clearedGame();
     play(game, NEXT_STAGE);
     freshRun(game);
-    expect(game.getRun().currentStage.id).not.toBe(STAGE_ID);
+    expect(game.getState().run.currentStage.id).not.toBe(STAGE_ID);
   });
 
   it('nothing else the player can do on a Run in progress abandons it', () => {
@@ -499,7 +503,7 @@ describe('only going to Academy Home and starting a Stage abandon a Run', () => 
       for (let n = 0; n < 40; n++) {
         const event =
           KEEPS_THE_RUN[Math.floor(random() * KEEPS_THE_RUN.length)];
-        log.push(`${game.getScreen()}:${event.type}`);
+        log.push(`${game.getState().screen}:${event.type}`);
         try {
           game.send(event);
         } catch (error) {
@@ -507,7 +511,7 @@ describe('only going to Academy Home and starting a Stage abandon a Run', () => 
         }
         if (random() < 0.3) game.step(1 + Math.floor(random() * 40));
         const where = `seed ${seed}: ${log.join(' > ')}`;
-        expect(['running', 'paused'], where).toContain(game.getPhase());
+        expect(['running', 'paused'], where).toContain(game.getState().phase);
         expect(progress(game), where).toEqual(before);
       }
     }
@@ -521,15 +525,15 @@ describe('only going to Academy Home and starting a Stage abandon a Run', () => 
 describe('Play with no Run starts the current Stage fresh', () => {
   const startsFresh = (game: Game) => {
     play(game, PLAY);
-    expect(game.getScreen()).toBe('flight-deck');
-    expect(game.getPhase()).toBe('running');
-    expect(game.getRun().currentStage.id).toBe(STAGE_ID);
+    expect(game.getState().screen).toBe('flight-deck');
+    expect(game.getState().phase).toBe('running');
+    expect(game.getState().run.currentStage.id).toBe(STAGE_ID);
     expect(progress(game)).toEqual({ index: 0, score: 0 });
     // A live Run, not an empty frozen deck: the Stage's first key counts.
     game.step(30);
     game.pressKey(targetKey(game));
-    expect(game.getRun().currentCharIndex).toBe(1);
-    expect(game.getRun().score).toBeGreaterThan(0);
+    expect(game.getState().run.currentCharIndex).toBe(1);
+    expect(game.getState().run.score).toBeGreaterThan(0);
   };
 
   it('on a fresh game', () => {
@@ -555,7 +559,7 @@ describe('Play with no Run starts the current Stage fresh', () => {
 
 describe('a pause keeps the Streak, Multiplier and Overdrive exactly as they were', () => {
   const meters = (game: Game) => {
-    const run = game.getRun();
+    const run = game.getState().run;
     return {
       streak: run.currentStreak,
       multiplier: run.multiplier,
@@ -593,7 +597,7 @@ describe('a pause keeps the Streak, Multiplier and Overdrive exactly as they wer
         expect(before.overdriveOn).toBe(overdrive);
 
         way.pause(game);
-        expect(game.getPhase()).toBe('paused');
+        expect(game.getState().phase).toBe('paused');
         expect(meters(game)).toEqual(before);
 
         // Keys pressed behind the menu count for nothing.
@@ -602,11 +606,11 @@ describe('a pause keeps the Streak, Multiplier and Overdrive exactly as they wer
         expect(meters(game)).toEqual(before);
 
         // Back in the Run, the Streak carries on from where it was.
-        if (game.getScreen() !== 'pause-menu') play(game, CLOSE);
+        if (game.getState().screen !== 'pause-menu') play(game, CLOSE);
         play(game, RESUME);
         expect(meters(game)).toEqual(before);
         hitPerfect(game, 1);
-        expect(game.getRun().currentStreak).toBe(hits + 1);
+        expect(game.getState().run.currentStreak).toBe(hits + 1);
       });
     }
   }
@@ -621,25 +625,25 @@ describe('the Debrief shows the result of the Run just cleared', () => {
     const game = startedGame();
     clearStage(game, { seconds: 8 });
 
-    expect(game.getScreen()).toBe('debrief');
-    expect(game.getPhase()).toBe('cleared');
-    const result = game.getDebrief();
+    expect(game.getState().screen).toBe('debrief');
+    expect(game.getState().phase).toBe('cleared');
+    const result = game.getState().debrief;
     expect(result).not.toBeNull();
     expect(result?.starsEarned).toBe(3);
-    expect(game.getProfile().totalStars).toBe(3);
+    expect(game.getState().profile.totalStars).toBe(3);
   });
 
   it('a replayed Run’s Debrief shows its own result, not the previous one', () => {
     const game = startedGame();
     clearStage(game, { seconds: 8 });
-    const first = game.getDebrief();
+    const first = game.getState().debrief;
     expect(first?.accuracy).toBe(100);
 
     play(game, REPLAY);
     clearStage(game, { seconds: 60, missesFirst: 4 });
 
-    expect(game.getScreen()).toBe('debrief');
-    const second = game.getDebrief();
+    expect(game.getState().screen).toBe('debrief');
+    const second = game.getState().debrief;
     expect(second).not.toEqual(first);
     // 77 right keys and 4 wrong ones.
     expect(second?.accuracy).toBeLessThan(100);
@@ -648,13 +652,13 @@ describe('the Debrief shows the result of the Run just cleared', () => {
 
   it('is the same after a menu is opened over it and closed', () => {
     const game = clearedGame();
-    const result = game.getDebrief();
+    const result = game.getState().debrief;
     play(game, OPEN.hangar);
     play(game, OPEN.analytics);
     play(game, CLOSE);
     play(game, CLOSE);
-    expect(game.getScreen()).toBe('debrief');
-    expect(game.getDebrief()).toEqual(result);
+    expect(game.getState().screen).toBe('debrief');
+    expect(game.getState().debrief).toEqual(result);
   });
 });
 
@@ -665,19 +669,17 @@ describe('the Debrief shows the result of the Run just cleared', () => {
 describe('a refused move changes nothing and fails the test that triggers it', () => {
   it('Next Stage with no Debrief showing', () => {
     const game = newGame();
-    expect(game.canSend(NEXT_STAGE)).toBe(false);
     expect(() => game.send(NEXT_STAGE)).toThrow(RefusedMoveError);
-    expect(game.getScreen()).toBe('academy-home');
-    expect(game.getPhase()).toBe('none');
+    expect(game.getState().screen).toBe('academy-home');
+    expect(game.getState().phase).toBe('none');
   });
 
   it('Close with nothing open, mid-Run', () => {
     const game = runningGame();
     const before = progress(game);
-    expect(game.canSend(CLOSE)).toBe(false);
     expect(() => game.send(CLOSE)).toThrow(RefusedMoveError);
-    expect(game.getScreen()).toBe('flight-deck');
-    expect(game.getPhase()).toBe('running');
+    expect(game.getState().screen).toBe('flight-deck');
+    expect(game.getState().phase).toBe('running');
     expect(progress(game)).toEqual(before);
   });
 });

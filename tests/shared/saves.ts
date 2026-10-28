@@ -5,6 +5,7 @@
  * defaults, as they do for a real one. This imports from no test runner, so
  * every layer of tests can use it.
  */
+import { AudioSynthCoreSchema } from '../../src/game/schemas';
 
 /** One Stage's progress, cleared with `stars` Stars. `overrides` change any field. */
 export function stageProgress(
@@ -46,6 +47,22 @@ export const RETURNING_PLAYER = {
   ...clearedStages({ 's1-l1': 3, 's1-l2': 2 }),
 };
 
+/** RETURNING_PLAYER with every Synthesizer core owned, so any can be equipped. */
+export const OWNS_EVERY_AUDIO_CORE = {
+  ...RETURNING_PLAYER,
+  upgrades: { unlockedAudioCores: [...AudioSynthCoreSchema.options] },
+};
+
+/**
+ * RETURNING_PLAYER who has bought the 8-Bit Retro core (300 Cr) and so owns
+ * two Synthesizer cores, Cyber Synth and 8-Bit Retro; Deep Space and Neo
+ * Acoustic are still the Hangar's to sell. The Credits are left as they were.
+ */
+export const OWNS_RETRO_AUDIO_CORE = {
+  ...RETURNING_PLAYER,
+  upgrades: { unlockedAudioCores: ['CYBER_SYNTH', 'RETRO_8BIT'] },
+};
+
 /**
  * A complete Save in today's format (no `version`): RETURNING_PLAYER's 5 Stars
  * and 1,234 Credits, plus every other field, each set to something other than
@@ -85,6 +102,34 @@ export function completeSave() {
     globalMuted: true,
   };
 }
+
+/**
+ * A returning player's Save with Free Flight results in it, as production
+ * writes them: Stage progress keyed `custom-<launch time>`, beside the
+ * curriculum Stages and every other field of `completeSave()`. Free Flight Stars
+ * count toward the fleet's total, so the Save's Stars are 5 + 2 + 3.
+ */
+export const FREE_FLIGHT_SAVE = (() => {
+  const save = completeSave();
+  return {
+    ...save,
+    totalStars: 10,
+    stagesProgress: {
+      ...save.stagesProgress,
+      'custom-1792904921385': stageProgress('custom-1792904921385', 2, {
+        highScore: 9100,
+        bestWpm: 44,
+        timesPlayed: 3,
+      }),
+      'custom-1792905000123': stageProgress('custom-1792905000123', 3, {
+        highScore: 15200,
+        bestWpm: 61,
+        bestStreak: 25,
+        timesPlayed: 1,
+      }),
+    },
+  };
+})();
 
 /**
  * The Drone speeds the game once let a player choose. Every Run now moves at

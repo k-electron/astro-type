@@ -1,12 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import {
   completeSave,
+  FREE_FLIGHT_SAVE,
   OLD_DRONE_SPEEDS,
   RETURNING_PLAYER,
   stageProgress,
   withOldDroneSpeed,
 } from '../../tests/shared/saves';
-import type { Game, UpgradeKind } from './createGame';
+import type { Game } from './game';
+import { totalStarsOf } from './schemas';
 import { DEFAULT_PROFILE } from './profile';
 import { UNREADABLE_SAVE_NOTICE } from './save';
 import { clearStage, loadGame, startStage, STAGE_ID } from './testHelpers';
@@ -17,6 +19,8 @@ import { clearStage, loadGame, startStage, STAGE_ID } from './testHelpers';
 const load = (save?: unknown) => loadGame(save);
 
 type ReturningSave = ReturnType<typeof completeSave>;
+// What the Save and a Backup hold: the Profile without the derived total of Stars.
+type Profile = Omit<ReturnType<Game['getState']>['profile'], 'totalStars'>;
 
 function withUpgrades(
   save: ReturningSave,
@@ -33,14 +37,17 @@ function without(save: ReturningSave, ...fields: string[]) {
 }
 
 function expectFreshProfile(game: Game) {
-  expect(game.getProfile()).toEqual(DEFAULT_PROFILE);
+  expect(game.getState().profile).toEqual({
+    ...DEFAULT_PROFILE,
+    totalStars: 0,
+  });
 }
 
 describe('a Save that is readable', () => {
   it('loads a returning player’s Save in today’s format, unchanged and without a notice', () => {
     const { game, storage } = load(completeSave());
 
-    const profile = game.getProfile();
+    const profile = game.getState().profile;
     expect(profile.totalCredits).toBe(1234);
     expect(profile.totalStars).toBe(5);
     expect(profile.stagesProgress['s1-l1'].starsEarned).toBe(3);
@@ -48,23 +55,23 @@ describe('a Save that is readable', () => {
     expect(profile.upgrades.deflectorShields).toBe(1);
     expect(profile.upgrades.hyperdriveReactor).toBe(2);
     expect(profile.globalMuted).toBe(true);
-    expect(game.getLoadNotice()).toBeNull();
+    expect(game.getState().loadNotice).toBeNull();
     expect(storage.movedAside).toBeUndefined();
   });
 
   it('reads a Save that says version 1 the same way', () => {
     const { game } = load({ ...completeSave(), version: 1 });
 
-    expect(game.getProfile().totalStars).toBe(5);
-    expect(game.getProfile().totalCredits).toBe(1234);
-    expect(game.getLoadNotice()).toBeNull();
+    expect(game.getState().profile.totalStars).toBe(5);
+    expect(game.getState().profile.totalCredits).toBe(1234);
+    expect(game.getState().loadNotice).toBeNull();
   });
 
   it('starts a player with no Save fresh, without a notice', () => {
     const { game, storage } = load(undefined);
 
     expectFreshProfile(game);
-    expect(game.getLoadNotice()).toBeNull();
+    expect(game.getState().loadNotice).toBeNull();
     expect(storage.movedAside).toBeUndefined();
   });
 
@@ -72,7 +79,7 @@ describe('a Save that is readable', () => {
     const { game, storage } = load(completeSave());
 
     // 1,234 Credits buys the first sensors Upgrade (200), which saves.
-    expect(game.buyUpgrade('sensors')).toBe(true);
+    game.buy('sensors');
 
     expect(storage.saved?.version).toBe(1);
   });
@@ -87,11 +94,39 @@ describe('a Save that is readable', () => {
       },
     });
 
-    expect(game.getLoadNotice()).toBeNull();
+    expect(game.getState().loadNotice).toBeNull();
     expect(
-      game.getProfile().stagesProgress['custom-1792904921385'].starsEarned,
+      game.getState().profile.stagesProgress['custom-1792904921385']
+        .starsEarned,
     ).toBe(1);
-    expect(game.getProfile().totalStars).toBe(6);
+    expect(game.getState().profile.totalStars).toBe(6);
+  });
+
+  it('loads a production Save with Free Flight results, each `custom-` entry as it was written', () => {
+    const { game } = load(FREE_FLIGHT_SAVE);
+
+    expect(game.getState().loadNotice).toBeNull();
+    expect(game.getState().profile.stagesProgress).toEqual(
+      FREE_FLIGHT_SAVE.stagesProgress,
+    );
+    expect(game.getState().profile.totalStars).toBe(
+      FREE_FLIGHT_SAVE.totalStars,
+    );
+  });
+
+  it('keeps the Free Flight results when the next write goes out', () => {
+    const { game, storage } = load(FREE_FLIGHT_SAVE);
+    startStage(game, STAGE_ID);
+    clearStage(game, { seconds: 60 });
+
+    expect(game.getState().screen).toBe('debrief');
+    const customEntries = Object.fromEntries(
+      Object.entries(FREE_FLIGHT_SAVE.stagesProgress).filter(([id]) =>
+        id.startsWith('custom-'),
+      ),
+    );
+    expect(Object.keys(customEntries)).toHaveLength(2);
+    expect(storage.saved?.stagesProgress).toMatchObject(customEntries);
   });
 
   it('accepts Upgrades at level 3', () => {
@@ -103,8 +138,8 @@ describe('a Save that is readable', () => {
       }),
     );
 
-    expect(game.getLoadNotice()).toBeNull();
-    expect(game.getProfile().upgrades.deflectorShields).toBe(3);
+    expect(game.getState().loadNotice).toBeNull();
+    expect(game.getState().profile.upgrades.deflectorShields).toBe(3);
   });
 
   it('drops fields the Save does not define, and writes them back no more', () => {
@@ -119,14 +154,14 @@ describe('a Save that is readable', () => {
       upgrades: { ...save.upgrades, warpDrive: 4 },
     });
 
-    expect(game.getLoadNotice()).toBeNull();
-    expect(game.getProfile()).not.toHaveProperty('cheatCode');
-    expect(game.getProfile().stagesProgress['s1-l1']).not.toHaveProperty(
+    expect(game.getState().loadNotice).toBeNull();
+    expect(game.getState().profile).not.toHaveProperty('cheatCode');
+    expect(game.getState().profile.stagesProgress['s1-l1']).not.toHaveProperty(
       'bonusStars',
     );
-    expect(game.getProfile().upgrades).not.toHaveProperty('warpDrive');
+    expect(game.getState().profile.upgrades).not.toHaveProperty('warpDrive');
 
-    game.buyUpgrade('sensors');
+    game.buy('sensors');
     expect(storage.saved).not.toHaveProperty('cheatCode');
     expect(JSON.stringify(storage.saved)).not.toMatch(
       /xyzzy|bonusStars|warpDrive/,
@@ -145,8 +180,8 @@ describe('a Save made when the player could choose a Drone speed', () => {
     (speed) => {
       const { game, storage } = load(withOldDroneSpeed(completeSave(), speed));
 
-      const profile = game.getProfile();
-      expect(game.getLoadNotice()).toBeNull();
+      const profile = game.getState().profile;
+      expect(game.getState().loadNotice).toBeNull();
       expect(storage.movedAside).toBeUndefined();
       expect(profile.totalStars).toBe(5);
       expect(profile.totalCredits).toBe(1234);
@@ -156,11 +191,60 @@ describe('a Save made when the player could choose a Drone speed', () => {
       expect(profile).not.toHaveProperty('highwaySpeed');
 
       // Saving again writes the Save back without the speed.
-      expect(game.buyUpgrade('sensors')).toBe(true);
-      expect(storage.saved?.totalStars).toBe(5);
+      game.buy('sensors');
+      expect(totalStarsOf(storage.saved?.stagesProgress ?? {})).toBe(5);
       expect(storage.saved).not.toHaveProperty('highwaySpeed');
     },
   );
+});
+
+describe('a Save with every key the game has since retired', () => {
+  // Saves from before: a stored `totalStars` (here one that is wrong),
+  // `ambientMusicVolume`, the Drone speed and the old Upgrade key names. None
+  // of them may cost the player their progress, Credits, Upgrades or settings.
+  const SETTINGS = [
+    'soundEnabled',
+    'soundVolume',
+    'keyboardVisible',
+    'handsVisible',
+    'musicEnabled',
+    'musicVolume',
+    'beatTheme',
+    'globalMuted',
+  ] as const;
+
+  it('loads with progress, Credits, Upgrades and settings intact, and keeps them through the next write', () => {
+    const save = withOldDroneSpeed(
+      { ...completeSave(), totalStars: 99, ambientMusicVolume: 0.9 },
+      'HYPER',
+    );
+    const { game, storage } = load(save);
+
+    const expectIntact = (
+      profile: Profile | null | undefined,
+      credits: number,
+    ) => {
+      expect(profile?.totalCredits).toBe(credits);
+      expect(profile?.stagesProgress).toEqual(save.stagesProgress);
+      expect(profile?.keyAnalytics).toEqual(save.keyAnalytics);
+      expect(profile?.upgrades.deflectorShields).toBe(
+        save.upgrades.deflectorShields,
+      );
+      expect(profile?.upgrades.hyperdriveReactor).toBe(
+        save.upgrades.hyperdriveReactor,
+      );
+      for (const field of SETTINGS) {
+        expect(profile?.[field], field).toEqual(save[field]);
+      }
+    };
+
+    expect(game.getState().loadNotice).toBeNull();
+    expect(storage.movedAside).toBeUndefined();
+    expectIntact(game.getState().profile, save.totalCredits);
+
+    game.buy('sensors'); // 200 Credits, and the game saves
+    expectIntact(storage.saved, save.totalCredits - 200);
+  });
 });
 
 describe('a Save with a field missing', () => {
@@ -169,7 +253,6 @@ describe('a Save with a field missing', () => {
   const SETTINGS = [
     'soundEnabled',
     'soundVolume',
-    'ambientMusicVolume',
     'keyboardVisible',
     'handsVisible',
     'musicEnabled',
@@ -183,12 +266,12 @@ describe('a Save with a field missing', () => {
     (field) => {
       const { game } = load(without(completeSave(), field));
 
-      expect(game.getLoadNotice()).toBeNull();
-      expect(game.getProfile()[field]).toEqual(DEFAULT_PROFILE[field]);
-      expect(game.getProfile().totalCredits).toBe(
+      expect(game.getState().loadNotice).toBeNull();
+      expect(game.getState().profile[field]).toEqual(DEFAULT_PROFILE[field]);
+      expect(game.getState().profile.totalCredits).toBe(
         RETURNING_PLAYER.totalCredits,
       );
-      expect(game.getProfile().totalStars).toBe(5);
+      expect(game.getState().profile.totalStars).toBe(5);
     },
   );
 
@@ -197,8 +280,8 @@ describe('a Save with a field missing', () => {
       without(completeSave(), 'totalCredits', 'stagesProgress', 'keyAnalytics'),
     );
 
-    const profile = game.getProfile();
-    expect(game.getLoadNotice()).toBeNull();
+    const profile = game.getState().profile;
+    expect(game.getState().loadNotice).toBeNull();
     expect(profile.totalCredits).toBe(0);
     expect(profile.stagesProgress).toEqual({});
     expect(profile.keyAnalytics).toEqual({});
@@ -208,11 +291,11 @@ describe('a Save with a field missing', () => {
   it('takes the default Upgrades when the Upgrades are missing', () => {
     const { game } = load(without(completeSave(), 'upgrades'));
 
-    expect(game.getLoadNotice()).toBeNull();
-    expect(game.getProfile().upgrades.deflectorShields).toBe(0);
-    expect(game.getProfile().upgrades.hyperdriveReactor).toBe(0);
-    expect(game.getProfile().upgrades.precisionSensors).toBe(0);
-    expect(game.getProfile().totalCredits).toBe(1234);
+    expect(game.getState().loadNotice).toBeNull();
+    expect(game.getState().profile.upgrades.deflectorShields).toBe(0);
+    expect(game.getState().profile.upgrades.hyperdriveReactor).toBe(0);
+    expect(game.getState().profile.upgrades.precisionSensors).toBe(0);
+    expect(game.getState().profile.totalCredits).toBe(1234);
   });
 });
 
@@ -267,7 +350,7 @@ describe('a Save that cannot be read', () => {
     (_what, bad) => {
       const { game, storage } = load(bad);
 
-      expect(game.getLoadNotice()).toBe(UNREADABLE_SAVE_NOTICE);
+      expect(game.getState().loadNotice).toBe(UNREADABLE_SAVE_NOTICE);
       expectFreshProfile(game);
       expect(storage.movedAside).toEqual(bad);
     },
@@ -280,8 +363,10 @@ describe('a Save that cannot be read', () => {
     startStage(game, STAGE_ID);
     clearStage(game, { seconds: 60 });
 
-    expect(game.getProfile().stagesProgress[STAGE_ID].starsEarned).toBe(3);
-    expect(game.getProfile().totalStars).toBe(3);
+    expect(game.getState().profile.stagesProgress[STAGE_ID].starsEarned).toBe(
+      3,
+    );
+    expect(game.getState().profile.totalStars).toBe(3);
     expect(storage.movedAside).toEqual(bad);
   });
 });
@@ -290,21 +375,21 @@ describe('total Stars', () => {
   it('are computed from the Stage progress when the Save claims more', () => {
     const { game } = load({ ...completeSave(), totalStars: 40 });
 
-    expect(game.getProfile().totalStars).toBe(5);
-    expect(game.getLoadNotice()).toBeNull();
+    expect(game.getState().profile.totalStars).toBe(5);
+    expect(game.getState().loadNotice).toBeNull();
   });
 
   it('are computed from the Stage progress when the Save claims fewer', () => {
     const { game } = load({ ...completeSave(), totalStars: 0 });
 
-    expect(game.getProfile().totalStars).toBe(5);
+    expect(game.getState().profile.totalStars).toBe(5);
   });
 
   it('are computed when the Save does not carry them', () => {
     const { game } = load(without(completeSave(), 'totalStars'));
 
-    expect(game.getProfile().totalStars).toBe(5);
-    expect(game.getLoadNotice()).toBeNull();
+    expect(game.getState().profile.totalStars).toBe(5);
+    expect(game.getState().loadNotice).toBeNull();
   });
 
   it('count a Stage cleared with 0 Stars as 0', () => {
@@ -314,70 +399,6 @@ describe('total Stars', () => {
       stagesProgress: { 's1-l1': stageProgress('s1-l1', 0) },
     });
 
-    expect(game.getProfile().totalStars).toBe(0);
-  });
-});
-
-describe('buying an Upgrade', () => {
-  const catalog: Array<
-    [
-      UpgradeKind,
-      'deflectorShields' | 'hyperdriveReactor' | 'precisionSensors',
-      number[],
-    ]
-  > = [
-    ['shields', 'deflectorShields', [250, 650, 1200]],
-    ['reactor', 'hyperdriveReactor', [300, 750, 1400]],
-    ['sensors', 'precisionSensors', [200, 500, 950]],
-  ];
-
-  function richPlayer() {
-    return load({
-      ...without(completeSave(), 'upgrades'),
-      totalCredits: 10000,
-    });
-  }
-
-  it.each(catalog)(
-    '%s: levels 1 to 3 are bought for the catalog price, and level 4 is refused with the Credits unchanged',
-    (kind, field, prices) => {
-      const { game } = richPlayer();
-      let credits = 10000;
-
-      prices.forEach((price, index) => {
-        expect(game.buyUpgrade(kind)).toBe(true);
-        credits -= price;
-        expect(game.getProfile().upgrades[field]).toBe(index + 1);
-        expect(game.getProfile().totalCredits).toBe(credits);
-      });
-
-      expect(game.buyUpgrade(kind)).toBe(false);
-      expect(game.getProfile().upgrades[field]).toBe(3);
-      expect(game.getProfile().totalCredits).toBe(credits);
-    },
-  );
-
-  it('refuses a purchase past level 3 for a player who loaded at level 3', () => {
-    const { game } = load({
-      ...withUpgrades(completeSave(), { deflectorShields: 3 }),
-      totalCredits: 5000,
-    });
-
-    expect(game.buyUpgrade('shields')).toBe(false);
-
-    expect(game.getProfile().upgrades.deflectorShields).toBe(3);
-    expect(game.getProfile().totalCredits).toBe(5000);
-  });
-
-  it('is refused when the Credits fall short, with nothing changed', () => {
-    const { game } = load({
-      ...without(completeSave(), 'upgrades'),
-      totalCredits: 249,
-    });
-
-    expect(game.buyUpgrade('shields')).toBe(false);
-
-    expect(game.getProfile().upgrades.deflectorShields).toBe(0);
-    expect(game.getProfile().totalCredits).toBe(249);
+    expect(game.getState().profile.totalStars).toBe(0);
   });
 });

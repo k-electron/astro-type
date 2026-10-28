@@ -12,16 +12,15 @@ A browser typing game: React and Tailwind for the screens, a Zustand store and a
 
 ## Where things live
 
-ADR-0001 sets the split between the store and the machine.
-- **Game rules and the live Run:** `src/game/gameStore.ts` holds the Run and the Profile. The rules themselves are pure functions in `src/game/rules.ts` (Judgement, scoring, Streak, Overdrive, shields, Stars and Credits), and the Profile's defaults and helpers are in `src/game/profile.ts`. `src/store/useGameStore.ts` is only React's hook over that store.
-- **The game, built:** `src/game/createGame.ts` is the headless factory that wires the store, the machine, the clock and the Save together; tests build their own. `src/appGame.ts` is the app's composition root, with real time, localStorage and sound attached.
-- **Run clock:** `src/game/clock.ts` measures Run Time, and `src/game/frameLoop.ts` steps it from the browser's frames.
-- **Screens and the moves between them:** `src/store/gameMachine.ts`. It is the only authority on the screen and the Run phase. Buttons send what the player did (`game.send({ type: 'PRESS_CLOSE' })`), the machine changes data only through the store's named Run actions, and a move it refuses changes nothing: it warns in dev builds and throws `RefusedMoveError` in the headless game.
-- **Action Deck:** PixiJS, in `src/components/pixi-deck/` (`PixiActionDeck.tsx` mounts it). Its accessibility layer is what browser tests read.
-- **Curriculum:** `src/data/curriculum.ts`.
-- **Save and Backup:** `src/game/save.ts` is the Save module, `src/utils/storage.ts` is the localStorage adapter, and the schemas are in `src/store/schemas.ts`.
-- **Sound:** `src/audio/soundEngine.ts`, attached to the game through the effects port in `src/audio/soundEffects.ts`.
-- **Tests:** headless unit tests in `src/**/*.test.ts`, screen tests in `tests/dom/*.test.tsx` (through `tests/dom/harness.tsx`), CI browser journeys in `tests/browser/*.spec.ts`, and the local-only suite in `tests/browser/local/`. ADR-0002 sets the layers.
+Who owns what is in ADR-0001 (the machine or the store: who reads it to decide) and ADR-0003 (the `Game` is the only way in).
+- **`src/game/`** is the headless game: it runs with no browser, React, PixiJS or sound. `game.ts` is `createGame` and the `Game` interface, the only way in (the store is private to it); `machine.ts` is the only authority on the screen and the Run phase; `rules.ts` holds the pure rules (`strike`, `tick`, Stars, Credits); `run.ts` and `profile.ts` are the Run and the Profile in the one store; `catalog.ts` is what the Hangar sells; `save.ts` and `schemas.ts` are the Save and Backup; `clock.ts` and `frameLoop.ts` measure and step Run Time; `sound.ts` and `moments.ts` are what the player hears and what just happened; `testHelpers.ts` is the one test-setup module.
+- **`src/curriculum/`** is the Sectors and Stages, the one key table (`KEY_FINGER_MAP`, finger and lane per key), the shown keyboard (`keyboardLayout.ts`), the Sector unlock gates, and Free Flight's Stage factory and text check (`freeFlightStage`). It depends on nothing in `src/game`.
+- **`src/app/`** is the composition root and the browser adapters: `appGame.ts` builds the app's `Game`, `attachKeyboard.ts` is the keys, Esc and focus loss, and the rest adapt localStorage and the browser's frames.
+- **`src/audio/`** is the sound engine (`soundEngine.ts`) and its adapter to the game's sound port (`engineSound.ts`); outside tests, only the composition root imports it.
+- **`src/screens/`** is the React screens, the overlay shell, the HUD and the header. They read `useGameState(selector)` and send what the player did (`useGame().send({ type: 'PRESS_CLOSE' })`).
+- **`src/deck/`** is the PixiJS Action Deck (`PixiActionDeck.tsx` mounts it). Its accessibility layer is what browser tests read.
+- **Tests:** headless unit tests beside the code in `src/**/*.test.ts`, screen tests in `tests/dom/*.test.tsx` (through `tests/dom/harness.tsx`), CI browser journeys in `tests/browser/*.spec.ts`, and the local-only suite in `tests/browser/local/`. ADR-0002 sets the layers.
+- **A refused move** (an event that doesn't apply on this screen) changes nothing: it warns in dev builds and throws `RefusedMoveError` in the headless game.
 
 ## Ground rules
 

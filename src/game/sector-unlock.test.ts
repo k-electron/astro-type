@@ -35,26 +35,26 @@ describe('the Sector unlock notice in the Debrief', () => {
     // 3 Stars so far: clearing Stage 1 for 3 Stars takes the fleet to 6.
     const game = clearStage1(clearedStages({ 's1-l2': 3 }));
 
-    expect(game.getDebrief()?.starsEarned).toBe(3);
-    expect(game.getDebrief()?.unlockedSector).toBe(true);
+    expect(game.getState().debrief?.starsEarned).toBe(3);
+    expect(game.getState().debrief?.unlockedSector).toBe(true);
   });
 
   it('shows when a Free Flight clear is what took the fleet to 6 Stars', () => {
     // 5 Stars so far: any Star from a Free Flight reaches 6.
     const game = clearFreeFlight(clearedStages({ 's1-l1': 3, 's1-l2': 2 }));
 
-    expect(game.getScreen()).toBe('debrief');
-    expect(game.getDebrief()?.starsEarned).toBeGreaterThan(0);
-    expect(game.getDebrief()?.unlockedSector).toBe(true);
+    expect(game.getState().screen).toBe('debrief');
+    expect(game.getState().debrief?.starsEarned).toBeGreaterThan(0);
+    expect(game.getState().debrief?.unlockedSector).toBe(true);
   });
 
   it('is absent after Stage 1 is cleared while Sector 02 is still locked', () => {
     // A fresh Profile: 3 Stars is short of the 6 that open Sector 02.
     const game = clearStage1();
 
-    expect(game.getDebrief()?.starsEarned).toBe(3);
-    expect(game.getProfile().totalStars).toBe(3);
-    expect(game.getDebrief()?.unlockedSector).toBe(false);
+    expect(game.getState().debrief?.starsEarned).toBe(3);
+    expect(game.getState().profile.totalStars).toBe(3);
+    expect(game.getState().debrief?.unlockedSector).toBe(false);
   });
 
   it('is absent when the Sector the Stars would open was already open', () => {
@@ -62,14 +62,14 @@ describe('the Sector unlock notice in the Debrief', () => {
     // nothing new, and a Sector open before the Run is not unlocked by it.
     const game = clearStage1(clearedStages({ 's1-l1': 3, 's1-l2': 3 }));
 
-    expect(game.getDebrief()?.starsEarned).toBe(3);
-    expect(game.getDebrief()?.unlockedSector).toBe(false);
+    expect(game.getState().debrief?.starsEarned).toBe(3);
+    expect(game.getState().debrief?.unlockedSector).toBe(false);
   });
 
   it('is absent after a Free Flight clear that opens nothing', () => {
     const game = clearFreeFlight();
 
-    expect(game.getScreen()).toBe('debrief');
-    expect(game.getDebrief()?.unlockedSector).toBe(false);
+    expect(game.getState().screen).toBe('debrief');
+    expect(game.getState().debrief?.unlockedSector).toBe(false);
   });
 });

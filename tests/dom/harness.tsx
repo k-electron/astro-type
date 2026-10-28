@@ -11,9 +11,9 @@
  * on the game itself, so a test can only check what a player would see.
  *
  * Things worth knowing:
- * - The HUD's Accuracy and Speed refresh only on the Run clock's telemetry
- *   tick, every 30 steps. `type` steps 30 between keys, so they are current
- *   after it; after a bare `press`, call `step(30)` first.
+ * - The HUD's Accuracy follows every keystroke. Its Speed refreshes only on the
+ *   Run clock's telemetry tick, every 30 steps: `type` steps 30 between keys,
+ *   so Speed is current after it; after a bare `press`, call `step(30)` first.
  * - A Run that was typed with no steps has Run Time 0, so its Speed means
  *   nothing. Reach a Debrief with `type`.
  * - Tailwind is not loaded: no element is hidden by CSS, and there is no layout.
@@ -27,16 +27,18 @@ import {
   within,
 } from '@testing-library/react';
 import { afterEach } from 'vitest';
-import App from '../../src/App';
+import App from '../../src/screens/App';
+import { attachKeyboard } from '../../src/app/attachKeyboard';
 import {
   createGame,
   createMemoryStorage,
   type Game,
   type MemorySaveStorage,
   type RefusedMoveError,
-} from '../../src/game/createGame';
+  type Sound,
+} from '../../src/game/game';
 import { startStage as sendStartStage } from '../../src/game/testHelpers';
-import { GameProvider } from '../../src/store/gameContext';
+import { GameProvider } from '../../src/screens/useGame';
 
 export { screen, within };
 
@@ -58,6 +60,11 @@ export interface RenderGameOptions {
   storage?: MemorySaveStorage;
   /** Start a Free Flight Run of this text, through the Free Flight screen. */
   text?: string;
+  /**
+   * Where the game's sound goes, when a test listens to it (the recording
+   * sound adapter's `effects` port). Left out, the game is silent.
+   */
+  sound?: Sound;
 }
 
 export interface PressOptions {
@@ -75,8 +82,9 @@ export interface Player {
   /** Academy Home -> Free Flight -> type the text in -> Launch Custom Flight. */
   launchFreeFlight(text: string): void;
   /**
-   * Press one key through the App's own key listener: a keydown, then the
-   * keyup, on `window`. `key` is a `KeyboardEvent.key` value (' ' for Space).
+   * Press one key through the keys the harness attaches to the game
+   * (`attachKeyboard`): a keydown, then the keyup, on `window`. `key` is a
+   * `KeyboardEvent.key` value (' ' for Space).
    */
   press(key: string, options?: PressOptions): void;
   /**
@@ -129,7 +137,11 @@ const STEPS_BEFORE_A_KEY = 30;
 /** Moves the machine refused during the current test; any is a test failure. */
 let refusals: RefusedMoveError[] = [];
 
+/** Lets go of the keys of every game mounted since the last test ended. */
+const detachers: Array<() => void> = [];
+
 afterEach(() => {
+  for (const detach of detachers.splice(0)) detach();
   const refused = refusals;
   refusals = [];
   if (refused.length > 0) {
@@ -167,14 +179,20 @@ export function renderGame(options: RenderGameOptions = {}): Player {
   const storage = options.storage ?? createMemoryStorage(options.profile);
   let game: Game;
   let unmount: () => void;
+  let detachKeyboard: () => void;
 
   const mount = () => {
     game = createGame({
       storage,
+      sound: options.sound,
       // A throw inside a React click handler would not reliably reach the
       // test, so a refused move is collected and fails the test when it ends.
       onRefusedMove: (error) => refusals.push(error),
     });
+    // The harness is the composition root here, so it attaches the keys, as
+    // the app does: a keydown on `window` reaches this game.
+    detachKeyboard = attachKeyboard(game, window);
+    detachers.push(detachKeyboard);
     unmount = render(
       <GameProvider game={game}>
         <App />
@@ -239,6 +257,7 @@ export function renderGame(options: RenderGameOptions = {}): Player {
       fireEvent(document, new Event('visibilitychange'));
     },
     reload() {
+      detachKeyboard();
       unmount();
       mount();
     },

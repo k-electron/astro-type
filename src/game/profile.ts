@@ -1,47 +1,87 @@
-import type {
-  KeyAnalytics,
-  PlayerProfile,
-  StageProgress,
-  TrailColorTheme,
-  AudioSynthCore,
-} from '../types/game';
-import { CURRICULUM_SECTORS } from '../data/curriculum';
-import { PlayerProfileSchema, totalStarsOf } from '../store/schemas';
+/**
+ * The Profile module: the player's Credits, Stars, Upgrades, Cosmetics,
+ * settings and Stage progress, and the commands that change them. Every
+ * command saves through the one `updateProfile`.
+ *
+ * The Run reads this module and this module reads nothing of the Run: no
+ * phase, no current Stage, no Drone. What a Run takes from the Profile is its
+ * `Loadout`, derived on each call.
+ */
+import { unlocksSector } from '../curriculum/curriculum';
+import {
+  DEFAULT_PROFILE,
+  type KeyAnalytics,
+  KeyAnalyticsSchema,
+  type PlayerProfile,
+  type Settings,
+  type StageProgress,
+  StageProgressSchema,
+  totalStarsOf,
+} from './schemas';
+import {
+  type CatalogItemId,
+  catalogEntry,
+  type CoreEntry,
+  type TrailEntry,
+} from './catalog';
+import type { Moment } from './moments';
+import {
+  type BackupImport,
+  createSave,
+  parseBackup,
+  type SaveStorage,
+} from './save';
 
-/** The Profile a new player starts with: every field at its default. */
-export const DEFAULT_PROFILE: PlayerProfile = PlayerProfileSchema.parse({});
+export { DEFAULT_PROFILE };
 
+/** What a Run takes from the Profile: its Upgrades, as the rules read them. */
+export interface Loadout {
+  /** Deflector Shields: Misses a Run absorbs, counted when the Run begins. */
+  shields: number;
+  /** Precision Sensors: widen the Judgement windows. */
+  sensors: number;
+  /** Hyperdrive Reactor: charges Overdrive faster. */
+  reactor: number;
+}
+
+export function loadoutOf(profile: PlayerProfile): Loadout {
+  const { deflectorShields, precisionSensors, hyperdriveReactor } =
+    profile.upgrades;
+  return {
+    shields: deflectorShields,
+    sensors: precisionSensors,
+    reactor: hyperdriveReactor,
+  };
+}
+
+/** What a cleared Run gives the Profile. */
+export interface StageResult {
+  score: number;
+  wpm: number;
+  accuracy: number;
+  maxStreak: number;
+  starsEarned: number;
+  creditsEarned: number;
+  keystrokesCount: number;
+  errorsCount: number;
+  practiceSeconds: number;
+  keyStats: Record<string, { hits: number; misses: number }>;
+}
+
+/** The Profile after a cleared Run, and what the clear means for the Debrief. */
 export function recordStageResult(
   currentProfile: PlayerProfile,
   stageId: string,
-  result: {
-    score: number;
-    wpm: number;
-    accuracy: number;
-    maxStreak: number;
-    starsEarned: number;
-    creditsEarned: number;
-    keystrokesCount: number;
-    errorsCount: number;
-    practiceSeconds: number;
-    keyStats: Record<string, { hits: number; misses: number }>;
-  },
+  result: StageResult,
   now: number,
 ): {
   updatedProfile: PlayerProfile;
   newStarsAwarded: number;
   isNewHighScore: boolean;
 } {
-  const prevProgress = currentProfile.stagesProgress[stageId] || {
-    stageId,
-    completed: false,
-    starsEarned: 0,
-    highScore: 0,
-    bestWpm: 0,
-    bestAccuracy: 0,
-    bestStreak: 0,
-    timesPlayed: 0,
-  };
+  const prevProgress =
+    currentProfile.stagesProgress[stageId] ??
+    StageProgressSchema.parse({ stageId });
 
   const isNewHighScore = result.score > prevProgress.highScore;
   const bestStars = Math.max(prevProgress.starsEarned, result.starsEarned);
@@ -69,7 +109,7 @@ export function recordStageResult(
     ...currentProfile.keyAnalytics,
   };
   Object.entries(result.keyStats).forEach(([char, stats]) => {
-    const existing = mergedKeyAnalytics[char] || { hits: 0, misses: 0 };
+    const existing = mergedKeyAnalytics[char] ?? KeyAnalyticsSchema.parse({});
     mergedKeyAnalytics[char] = {
       hits: existing.hits + stats.hits,
       misses: existing.misses + stats.misses,
@@ -79,7 +119,6 @@ export function recordStageResult(
   const updatedProfile: PlayerProfile = {
     ...currentProfile,
     totalCredits: currentProfile.totalCredits + result.creditsEarned,
-    totalStars: totalStarsOf(newStagesProgress),
     totalKeystrokes: currentProfile.totalKeystrokes + result.keystrokesCount,
     totalErrors: currentProfile.totalErrors + result.errorsCount,
     totalWordsTyped:
@@ -94,141 +133,214 @@ export function recordStageResult(
   return { updatedProfile, newStarsAwarded, isNewHighScore };
 }
 
-export function isSectorUnlocked(
-  sectorId: string,
-  currentStars: number,
-): { unlocked: boolean; starsRequired: number; starsRemaining: number } {
-  const sector = CURRICULUM_SECTORS.find((s) => s.id === sectorId);
-  if (!sector) return { unlocked: true, starsRequired: 0, starsRemaining: 0 };
-  const starsRequired = sector.requiredStarsToUnlock;
-  const unlocked = currentStars >= starsRequired;
+/**
+ * The Profile after the player changes some settings. Each setting's rules are
+ * here: a volume is kept between 0 and 1, and a volume of 0 turns its channel
+ * off while any volume above 0 turns it on (unless the patch says otherwise).
+ * Turning a channel off keeps its volume.
+ */
+export function settingsAfter(
+  profile: PlayerProfile,
+  patch: Partial<Settings>,
+): PlayerProfile {
+  const next = { ...profile, ...patch };
+  if (patch.soundVolume !== undefined) {
+    next.soundVolume = clampVolume(patch.soundVolume);
+    next.soundEnabled = patch.soundEnabled ?? next.soundVolume > 0;
+  }
+  if (patch.musicVolume !== undefined) {
+    next.musicVolume = clampVolume(patch.musicVolume);
+    next.musicEnabled = patch.musicEnabled ?? next.musicVolume > 0;
+  }
+  return next;
+}
+
+const clampVolume = (volume: number): number =>
+  Math.max(0, Math.min(1, volume));
+
+/** Where a Cosmetic's kind keeps what the player owns and what is equipped, in the Save. */
+const COSMETIC_FIELDS = {
+  trail: { owned: 'unlockedThemes', equipped: 'equippedTrailTheme' },
+  core: { owned: 'unlockedAudioCores', equipped: 'equippedAudioCore' },
+} as const;
+
+/** Where the player stands with a Cosmetic: whether they own it, wear it, and can pay for it. */
+export interface CosmeticStatus {
+  owned: boolean;
+  equipped: boolean;
+  affordable: boolean;
+}
+
+export function cosmeticStatus(
+  profile: PlayerProfile,
+  entry: TrailEntry | CoreEntry,
+): CosmeticStatus {
+  const { owned, equipped } = COSMETIC_FIELDS[entry.kind];
+  const { upgrades, totalCredits } = profile;
+  const ownedIds: readonly string[] = upgrades[owned];
   return {
-    unlocked,
-    starsRequired,
-    starsRemaining: Math.max(0, starsRequired - currentStars),
+    owned: ownedIds.includes(entry.id),
+    equipped: upgrades[equipped] === entry.id,
+    affordable: totalCredits >= entry.price,
   };
 }
 
-/** Whether going from `previousStars` to `nextStars` takes the fleet past some Sector's gate. */
-export function unlocksSector(
-  previousStars: number,
-  nextStars: number,
-): boolean {
-  return CURRICULUM_SECTORS.some(
-    (sector) =>
-      !isSectorUnlocked(sector.id, previousStars).unlocked &&
-      isSectorUnlocked(sector.id, nextStars).unlocked,
-  );
+/**
+ * What the Profile becomes when the player buys an item: an Upgrade's next
+ * level at its price, or a Cosmetic bought and equipped (a Cosmetic already
+ * owned is equipped for nothing). Null when it changes nothing: an Upgrade at
+ * its last level, or Credits short of the price.
+ */
+export function purchaseOf(
+  profile: PlayerProfile,
+  itemId: CatalogItemId,
+): Pick<PlayerProfile, 'totalCredits' | 'upgrades'> | null {
+  const entry = catalogEntry(itemId);
+  const { upgrades, totalCredits } = profile;
+
+  if (entry.kind === 'upgrade') {
+    const level = upgrades[entry.field];
+    const price = entry.prices[level];
+    if (price === undefined || totalCredits < price) return null;
+    return {
+      totalCredits: totalCredits - price,
+      upgrades: { ...upgrades, [entry.field]: level + 1 },
+    };
+  }
+
+  const { owned, equipped } = COSMETIC_FIELDS[entry.kind];
+  const ownedIds: readonly string[] = upgrades[owned];
+  const status = cosmeticStatus(profile, entry);
+  const isOwned = status.owned;
+  if (!isOwned && !status.affordable) return null;
+  return {
+    totalCredits: isOwned ? totalCredits : totalCredits - entry.price,
+    upgrades: {
+      ...upgrades,
+      [equipped]: entry.id,
+      [owned]: isOwned ? ownedIds : [...ownedIds, entry.id],
+    },
+  };
 }
 
-export const UPGRADE_CATALOG = {
-  deflectorShields: [
-    {
-      level: 1,
-      cost: 250,
-      desc: 'Absorbs 1 typing error per stage without breaking your Streak',
+// ---- The Profile's place in the store -----------------------------------
+
+/** The Profile's state in the store. */
+export interface ProfileState {
+  profile: PlayerProfile;
+  /** Set when the Save couldn't be read and the player started fresh. */
+  loadNotice: string | null;
+}
+
+/** What a cleared Stage did to the Profile, for the Debrief. */
+export interface StageRecord {
+  newStarsAwarded: number;
+  isNewHighScore: boolean;
+  /** This Run's Stars took the fleet past a Sector's gate. */
+  unlockedSector: boolean;
+}
+
+/** The Profile's commands. Each one changes the Profile and saves it. */
+export interface ProfileCommands {
+  /** Changes some settings. Each one's rules are in `settingsAfter`. */
+  changeSettings: (patch: Partial<Settings>) => void;
+  /**
+   * Buys an Upgrade's next level, or buys or equips a Cosmetic, at the price
+   * the catalog gives. False, and nothing changes, when it is maxed, owned
+   * (an Upgrade) or unaffordable.
+   */
+  buy: (itemId: CatalogItemId) => boolean;
+  /**
+   * Replaces the Profile with a Backup's, and saves it. A Backup that fails
+   * the Save's checks is refused: the Profile and the Save are left as they were.
+   */
+  importProfile: (text: string) => BackupImport;
+  /** Wipes Stars and Stage progress; Credits and Upgrades stay. */
+  wipeCurriculumAchievements: () => void;
+  /** Back to a fresh Profile. */
+  resetProgress: () => void;
+  /** Takes in a cleared Stage's result: Credits, Stars, bests, key analytics. */
+  recordStageResult: (
+    stageId: string,
+    result: StageResult,
+    now: number,
+  ) => StageRecord;
+}
+
+export type ProfileSlice = ProfileState & ProfileCommands;
+
+export interface ProfileDeps {
+  storage: SaveStorage;
+  /** Told of a purchase as it happens. */
+  emit: (moment: Moment) => void;
+}
+
+/**
+ * The Profile's part of the game's one store: the Profile loaded from the
+ * Save, and its commands. `set` and `get` are the store's, seen through the
+ * Profile's fields only.
+ */
+export function createProfileSlice(
+  { storage, emit }: ProfileDeps,
+  set: (partial: Partial<ProfileState>) => void,
+  get: () => ProfileState,
+): ProfileSlice {
+  const save = createSave(storage);
+  const { profile: savedProfile, notice: loadNotice } = save.load();
+
+  // The one way the Profile changes: the new Profile, and the Save with it.
+  const updateProfile = (patch: Partial<PlayerProfile>) => {
+    const profile = { ...get().profile, ...patch };
+    set({ profile });
+    save.write(profile);
+  };
+
+  return {
+    profile: savedProfile,
+    loadNotice,
+
+    changeSettings: (patch) => {
+      updateProfile(settingsAfter(get().profile, patch));
     },
-    {
-      level: 2,
-      cost: 650,
-      desc: 'Absorbs 2 typing errors per stage without breaking your Streak',
+
+    buy: (itemId) => {
+      const purchase = purchaseOf(get().profile, itemId);
+      if (!purchase) return false;
+      updateProfile(purchase);
+      // A Synthesizer Voice is sound state, not a moment: it just starts sounding.
+      const { kind } = catalogEntry(itemId);
+      if (kind === 'upgrade') emit({ type: 'upgrade' });
+      else if (kind === 'trail') emit({ type: 'equip' });
+      return true;
     },
-    {
-      level: 3,
-      cost: 1200,
-      desc: 'Absorbs 3 typing errors per stage without breaking your Streak',
+
+    importProfile: (text) => {
+      const backup = parseBackup(text);
+      if (backup.ok) updateProfile(backup.profile);
+      return backup;
     },
-  ],
-  hyperdriveReactor: [
-    {
-      level: 1,
-      cost: 300,
-      desc: '+20% Overdrive meter fill rate',
+
+    wipeCurriculumAchievements: () => {
+      updateProfile({ stagesProgress: {} });
     },
-    {
-      level: 2,
-      cost: 750,
-      desc: '+40% Overdrive meter fill rate',
+
+    resetProgress: () => {
+      updateProfile(DEFAULT_PROFILE);
     },
-    {
-      level: 3,
-      cost: 1400,
-      desc: '+60% Overdrive meter fill rate',
+
+    recordStageResult: (stageId, result, now) => {
+      const before = get().profile;
+      const { updatedProfile, newStarsAwarded, isNewHighScore } =
+        recordStageResult(before, stageId, result, now);
+      updateProfile(updatedProfile);
+      return {
+        newStarsAwarded,
+        isNewHighScore,
+        unlockedSector: unlocksSector(
+          totalStarsOf(before.stagesProgress),
+          totalStarsOf(updatedProfile.stagesProgress),
+        ),
+      };
     },
-  ],
-  precisionSensors: [
-    {
-      level: 1,
-      cost: 200,
-      desc: '+15% wider strike timing window for PERFECT scores',
-    },
-    {
-      level: 2,
-      cost: 500,
-      desc: '+30% wider strike timing window for PERFECT scores',
-    },
-    {
-      level: 3,
-      cost: 950,
-      desc: '+45% wider strike timing window for PERFECT scores',
-    },
-  ],
-  themes: [
-    {
-      id: 'CYAN' as TrailColorTheme,
-      name: 'Cyan Nebula',
-      cost: 0,
-      color: '#06b6d4',
-    },
-    {
-      id: 'AMBER' as TrailColorTheme,
-      name: 'Solar Flare',
-      cost: 350,
-      color: '#f59e0b',
-    },
-    {
-      id: 'EMERALD' as TrailColorTheme,
-      name: 'Ion Emerald',
-      cost: 450,
-      color: '#10b981',
-    },
-    {
-      id: 'VIOLET' as TrailColorTheme,
-      name: 'Pulsar Violet',
-      cost: 600,
-      color: '#8b5cf6',
-    },
-    {
-      id: 'SUPERNOVA' as TrailColorTheme,
-      name: 'Supernova Prism',
-      cost: 900,
-      color: '#f43f5e',
-    },
-  ],
-  audioCores: [
-    {
-      id: 'CYBER_SYNTH' as AudioSynthCore,
-      name: 'Cyber Synth (Default)',
-      cost: 0,
-      desc: 'Harmonic dual-oscillator space synth',
-    },
-    {
-      id: 'RETRO_8BIT' as AudioSynthCore,
-      name: '8-Bit Retro Arcade',
-      cost: 300,
-      desc: 'Classic chiptune square wave blasters',
-    },
-    {
-      id: 'DEEP_SPACE' as AudioSynthCore,
-      name: 'Deep Space Drone',
-      cost: 450,
-      desc: 'Smooth sine-wave bass resonant chimes',
-    },
-    {
-      id: 'NEO_ACOUSTIC' as AudioSynthCore,
-      name: 'Neo Acoustic Harp',
-      cost: 600,
-      desc: 'Warm triangular bells and melodic tones',
-    },
-  ],
-};
+  };
+}

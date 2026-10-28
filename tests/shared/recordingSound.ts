@@ -1,8 +1,7 @@
 // A sound adapter for tests: it plays nothing and records what a player would
 // hear. It imports from no test runner, so any layer of tests can use it.
 
-import type { GameEffects } from '../../src/game/effects';
-import { DEFAULT_PROFILE } from '../../src/game/profile';
+import type { Cue, Sound, SoundState } from '../../src/game/sound';
 
 /** What is sounding right now. */
 export interface Heard {
@@ -13,68 +12,52 @@ export interface Heard {
 }
 
 export interface RecordingSound {
-  /** Pass to `createGame({ effects })`. */
-  effects: GameEffects;
+  /** The sound adapter: pass to `createGame({ sound })`. */
+  effects: Sound;
   /** What is sounding now. */
   heard(): Heard;
+  /** The whole continuous sound the game last synced, or null before the first sync. */
+  state(): SoundState | null;
   /** The one-shot cues since the last call, in the order they fired. Clears them. */
   takeCues(): string[];
 }
 
+/** A cue's name, as the tests read them. */
+function nameOf(cue: Cue): string {
+  switch (cue.type) {
+    case 'hit':
+      return `hit:${cue.grade.toUpperCase()}`;
+    case 'stars':
+      return `stars:${cue.count}`;
+    default:
+      return cue.type;
+  }
+}
+
 /**
- * Today's port is a list of commands, so the adapter has to keep the little
- * state the sound engine keeps to turn them into what is audible: a beat
- * starts only when sound is allowed (not muted, music on, volume above 0), and
- * muting or turning music off stops it. Everything else is a plain record.
+ * Records both halves of the sound port: the last state the game synced (what
+ * is audible: the beat and its Overdrive layer) and the cues it played.
  */
 export function createRecordingSound(): RecordingSound {
-  let beat = false;
-  let overdrive = false;
-  let muted = DEFAULT_PROFILE.globalMuted;
-  let musicEnabled = DEFAULT_PROFILE.musicEnabled;
-  let musicVolume = DEFAULT_PROFILE.musicVolume;
+  let state: SoundState | null = null;
   let cues: string[] = [];
-  const cue = (name: string) => cues.push(name);
 
-  const effects: GameEffects = {
-    init: () => {},
-    startBeat: () => {
-      if (!muted && musicEnabled && musicVolume > 0) beat = true;
+  const effects: Sound = {
+    sync: (next) => {
+      state = next;
     },
-    stopBeat: () => {
-      beat = false;
+    play: (cue) => {
+      cues.push(nameOf(cue));
     },
-    setOverdrive: (active) => {
-      overdrive = active;
-    },
-    playLaneHit: (_lane, rating) => cue(`hit:${rating}`),
-    playHyperspaceIgnition: () => cue('ignition'),
-    playShieldAbsorb: () => cue('shield'),
-    playMiss: () => cue('miss'),
-    playStageVictory: () => cue('victory'),
-    playStarChimes: (stars) => cue(`stars:${stars}`),
-    playShieldUpgrade: () => cue('upgrade'),
-    playEquipCosmetic: () => cue('equip'),
-    setGlobalMute: (value) => {
-      muted = value;
-      if (value) beat = false;
-    },
-    setSoundEnabled: () => {},
-    setSoundVolume: () => {},
-    setMusicEnabled: (enabled) => {
-      musicEnabled = enabled;
-      if (!enabled) beat = false;
-    },
-    setMusicVolume: (volume) => {
-      musicVolume = volume;
-    },
-    setBeatTheme: () => {},
-    setCore: () => {},
   };
 
   return {
     effects,
-    heard: () => ({ beat, overdrive }),
+    heard: () => ({
+      beat: state?.beat ?? false,
+      overdrive: state?.overdrive ?? false,
+    }),
+    state: () => state,
     takeCues: () => {
       const taken = cues;
       cues = [];

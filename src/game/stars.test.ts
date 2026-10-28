@@ -6,6 +6,7 @@ import {
   STAGE_ID,
   startedGame,
   startStage,
+  typeText,
 } from './testHelpers';
 
 /**
@@ -16,7 +17,7 @@ import {
  */
 
 function debriefOf(game: ReturnType<typeof startedGame>) {
-  const debrief = game.getDebrief();
+  const debrief = game.getState().debrief;
   if (!debrief) throw new Error('expected a Debrief after clearing the Stage');
   return debrief;
 }
@@ -26,7 +27,7 @@ describe('Stars from WPM, accuracy and Streak', () => {
     const game = startedGame();
     clearStage(game, { seconds: 60 });
 
-    expect(game.getScreen()).toBe('debrief');
+    expect(game.getState().screen).toBe('debrief');
     const debrief = debriefOf(game);
     expect(debrief.wpm).toBe(15); // 77 correct keys / 5 per word / 1 minute = 15.4
     expect(debrief.accuracy).toBe(100);
@@ -38,7 +39,7 @@ describe('Stars from WPM, accuracy and Streak', () => {
     expect(debrief.isNewHighScore).toBe(true);
     expect(debrief.newStarsAwarded).toBe(3);
 
-    const profile = game.getProfile();
+    const profile = game.getState().profile;
     expect(profile.totalCredits).toBe(547);
     expect(profile.totalStars).toBe(3);
     expect(profile.totalKeystrokes).toBe(77);
@@ -90,7 +91,7 @@ describe('Stars from WPM, accuracy and Streak', () => {
     clearStage(game, { seconds: 60, missesFirst: 15 });
 
     expect(debriefOf(game).creditsEarned).toBe(100 + 222); // no Star bonus
-    const profile = game.getProfile();
+    const profile = game.getState().profile;
     expect(profile.totalCredits).toBe(322);
     expect(profile.totalStars).toBe(0);
     expect(profile.totalErrors).toBe(15);
@@ -110,22 +111,18 @@ describe('Stars from WPM, accuracy and Streak', () => {
   });
 
   it('the 3rd Star also needs the Streak: the same clean Run falls to 2 Stars when the Streak asked is out of reach', () => {
-    // On the real Stage, accuracy always trips before the Streak can, so give the
-    // Stage a Streak longer than the text to see the Streak gate on its own.
-    const stage = startedGame().getRun().currentStage;
-    if (!stage) throw new Error('expected a current Stage');
-    const strictStage = {
-      ...stage,
-      starThresholds: { ...stage.starThresholds, threeStarMinStreak: 78 },
-    };
+    // On the real Stage, accuracy always trips before the Streak can, so fly a
+    // Free Flight whose text is 19 characters, one short of the Streak its 3rd
+    // Star asks for (20), to see the Streak gate on its own.
+    const text = 'fj fj fj fj fj fj f';
 
     const game = newGame();
-    game.send({ type: 'LAUNCH_FREE_FLIGHT', stage: strictStage });
-    clearStage(game, { seconds: 60 });
+    game.send({ type: 'LAUNCH_FREE_FLIGHT', text, targetWpm: 15 });
+    typeText(game, text);
     const debrief = debriefOf(game);
-    expect(debrief.wpm).toBe(15);
+    expect(debrief.wpm).toBe(24);
     expect(debrief.accuracy).toBe(100);
-    expect(debrief.maxStreak).toBe(77);
+    expect(debrief.maxStreak).toBe(19);
     expect(debrief.starsEarned).toBe(2);
   });
 
@@ -149,7 +146,7 @@ describe('Stars from WPM, accuracy and Streak', () => {
     expect(debrief.isNewHighScore).toBe(false);
     expect(debrief.creditsEarned).toBe(100 + 2 * 75 + 222); // Credits are paid on every clear
 
-    const profile = game.getProfile();
+    const profile = game.getState().profile;
     expect(profile.stagesProgress[STAGE_ID]).toMatchObject({
       starsEarned: 3,
       highScore: 50000,
