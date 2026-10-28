@@ -12,6 +12,7 @@ import {
 import { useGame } from './useGame';
 import { useGameState } from './useGameState';
 import { AudioPanel } from './AudioPanel';
+import { muteAllLabel, OPEN_AUDIO_PANEL } from './audioLabels';
 
 /**
  * `ref` is the header element itself. The layout that owns the header and the
@@ -173,7 +174,7 @@ export const HeaderNav: React.FC<{ ref?: React.Ref<HTMLElement> }> = ({
                   ? 'bg-rose-950/70 text-rose-300 hover:bg-rose-900/70'
                   : 'text-slate-300 hover:text-white hover:bg-slate-800'
               }`}
-              aria-label={isMuted ? 'Unmute All Audio' : 'Mute All Audio'}
+              aria-label={muteAllLabel(isMuted)}
             >
               {isMuted ? (
                 <>
@@ -202,7 +203,7 @@ export const HeaderNav: React.FC<{ ref?: React.Ref<HTMLElement> }> = ({
                   ? 'bg-cyan-500/20 text-cyan-300'
                   : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
               }`}
-              aria-label="Open Audio Flight Deck Settings"
+              aria-label={OPEN_AUDIO_PANEL}
             >
               <SlidersHorizontal className="w-3.5 h-3.5" />
             </button>

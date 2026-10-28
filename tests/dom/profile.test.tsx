@@ -5,6 +5,7 @@ import {
 } from '../../src/game/save';
 import { type Player, renderGame, screen } from './harness';
 import { OLD_LIVE_EXPORT, RETURNING_PLAYER } from '../shared/saves';
+import { muteAllLabel } from '../../src/screens/audioLabels';
 
 const stars = (count: number) =>
   screen.getByRole('button', { name: new RegExp(`^${count}\\s*★$`) });
@@ -47,11 +48,11 @@ describe('a returning player', () => {
       profile: { ...RETURNING_PLAYER, totalStars: 40 },
     });
     // Muting makes the game write the Save back; the reload reads that Save.
-    player.click('Mute All Audio');
+    player.click(muteAllLabel(false));
     player.reload();
 
     expect(
-      screen.getByRole('button', { name: 'Unmute All Audio' }),
+      screen.getByRole('button', { name: muteAllLabel(true) }),
     ).toBeTruthy();
     expect(stars(5)).toBeTruthy();
   });
@@ -65,7 +66,9 @@ describe('a returning player', () => {
     expect(credits('0')).toBeTruthy();
     expect(screen.queryByText(UNREADABLE_SAVE_NOTICE)).toBeNull();
     // Audio is not muted by default, so the header offers to mute it.
-    expect(screen.getByRole('button', { name: 'Mute All Audio' })).toBeTruthy();
+    expect(
+      screen.getByRole('button', { name: muteAllLabel(false) }),
+    ).toBeTruthy();
     player.click('Start Mission');
     expect(screen.getByRole('button', { name: 'Pause' })).toBeTruthy();
   });
@@ -74,7 +77,7 @@ describe('a returning player', () => {
     renderGame({ profile: { ...RETURNING_PLAYER, globalMuted: true } });
 
     expect(
-      screen.getByRole('button', { name: 'Unmute All Audio' }),
+      screen.getByRole('button', { name: muteAllLabel(true) }),
     ).toBeTruthy();
   });
 });

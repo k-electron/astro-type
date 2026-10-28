@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { OWNS_RETRO_AUDIO_CORE, RETURNING_PLAYER } from '../shared/saves';
 import { renderGame, screen } from './harness';
+import { OPEN_AUDIO_PANEL } from '../../src/screens/audioLabels';
 
 // A Synthesizer Voice is a paid Cosmetic: the Hangar sells it, and the header's
 // audio panel only equips the ones the player owns. The panel still lists all
@@ -9,8 +10,6 @@ import { renderGame, screen } from './harness';
 //
 // RETURNING_PLAYER has 1,234 Credits and owns only Cyber Synth, so it could
 // afford every other voice: a click that spent Credits would show.
-
-const OPEN_PANEL = 'Open Audio Flight Deck Settings';
 
 /** The panel's voices, as the player reads them, with the Hangar price of each. */
 const VOICES = {
@@ -44,7 +43,7 @@ const credits = (text: string) =>
 describe('the header lists every Synthesizer Voice', () => {
   it('shows the ones the player does not own locked, with their Hangar price', () => {
     const player = renderGame({ profile: RETURNING_PLAYER });
-    player.click(OPEN_PANEL);
+    player.click(OPEN_AUDIO_PANEL);
 
     expect(voice('cyber')).toBeTruthy();
     expect(showsAPrice('cyber')).toBe(false);
@@ -56,7 +55,7 @@ describe('the header lists every Synthesizer Voice', () => {
 
   it('shows a voice without a price once it is owned, and keeps the others priced', () => {
     const player = renderGame({ profile: OWNS_RETRO_AUDIO_CORE });
-    player.click(OPEN_PANEL);
+    player.click(OPEN_AUDIO_PANEL);
 
     expect(showsAPrice('retro')).toBe(false);
     expect(hasPrice('deep', 450)).toBe(true);
@@ -69,12 +68,12 @@ describe('a Synthesizer Voice the player does not own', () => {
     'cannot be equipped from the header: the %s voice stays unequipped and no Credits are spent',
     (which) => {
       const player = renderGame({ profile: RETURNING_PLAYER });
-      player.click(OPEN_PANEL);
+      player.click(OPEN_AUDIO_PANEL);
 
       player.click(VOICES[which].name);
 
       expect(credits('1,234')).toBeTruthy();
-      player.click(OPEN_PANEL);
+      player.click(OPEN_AUDIO_PANEL);
       player.openHeader('Hangar');
       expect(equippedVoiceIndex(), 'the equipped voice').toBe(0);
       // The Hangar still sells it.
@@ -88,14 +87,14 @@ describe('a Synthesizer Voice the player does not own', () => {
 
   it('stays locked after a reload', () => {
     const player = renderGame({ profile: RETURNING_PLAYER });
-    player.click(OPEN_PANEL);
+    player.click(OPEN_AUDIO_PANEL);
     player.click(VOICES.deep.name);
 
     player.reload();
-    player.click(OPEN_PANEL);
+    player.click(OPEN_AUDIO_PANEL);
 
     expect(hasPrice('deep', 450)).toBe(true);
-    player.click(OPEN_PANEL);
+    player.click(OPEN_AUDIO_PANEL);
     player.openHeader('Hangar');
     expect(equippedVoiceIndex()).toBe(0);
   });
@@ -104,12 +103,12 @@ describe('a Synthesizer Voice the player does not own', () => {
 describe('a Synthesizer Voice the player owns', () => {
   it('is equipped from the header at no cost, and the Hangar shows it Active', () => {
     const player = renderGame({ profile: OWNS_RETRO_AUDIO_CORE });
-    player.click(OPEN_PANEL);
+    player.click(OPEN_AUDIO_PANEL);
 
     player.click(VOICES.retro.name);
 
     expect(credits('1,234')).toBeTruthy();
-    player.click(OPEN_PANEL);
+    player.click(OPEN_AUDIO_PANEL);
     player.openHeader('Hangar');
     expect(equippedVoiceIndex()).toBe(1);
   });
@@ -125,18 +124,18 @@ describe('buying a Synthesizer Voice in the Hangar', () => {
     expect(equippedVoiceIndex()).toBe(1);
     player.click(/^Back to /);
 
-    player.click(OPEN_PANEL);
+    player.click(OPEN_AUDIO_PANEL);
     expect(showsAPrice('retro')).toBe(false);
     player.click(VOICES.cyber.name);
-    player.click(OPEN_PANEL);
+    player.click(OPEN_AUDIO_PANEL);
     player.openHeader('Hangar');
     expect(equippedVoiceIndex()).toBe(0);
     player.click(/^Back to /);
 
-    player.click(OPEN_PANEL);
+    player.click(OPEN_AUDIO_PANEL);
     player.click(VOICES.retro.name);
     expect(credits('934')).toBeTruthy();
-    player.click(OPEN_PANEL);
+    player.click(OPEN_AUDIO_PANEL);
     player.openHeader('Hangar');
     expect(equippedVoiceIndex()).toBe(1);
   });

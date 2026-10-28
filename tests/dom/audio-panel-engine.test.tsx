@@ -4,6 +4,12 @@ import { engineSound } from '../../src/audio/engineSound';
 import { STAGE_ID } from '../../src/game/testHelpers';
 import { OWNS_RETRO_AUDIO_CORE } from '../shared/saves';
 import { renderGame, screen } from './harness';
+import {
+  OPEN_AUDIO_PANEL,
+  muteAllLabel,
+  laserSfxLabel,
+  rhythmBeatsLabel,
+} from '../../src/screens/audioLabels';
 
 // What the sound engine ends up set to: the Synthesizer Voice, the beat theme,
 // both volumes and their on/off, and mute. A Save's settings must reach it at
@@ -27,8 +33,6 @@ vi.mock('../../src/audio/soundEngine', () => ({
     },
   ),
 }));
-
-const OPEN_PANEL = 'Open Audio Flight Deck Settings';
 
 /** The settings the engine holds now. */
 const engineSettings = () => ({
@@ -91,7 +95,7 @@ it('each control in the panel sets the engine', () => {
     effects: engineSound,
   });
   player.startStage(STAGE_ID);
-  player.click(OPEN_PANEL);
+  player.click(OPEN_AUDIO_PANEL);
 
   player.click(/Retro 8-Bit/);
   expect(engineSettings().voice, 'voice').toBe('RETRO_8BIT');
@@ -104,18 +108,18 @@ it('each control in the panel sets the engine', () => {
   slider('beats', 0.9);
   expect(engineSettings().beatsVolume, 'beats volume').toBe(0.9);
 
-  player.click('Mute Laser SFX');
+  player.click(laserSfxLabel(true));
   expect(engineSettings().laserSounds, 'laser sounds off').toBe(false);
-  player.click('Enable Laser SFX');
+  player.click(laserSfxLabel(false));
   expect(engineSettings().laserSounds, 'laser sounds on').toBe(true);
 
-  player.click('Mute Rhythm Beats');
+  player.click(rhythmBeatsLabel(true));
   expect(engineSettings().beats, 'beats off').toBe(false);
-  player.click('Enable Rhythm Beats');
+  player.click(rhythmBeatsLabel(false));
   expect(engineSettings().beats, 'beats on').toBe(true);
 
-  player.click('Mute All Audio');
+  player.click(muteAllLabel(false));
   expect(engineSettings().muted, 'muted').toBe(true);
-  player.click('Unmute All Audio');
+  player.click(muteAllLabel(true));
   expect(engineSettings().muted, 'unmuted').toBe(false);
 });

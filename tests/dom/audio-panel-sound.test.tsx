@@ -4,6 +4,11 @@ import { STAGE_ID } from '../../src/game/testHelpers';
 import { createRecordingSound } from '../shared/recordingSound';
 import { RETURNING_PLAYER } from '../shared/saves';
 import { renderGame, screen } from './harness';
+import {
+  OPEN_AUDIO_PANEL,
+  muteAllLabel,
+  rhythmBeatsLabel,
+} from '../../src/screens/audioLabels';
 
 // What the header's audio controls do to the sound the player hears: the
 // panel is the player's way to change mute and the rhythm beats, so a click
@@ -12,7 +17,6 @@ import { renderGame, screen } from './harness';
 // whether the beat is sounding. (`audio-panel-engine.test.tsx` covers the
 // settings it can't see.)
 
-const OPEN_PANEL = 'Open Audio Flight Deck Settings';
 const NO_BEAT = { beat: false, overdrive: false };
 const BEAT = { beat: true, overdrive: false };
 
@@ -28,7 +32,7 @@ const flyWith = (profile: Record<string, unknown> = RETURNING_PLAYER) => {
   const sound = createRecordingSound();
   const player = renderGame({ profile, effects: sound.effects });
   player.startStage(STAGE_ID);
-  player.click(OPEN_PANEL);
+  player.click(OPEN_AUDIO_PANEL);
   return { player, sound };
 };
 
@@ -37,20 +41,20 @@ describe('in a Run, the audio panel changes what is heard', () => {
     const { player, sound } = flyWith();
     expect(sound.heard(), 'Run started').toEqual(BEAT);
 
-    player.click('Mute All Audio');
+    player.click(muteAllLabel(false));
     expect(sound.heard(), 'muted').toEqual(NO_BEAT);
 
-    player.click('Unmute All Audio');
+    player.click(muteAllLabel(true));
     expect(sound.heard(), 'unmuted').toEqual(BEAT);
   });
 
   it('the rhythm beats button silences the beat and brings it back', () => {
     const { player, sound } = flyWith();
 
-    player.click('Mute Rhythm Beats');
+    player.click(rhythmBeatsLabel(true));
     expect(sound.heard(), 'beats off').toEqual(NO_BEAT);
 
-    player.click('Enable Rhythm Beats');
+    player.click(rhythmBeatsLabel(false));
     expect(sound.heard(), 'beats on').toEqual(BEAT);
   });
 

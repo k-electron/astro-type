@@ -3,6 +3,7 @@ import { BANNED_NAME } from '../shared/names';
 import { clearedStages } from '../shared/saves';
 import { DEBRIEF_TITLE, HUD_NAME, PAUSE_MENU_NAME } from '../shared/screens';
 import { type Player, renderGame, screen, within } from './harness';
+import { OPEN_AUDIO_PANEL } from '../../src/screens/audioLabels';
 
 // One name for each thing: the game says Streak and Overdrive, never combo,
 // hyperspace or warp (GLOSSARY.md: Streak, Multiplier and Overdrive each list
@@ -162,7 +163,7 @@ describe('the glossary names', () => {
   it('the audio settings use them', () => {
     const player = renderGame();
 
-    player.click('Open Audio Flight Deck Settings');
+    player.click(OPEN_AUDIO_PANEL);
 
     expectNoBannedNames('Flight Audio Station');
   });
