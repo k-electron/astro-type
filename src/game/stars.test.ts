@@ -6,6 +6,7 @@ import {
   STAGE_ID,
   startedGame,
   startStage,
+  typeText,
 } from './testHelpers';
 
 /**
@@ -110,22 +111,18 @@ describe('Stars from WPM, accuracy and Streak', () => {
   });
 
   it('the 3rd Star also needs the Streak: the same clean Run falls to 2 Stars when the Streak asked is out of reach', () => {
-    // On the real Stage, accuracy always trips before the Streak can, so give the
-    // Stage a Streak longer than the text to see the Streak gate on its own.
-    const stage = startedGame().getState().run.currentStage;
-    if (!stage) throw new Error('expected a current Stage');
-    const strictStage = {
-      ...stage,
-      starThresholds: { ...stage.starThresholds, threeStarMinStreak: 78 },
-    };
+    // On the real Stage, accuracy always trips before the Streak can, so fly a
+    // Free Flight whose text is 19 characters, one short of the Streak its 3rd
+    // Star asks for (20), to see the Streak gate on its own.
+    const text = 'fj fj fj fj fj fj f';
 
     const game = newGame();
-    game.send({ type: 'LAUNCH_FREE_FLIGHT', stage: strictStage });
-    clearStage(game, { seconds: 60 });
+    game.send({ type: 'LAUNCH_FREE_FLIGHT', text, targetWpm: 15 });
+    typeText(game, text);
     const debrief = debriefOf(game);
-    expect(debrief.wpm).toBe(15);
+    expect(debrief.wpm).toBe(24);
     expect(debrief.accuracy).toBe(100);
-    expect(debrief.maxStreak).toBe(77);
+    expect(debrief.maxStreak).toBe(19);
     expect(debrief.starsEarned).toBe(2);
   });
 
