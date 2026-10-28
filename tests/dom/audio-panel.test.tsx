@@ -2,7 +2,7 @@ import { fireEvent } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_PROFILE } from '../../src/game/profile';
 import { OWNS_EVERY_AUDIO_CORE, RETURNING_PLAYER } from '../shared/saves';
-import { voiceName } from '../shared/screens';
+import { START_STAGE, voiceName } from '../shared/screens';
 import { type Player, renderGame, screen } from './harness';
 import {
   OPEN_AUDIO_PANEL,
@@ -76,8 +76,8 @@ describe(muteAllLabel(false), () => {
 
   it('works from a Galaxy Map that is open over the Flight Deck', () => {
     const player = renderGame({ profile: RETURNING_PLAYER });
-    player.click('Start Mission');
-    player.openHeader('Sectors');
+    player.click(START_STAGE);
+    player.openHeader('Galaxy Map');
 
     player.click(muteAllLabel(false));
     expect(

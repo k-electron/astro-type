@@ -398,7 +398,7 @@ export const Analytics: React.FC = () => {
               Offline LocalStorage Storage
             </span>
             <span>
-              All progress, star ratings, and records are safely cached in your
+              All progress, Stage Stars, and records are safely cached in your
               browser.
             </span>
           </div>

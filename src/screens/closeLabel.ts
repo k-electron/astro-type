@@ -11,9 +11,9 @@ import type { Screen } from '../game/machine';
 export function closeLabel(opener: Screen | null): string {
   switch (opener) {
     case 'galaxy-map':
-      return 'Back to Sectors';
+      return 'Back to Galaxy Map';
     case 'debrief':
-      return 'Back to Debriefing';
+      return 'Back to Debrief';
     case 'pause-menu':
     case 'flight-deck':
       return 'Back to Pause Menu';
@@ -24,7 +24,7 @@ export function closeLabel(opener: Screen | null): string {
     case 'free-flight':
       return 'Back to Free Flight';
     default:
-      return 'Back to Academy';
+      return 'Back to Academy Home';
   }
 }
 

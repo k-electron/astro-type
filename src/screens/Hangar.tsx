@@ -233,7 +233,7 @@ export const Hangar: React.FC = () => {
           <div className="flex items-center gap-2 mb-3">
             <Palette className="w-4 h-4 text-cyan-400" />
             <h3 className="text-sm font-semibold uppercase font-mono tracking-wider text-slate-400">
-              Photon Highway Laser Themes
+              Photon Trail Themes
             </h3>
           </div>
 

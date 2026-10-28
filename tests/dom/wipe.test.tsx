@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { CURRICULUM_SECTORS } from '../../src/curriculum/curriculum';
 import { RETURNING_PLAYER } from '../shared/saves';
-import { DEBRIEF_TITLE, MENU_HEADINGS } from '../shared/screens';
+import { DEBRIEF_TITLE, MENU_HEADINGS, START_STAGE } from '../shared/screens';
 import { type Player, renderGame, screen } from './harness';
 import { flightDeckLabel } from '../../src/screens/closeLabel';
 
@@ -17,7 +17,7 @@ const confirmButton = (name: string) => screen.queryByRole('button', { name });
 
 /** What the Galaxy Map's first Sector says about its Stars, like "5/12". */
 function sectorOneStars(player: Player): string {
-  player.openHeader('Sectors');
+  player.openHeader('Galaxy Map');
   return screen.getByRole('button', { name: /Sector 01/ }).textContent ?? '';
 }
 
@@ -27,7 +27,7 @@ const onShow = () => screen.getByRole('main').textContent ?? '';
 const WIPES = [
   {
     where: 'the Galaxy Map',
-    menu: 'Sectors',
+    menu: 'Galaxy Map',
     button: /^Wipe Achievements/,
   },
   { where: 'Analytics', menu: 'Analytics', button: 'Wipe Stars' },
@@ -76,7 +76,7 @@ describe.each(WIPES)('Wipe on $where', ({ menu, button }) => {
     expect(sectorOneStars(player)).toContain('0/12');
   });
 
-  it('with no Run on show, sends Start Mission back to the first Stage', () => {
+  it('with no Run on show, sends Start Stage back to the first Stage', () => {
     const player = renderGame({ profile: RETURNING_PLAYER });
     player.startStage(SECOND_STAGE.id);
     player.click('Pause');
@@ -86,7 +86,7 @@ describe.each(WIPES)('Wipe on $where', ({ menu, button }) => {
     player.click(button);
     player.click('Confirm Wipe');
     player.click(/^Back to /);
-    player.click('Start Mission');
+    player.click(START_STAGE);
 
     expect(onShow()).toContain(FIRST_STAGE.title);
   });
@@ -108,7 +108,7 @@ describe.each(WIPES)('Wipe on $where', ({ menu, button }) => {
 
   it('over a paused Run, clears the Stars and leaves the Run to resume where it was', () => {
     const player = renderGame({ profile: RETURNING_PLAYER });
-    player.click('Start Mission');
+    player.click(START_STAGE);
     player.typePrompt({ characters: 3 });
     const progress = () =>
       screen.getByRole('progressbar', { name: 'Progress' }).textContent;

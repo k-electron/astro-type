@@ -78,8 +78,8 @@ export const GalaxyMap: React.FC = () => {
 
         <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800 text-[11px] font-mono text-left mb-6 space-y-1.5">
           <div className="text-rose-400 font-bold flex items-center gap-1.5">
-            <span>•</span> All {CURRICULUM_TOTALS.stages} Stage Star Ratings
-            reset to 0 ★
+            <span>•</span>{' '}
+            {`All ${CURRICULUM_TOTALS.stages} Stages reset to 0 ★`}
           </div>
           <div className="text-rose-400 font-bold flex items-center gap-1.5">
             <span>•</span> Interstellar Sectors relocked to Gate 0
@@ -138,7 +138,7 @@ export const GalaxyMap: React.FC = () => {
             id="galaxy-map-title"
             className="text-xl sm:text-2xl font-bold font-display text-white mt-0.5"
           >
-            Flight Sectors & Missions
+            Galaxy Map
           </h2>
         </div>
 
@@ -206,7 +206,7 @@ export const GalaxyMap: React.FC = () => {
                   className="px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-700 bg-slate-800 text-slate-300 hover:text-white transition-colors flex items-center gap-1 cursor-pointer whitespace-nowrap"
                 >
                   <Home className="w-3.5 h-3.5" />
-                  <span>Menu</span>
+                  <span>Academy Home</span>
                 </button>
               </div>
             ) : (
@@ -219,7 +219,7 @@ export const GalaxyMap: React.FC = () => {
                     className="px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-700 bg-slate-800 text-slate-300 hover:text-white transition-colors flex items-center gap-1 cursor-pointer whitespace-nowrap"
                   >
                     <Home className="w-3.5 h-3.5" />
-                    <span>Menu</span>
+                    <span>Academy Home</span>
                   </button>
                 )}
                 <OverlayCloseButton look="compact" />
@@ -234,7 +234,7 @@ export const GalaxyMap: React.FC = () => {
         {/* Left: Sector Navigation List */}
         <div className="w-full md:w-80 border-b md:border-b-0 md:border-r border-slate-800 bg-slate-950/40 p-3 sm:p-4 overflow-y-auto flex flex-col gap-2">
           <span className="text-[11px] uppercase font-mono tracking-wider text-slate-500 px-2">
-            Progression Sectors
+            Sectors
           </span>
 
           {CURRICULUM_SECTORS.map((sector) => {
@@ -365,7 +365,7 @@ export const GalaxyMap: React.FC = () => {
                         <span>{stage.difficulty}</span>
                       </div>
 
-                      {/* 3-Star Rating */}
+                      {/* 3-Star display */}
                       <div className="flex items-center gap-1">
                         {[1, 2, 3].map((starNum) => (
                           <Star
@@ -464,7 +464,7 @@ export const GalaxyMap: React.FC = () => {
                     )}
                   </div>
 
-                  {/* Launch Mission Button */}
+                  {/* Launch Stage Button */}
                   <button
                     type="button"
                     disabled={!isCurrentUnlocked}
@@ -478,9 +478,7 @@ export const GalaxyMap: React.FC = () => {
                     }`}
                   >
                     <Play className="w-3.5 h-3.5 fill-current" />
-                    <span>
-                      {isCompleted ? 'Replay Mission' : 'Launch Mission'}
-                    </span>
+                    <span>{isCompleted ? 'Replay Stage' : 'Launch Stage'}</span>
                   </button>
                 </div>
               );

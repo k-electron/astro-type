@@ -11,6 +11,7 @@ import {
   type Player,
   renderGame,
   screen,
+  toDebrief,
   within,
 } from './harness';
 
@@ -65,13 +66,6 @@ function halfwayThroughARun(): Player {
   return player;
 }
 
-/** The Debrief of a two-character Free Flight. */
-function toDebrief(): Player {
-  const player = renderGame({ text: 'ab' });
-  player.type('ab');
-  return player;
-}
-
 describe('every overlay screen is a modal dialog over the Flight Deck', () => {
   it.each(MENU_BUTTONS)(
     '%s opens as a dialog with its heading and one Close button',
@@ -89,7 +83,7 @@ describe('every overlay screen is a modal dialog over the Flight Deck', () => {
     },
   );
 
-  const FLIGHT_DECK_BUTTONS = ['Sectors', 'Hangar', 'Analytics'].flatMap(
+  const FLIGHT_DECK_BUTTONS = ['Galaxy Map', 'Hangar', 'Analytics'].flatMap(
     (button) => [
       { button, from: 'Academy Home', label: flightDeckLabel(false) },
       { button, from: 'a Run', label: flightDeckLabel(true) },
@@ -175,7 +169,7 @@ describe('the Flight Deck is inert exactly while an overlay shows', () => {
   it('a chain of menus stays inert at every step and is live at the end', () => {
     const player = halfwayThroughARun();
 
-    player.openHeader('Sectors');
+    player.openHeader('Galaxy Map');
     player.click('Hangar Upgrades');
     expect(flightDeckInert()).toBe(true);
     player.click(/^Back to /);
@@ -232,7 +226,7 @@ describe('the Flight Deck is inert exactly while an overlay shows', () => {
 });
 
 describe('the Flight Deck button on an overlay', () => {
-  it.each(['Sectors', 'Hangar', 'Analytics'] as const)(
+  it.each(['Galaxy Map', 'Hangar', 'Analytics'] as const)(
     '%s opened from Academy Home offers Enter Flight Deck, which starts the Stage with the Flight Deck live',
     (button) => {
       const player = renderGame();
@@ -245,7 +239,7 @@ describe('the Flight Deck button on an overlay', () => {
     },
   );
 
-  it.each(['Sectors', 'Hangar', 'Analytics'] as const)(
+  it.each(['Galaxy Map', 'Hangar', 'Analytics'] as const)(
     '%s opened over a Run offers Resume Flight, which carries the Run on',
     (button) => {
       const player = halfwayThroughARun();

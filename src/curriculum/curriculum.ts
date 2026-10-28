@@ -307,7 +307,7 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         title: 'Ring & Pinky Completion',
         subtitle: 'Full 8-Finger Baseline: S, L, A, ;',
         description:
-          'Add ring fingers (S, L) and outer pinkies (A, ;). Drill 4-finger rolls and simple real home-row vocabulary.',
+          'Add ring fingers (S, L) and outer pinkies (A, ;). Practice 4-finger rolls and simple real home-row vocabulary.',
         targetKeys: ['a', 's', 'd', 'f', 'j', 'k', 'l', ';', ' '],
         sampleText:
           's l s l a ; a ; asdf jkl; fdsa ;lkj asdf jkl; ask all dad fad lad fall flask salad alas',
@@ -360,7 +360,7 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
     name: 'Andromeda Nebula',
     curriculumCategory: 'Top Row & Vowels (Ergonomic Phase 2)',
     description:
-      'Upward finger reaches drilled with Anchor-Reach-Return triplets: middle vowels (E, I), index (R, U), center (T, Y), and outer wings (W, O, Q, P).',
+      'Upward finger reaches practiced with Anchor-Reach-Return triplets: middle vowels (E, I), index (R, U), center (T, Y), and outer wings (W, O, Q, P).',
     requiredStarsToUnlock: 6,
     accentColor: '#3b82f6',
     themeSymbol: '▲',
@@ -991,7 +991,7 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         title: 'Flight Telemetry Grid',
         subtitle: 'Alphanumeric Codes & Coordinates',
         description:
-          'Real-world mission callsigns, flight dates, and vector coordinates mixing words and numbers.',
+          'Real-world callsigns, flight dates, and vector coordinates mixing words and numbers.',
         targetKeys: [
           '0',
           '1',
@@ -1663,6 +1663,10 @@ export const FreeFlightTextSchema = z
     }
   });
 
+/** What a Free Flight Stage is called, on the Free Flight screen and over the Run. */
+export const FREE_FLIGHT_TITLE = 'Free Flight';
+export const FREE_FLIGHT_SUBTITLE = 'Your own text, at your own speed.';
+
 /**
  * The Stage a Free Flight Run flies: the player's own `text` (already checked
  * as typeable) and Target Cadence, with Star thresholds worked out from the
@@ -1675,8 +1679,8 @@ export function freeFlightStage(text: string, targetWpm: number): Stage {
     origin: 'free-flight',
     sectorId: 'sector-custom',
     stageNumber: 0,
-    title: 'Free Flight Drill',
-    subtitle: 'Custom Practice Mission',
+    title: FREE_FLIGHT_TITLE,
+    subtitle: FREE_FLIGHT_SUBTITLE,
     description: 'Player tailored free-form typing session.',
     targetKeys: Array.from(new Set(text.toLowerCase().split(''))),
     sampleText: text,

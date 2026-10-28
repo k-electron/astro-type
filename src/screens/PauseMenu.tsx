@@ -22,7 +22,7 @@ export const PauseMenu: React.FC = () => {
         id="pause-menu-title"
         className="text-xl font-bold font-display text-white mb-1"
       >
-        Mission Paused
+        Flight Paused
       </h3>
       <p className="text-xs text-slate-400 mb-6">
         Rest your wrists and maintain posture.
@@ -43,7 +43,7 @@ export const PauseMenu: React.FC = () => {
           className="w-full py-2.5 rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-mono transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
         >
           <RotateCcw className="w-3.5 h-3.5" />
-          <span>Restart Mission</span>
+          <span>Restart Stage</span>
         </button>
 
         <button

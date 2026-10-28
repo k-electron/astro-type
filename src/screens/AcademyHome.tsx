@@ -26,8 +26,8 @@ export const AcademyHome: React.FC = () => {
       </h1>
       <p className="text-sm sm:text-base text-slate-400 leading-relaxed mb-8 max-w-xl">
         Master touch typing with a comprehensive structured curriculum. Guide
-        falling laser notes down the cosmic rhythm highway, unlock interstellar
-        sectors with 3-star ratings, and upgrade your starship shields.
+        falling Drones down the Action Deck, earn Stars to unlock new Sectors,
+        and upgrade your starship shields.
       </p>
 
       <div className="flex flex-wrap items-center justify-center gap-4 mb-10">
@@ -42,7 +42,7 @@ export const AcademyHome: React.FC = () => {
           className="px-6 py-3.5 rounded-xl text-sm sm:text-base flex items-center gap-2 font-bold transition-all cursor-pointer bg-cyan-400 hover:bg-cyan-300 text-slate-950 shadow-xl shadow-cyan-950"
         >
           <Play className="w-4 h-4 fill-current" />
-          <span>Begin Home Row Mission</span>
+          <span>Begin Home Row</span>
         </button>
 
         <button
@@ -50,7 +50,7 @@ export const AcademyHome: React.FC = () => {
           onClick={() => send({ type: 'OPEN_GALAXY_MAP' })}
           className="px-6 py-3.5 rounded-xl border border-slate-700 bg-slate-900/80 hover:bg-slate-800 text-slate-200 font-medium text-sm sm:text-base transition-colors cursor-pointer"
         >
-          {`View Galaxy Sectors (${CURRICULUM_TOTALS.sectors} Sectors)`}
+          {`View Galaxy Map (${CURRICULUM_TOTALS.sectors} Sectors)`}
         </button>
       </div>
 
@@ -92,11 +92,11 @@ export const AcademyHome: React.FC = () => {
 
         <div className="p-4 rounded-xl border border-slate-800 bg-slate-900/60">
           <span className="text-xs font-mono font-bold text-amber-400 block mb-1">
-            Rhythm Space Highway
+            Action Deck
           </span>
           <p className="text-xs text-slate-400">
-            9-lane falling keystroke notes, PERFECT strike timing, Streak
-            Multipliers, and Overdrive.
+            9 lanes of falling Drones, Perfect timing at the Strike Line,
+            Multipliers and Overdrive.
           </p>
         </div>
 
@@ -105,7 +105,7 @@ export const AcademyHome: React.FC = () => {
             Sector Fleet Progression
           </span>
           <p className="text-xs text-slate-400">
-            Earn 3 stars per stage, unlock gated sectors, install Deflector
+            Earn 3 Stars per Stage, unlock gated Sectors, install Deflector
             Shields, and equip custom audio synths.
           </p>
         </div>

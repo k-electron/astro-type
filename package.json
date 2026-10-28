@@ -1,7 +1,7 @@
 {
   "name": "astrotype",
   "version": "1.0.0",
-  "description": "AstroType: Cosmic Touch Typing Academy - Space-futuristic touch typing game with comprehensive pedagogical curriculum, rhythm highway, and real-time analytics",
+  "description": "AstroType: Cosmic Touch Typing Academy - Space-futuristic touch typing game with comprehensive pedagogical curriculum, Action Deck, and real-time analytics",
   "license": "MIT",
   "type": "module",
   "packageManager": "pnpm@12.15.0",

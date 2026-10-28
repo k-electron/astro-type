@@ -78,7 +78,7 @@ export default function App() {
           /* Title Screen / Academy Briefing */
           <AcademyHome />
         ) : (
-          /* Active Cockpit Flight Deck */
+          /* Active Flight Deck */
           <div
             className="flex-1 flex flex-col gap-4"
             inert={Overlay !== undefined}

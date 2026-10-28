@@ -1,18 +1,28 @@
 import { describe, expect, it } from 'vitest';
 import { CURRICULUM_SECTORS } from '../../src/curriculum/curriculum';
-import { flightDeckLabel } from '../../src/screens/closeLabel';
+import { RETURNING_PLAYER } from '../shared/saves';
+import { closeLabel, flightDeckLabel } from '../../src/screens/closeLabel';
 import { fireEvent } from '@testing-library/react';
 import {
+  ACADEMY_HOME,
   ACADEMY_HOME_HEADING,
+  BEGIN_HOME_ROW,
+  DEBRIEF_TITLE,
+  GALAXY_MAP_SUBHEADING,
   HUD_NAME,
+  LAUNCH_STAGE,
   MENU_HEADINGS,
   PAUSE_MENU_NAME,
+  REPLAY_STAGE,
+  RESTART_STAGE,
+  START_STAGE,
 } from '../shared/screens';
 import {
   type HeaderButton,
   type Player,
   renderGame,
   screen,
+  toDebrief,
   within,
 } from './harness';
 
@@ -29,8 +39,7 @@ const menuHeading = (button: MenuButton) =>
 const pauseMenu = () => screen.queryByRole('dialog', { name: PAUSE_MENU_NAME });
 const academyHome = () =>
   screen.queryByRole('heading', { name: ACADEMY_HOME_HEADING });
-const debriefHeading = () =>
-  screen.queryByRole('heading', { name: 'Free Flight Drill', level: 2 });
+const debriefHeading = () => screen.queryByText(DEBRIEF_TITLE);
 const progress = () =>
   screen
     .getByRole('progressbar', { name: 'Progress' })
@@ -54,14 +63,6 @@ function halfwayThroughARun(): Player {
   player.type('abc');
   expect(progress()).toBe('50%');
   expect(streak()).toBe('3');
-  return player;
-}
-
-/** The Debrief of a two-character Free Flight. */
-function toDebrief(): Player {
-  const player = renderGame({ text: 'ab' });
-  player.type('ab');
-  expect(debriefHeading()).not.toBeNull();
   return player;
 }
 
@@ -105,7 +106,7 @@ describe('the Back button of a menu', () => {
       from: {
         name: 'Academy Home',
         go: () => renderGame(),
-        label: 'Back to Academy',
+        label: closeLabel('academy-home'),
         landed: academyHome,
       },
     },
@@ -114,23 +115,26 @@ describe('the Back button of a menu', () => {
       from: {
         name: 'the Flight Deck mid-Run',
         go: halfwayThroughARun,
-        label: 'Back to Pause Menu',
+        label: closeLabel('pause-menu'),
         landed: pauseMenu,
       },
     },
     {
-      menu: 'Sectors',
+      menu: 'Galaxy Map',
       from: {
         name: 'the Debrief',
         go: toDebrief,
-        label: 'Back to Debriefing',
+        label: closeLabel('debrief'),
         landed: debriefHeading,
       },
     },
-    { menu: 'Analytics', from: inMenu('Hangar', 'Back to Hangar') },
-    { menu: 'Free Flight', from: inMenu('Sectors', 'Back to Sectors') },
-    { menu: 'Sectors', from: inMenu('Analytics', 'Back to Analytics') },
-    { menu: 'Hangar', from: inMenu('Free Flight', 'Back to Free Flight') },
+    { menu: 'Analytics', from: inMenu('Hangar', closeLabel('hangar')) },
+    {
+      menu: 'Free Flight',
+      from: inMenu('Galaxy Map', closeLabel('galaxy-map')),
+    },
+    { menu: 'Galaxy Map', from: inMenu('Analytics', closeLabel('analytics')) },
+    { menu: 'Hangar', from: inMenu('Free Flight', closeLabel('free-flight')) },
   ];
 
   it.each(CASES)(
@@ -150,32 +154,66 @@ describe('the Back button of a menu', () => {
 });
 
 describe('the Galaxy Map', () => {
-  it('Launch Mission on a Stage starts that Stage', () => {
+  it('is headed Galaxy Map over its Sectors, and a Stage is launched, or replayed once cleared', () => {
+    // RETURNING_PLAYER has cleared the first two Stages of Sector 01.
+    const player = renderGame({ profile: RETURNING_PLAYER });
+
+    player.openHeader('Galaxy Map');
+
+    const map = within(screen.getByRole('dialog'));
+    expect(
+      map.getByRole('heading', { name: MENU_HEADINGS['Galaxy Map'] }),
+    ).toBeTruthy();
+    expect(map.getByText(GALAXY_MAP_SUBHEADING)).toBeTruthy();
+    expect(
+      map.getAllByRole('button', { name: REPLAY_STAGE }).length,
+    ).toBeGreaterThan(0);
+    expect(
+      map.getAllByRole('button', { name: LAUNCH_STAGE }).length,
+    ).toBeGreaterThan(0);
+  });
+
+  it('Launch Stage on a Stage starts that Stage', () => {
     const [sector] = CURRICULUM_SECTORS;
     const player = renderGame();
-    player.openHeader('Sectors');
+    player.openHeader('Galaxy Map');
     player.click(new RegExp(sector.codenick));
 
-    // Each Stage's card has its own Launch Mission button; find the card by
+    // Each Stage's card has its own Launch Stage button; find the card by
     // the Stage's title, then the button inside it.
     const title = screen.getByRole('heading', { name: sector.stages[1].title });
     let card = title.parentElement;
     while (
       card &&
-      within(card).queryAllByRole('button', { name: 'Launch Mission' })
-        .length === 0
+      within(card).queryAllByRole('button', { name: LAUNCH_STAGE }).length === 0
     ) {
       card = card.parentElement;
     }
-    if (!card) throw new Error('the Stage has no Launch Mission button');
-    fireEvent.click(
-      within(card).getByRole('button', { name: 'Launch Mission' }),
-    );
+    if (!card) throw new Error('the Stage has no Launch Stage button');
+    fireEvent.click(within(card).getByRole('button', { name: LAUNCH_STAGE }));
 
     expect(screen.getByRole('button', { name: 'Pause' })).toBeTruthy();
     expect(screen.getByRole('main').textContent).toContain(
       sector.stages[1].title,
     );
+  });
+
+  it('its Academy Home button leaves for Academy Home and abandons a Run that was paused', () => {
+    const player = halfwayThroughARun();
+    player.openHeader('Galaxy Map');
+
+    player.click(ACADEMY_HOME);
+
+    expect(academyHome()).not.toBeNull();
+    expect(menuHeading('Galaxy Map')).toBeNull();
+    // There is no Run waiting to be resumed.
+    player.openHeader('Galaxy Map');
+    expect(
+      screen.getByRole('button', { name: flightDeckLabel(false) }),
+    ).toBeTruthy();
+    expect(
+      screen.queryByRole('button', { name: flightDeckLabel(true) }),
+    ).toBeNull();
   });
 });
 
@@ -245,14 +283,14 @@ describe('the header buttons', () => {
 
   it('pressed again over another menu, one Close returns to that menu', () => {
     const player = renderGame();
-    player.openHeader('Sectors');
+    player.openHeader('Galaxy Map');
     player.openHeader('Hangar');
 
     player.openHeader('Hangar');
     closeMenu(player);
 
     expect(menuHeading('Hangar')).toBeNull();
-    expect(menuHeading('Sectors')).not.toBeNull();
+    expect(menuHeading('Galaxy Map')).not.toBeNull();
   });
 });
 
@@ -270,7 +308,7 @@ describe('menus opened in the middle of a Run', () => {
     };
 
     // Each menu straight from the Flight Deck: Close lands on the Pause Menu.
-    for (const button of ['Sectors', 'Hangar', 'Analytics'] as const) {
+    for (const button of ['Galaxy Map', 'Hangar', 'Analytics'] as const) {
       player.openHeader(button);
       closeMenu(player);
       expect(pauseMenu()).not.toBeNull();
@@ -279,15 +317,15 @@ describe('menus opened in the middle of a Run', () => {
     }
 
     // A chain: Flight Deck > Galaxy Map > Hangar unwinds one step at a time.
-    player.openHeader('Sectors');
+    player.openHeader('Galaxy Map');
     player.click('Hangar Upgrades');
     expect(menuHeading('Hangar')).not.toBeNull();
     closeMenu(player);
-    expect(menuHeading('Sectors')).not.toBeNull();
+    expect(menuHeading('Galaxy Map')).not.toBeNull();
     expect(menuHeading('Hangar')).toBeNull();
     closeMenu(player);
     expect(pauseMenu()).not.toBeNull();
-    expect(menuHeading('Sectors')).toBeNull();
+    expect(menuHeading('Galaxy Map')).toBeNull();
     resume();
 
     // The Run carries on from the character it was on, to the Debrief.
@@ -335,19 +373,32 @@ describe('the Pause Menu', () => {
     player.click('Pause');
 
     player.click('View Galaxy Map');
-    expect(menuHeading('Sectors')).not.toBeNull();
+    expect(menuHeading('Galaxy Map')).not.toBeNull();
     expect(pauseMenu()).toBeNull();
     closeMenu(player);
 
-    expect(menuHeading('Sectors')).toBeNull();
+    expect(menuHeading('Galaxy Map')).toBeNull();
     expectPausedHalfway();
     player.click(flightDeckLabel(true));
     expectCarriesOn(player);
   });
 
-  it('Exit to Academy Home abandons the Run: Start Mission begins the Stage afresh', () => {
+  it('Restart Stage begins the same Stage afresh', () => {
+    const player = halfwayThroughARun();
+    player.click('Pause');
+
+    player.click(RESTART_STAGE);
+
+    expect(pauseMenu()).toBeNull();
+    expect(progress()).toBe('0%');
+    expect(streak()).toBe('0');
+    player.type('a');
+    expect(progress()).toBe('17%');
+  });
+
+  it('Exit to Academy Home abandons the Run: Start Stage begins the Stage afresh', () => {
     const player = renderGame();
-    player.click('Begin Home Row Mission');
+    player.click(BEGIN_HOME_ROW);
     player.type('f j f j');
     expect(progress()).not.toBe('0%');
     player.click('Pause');
@@ -356,7 +407,7 @@ describe('the Pause Menu', () => {
     expect(pauseMenu()).toBeNull();
     expect(academyHome()).not.toBeNull();
     // There is no Run waiting to be resumed.
-    player.openHeader('Sectors');
+    player.openHeader('Galaxy Map');
     expect(
       screen.getByRole('button', { name: flightDeckLabel(false) }),
     ).toBeTruthy();
@@ -364,7 +415,7 @@ describe('the Pause Menu', () => {
       screen.queryByRole('button', { name: flightDeckLabel(true) }),
     ).toBeNull();
     closeMenu(player);
-    player.click('Start Mission');
+    player.click(START_STAGE);
 
     expect(progress()).toBe('0%');
     expect(score()).toBe('0');
@@ -412,7 +463,7 @@ describe('Esc', () => {
   it('on a menu opened from the Flight Deck goes back to the Pause Menu', () => {
     const player = halfwayThroughARun();
 
-    for (const button of ['Sectors', 'Hangar', 'Analytics'] as const) {
+    for (const button of ['Galaxy Map', 'Hangar', 'Analytics'] as const) {
       player.openHeader(button);
       player.press('Escape');
       expect(menuHeading(button)).toBeNull();
@@ -428,11 +479,11 @@ describe('Esc', () => {
   it('on a menu opened from the Pause Menu goes back to the Pause Menu', () => {
     const player = halfwayThroughARun();
     player.click('Pause');
-    player.openHeader('Sectors');
+    player.openHeader('Galaxy Map');
 
     player.press('Escape');
 
-    expect(menuHeading('Sectors')).toBeNull();
+    expect(menuHeading('Galaxy Map')).toBeNull();
     expectPausedHalfway();
     player.click(flightDeckLabel(true));
     expectCarriesOn(player);
@@ -440,16 +491,16 @@ describe('Esc', () => {
 
   it('unwinds a chain of menus one step at a time', () => {
     const player = halfwayThroughARun();
-    player.openHeader('Sectors');
+    player.openHeader('Galaxy Map');
     player.click('Hangar Upgrades');
     expect(menuHeading('Hangar')).not.toBeNull();
 
     player.press('Escape');
-    expect(menuHeading('Sectors')).not.toBeNull();
+    expect(menuHeading('Galaxy Map')).not.toBeNull();
     expect(menuHeading('Hangar')).toBeNull();
 
     player.press('Escape');
-    expect(menuHeading('Sectors')).toBeNull();
+    expect(menuHeading('Galaxy Map')).toBeNull();
     expectPausedHalfway();
 
     player.press('Escape');
@@ -485,7 +536,7 @@ describe('Esc', () => {
 
     expect(academyHome()).not.toBeNull();
     expect(pauseMenu()).toBeNull();
-    player.click('Begin Home Row Mission');
+    player.click(BEGIN_HOME_ROW);
     expect(screen.getByRole('button', { name: 'Pause' })).toBeTruthy();
     expect(pauseMenu()).toBeNull();
   });

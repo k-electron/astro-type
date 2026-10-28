@@ -1,8 +1,23 @@
 import { fireEvent } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { CURRICULUM_SECTORS } from '../../src/curriculum/curriculum';
+import {
+  CURRICULUM_SECTORS,
+  FREE_FLIGHT_SUBTITLE,
+  FREE_FLIGHT_TITLE,
+} from '../../src/curriculum/curriculum';
+import { closeLabel } from '../../src/screens/closeLabel';
 import { clearedStages } from '../shared/saves';
-import { DEBRIEF_TITLE, HUD_NAME } from '../shared/screens';
+import {
+  ACADEMY_HOME,
+  ACADEMY_HOME_HEADING,
+  DEBRIEF_TITLE,
+  GALAXY_MAP,
+  HUD_NAME,
+  MENU_HEADINGS,
+  NEXT_STAGE,
+  START_STAGE,
+  YOUR_TEXT,
+} from '../shared/screens';
 import { type Player, renderGame, screen, within } from './harness';
 
 /** The card the Debrief shows over the Flight Deck. */
@@ -33,14 +48,14 @@ const BANNER = 'New Sector Unlocked! Find it on the Galaxy Map.';
 
 /** Start Stage 1 from Academy Home and type it to the end. */
 function clearStageOne(player: Player) {
-  player.click('Start Mission');
+  player.click(START_STAGE);
   player.typePrompt();
 }
 
 describe('the Debrief of Stage 1', () => {
   it('shows the Stage, Speed and new Stars, and the header and map count them', () => {
     const player = renderGame();
-    player.click('Start Mission');
+    player.click(START_STAGE);
     expect(stars(0)).toBeTruthy();
 
     player.typePrompt();
@@ -52,14 +67,14 @@ describe('the Debrief of Stage 1', () => {
     expect(debriefCard().textContent).toMatch(/\+3\s*new/);
     expect(stars(3)).toBeTruthy();
 
-    player.openHeader('Sectors');
+    player.openHeader('Galaxy Map');
     expect(
       screen.getByRole('button', { name: /Sector 01/ }).textContent,
     ).toContain('3/12');
   });
 });
 
-describe('Replay and Next Mission', () => {
+describe('Replay and Next Stage', () => {
   it('Replay starts a fresh Run of the same Stage', () => {
     const player = renderGame();
     clearStageOne(player);
@@ -78,11 +93,11 @@ describe('Replay and Next Mission', () => {
     expect(progress()).not.toBe('0%');
   });
 
-  it('Next Mission starts a fresh Run of the next Stage', () => {
+  it('Next Stage starts a fresh Run of the next Stage', () => {
     const player = renderGame();
     clearStageOne(player);
 
-    player.click('Next Mission');
+    player.click(NEXT_STAGE);
 
     expect(screen.queryByText(DEBRIEF_TITLE)).toBeNull();
     expect(screen.getByRole('main').textContent).toContain(
@@ -104,7 +119,7 @@ describe('the Debrief buttons', () => {
     ),
   );
 
-  it('on the last Stage, Back to Galaxy Map takes the place of Next Mission and opens the Galaxy Map', () => {
+  it('on the last Stage, one Galaxy Map button takes the place of Next Stage, and opens the Galaxy Map', () => {
     const player = renderGame({ profile: everyStageCleared });
     // The whole Save loaded: a refused Save would leave a fresh Profile.
     expect(screen.queryByRole('status')).toBeNull();
@@ -113,39 +128,49 @@ describe('the Debrief buttons', () => {
 
     player.typePrompt();
 
-    expect(debriefButtons()).toEqual([
-      'Replay',
-      'Galaxy Map',
-      'Main Menu',
-      'Back to Galaxy Map',
-    ]);
-    expect(screen.queryByRole('button', { name: 'Next Mission' })).toBeNull();
+    expect(debriefButtons()).toEqual(['Replay', ACADEMY_HOME, GALAXY_MAP]);
+    expect(screen.queryByRole('button', { name: NEXT_STAGE })).toBeNull();
+    expect(
+      screen.queryByRole('button', { name: closeLabel('galaxy-map') }),
+    ).toBeNull();
 
-    player.click('Back to Galaxy Map');
+    player.click(GALAXY_MAP);
 
     expect(
-      screen.getByRole('heading', { name: 'Flight Sectors & Missions' }),
+      screen.getByRole('heading', { name: MENU_HEADINGS['Galaxy Map'] }),
     ).toBeTruthy();
   });
 
-  it('on any other Stage, Next Mission comes last', () => {
+  it('on any other Stage, Next Stage comes last, after Galaxy Map and Academy Home', () => {
     const player = renderGame();
     clearStageOne(player);
 
     expect(debriefButtons()).toEqual([
       'Replay',
-      'Galaxy Map',
-      'Main Menu',
-      'Next Mission',
+      GALAXY_MAP,
+      ACADEMY_HOME,
+      NEXT_STAGE,
     ]);
   });
 
-  it('after a Free Flight there is no Next Mission and no Back to Galaxy Map', () => {
+  it('after a Free Flight there is no Next Stage and no second Galaxy Map button', () => {
     const player = renderGame({ text: 'f j f j' });
 
     player.typePrompt();
 
-    expect(debriefButtons()).toEqual(['Replay', 'Galaxy Map', 'Main Menu']);
+    expect(debriefButtons()).toEqual(['Replay', GALAXY_MAP, ACADEMY_HOME]);
+  });
+
+  it('Academy Home leaves the Debrief for Academy Home', () => {
+    const player = renderGame();
+    clearStageOne(player);
+
+    player.click(ACADEMY_HOME);
+
+    expect(screen.queryByText(DEBRIEF_TITLE)).toBeNull();
+    expect(
+      screen.getByRole('heading', { name: ACADEMY_HOME_HEADING }),
+    ).toBeTruthy();
   });
 });
 
@@ -176,12 +201,17 @@ describe('Free Flight', () => {
   it('plays a short text of your own through to a Debrief with Speed and 100% Accuracy', () => {
     const player = renderGame({ text: 'the quick fox' });
     expect(screen.getByRole('main').textContent).toContain('the␣quick␣fox');
+    // The Flight Deck names the Stage the way Free Flight does.
+    expect(screen.getByRole('main').textContent).toContain(FREE_FLIGHT_TITLE);
+    expect(screen.getByRole('main').textContent).toContain(
+      FREE_FLIGHT_SUBTITLE,
+    );
 
     player.typePrompt();
 
     const card = debriefCard();
     expect(within(card).getByRole('heading', { level: 2 }).textContent).toBe(
-      'Free Flight Drill',
+      FREE_FLIGHT_TITLE,
     );
     expect(card.textContent).toMatch(/Speed\s*[1-9]\d*\s*WPM/);
     expect(card.textContent).toMatch(/Accuracy\s*100%/);
@@ -202,8 +232,16 @@ describe('Free Flight', () => {
 
     expect(
       within(debriefCard()).getByRole('heading', { level: 2 }).textContent,
-    ).toBe('Free Flight Drill');
+    ).toBe(FREE_FLIGHT_TITLE);
     expect(debriefCard().textContent).toMatch(/Accuracy\s*100%/);
+  });
+
+  it('asks for Your Text', () => {
+    const player = renderGame();
+
+    player.openHeader('Free Flight');
+
+    expect(screen.getByRole('textbox', { name: YOUR_TEXT })).toBeTruthy();
   });
 
   it('does not clear the Run one character short', () => {

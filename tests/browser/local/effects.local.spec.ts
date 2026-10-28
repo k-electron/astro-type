@@ -5,7 +5,7 @@ import {
   test as base,
 } from '@playwright/test';
 import { drone, keycap, pauseMenu } from '../helpers';
-import { launchOnStoppedClock } from '../journey-helpers';
+import { launchOnStoppedClock, resumeButton } from '../journey-helpers';
 
 // LOCAL ONLY (run by `pnpm verify`, not in CI; docs/agents/testing.md): hundreds of drawn
 // frames per test, too heavy for CI's runner. The old browser tests guarded
@@ -354,7 +354,7 @@ test('the paused deck is frozen mid-explosion, and the explosion carries on from
   expect(await pixels.changed(frozen, stillFrozen, lane)).toBeLessThan(10);
 
   // Back in the Run, it picks up from the very frame it stopped on...
-  await page.getByRole('button', { name: 'Resume Flight' }).click();
+  await resumeButton(page).click();
   await expect(pauseMenu(page)).toBeHidden();
   await page.clock.runFor(16);
   const resumed = await look(page, deck, pixels);

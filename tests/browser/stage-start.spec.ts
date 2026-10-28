@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { BEGIN_HOME_ROW } from '../shared/screens';
 import { promptProgress } from './helpers';
 
 test('a Stage can start', { tag: '@smoke' }, async ({ page }) => {
@@ -8,7 +9,7 @@ test('a Stage can start', { tag: '@smoke' }, async ({ page }) => {
   await page.goto('/');
 
   // Academy Home: start the first Stage.
-  await page.getByRole('button', { name: /begin home row mission/i }).click();
+  await page.getByRole('button', { name: BEGIN_HOME_ROW, exact: true }).click();
 
   // Flight Deck: a Run is underway once it can be paused.
   await expect(

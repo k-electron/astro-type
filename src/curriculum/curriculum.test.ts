@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { BANNED_NAME } from '../../tests/shared/names';
 import {
   CURRICULUM_SECTORS,
   FINGER_LANES,
@@ -26,6 +27,23 @@ function keyFor(char: string) {
       ? KEY_FINGER_MAP[char.toLowerCase()]
       : undefined)
   );
+}
+
+/**
+ * Every piece of copy a screen shows from a Sector or a Stage: all its text
+ * except what the player types (`sampleText` is prose, and may say anything).
+ */
+function copyOf(value: unknown, path: string): [string, string][] {
+  if (typeof value === 'string') return [[path, value]];
+  if (Array.isArray(value)) {
+    return value.flatMap((item, index) => copyOf(item, `${path}[${index}]`));
+  }
+  if (value && typeof value === 'object') {
+    return Object.entries(value).flatMap(([key, item]) =>
+      key === 'sampleText' ? [] : copyOf(item, `${path}.${key}`),
+    );
+  }
+  return [];
 }
 
 describe('curriculum', () => {
@@ -57,6 +75,14 @@ describe('curriculum', () => {
       }
     }
     expect(problems).toEqual([]);
+  });
+
+  it('names things as the Glossary does in the copy of every Sector and Stage', () => {
+    const offenders = copyOf(sectors, 'sectors')
+      .filter(([, text]) => BANNED_NAME.test(text))
+      .map(([path, text]) => `${path}: ${text}`);
+
+    expect(offenders).toEqual([]);
   });
 
   it('puts every Stage in the Sector that lists it', () => {
@@ -134,6 +160,15 @@ describe('curriculum', () => {
 // here, from the player's text and Target Cadence, and judged by the same
 // rules as a Sector's.
 describe('a Free Flight Stage', () => {
+  it('names itself as the Glossary does', () => {
+    const stage = freeFlightStage('abc', 30);
+    const offenders = copyOf(stage, 'stage')
+      .filter(([, text]) => BANNED_NAME.test(text))
+      .map(([path, text]) => `${path}: ${text}`);
+
+    expect(offenders).toEqual([]);
+  });
+
   const text = 'the quick fox';
 
   it('is a Stage of the text it was built from, marked as Free Flight with a custom id', () => {

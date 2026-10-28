@@ -26,7 +26,7 @@ import {
   screen,
   within,
 } from '@testing-library/react';
-import { afterEach } from 'vitest';
+import { afterEach, expect } from 'vitest';
 import App from '../../src/screens/App';
 import { attachKeyboard } from '../../src/app/attachKeyboard';
 import {
@@ -37,15 +37,17 @@ import {
   type RefusedMoveError,
   type Sound,
 } from '../../src/game/game';
+import { FIRST_STAGE } from '../../src/curriculum/curriculum';
 import { startStage as sendStartStage } from '../../src/game/testHelpers';
 import { GameProvider } from '../../src/screens/useGame';
+import { DEBRIEF_TITLE } from '../shared/screens';
 
 export { screen, within };
 
 /** The header's screen buttons, by the text the player reads on them. */
 export type HeaderButton =
   | 'Home'
-  | 'Sectors'
+  | 'Galaxy Map'
   | 'Hangar'
   | 'Analytics'
   | 'Free Flight';
@@ -77,8 +79,16 @@ export interface PressOptions {
 export interface Player {
   /** Click a header button, as the player would. */
   openHeader(button: HeaderButton): void;
-  /** Click a button anywhere on the screen, found by its accessible name. */
+  /**
+   * Click a button on the screen, found by its accessible name. The header
+   * stays reachable under an overlay, so a name can be on both (Resume Flight
+   * is on the header and on a Pause Menu or an overlay over a paused Run):
+   * the player clicks what is in front, so the dialog on show wins when it
+   * has the button, and otherwise the whole page is searched.
+   */
   click(name: string | RegExp): void;
+  /** Click a button in the header bar (its Flight Deck button, say), found by its accessible name. */
+  clickHeader(name: string | RegExp): void;
   /** Academy Home -> Free Flight -> type the text in -> Launch Custom Flight. */
   launchFreeFlight(text: string): void;
   /**
@@ -110,7 +120,7 @@ export interface Player {
   reload(): void;
   /**
    * Begin a Run of a curriculum Stage by id, through the game, as the Galaxy
-   * Map's Launch Mission button does. It does not click through the Galaxy
+   * Map's Launch Stage button does. It does not click through the Galaxy
    * Map (a Stage's card has no name of its own to find it by), and it does not
    * check that the Stage's Sector is open: a test that needs to see the
    * Launch button work clicks it. An id that is no Stage is a refused move,
@@ -207,7 +217,20 @@ export function renderGame(options: RenderGameOptions = {}): Player {
       fireEvent.click(header.getByRole('button', { name: button }));
     },
     click(name) {
-      fireEvent.click(screen.getByRole('button', { name }));
+      const dialogs = screen.queryAllByRole('dialog');
+      const front = dialogs[dialogs.length - 1];
+      const inFront = front
+        ? within(front).queryAllByRole('button', { name })
+        : [];
+      fireEvent.click(
+        inFront.length === 1
+          ? inFront[0]
+          : screen.getByRole('button', { name }),
+      );
+    },
+    clickHeader(name) {
+      const header = within(screen.getByRole('banner'));
+      fireEvent.click(header.getByRole('button', { name }));
     },
     launchFreeFlight(text) {
       player.openHeader('Free Flight');
@@ -293,5 +316,18 @@ export function renderGame(options: RenderGameOptions = {}): Player {
   };
 
   if (options.text !== undefined) player.launchFreeFlight(options.text);
+  return player;
+}
+
+/**
+ * The Debrief of the first Stage, on a new game. (Not of a Free Flight: its
+ * Stage is called Free Flight too, like the screen, so the screen's heading
+ * would be on show twice.)
+ */
+export function toDebrief(): Player {
+  const player = renderGame();
+  player.startStage(FIRST_STAGE.id);
+  player.typePrompt();
+  expect(screen.getByText(DEBRIEF_TITLE)).toBeTruthy();
   return player;
 }

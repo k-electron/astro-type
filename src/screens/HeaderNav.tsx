@@ -13,6 +13,7 @@ import { useGame } from './useGame';
 import { useGameState } from './useGameState';
 import { AudioPanel } from './AudioPanel';
 import { muteAllLabel, OPEN_AUDIO_PANEL } from './audioLabels';
+import { flightDeckLabel } from './closeLabel';
 
 /**
  * `ref` is the header element itself. The layout that owns the header and the
@@ -23,14 +24,20 @@ export const HeaderNav: React.FC<{ ref?: React.Ref<HTMLElement> }> = ({
 }) => {
   const game = useGame();
   const { send } = game;
-  const { totalStars, totalCredits, isMuted, isPlaying } = useGameState(
-    (state) => ({
+  const { totalStars, totalCredits, isMuted, isPlaying, runPaused } =
+    useGameState((state) => ({
       totalStars: state.profile.totalStars,
       totalCredits: state.profile.totalCredits,
       isMuted: state.profile.globalMuted,
       isPlaying: state.screen === 'flight-deck',
-    }),
-  );
+      runPaused: state.phase === 'paused',
+    }));
+  // The Flight Deck button: what it says, and what its tooltip says.
+  const flightButton = isPlaying
+    ? { label: 'Pause Flight', title: 'Pause Flight' }
+    : runPaused
+      ? { label: flightDeckLabel(true), title: flightDeckLabel(true) }
+      : { label: 'Start Stage', title: 'Open the Flight Deck' };
   const onGoHome = () => send({ type: 'PRESS_HOME' });
   const onOpenStages = () => send({ type: 'OPEN_GALAXY_MAP' });
   const onOpenHangar = () => send({ type: 'OPEN_HANGAR' });
@@ -91,7 +98,7 @@ export const HeaderNav: React.FC<{ ref?: React.Ref<HTMLElement> }> = ({
           <button
             type="button"
             onClick={onOpenStages}
-            title="Total Stars Earned across Galaxy Sectors (Click to view Sectors)"
+            title="Stars earned across all Sectors (opens the Galaxy Map)"
             className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-950/40 border border-amber-500/40 hover:border-amber-400 text-amber-300 transition-all cursor-pointer shadow-sm hover:shadow-[0_0_12px_rgba(245,158,11,0.25)]"
           >
             <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400 shrink-0" />
@@ -130,7 +137,7 @@ export const HeaderNav: React.FC<{ ref?: React.Ref<HTMLElement> }> = ({
           onClick={onOpenStages}
           className="hover:text-slate-100 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
         >
-          Sectors
+          Galaxy Map
         </button>
         <button
           type="button"
@@ -222,21 +229,17 @@ export const HeaderNav: React.FC<{ ref?: React.Ref<HTMLElement> }> = ({
           type="button"
           onClick={onQuickPlay}
           className="px-3.5 sm:px-4 py-2 text-xs font-bold text-slate-950 bg-cyan-400 rounded-lg hover:bg-cyan-300 shadow-md shadow-cyan-950 transition-all whitespace-nowrap shrink-0 cursor-pointer flex items-center gap-1.5"
-          title={
-            isPlaying
-              ? 'Pause active flight session'
-              : 'Launch cockpit flight deck'
-          }
+          title={flightButton.title}
         >
           {isPlaying ? (
             <>
               <Pause className="w-3.5 h-3.5 fill-current" />
-              <span>Pause Flight</span>
+              <span>{flightButton.label}</span>
             </>
           ) : (
             <>
               <Play className="w-3.5 h-3.5 fill-current" />
-              <span>Start Mission</span>
+              <span>{flightButton.label}</span>
             </>
           )}
         </button>

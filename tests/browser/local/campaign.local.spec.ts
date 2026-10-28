@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { GALAXY_MAP } from '../../shared/screens';
 import { clearFirstStage, debrief, startFirstStage } from '../helpers';
 
 // LOCAL ONLY (run by `pnpm verify`, not in CI; docs/agents/testing.md): one full
@@ -43,7 +44,10 @@ test('the first Stage played for real from a fresh Save: its Debrief, and the St
     await expect(
       page.getByRole('button', { name: '3 ★', exact: true }),
     ).toBeVisible();
-    await page.getByRole('button', { name: 'Sectors', exact: true }).click();
+    await page
+      .getByRole('navigation')
+      .getByRole('button', { name: GALAXY_MAP, exact: true })
+      .click();
     await expect(
       page.getByRole('button', { name: /Orion Belt/ }),
     ).toContainText('3/12');

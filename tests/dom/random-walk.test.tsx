@@ -7,6 +7,7 @@ import {
   HUD_NAME,
   MENU_HEADINGS,
   PAUSE_MENU_NAME,
+  YOUR_TEXT,
 } from '../shared/screens';
 import { expectNoRefusedMove, renderGame, screen } from './harness';
 
@@ -68,13 +69,16 @@ function screensShowing(): ScreenName[] {
   const showing: ScreenName[] = [];
   if (screen.queryByRole('dialog', { name: PAUSE_MENU_NAME }))
     showing.push('Pause Menu');
-  if (screen.queryByRole('heading', { name: MENU_HEADINGS.Sectors }))
+  if (screen.queryByRole('heading', { name: MENU_HEADINGS['Galaxy Map'] }))
     showing.push('Galaxy Map');
   if (screen.queryByRole('heading', { name: MENU_HEADINGS.Hangar }))
     showing.push('Hangar');
   if (screen.queryByRole('heading', { name: MENU_HEADINGS.Analytics }))
     showing.push('Analytics');
-  if (screen.queryByRole('heading', { name: MENU_HEADINGS['Free Flight'] }))
+  // By its text box: a Free Flight Stage's Debrief has a heading of the same
+  // name (the Stage is called Free Flight), so the heading alone would count
+  // both screens.
+  if (screen.queryByRole('textbox', { name: YOUR_TEXT }))
     showing.push('Free Flight');
   if (screen.queryByText(DEBRIEF_TITLE)) showing.push('Debrief');
   if (screen.queryByRole('heading', { name: ACADEMY_HOME_HEADING }))

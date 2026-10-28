@@ -3,6 +3,8 @@ import { useState } from 'react';
 import { Play } from 'lucide-react';
 import {
   DEFAULT_FREE_FLIGHT_WPM,
+  FREE_FLIGHT_SUBTITLE,
+  FREE_FLIGHT_TITLE,
   FREE_FLIGHT_PRESETS,
   FreeFlightTextSchema,
 } from '../curriculum/curriculum';
@@ -34,15 +36,15 @@ export const FreeFlight: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-5">
         <div>
-          <span className="block text-xs uppercase font-mono text-cyan-400">
-            Free Flight Simulator
-          </span>
           <h2
             id="free-flight-title"
             className="text-xl sm:text-2xl font-bold font-display text-white"
           >
-            Custom Typing Practice
+            {FREE_FLIGHT_TITLE}
           </h2>
+          <p className="text-xs font-mono text-cyan-400 mt-0.5">
+            {FREE_FLIGHT_SUBTITLE}
+          </p>
         </div>
 
         <OverlayCloseButton />
@@ -76,13 +78,13 @@ export const FreeFlight: React.FC = () => {
       {/* Custom Text Area */}
       <div className="mb-5">
         <label
-          htmlFor="custom-drill-text"
+          htmlFor="free-flight-text"
           className="text-xs font-mono uppercase tracking-wider text-slate-400 block mb-2"
         >
-          Custom Drill Text
+          Your Text
         </label>
         <textarea
-          id="custom-drill-text"
+          id="free-flight-text"
           value={customText}
           onChange={(e) => setCustomText(e.target.value)}
           rows={4}

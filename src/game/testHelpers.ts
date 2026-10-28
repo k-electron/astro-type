@@ -64,7 +64,7 @@ export function newGame(seed?: unknown): Game {
   return loadGame(seed).game;
 }
 
-/** Begin a Run of a curriculum Stage, as the Galaxy Map's Launch Mission does. */
+/** Begin a Run of a curriculum Stage, as the Galaxy Map's Launch Stage does. */
 export function startStage(game: Game, stageId: string): void {
   game.send({ type: 'PICK_STAGE', stageId });
 }

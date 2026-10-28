@@ -1,6 +1,11 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 import { SAVE_KEY } from '../../src/game/save';
-import { DEBRIEF_TITLE, HUD_NAME, PAUSE_MENU_NAME } from '../shared/screens';
+import {
+  BEGIN_HOME_ROW,
+  DEBRIEF_TITLE,
+  HUD_NAME,
+  PAUSE_MENU_NAME,
+} from '../shared/screens';
 
 // Shared by the browser journeys. Everything here finds things the way a
 // player sees them: by role and visible text, and, inside the Action Deck's
@@ -101,7 +106,7 @@ export async function launchFreeFlight(
 /** Academy Home -> the first Stage, ready for its first key. */
 export async function startFirstStage(page: Page) {
   await page.goto('/');
-  await page.getByRole('button', { name: /begin home row mission/i }).click();
+  await page.getByRole('button', { name: BEGIN_HOME_ROW, exact: true }).click();
   await expect(
     page.getByRole('button', { name: 'Pause', exact: true }),
   ).toBeVisible();

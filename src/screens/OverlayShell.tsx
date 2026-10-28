@@ -155,7 +155,7 @@ export const OverlayFlightDeckButton: React.FC<{
           ? 'px-3 py-1.5 text-xs font-bold rounded-lg bg-cyan-400 hover:bg-cyan-300 text-slate-950 transition-all flex items-center gap-1 cursor-pointer shadow-sm shadow-cyan-950 whitespace-nowrap'
           : 'px-3.5 py-1.5 text-xs font-bold rounded-lg bg-cyan-400 hover:bg-cyan-300 text-slate-950 transition-all flex items-center gap-1.5 cursor-pointer shadow-md shadow-cyan-950/60'
       }
-      title="Launch directly into the cockpit flight deck"
+      title="Go straight to the Flight Deck"
     >
       <Play className="w-3.5 h-3.5 fill-current" />
       <span>{flightDeckLabel(runPaused)}</span>

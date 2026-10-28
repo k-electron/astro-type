@@ -95,8 +95,7 @@ export const CATALOG: readonly CatalogEntry[] = [
     id: 'sensors',
     field: 'precisionSensors',
     name: 'Precision Sensors',
-    description:
-      'Expands the rhythm highway strike timing window for PERFECT score multipliers.',
+    description: 'Widens the Perfect window at the Strike Line.',
     icon: 'sparkles',
     tone: 'emerald',
     prices: [200, 500, 950],

@@ -182,7 +182,7 @@ export const HUD: React.FC = () => {
               ? 'border-cyan-500/50 bg-cyan-950/40 text-cyan-300'
               : 'border-slate-800 bg-slate-950 text-slate-400 hover:text-slate-200'
           }`}
-          title="Toggle Cockpit Keyboard Guide"
+          title="Show or hide the Action Deck"
         >
           {keyboardVisible ? 'Hide Deck' : 'Show Deck'}
         </button>

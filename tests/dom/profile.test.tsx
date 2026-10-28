@@ -3,9 +3,11 @@ import {
   REFUSED_BACKUP_MESSAGE,
   UNREADABLE_SAVE_NOTICE,
 } from '../../src/game/save';
+import { BEGIN_HOME_ROW, START_STAGE } from '../shared/screens';
 import { type Player, renderGame, screen } from './harness';
 import { OLD_LIVE_EXPORT, RETURNING_PLAYER } from '../shared/saves';
 import { muteAllLabel } from '../../src/screens/audioLabels';
+import { closeLabel } from '../../src/screens/closeLabel';
 
 const stars = (count: number) =>
   screen.getByRole('button', { name: new RegExp(`^${count}\\s*★$`) });
@@ -14,9 +16,9 @@ const credits = (text: string) =>
 
 /** What the Galaxy Map's first Sector says about its Stars, like "5/12". */
 function sectorOneStars(player: Player): string {
-  player.openHeader('Sectors');
+  player.openHeader('Galaxy Map');
   const text = screen.getByRole('button', { name: /Sector 01/ }).textContent;
-  player.click('Back to Academy');
+  player.click(closeLabel('academy-home'));
   return text ?? '';
 }
 
@@ -36,7 +38,7 @@ describe('a returning player', () => {
     });
 
     expect(stars(5)).toBeTruthy();
-    player.openHeader('Sectors');
+    player.openHeader('Galaxy Map');
     // Sector 02 needs 6 Stars; the Save's claim of 40 does not count.
     expect(
       screen.getByRole('button', { name: /Sector 02.*Needs 6★/ }),
@@ -69,7 +71,7 @@ describe('a returning player', () => {
     expect(
       screen.getByRole('button', { name: muteAllLabel(false) }),
     ).toBeTruthy();
-    player.click('Start Mission');
+    player.click(START_STAGE);
     expect(screen.getByRole('button', { name: 'Pause' })).toBeTruthy();
   });
 
@@ -103,7 +105,7 @@ describe('a first visit and a Save that cannot be read', () => {
     expect(stars(0)).toBeTruthy();
     expect(credits('0')).toBeTruthy();
     // The game still works from a fresh start.
-    player.click('Begin Home Row Mission');
+    player.click(BEGIN_HOME_ROW);
     expect(screen.getByRole('button', { name: 'Pause' })).toBeTruthy();
   });
 });
@@ -118,7 +120,7 @@ describe('Import Backup and Factory Reset', () => {
     expect(await screen.findByRole('button', { name: /^3\s*★$/ })).toBeTruthy();
     expect(credits('491')).toBeTruthy();
     expect(screen.queryByRole('alert')).toBeNull();
-    player.click('Back to Academy');
+    player.click(closeLabel('academy-home'));
     expect(sectorOneStars(player)).toContain('3/12');
   });
 
@@ -129,7 +131,7 @@ describe('Import Backup and Factory Reset', () => {
     player.importBackup(JSON.stringify({ ...OLD_LIVE_EXPORT, totalStars: 99 }));
 
     expect(await screen.findByRole('button', { name: /^3\s*★$/ })).toBeTruthy();
-    player.click('Back to Academy');
+    player.click(closeLabel('academy-home'));
     expect(sectorOneStars(player)).toContain('3/12');
   });
 
@@ -143,7 +145,7 @@ describe('Import Backup and Factory Reset', () => {
     expect((await screen.findByRole('alert')).textContent).toMatch(/\S/);
     expect(stars(5)).toBeTruthy();
     expect(credits('1,234')).toBeTruthy();
-    player.click('Back to Academy');
+    player.click(closeLabel('academy-home'));
     expect(sectorOneStars(player)).toContain('5/12');
   });
 
@@ -175,7 +177,7 @@ describe('Import Backup and Factory Reset', () => {
     expect(await screen.findByRole('button', { name: /^5\s*★$/ })).toBeTruthy();
     expect(credits('1,234')).toBeTruthy();
     expect(screen.queryByRole('alert')).toBeNull();
-    player.click('Back to Academy');
+    player.click(closeLabel('academy-home'));
     expect(sectorOneStars(player)).toContain('5/12');
   });
 });

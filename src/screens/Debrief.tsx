@@ -63,7 +63,7 @@ export const Debrief: React.FC = () => {
         id="debrief-title"
         className="text-xs uppercase font-mono tracking-wider text-cyan-400 mb-1"
       >
-        Mission Debriefing · {stage.id.toUpperCase()}
+        Debrief · {stage.id.toUpperCase()}
       </span>
       <h2 className="text-2xl sm:text-3xl font-bold font-display text-white mb-1">
         {stage.title}
@@ -312,14 +312,17 @@ export const Debrief: React.FC = () => {
           <span>Replay</span>
         </button>
 
-        <button
-          type="button"
-          onClick={onReturnToMap}
-          className="flex-1 min-w-[130px] px-3.5 py-2.5 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs sm:text-sm font-medium flex items-center justify-center gap-2 transition-colors cursor-pointer"
-        >
-          <MapIcon className="w-4 h-4 text-cyan-400" />
-          <span>Galaxy Map</span>
-        </button>
+        {/* On the last Stage, the one Galaxy Map button is the last one, where Next Stage would be. */}
+        {stageAhead !== 'last-stage' && (
+          <button
+            type="button"
+            onClick={onReturnToMap}
+            className="flex-1 min-w-[130px] px-3.5 py-2.5 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs sm:text-sm font-medium flex items-center justify-center gap-2 transition-colors cursor-pointer"
+          >
+            <MapIcon className="w-4 h-4 text-cyan-400" />
+            <span>Galaxy Map</span>
+          </button>
+        )}
 
         <button
           type="button"
@@ -327,10 +330,10 @@ export const Debrief: React.FC = () => {
           className="flex-1 min-w-[120px] px-3.5 py-2.5 rounded-xl border border-slate-800 bg-slate-950 hover:bg-slate-800 text-slate-400 hover:text-slate-200 text-xs sm:text-sm font-medium flex items-center justify-center gap-2 transition-colors cursor-pointer"
         >
           <Home className="w-4 h-4" />
-          <span>Main Menu</span>
+          <span>Academy Home</span>
         </button>
 
-        {/* On the last Stage, Next Stage opens the Galaxy Map instead. */}
+        {/* On the last Stage, Next Stage opens the Galaxy Map instead, under its name. */}
         {stageAhead !== 'free-flight' && (
           <button
             type="button"
@@ -338,9 +341,7 @@ export const Debrief: React.FC = () => {
             className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-lg shadow-cyan-950/50 transition-all cursor-pointer"
           >
             <span>
-              {stageAhead === 'next-stage'
-                ? 'Next Mission'
-                : 'Back to Galaxy Map'}
+              {stageAhead === 'next-stage' ? 'Next Stage' : 'Galaxy Map'}
             </span>
             <ArrowRight className="w-4 h-4" />
           </button>

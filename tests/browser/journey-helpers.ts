@@ -1,5 +1,7 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 import { BANNED_NAME } from '../shared/names';
+import { flightDeckLabel } from '../../src/screens/closeLabel';
+import { PAUSE_MENU_NAME } from '../shared/screens';
 import { drone, hud, launchFreeFlight, pauseMenu } from './helpers';
 
 // Helpers shared by the journeys, CI's and the local-only ones. Like
@@ -51,8 +53,14 @@ export const expectStreak = (page: Page, streak: number) =>
 export const pauseButton = (page: Page): Locator =>
   page.getByRole('button', { name: 'Pause', exact: true });
 
+/**
+ * The Pause Menu's Resume Flight. The header reads Resume Flight too while a
+ * Run is paused, so this looks inside the Pause Menu.
+ */
 export const resumeButton = (page: Page): Locator =>
-  page.getByRole('button', { name: 'Resume Flight' });
+  page
+    .getByRole('dialog', { name: PAUSE_MENU_NAME })
+    .getByRole('button', { name: flightDeckLabel(true), exact: true });
 
 /**
  * Waits until the Action Deck is up and has drawn its Drones (the deck starts
@@ -87,7 +95,8 @@ export async function launchOnStoppedClock(page: Page, text: string) {
  * now: the visible text, the accessible names a screen reader announces (an
  * accessibility snapshot), the tooltips, the labels, and the page title. The
  * Action Deck's accessibility layer carries the canvas's drawn text (Drones,
- * keycaps, hit popups) in its labels and titles.
+ * keycaps, hit popups) in its labels and titles. The page's description (what
+ * a search result or a link preview reads) is in the head, so it is read here.
  */
 export async function textOnScreen(page: Page): Promise<string[]> {
   const body = page.locator('body');
@@ -103,11 +112,17 @@ export async function textOnScreen(page: Page): Promise<string[]> {
         element.getAttribute('aria-label') ?? '',
       ]),
     );
+  const descriptions = await page
+    .locator('meta[name="description"], meta[property="og:description"]')
+    .evaluateAll((elements) =>
+      elements.map((element) => element.getAttribute('content') ?? ''),
+    );
   const lines = [
     ...visible.split('\n'),
     ...announced.split('\n'),
     ...attributes,
     await page.title(),
+    ...descriptions,
   ].map((line) => line.trim());
   return [...new Set(lines.filter((line) => line !== ''))];
 }
@@ -124,7 +139,7 @@ export async function expectNoBannedNames(
   expect
     .soft(
       lines.filter((line) => BANNED_NAME.test(line)),
-      `${where}: text that uses combo, hyperspace or warp`,
+      `${where}: text that uses a name the Glossary drops (see BANNED_NAME)`,
     )
     .toEqual([]);
   return lines;
