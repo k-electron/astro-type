@@ -4,7 +4,7 @@ import {
   KEY_FINGER_MAP,
   FINGER_LANES,
   FINGER_DISPLAY_NAMES,
-} from '../data/curriculum';
+} from '../curriculum/curriculum';
 import { useGameState } from '../store/useGameState';
 
 /** The Stage's text and where the player is in it. It selects only what it shows. */

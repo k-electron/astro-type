@@ -11,8 +11,8 @@
  * The numbers and windows are the original game's, except that every Run now
  * falls at one Drone speed (`DRONE_SPEED`).
  */
-import { getNoteLaneAndFinger, type Stage } from '../data/curriculum';
-import type { FingerZone } from '../data/keyboardLayout';
+import { getNoteLaneAndFinger, type Stage } from '../curriculum/curriculum';
+import type { FingerZone } from '../curriculum/keyboardLayout';
 import { STEP_MS } from './clock';
 import type { Moment } from './moments';
 import type { Loadout } from './profile';

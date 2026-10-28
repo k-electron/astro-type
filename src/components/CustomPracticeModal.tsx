@@ -5,7 +5,7 @@ import {
   DEFAULT_FREE_FLIGHT_WPM,
   FREE_FLIGHT_PRESETS,
   FreeFlightTextSchema,
-} from '../data/curriculum';
+} from '../curriculum/curriculum';
 import { useGame } from '../store/gameContext';
 import { OverlayCloseButton, OverlayShell } from './OverlayShell';
 

@@ -9,8 +9,8 @@
  * by handing a cleared Stage's result to the Profile's command. The Profile
  * reads nothing of this module.
  */
-import { CURRICULUM_SECTORS } from '../data/curriculum';
-import type { Stage } from '../data/curriculum';
+import { CURRICULUM_SECTORS } from '../curriculum/curriculum';
+import type { Stage } from '../curriculum/curriculum';
 import type { RunPhase } from '../store/gameMachine';
 import type { Clock, RunClock } from './clock';
 import type { Moment } from './moments';

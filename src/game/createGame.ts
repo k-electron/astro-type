@@ -13,7 +13,7 @@ import {
   nextStageOf,
   type StageAhead,
   stageAheadOf,
-} from '../data/curriculum';
+} from '../curriculum/curriculum';
 import {
   type GameMachineEvent,
   gameMachine,
@@ -22,7 +22,7 @@ import {
   type Screen,
   type ScreenParams,
 } from '../store/gameMachine';
-import type { Stage } from '../data/curriculum';
+import type { Stage } from '../curriculum/curriculum';
 import { type Clock, createRunClock, createSteppedClock } from './clock';
 import type {
   FallingNote,

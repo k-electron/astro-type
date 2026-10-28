@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { RETURNING_PLAYER } from '../../tests/shared/saves';
-import { KEYBOARD_ROWS } from '../data/keyboardLayout';
+import { KEYBOARD_ROWS } from '../curriculum/keyboardLayout';
 import {
   type Game,
   hitPerfect,

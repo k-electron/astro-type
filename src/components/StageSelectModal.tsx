@@ -22,7 +22,7 @@ import {
   CURRICULUM_SECTORS,
   CURRICULUM_TOTALS,
   type Stage,
-} from '../data/curriculum';
+} from '../curriculum/curriculum';
 import { isSectorUnlocked } from '../game/profile';
 
 export const StageSelectModal: React.FC = () => {

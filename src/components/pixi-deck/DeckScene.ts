@@ -4,8 +4,8 @@ import {
   FINGER_LANES,
   getNoteLaneAndFinger,
   KEY_FINGER_MAP,
-} from '../../data/curriculum';
-import type { KeySpec } from '../../data/keyboardLayout';
+} from '../../curriculum/curriculum';
+import type { KeySpec } from '../../curriculum/keyboardLayout';
 import { trailColor } from '../../game/catalog';
 import { STEP_MS } from '../../game/clock';
 import type { JudgementMoment } from '../../game/moments';

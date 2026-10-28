@@ -6,7 +6,7 @@ import {
   Sprite,
   type Text,
 } from 'pixi.js';
-import type { KeySpec } from '../../data/keyboardLayout';
+import type { KeySpec } from '../../curriculum/keyboardLayout';
 import { ping, pulseOpacity } from './animation';
 import { makeText, rgba } from './draw';
 import { boxGlow } from './textures';

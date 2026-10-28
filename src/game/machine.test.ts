@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   CURRICULUM_SECTORS,
   DEFAULT_FREE_FLIGHT_WPM,
-} from '../data/curriculum';
+} from '../curriculum/curriculum';
 import { type PlayerEvent, RefusedMoveError, type Screen } from './createGame';
 import {
   clearStage,

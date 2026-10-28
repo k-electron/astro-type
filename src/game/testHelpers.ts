@@ -4,7 +4,10 @@
  * It imports from no test runner and no React, so a headless test and the DOM
  * harness both use it.
  */
-import { DEFAULT_FREE_FLIGHT_WPM, getStageById } from '../data/curriculum';
+import {
+  DEFAULT_FREE_FLIGHT_WPM,
+  getStageById,
+} from '../curriculum/curriculum';
 import {
   createGame,
   createMemoryStorage,

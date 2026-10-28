@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CURRICULUM_SECTORS } from '../../src/data/curriculum';
+import { CURRICULUM_SECTORS } from '../../src/curriculum/curriculum';
 import { fireEvent } from '@testing-library/react';
 import {
   ACADEMY_HOME_HEADING,

@@ -1,7 +1,7 @@
 import { Award, Flame, Hand, Sparkles } from 'lucide-react';
 import { memo, useLayoutEffect, useRef } from 'react';
 import { useGame, useOnFrame } from '../../store/gameContext';
-import { FINGER_COLOR_MAP } from '../../data/curriculum';
+import { FINGER_COLOR_MAP } from '../../curriculum/curriculum';
 import { overdriveScoreFactor } from '../../game/rules';
 import { useGameState } from '../../store/useGameState';
 import { getDeckSession } from './deckSession';

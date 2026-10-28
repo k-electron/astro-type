@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CURRICULUM_SECTORS } from '../../src/data/curriculum';
+import { CURRICULUM_SECTORS } from '../../src/curriculum/curriculum';
 import { RETURNING_PLAYER } from '../shared/saves';
 import { DEBRIEF_TITLE, MENU_HEADINGS } from '../shared/screens';
 import { type Player, renderGame, screen } from './harness';

@@ -1,4 +1,4 @@
-import type { FingerZone } from '../data/keyboardLayout';
+import type { FingerZone } from '../curriculum/keyboardLayout';
 import type { Judgement } from './rules';
 
 /**

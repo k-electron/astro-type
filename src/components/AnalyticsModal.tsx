@@ -11,7 +11,7 @@ import {
   KEY_FINGER_MAP,
   FINGER_COLOR_MAP,
   FINGER_DISPLAY_NAMES,
-} from '../data/curriculum';
+} from '../curriculum/curriculum';
 import { exportBackup, REFUSED_BACKUP_MESSAGE } from '../game/save';
 import { Download, Upload, RotateCcw, AlertTriangle } from 'lucide-react';
 

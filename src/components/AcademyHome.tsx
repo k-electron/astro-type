@@ -1,6 +1,9 @@
 import type React from 'react';
 import { Play } from 'lucide-react';
-import { CURRICULUM_SECTORS, CURRICULUM_TOTALS } from '../data/curriculum';
+import {
+  CURRICULUM_SECTORS,
+  CURRICULUM_TOTALS,
+} from '../curriculum/curriculum';
 import { useGame } from '../store/gameContext';
 import { useGameState } from '../store/useGameState';
 

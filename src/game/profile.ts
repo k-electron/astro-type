@@ -7,7 +7,7 @@
  * phase, no current Stage, no Drone. What a Run takes from the Profile is its
  * `Loadout`, derived on each call.
  */
-import { CURRICULUM_SECTORS } from '../data/curriculum';
+import { CURRICULUM_SECTORS } from '../curriculum/curriculum';
 import {
   DEFAULT_PROFILE,
   type KeyAnalytics,

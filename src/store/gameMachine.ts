@@ -10,7 +10,7 @@
  * changes nothing.
  */
 import { assign, setup } from 'xstate';
-import { getStageById, type Stage } from '../data/curriculum';
+import { getStageById, type Stage } from '../curriculum/curriculum';
 
 /** The screens, named as in GLOSSARY.md. The machine decides which one shows. */
 export type Screen =

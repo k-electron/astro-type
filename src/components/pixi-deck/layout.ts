@@ -1,4 +1,4 @@
-import { KEYBOARD_ROWS, type KeySpec } from '../../data/keyboardLayout';
+import { KEYBOARD_ROWS, type KeySpec } from '../../curriculum/keyboardLayout';
 import { STRIKE_LINE_Y } from '../../game/rules';
 
 /**

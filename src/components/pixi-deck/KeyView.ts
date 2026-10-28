@@ -1,6 +1,6 @@
 import { Container, Graphics, Rectangle, Sprite, type Text } from 'pixi.js';
-import { FINGER_LANES } from '../../data/curriculum';
-import type { KeySpec } from '../../data/keyboardLayout';
+import { FINGER_LANES } from '../../curriculum/curriculum';
+import type { KeySpec } from '../../curriculum/keyboardLayout';
 import { bounceLift, pulseOpacity } from './animation';
 import { dashedRoundRect, keycapGradient, makeText } from './draw';
 import type { KeyRect } from './layout';

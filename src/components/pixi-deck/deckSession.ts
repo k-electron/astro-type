@@ -1,5 +1,5 @@
 import { Application } from 'pixi.js';
-import type { KeySpec } from '../../data/keyboardLayout';
+import type { KeySpec } from '../../curriculum/keyboardLayout';
 import { STEP_MS } from '../../game/clock';
 import type { Game } from '../../game/createGame';
 import type { OnFrame } from '../../game/frameLoop';
