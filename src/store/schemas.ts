@@ -41,7 +41,7 @@ export const UpgradesSchema = z.object({
   unlockedAudioCores: z.array(AudioSynthCoreSchema).default(['CYBER_SYNTH']),
 });
 
-/** The most Stars one Stage gives. The star rules, the Save and the curriculum's totals stop here. */
+/** The most Stars one Stage gives. The Save and the curriculum's totals stop here. */
 export const MAX_STARS_PER_STAGE = 3;
 
 /**

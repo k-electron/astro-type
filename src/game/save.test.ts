@@ -8,6 +8,7 @@ import {
   withOldDroneSpeed,
 } from '../../tests/shared/saves';
 import type { Game } from './createGame';
+import { totalStarsOf } from '../store/schemas';
 import { DEFAULT_PROFILE } from './profile';
 import { UNREADABLE_SAVE_NOTICE } from './save';
 import { clearStage, loadGame, startStage, STAGE_ID } from './testHelpers';
@@ -191,7 +192,7 @@ describe('a Save made when the player could choose a Drone speed', () => {
 
       // Saving again writes the Save back without the speed.
       game.buy('sensors');
-      expect(storage.saved?.stagesProgress['s1-l1'].starsEarned).toBe(3);
+      expect(totalStarsOf(storage.saved?.stagesProgress ?? {})).toBe(5);
       expect(storage.saved).not.toHaveProperty('highwaySpeed');
     },
   );
