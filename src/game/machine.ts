@@ -136,7 +136,6 @@ const { createMachine } = setup({
     beginFreeFlight: unprovided<{
       text: string;
       targetWpm: number;
-      stage?: Stage;
     }>('beginFreeFlight'),
     /** Set up a fresh Run of the Stage the last Run was of. */
     beginCurrentStage: unprovided('beginCurrentStage'),

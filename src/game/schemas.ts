@@ -21,7 +21,7 @@ export const BeatThemeSchema = z.enum([
   'COSMIC_LOFI',
 ]);
 
-/** The most levels any Upgrade has. The Hangar, the store and the Save all stop here. */
+/** The most levels any Upgrade has: the Save accepts no level above it. */
 export const MAX_UPGRADE_LEVEL = 3;
 
 const UpgradeLevelSchema = z

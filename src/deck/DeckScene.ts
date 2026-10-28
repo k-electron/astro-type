@@ -236,10 +236,10 @@ export class DeckScene {
   }
 
   /**
-   * Bring the scene up to date with the store, with Drones drawn `fraction` of
-   * the way through the Run clock's current step and the effects `d` steps of
-   * 1/60 s on (zero while paused, which redraws the same picture). Call
-   * before rendering.
+   * Bring the scene up to date with the game's snapshot, with Drones drawn
+   * `fraction` of the way through the Run clock's current step and the effects
+   * `d` steps of 1/60 s on (zero while paused, which redraws the same
+   * picture). Call before rendering.
    */
   update(motion: DroneMotion, fraction: number, d: number): void {
     const state = this.options.getState();

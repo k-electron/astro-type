@@ -123,7 +123,7 @@ export function computeLayout(
 }
 
 /**
- * The top edge of a Drone, in stage pixels, from the store's `yPercent` and its
+ * The top edge of a Drone, in stage pixels, from the Drone's `yPercent` and its
  * place in the queue. This is the DOM deck's mapping: the lead Drone falls from
  * the sky to the Strike Line; the queued ones hold echelon slots behind it.
  */

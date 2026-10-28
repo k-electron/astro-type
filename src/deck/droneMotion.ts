@@ -1,11 +1,11 @@
 import type { FallingNote } from '../game/rules';
 
 /**
- * Smooths Drone motion between Run clock steps. The store moves Drones in
+ * Smooths Drone motion between Run clock steps. The rules move Drones in
  * fixed steps of 1/60 s; a 120 Hz display draws two frames per step. Drawing
  * a point between the last two steps makes the Drones glide instead.
  *
- * Only the store's `yPercent` is smoothed, then mapped to pixels the way the
+ * Only a Drone's `yPercent` is smoothed, then mapped to pixels the way the
  * DOM deck does, so a Drone at rest sits exactly where the DOM deck puts it.
  * The deck is drawn one step behind the game at most, which a player can't see
  * and the rules never read: Judgement uses the real `yPercent`.

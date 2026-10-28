@@ -1518,7 +1518,7 @@ export function getStageById(stageId: string): Stage | undefined {
   return undefined;
 }
 
-export function getNextStage(currentStageId: string): Stage | undefined {
+function getNextStage(currentStageId: string): Stage | undefined {
   let found = false;
   for (const sector of CURRICULUM_SECTORS) {
     for (const stage of sector.stages) {

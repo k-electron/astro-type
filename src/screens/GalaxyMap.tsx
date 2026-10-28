@@ -341,7 +341,7 @@ export const GalaxyMap: React.FC = () => {
             {activeSector.stages.map((stage) => {
               const progress = stagesProgress[stage.id];
               const stars = progress?.starsEarned || 0;
-              const isCompleted = progress?.completed || false;
+              const isCompleted = progress?.completed;
 
               return (
                 <div
