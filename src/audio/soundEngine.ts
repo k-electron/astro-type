@@ -1,3 +1,4 @@
+import type { Grade } from '../game/rules';
 import type { AudioSynthCore, BeatTheme } from '../types/game';
 
 class SoundEngine {
@@ -597,7 +598,7 @@ class SoundEngine {
 
   public playLaneHit(
     laneIndex: number,
-    rating: 'PERFECT' | 'GREAT' | 'GOOD',
+    grade: Grade,
     isSpace: boolean = laneIndex === 4,
   ) {
     if (this.globalMuted || !this.soundEnabled) return;
@@ -615,8 +616,8 @@ class SoundEngine {
 
       // Melodic chime volume
       const targetGain =
-        rating === 'PERFECT' ? 0.14 : rating === 'GREAT' ? 0.11 : 0.085;
-      const decayDuration = rating === 'PERFECT' ? 0.22 : 0.16;
+        grade === 'perfect' ? 0.14 : grade === 'great' ? 0.11 : 0.085;
+      const decayDuration = grade === 'perfect' ? 0.22 : 0.16;
 
       if (this.currentCore === 'RETRO_8BIT') {
         const osc = this.ctx.createOscillator();
@@ -689,7 +690,7 @@ class SoundEngine {
         oscMain.stop(now + decayDuration + 0.02);
 
         // Delicate, soft harmonic shimmer for PERFECT hits (clean octave, very subtle, soothing)
-        if (rating === 'PERFECT') {
+        if (grade === 'perfect') {
           const oscShimmer = this.ctx.createOscillator();
           const gainShimmer = this.ctx.createGain();
 
@@ -708,9 +709,9 @@ class SoundEngine {
       }
 
       // Orbital Interceptor: Visceral laser zap & target shatter crunch
-      this.playPhotonBlast(now, rating, isSpace);
-      this.playTargetDetonation(now, rating, isSpace);
-      if (rating === 'PERFECT' || rating === 'GREAT') {
+      this.playPhotonBlast(now, grade, isSpace);
+      this.playTargetDetonation(now, grade, isSpace);
+      if (grade === 'perfect' || grade === 'great') {
         this.playCrystalChime(now);
       }
     } catch {
@@ -719,11 +720,7 @@ class SoundEngine {
   }
 
   // Snappy photon cannon bolt or heavy torpedo discharge
-  private playPhotonBlast(
-    now: number,
-    rating: 'PERFECT' | 'GREAT' | 'GOOD',
-    isSpace: boolean,
-  ) {
+  private playPhotonBlast(now: number, grade: Grade, isSpace: boolean) {
     if (!this.ctx || !this.sfxGain) return;
     try {
       const osc = this.ctx.createOscillator();
@@ -746,7 +743,7 @@ class SoundEngine {
       } else {
         // Snappy laser pulse: high to mid chirp
         osc.type = 'sawtooth';
-        const startFreq = rating === 'PERFECT' ? 1280 : 1020;
+        const startFreq = grade === 'perfect' ? 1280 : 1020;
         osc.frequency.setValueAtTime(startFreq, now);
         osc.frequency.exponentialRampToValueAtTime(220, now + 0.06);
 
@@ -756,7 +753,7 @@ class SoundEngine {
 
         gain.gain.setValueAtTime(0, now);
         gain.gain.linearRampToValueAtTime(
-          rating === 'PERFECT' ? 0.16 : 0.12,
+          grade === 'perfect' ? 0.16 : 0.12,
           now + 0.003,
         );
         gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.08);
@@ -771,11 +768,7 @@ class SoundEngine {
   }
 
   // Target shatter / asteroid mine detonation crunch
-  private playTargetDetonation(
-    now: number,
-    rating: 'PERFECT' | 'GREAT' | 'GOOD',
-    isSpace: boolean,
-  ) {
+  private playTargetDetonation(now: number, grade: Grade, isSpace: boolean) {
     if (!this.ctx || !this.sfxGain) return;
     try {
       const dur = isSpace ? 0.18 : 0.11;
@@ -791,7 +784,7 @@ class SoundEngine {
       const filter = this.ctx.createBiquadFilter();
       filter.type = 'bandpass';
       filter.frequency.setValueAtTime(
-        isSpace ? 380 : rating === 'PERFECT' ? 1600 : 1200,
+        isSpace ? 380 : grade === 'perfect' ? 1600 : 1200,
         now,
       );
       filter.frequency.exponentialRampToValueAtTime(
@@ -802,7 +795,7 @@ class SoundEngine {
       const gain = this.ctx.createGain();
       gain.gain.setValueAtTime(0, now);
       gain.gain.linearRampToValueAtTime(
-        isSpace ? 0.22 : rating === 'PERFECT' ? 0.15 : 0.11,
+        isSpace ? 0.22 : grade === 'perfect' ? 0.15 : 0.11,
         now + 0.004,
       );
       gain.gain.exponentialRampToValueAtTime(0.0001, now + dur);

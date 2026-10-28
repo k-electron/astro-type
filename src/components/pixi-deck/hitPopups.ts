@@ -1,4 +1,4 @@
-import { type Rating, scoreForHit } from '../../game/rules';
+import { type Grade, scoreForHit } from '../../game/rules';
 
 /**
  * What the deck's popup for a hit says: a few words, then "+" and the points
@@ -9,7 +9,7 @@ import { type Rating, scoreForHit } from '../../game/rules';
 
 /** How a hit was judged, as far as its popup goes. */
 export interface HitKind {
-  grade: 'perfect' | 'great' | 'good';
+  grade: Grade;
   isSpace: boolean;
   /** Overdrive doubled the hit. The hit that ignites Overdrive is not doubled. */
   overdrive: boolean;
@@ -54,12 +54,6 @@ export function hitPopupColor({ grade, isSpace }: HitKind): string {
   return grade === 'great' ? '#4ade80' : '#facc15';
 }
 
-const RATING: Record<HitKind['grade'], Rating> = {
-  perfect: 'PERFECT',
-  great: 'GREAT',
-  good: 'GOOD',
-};
-
 /** The Multipliers a hit can score at: x1, then x2, x3 and x4 as the Streak grows. */
 const MULTIPLIERS = [1, 2, 3, 4];
 
@@ -77,7 +71,7 @@ export function hitPopupsToPrepare(): { label: string; color: string }[] {
         const kind: HitKind = { grade, isSpace, overdrive };
         const color = hitPopupColor(kind);
         for (const multiplier of MULTIPLIERS) {
-          const points = scoreForHit(RATING[grade], multiplier, overdrive);
+          const points = scoreForHit(grade, multiplier, overdrive);
           for (const stem of hitPopupStems(kind)) {
             const label = hitPopupLabel(stem, points);
             prepared.set(`${label}|${color}`, { label, color });

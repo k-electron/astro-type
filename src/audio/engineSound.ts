@@ -27,15 +27,7 @@ export const engineSound: Sound = {
   play(cue) {
     switch (cue.type) {
       case 'hit':
-        soundEngine.playLaneHit(
-          cue.lane,
-          cue.grade === 'perfect'
-            ? 'PERFECT'
-            : cue.grade === 'great'
-              ? 'GREAT'
-              : 'GOOD',
-          cue.space,
-        );
+        soundEngine.playLaneHit(cue.lane, cue.grade, cue.space);
         return;
       case 'shield':
         soundEngine.playShieldAbsorb();

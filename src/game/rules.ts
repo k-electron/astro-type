@@ -17,7 +17,8 @@ import { STEP_MS } from './clock';
 import type { Moment } from './moments';
 import type { Loadout } from './profile';
 
-export type Rating = 'PERFECT' | 'GREAT' | 'GOOD';
+/** How close to the Strike Line a hit landed: Perfect, Great or Good. */
+export type Grade = 'perfect' | 'great' | 'good';
 
 /** Where a Drone waits for the player, as a percentage down the Action Deck. */
 export const STRIKE_LINE_Y = 84;
@@ -30,7 +31,7 @@ export const STRIKE_LINE_Y = 84;
 export type Judgement =
   | {
       type: 'hit';
-      grade: 'perfect' | 'great' | 'good';
+      grade: Grade;
       key: string;
       points: number;
       overdrive: boolean;
@@ -245,13 +246,13 @@ function moveDrones(drones: FallingNote[]): FallingNote[] {
  * Perfect, Great or Good by distance from the Strike Line. Precision sensor
  * Upgrades widen the windows. With no Drone to measure, a hit is Great.
  */
-function judge(droneY: number | undefined, precisionSensors: number): Rating {
-  if (droneY === undefined) return 'GREAT';
+function judge(droneY: number | undefined, precisionSensors: number): Grade {
+  if (droneY === undefined) return 'great';
   const sensorBonus = precisionSensors * 3.5;
   const diff = Math.abs(droneY - STRIKE_LINE_Y);
-  if (diff <= 8 + sensorBonus) return 'PERFECT';
-  if (diff <= 16 + sensorBonus) return 'GREAT';
-  return 'GOOD';
+  if (diff <= 8 + sensorBonus) return 'perfect';
+  if (diff <= 16 + sensorBonus) return 'great';
+  return 'good';
 }
 
 function multiplierForStreak(streak: number): number {
@@ -271,11 +272,11 @@ export function overdriveScoreFactor(multiplier: number): number {
 
 /** Points for one hit. Overdrive doubles them. */
 export function scoreForHit(
-  rating: Rating,
+  grade: Grade,
   multiplier: number,
   overdrive: boolean,
 ): number {
-  const base = rating === 'PERFECT' ? 100 : rating === 'GREAT' ? 75 : 50;
+  const base = grade === 'perfect' ? 100 : grade === 'great' ? 75 : 50;
   return base * (overdrive ? overdriveScoreFactor(multiplier) : multiplier);
 }
 
@@ -358,12 +359,6 @@ export interface StrikeResult {
   cleared: boolean;
 }
 
-const GRADE_OF: Record<Rating, 'perfect' | 'great' | 'good'> = {
-  PERFECT: 'perfect',
-  GREAT: 'great',
-  GOOD: 'good',
-};
-
 /**
  * The whole keystroke: the player strikes `key` against the character the Run
  * is on. `key` is one that counts (see `countsAsKeystroke`). A right key is
@@ -420,10 +415,10 @@ export function strike(
   const drone = run.drones.find(
     (d) => d.char === target && d.status === 'PENDING',
   );
-  const rating = judge(drone?.yPercent, loadout.sensors);
+  const grade = judge(drone?.yPercent, loadout.sensors);
   const streak = performance.currentStreak + 1;
   const multiplier = multiplierForStreak(streak);
-  const points = scoreForHit(rating, multiplier, performance.hyperspaceActive);
+  const points = scoreForHit(grade, multiplier, performance.hyperspaceActive);
   const charge = chargeOverdrive(
     performance.hyperspaceEnergy,
     performance.hyperspaceActive,
@@ -439,7 +434,7 @@ export function strike(
 
   const judgement: Judgement = {
     type: 'hit',
-    grade: GRADE_OF[rating],
+    grade,
     key,
     points,
     overdrive: performance.hyperspaceActive,

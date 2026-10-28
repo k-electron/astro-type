@@ -5,7 +5,7 @@ import type {
   PlayerProfile,
   RunPhase,
 } from '../types/game';
-import type { Judgement } from './rules';
+import type { Grade } from './rules';
 import type { Moment } from './moments';
 
 /**
@@ -15,8 +15,6 @@ import type { Moment } from './moments';
  * happened. Nothing here imports the sound engine or the browser, so the
  * rules and the tests run without it.
  */
-
-type Grade = Extract<Judgement, { type: 'hit' }>['grade'];
 
 /** Everything continuous the player hears, as one value. */
 export interface SoundState {

@@ -14,11 +14,7 @@ import {
  * draws the texts it prepared at start-up: a hit whose text was not prepared
  * would make the first hit of its kind cost more than the rest.
  */
-const RATINGS = [
-  ['perfect', 'PERFECT'],
-  ['great', 'GREAT'],
-  ['good', 'GOOD'],
-] as const;
+const GRADES = ['perfect', 'great', 'good'] as const;
 
 describe('the popup of a hit', () => {
   it('ends with the points the hit scored, and is one of the prepared texts, in its own colour, for every hit the rules can score', () => {
@@ -27,12 +23,12 @@ describe('the popup of a hit', () => {
       hitPopupsToPrepare().map(({ label, color }) => `${label}|${color}`),
     );
     const missing: string[] = [];
-    for (const [grade, rating] of RATINGS) {
+    for (const grade of GRADES) {
       for (const isSpace of [false, true]) {
         for (const overdrive of [false, true]) {
           for (const multiplier of [1, 2, 3, 4]) {
             const kind: HitKind = { grade, isSpace, overdrive };
-            const points = scoreForHit(rating, multiplier, overdrive);
+            const points = scoreForHit(grade, multiplier, overdrive);
             for (const stem of hitPopupStems(kind)) {
               const label = hitPopupLabel(stem, points);
               // The popup ends with the points the hit scored.

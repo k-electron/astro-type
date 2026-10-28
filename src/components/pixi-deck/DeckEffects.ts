@@ -1,4 +1,5 @@
 import { Container, Graphics, Rectangle, Sprite, Text } from 'pixi.js';
+import type { Grade } from '../../game/rules';
 import { hitPopupLabel, hitPopupsToPrepare, hitPopupStems } from './hitPopups';
 import { Pool } from './pool';
 import {
@@ -42,7 +43,7 @@ export interface HitShot {
   /** Where the cannons fire from. */
   originY: number;
   isSpace: boolean;
-  grade: 'perfect' | 'great' | 'good';
+  grade: Grade;
   /** The points the hit scored, and whether Overdrive doubled them. */
   points: number;
   overdrive: boolean;
@@ -97,7 +98,7 @@ interface Bolt {
   hitColor: string;
   isSpace: boolean;
   /** Hit grade, or null for the red laser of a wrong key. */
-  grade: 'perfect' | 'great' | 'good' | null;
+  grade: Grade | null;
   /** What the hit scored, for its popup, and whether Overdrive doubled it. */
   points: number;
   overdrive: boolean;
@@ -869,7 +870,7 @@ export class DeckEffects {
   /** The popup of a hit: a few words, then the points that hit scored. */
   private hitPopup(
     hit: Pick<HitShot, 'isSpace' | 'points' | 'overdrive'> & {
-      grade: 'perfect' | 'great' | 'good' | null;
+      grade: Grade | null;
     },
     color: string,
     x: number,
