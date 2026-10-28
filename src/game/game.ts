@@ -353,18 +353,13 @@ export function createGame(options: GameOptions): Game {
       loadNotice: state.loadNotice,
       runTime: runClock.runTimeMs(),
     };
+    // Unchanged when every field is the very object it was: the snapshot is
+    // then the same one, and nobody is told.
     const unchanged =
-      previous &&
-      next.screen === previous.screen &&
-      next.phase === previous.phase &&
-      next.opener === previous.opener &&
-      next.screenParams === previous.screenParams &&
-      next.stageAhead === previous.stageAhead &&
-      next.run === previous.run &&
-      next.debrief === previous.debrief &&
-      next.profile === previous.profile &&
-      next.loadNotice === previous.loadNotice &&
-      next.runTime === previous.runTime;
+      previous !== null &&
+      (Object.keys(next) as (keyof GameState)[]).every(
+        (field) => next[field] === previous[field],
+      );
     return unchanged ? previous : next;
   };
   let snapshot = snapshotNow(null);
