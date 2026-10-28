@@ -1,4 +1,5 @@
 import { expect, type Locator, type Page } from '@playwright/test';
+import { SAVE_KEY } from '../../src/game/save';
 import { DEBRIEF_TITLE, HUD_NAME, PAUSE_MENU_NAME } from '../shared/screens';
 
 // Shared by the browser journeys. Everything here finds things the way a
@@ -128,7 +129,7 @@ export async function seedSave(page: Page, save: unknown): Promise<void> {
       sessionStorage.setItem('seeded', 'yes');
       localStorage.setItem(key, value);
     },
-    { key: 'astrotype_profile_v1', value: JSON.stringify(save) },
+    { key: SAVE_KEY, value: JSON.stringify(save) },
   );
 }
 

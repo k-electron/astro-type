@@ -35,6 +35,12 @@ export interface SaveStorage {
   moveAside(): void;
 }
 
+/** Where the Save lives in the browser's localStorage. */
+export const SAVE_KEY = 'astrotype_profile_v1';
+
+/** Where an unreadable Save is moved to, untouched. */
+export const UNREADABLE_SAVE_KEY = 'astrotype_profile_v1_unreadable';
+
 export const UNREADABLE_SAVE_NOTICE =
   "Your saved progress couldn't be read, so you're starting fresh.";
 

@@ -1,6 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createGame } from '../game/createGame';
-import { UNREADABLE_SAVE_NOTICE } from '../game/save';
+import {
+  SAVE_KEY,
+  UNREADABLE_SAVE_KEY,
+  UNREADABLE_SAVE_NOTICE,
+} from '../game/save';
 import { clearStage, STAGE_ID, startStage } from '../game/testHelpers';
 import { createLocalStorageSave } from './storage';
 
@@ -10,9 +14,6 @@ import { createLocalStorageSave } from './storage';
  * unreadable Save is kept where the player (or a repair) can still find it.
  * These tests run the real adapter over a stand-in for localStorage.
  */
-
-const SAVE_KEY = 'astrotype_profile_v1';
-const UNREADABLE_KEY = 'astrotype_profile_v1_unreadable';
 
 /** What localStorage does, in a Map. */
 function memoryLocalStorage() {
@@ -53,7 +54,7 @@ describe('a Save that cannot be read', () => {
 
     expect(game.getState().loadNotice).toBe(UNREADABLE_SAVE_NOTICE);
     expect(game.getState().profile.totalCredits).toBe(0);
-    expect(browserStorage.getItem(UNREADABLE_KEY)).toBe(raw);
+    expect(browserStorage.getItem(UNREADABLE_SAVE_KEY)).toBe(raw);
     expect(browserStorage.getItem(SAVE_KEY)).toBeNull();
   });
 
@@ -65,7 +66,7 @@ describe('a Save that cannot be read', () => {
     const nextVisit = openGame();
 
     expect(nextVisit.getState().loadNotice).toBeNull();
-    expect(browserStorage.getItem(UNREADABLE_KEY)).toBe(raw);
+    expect(browserStorage.getItem(UNREADABLE_SAVE_KEY)).toBe(raw);
   });
 
   it('is still kept after the player has played on from a fresh start', () => {
@@ -78,7 +79,7 @@ describe('a Save that cannot be read', () => {
     const nextVisit = openGame();
 
     expect(nextVisit.getState().loadNotice).toBeNull();
-    expect(browserStorage.getItem(UNREADABLE_KEY)).toBe(raw);
+    expect(browserStorage.getItem(UNREADABLE_SAVE_KEY)).toBe(raw);
   });
 });
 
@@ -88,7 +89,7 @@ describe('a first visit', () => {
 
     expect(game.getState().loadNotice).toBeNull();
     expect(game.getState().profile.totalStars).toBe(0);
-    expect(browserStorage.getItem(UNREADABLE_KEY)).toBeNull();
+    expect(browserStorage.getItem(UNREADABLE_SAVE_KEY)).toBeNull();
   });
 });
 
@@ -102,6 +103,6 @@ describe('a Save that can be read', () => {
 
     expect(nextVisit.getState().loadNotice).toBeNull();
     expect(nextVisit.getState().profile.totalStars).toBe(3);
-    expect(browserStorage.getItem(UNREADABLE_KEY)).toBeNull();
+    expect(browserStorage.getItem(UNREADABLE_SAVE_KEY)).toBeNull();
   });
 });

@@ -1,8 +1,9 @@
-import type { SaveStorage, StoredSave } from '../game/save';
-
-const STORAGE_KEY = 'astrotype_profile_v1';
-/** Where an unreadable Save is moved to, untouched. */
-const UNREADABLE_KEY = 'astrotype_profile_v1_unreadable';
+import {
+  SAVE_KEY,
+  type SaveStorage,
+  type StoredSave,
+  UNREADABLE_SAVE_KEY,
+} from '../game/save';
 
 /**
  * Save storage in the browser's localStorage. The app passes this to the game.
@@ -13,7 +14,7 @@ export function createLocalStorageSave(): SaveStorage {
     read(): StoredSave {
       let raw: string | null;
       try {
-        raw = localStorage.getItem(STORAGE_KEY);
+        raw = localStorage.getItem(SAVE_KEY);
       } catch {
         return { kind: 'empty' };
       }
@@ -26,18 +27,18 @@ export function createLocalStorageSave(): SaveStorage {
     },
     write(profile) {
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
+        localStorage.setItem(SAVE_KEY, JSON.stringify(profile));
       } catch {
         // Storage quota or error
       }
     },
     moveAside() {
       try {
-        const raw = localStorage.getItem(STORAGE_KEY);
+        const raw = localStorage.getItem(SAVE_KEY);
         if (raw === null) return;
         // Copy first, and only clear the Save's own key once the copy is safe.
-        localStorage.setItem(UNREADABLE_KEY, raw);
-        localStorage.removeItem(STORAGE_KEY);
+        localStorage.setItem(UNREADABLE_SAVE_KEY, raw);
+        localStorage.removeItem(SAVE_KEY);
       } catch {
         // Storage quota or error: leave the Save where it is.
       }
