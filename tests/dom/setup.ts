@@ -16,13 +16,13 @@
 import { cleanup } from '@testing-library/react';
 import { afterEach, vi } from 'vitest';
 
-// 1. `src/appGame.ts` builds a localStorage game and starts a real frame loop
+// 1. `src/app/appGame.ts` builds a localStorage game and starts a real frame loop
 //    the moment it is imported. A DOM test builds its own headless game, so
 //    anything that still imports the singleton fails loudly here instead of
 //    quietly leaking real time and real storage into a test.
-vi.mock('../../src/appGame', () => {
+vi.mock('../../src/app/appGame', () => {
   throw new Error(
-    'DOM tests must not load src/appGame.ts: read the game with useGame().',
+    'DOM tests must not load src/app/appGame.ts: read the game with useGame().',
   );
 });
 

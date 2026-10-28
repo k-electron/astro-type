@@ -6,7 +6,7 @@ import {
   UNREADABLE_SAVE_NOTICE,
 } from '../game/save';
 import { clearStage, STAGE_ID, startStage } from '../game/testHelpers';
-import { createLocalStorageSave } from './storage';
+import { createLocalStorageSave } from './localStorageSave';
 
 /**
  * The Save in the player's browser. The Save module decides what a stored

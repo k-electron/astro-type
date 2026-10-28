@@ -1,9 +1,9 @@
-import { engineSound } from './audio/engineSound';
-import { attachKeyboard } from './app/attachKeyboard';
-import { createRealtimeClock } from './game/clock';
-import { createGame } from './game/game';
-import { browserFrameEnvironment, startFrameLoop } from './game/frameLoop';
-import { createLocalStorageSave } from './utils/storage';
+import { engineSound } from '../audio/engineSound';
+import { attachKeyboard } from './attachKeyboard';
+import { createRealtimeClock } from '../game/clock';
+import { createGame } from '../game/game';
+import { browserFrameEnvironment, startFrameLoop } from '../game/frameLoop';
+import { createLocalStorageSave } from './localStorageSave';
 
 /**
  * The composition root: the one game the app builds at startup. Real time,

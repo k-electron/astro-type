@@ -1,7 +1,7 @@
 import { createRoot } from 'react-dom/client';
-import App from './App.tsx';
+import App from '../App.tsx';
 import { game, onFrame } from './appGame';
-import { GameProvider } from './store/gameContext';
+import { GameProvider } from '../store/gameContext';
 import './index.css';
 
 const root = document.getElementById('root');

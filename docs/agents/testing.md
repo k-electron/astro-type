@@ -67,7 +67,7 @@ Rules:
 
 **What is stubbed, and why.** All of it is in `tests/dom/setup.ts`, with a numbered comment each:
 - The PixiJS deck session (`getDeckSession`, the only place `pixi.js` loads) attaches to nothing. It needs WebGL, and a DOM has none. The Action Deck's React header bar around it stays real: the Overdrive and Streak badges and the Hands toggle can be tested here. The canvas under it (Drones, keycaps, effects) is not there, so assert nothing about anything drawn.
-- `src/appGame.ts`, the app's real game, is a tripwire: loading it fails the test, because it would bring in real time and localStorage. The tree reads its game with `useGame()`, and `renderGame` provides a headless one.
+- `src/app/appGame.ts`, the app's real game, is a tripwire: loading it fails the test, because it would bring in real time and localStorage. The tree reads its game with `useGame()`, and `renderGame` provides a headless one.
 - `canvas-confetti` draws on a canvas.
 - `ResizeObserver` and `requestAnimationFrame` do nothing, since there is no layout and no frame. The starfield's canvas gets no 2D context from happy-dom and skips drawing by itself.
 - Sound needs no stub: the sound engine only sets fields until a sound plays, and the headless game's sound is silent.
