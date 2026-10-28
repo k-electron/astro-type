@@ -9,8 +9,8 @@ import {
   VolumeX,
   SlidersHorizontal,
 } from 'lucide-react';
-import { useGame } from '../store/gameContext';
-import { useGameState } from '../store/useGameState';
+import { useGame } from './useGame';
+import { useGameState } from './useGameState';
 import { AudioPanel } from './AudioPanel';
 
 /**

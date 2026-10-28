@@ -2,8 +2,8 @@ import type React from 'react';
 import type { ReactNode } from 'react';
 import { useEffect, useRef } from 'react';
 import { ArrowLeft, Play } from 'lucide-react';
-import { useGame } from '../store/gameContext';
-import { useGameState } from '../store/useGameState';
+import { useGame } from './useGame';
+import { useGameState } from './useGameState';
 import { closeLabel, flightDeckLabel } from './closeLabel';
 
 /**

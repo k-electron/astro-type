@@ -27,7 +27,7 @@ import {
   within,
 } from '@testing-library/react';
 import { afterEach } from 'vitest';
-import App from '../../src/App';
+import App from '../../src/screens/App';
 import { attachKeyboard } from '../../src/app/attachKeyboard';
 import {
   createGame,
@@ -38,7 +38,7 @@ import {
   type Sound,
 } from '../../src/game/game';
 import { startStage as sendStartStage } from '../../src/game/testHelpers';
-import { GameProvider } from '../../src/store/gameContext';
+import { GameProvider } from '../../src/screens/useGame';
 
 export { screen, within };
 

@@ -1,8 +1,8 @@
 import type React from 'react';
 import { Shield, Zap, Pause } from 'lucide-react';
-import { useGame } from '../store/gameContext';
+import { useGame } from './useGame';
 import { overdriveScoreFactor } from '../game/rules';
-import { useGameState } from '../store/useGameState';
+import { useGameState } from './useGameState';
 
 /** The readouts above the deck. It selects only the fields it shows, so it re-renders when one of them changes. */
 export const HUD: React.FC = () => {

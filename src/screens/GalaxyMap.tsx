@@ -11,8 +11,8 @@ import {
   Home,
   RotateCcw,
 } from 'lucide-react';
-import { useGame } from '../store/gameContext';
-import { useGameState } from '../store/useGameState';
+import { useGame } from './useGame';
+import { useGameState } from './useGameState';
 import {
   OverlayCloseButton,
   OverlayFlightDeckButton,
@@ -25,7 +25,7 @@ import {
 } from '../curriculum/curriculum';
 import { isSectorUnlocked } from '../game/profile';
 
-export const StageSelectModal: React.FC = () => {
+export const GalaxyMap: React.FC = () => {
   const game = useGame();
   const { send } = game;
   const { stagesProgress, totalStars, totalCredits, opener } = useGameState(

@@ -4,8 +4,8 @@ import {
   CURRICULUM_SECTORS,
   CURRICULUM_TOTALS,
 } from '../curriculum/curriculum';
-import { useGame } from '../store/gameContext';
-import { useGameState } from '../store/useGameState';
+import { useGame } from './useGame';
+import { useGameState } from './useGameState';
 
 /** The title screen: the Academy briefing, with a way into the curriculum. */
 export const AcademyHome: React.FC = () => {

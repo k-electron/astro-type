@@ -10,11 +10,11 @@ import {
   Home,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { useGame } from '../store/gameContext';
-import { useGameState } from '../store/useGameState';
+import { useGame } from './useGame';
+import { useGameState } from './useGameState';
 import { OverlayShell } from './OverlayShell';
 
-export const LevelCompleteModal: React.FC = () => {
+export const Debrief: React.FC = () => {
   const { send } = useGame();
   const { stage, stageAhead, result, totalStars } = useGameState((state) => ({
     stage: state.run.currentStage,

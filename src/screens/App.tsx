@@ -1,19 +1,19 @@
 import type { ComponentType } from 'react';
-import { AcademyHome } from './components/AcademyHome';
-import { PauseMenu } from './components/PauseMenu';
-import { HeaderNav } from './components/HeaderNav';
-import { useHeaderHeight } from './components/useHeaderHeight';
-import { HUD } from './components/HUD';
-import { TextPromptStream } from './components/TextPromptStream';
-import { StageSelectModal } from './components/StageSelectModal';
-import { HangarUpgradesModal } from './components/HangarUpgradesModal';
-import { AnalyticsModal } from './components/AnalyticsModal';
-import { PixiActionDeck } from './components/pixi-deck/PixiActionDeck';
-import { CustomPracticeModal } from './components/CustomPracticeModal';
-import { LevelCompleteModal } from './components/LevelCompleteModal';
-import { GlobalCosmicBackground } from './components/GlobalCosmicBackground';
-import { useGameState } from './store/useGameState';
-import type { Screen } from './game/machine';
+import { AcademyHome } from './AcademyHome';
+import { PauseMenu } from './PauseMenu';
+import { HeaderNav } from './HeaderNav';
+import { useHeaderHeight } from './useHeaderHeight';
+import { HUD } from './HUD';
+import { TextPromptStream } from './TextPromptStream';
+import { GalaxyMap } from './GalaxyMap';
+import { Hangar } from './Hangar';
+import { Analytics } from './Analytics';
+import { PixiActionDeck } from '../components/pixi-deck/PixiActionDeck';
+import { FreeFlight } from './FreeFlight';
+import { Debrief } from './Debrief';
+import { GlobalCosmicBackground } from './GlobalCosmicBackground';
+import { useGameState } from './useGameState';
+import type { Screen } from '../game/machine';
 
 /**
  * The starfield behind everything. It selects the two fields that speed it up
@@ -42,11 +42,11 @@ function CosmicBackdrop() {
 type OverlayScreen = Exclude<Screen, 'academy-home' | 'flight-deck'>;
 const OVERLAYS: Record<OverlayScreen, ComponentType> = {
   'pause-menu': PauseMenu,
-  'galaxy-map': StageSelectModal,
-  hangar: HangarUpgradesModal,
-  analytics: AnalyticsModal,
-  'free-flight': CustomPracticeModal,
-  debrief: LevelCompleteModal,
+  'galaxy-map': GalaxyMap,
+  hangar: Hangar,
+  analytics: Analytics,
+  'free-flight': FreeFlight,
+  debrief: Debrief,
 };
 
 function overlayFor(screen: Screen): ComponentType | undefined {

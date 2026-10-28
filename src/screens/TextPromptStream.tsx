@@ -5,7 +5,7 @@ import {
   FINGER_LANES,
   FINGER_DISPLAY_NAMES,
 } from '../curriculum/curriculum';
-import { useGameState } from '../store/useGameState';
+import { useGameState } from './useGameState';
 
 /** The Stage's text and where the player is in it. It selects only what it shows. */
 export const TextPromptStream: React.FC = () => {

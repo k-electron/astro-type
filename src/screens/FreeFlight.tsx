@@ -6,10 +6,10 @@ import {
   FREE_FLIGHT_PRESETS,
   FreeFlightTextSchema,
 } from '../curriculum/curriculum';
-import { useGame } from '../store/gameContext';
+import { useGame } from './useGame';
 import { OverlayCloseButton, OverlayShell } from './OverlayShell';
 
-export const CustomPracticeModal: React.FC = () => {
+export const FreeFlight: React.FC = () => {
   const { send } = useGame();
   const [customText, setCustomText] = useState<string>(
     FREE_FLIGHT_PRESETS[0].text,

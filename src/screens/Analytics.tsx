@@ -1,7 +1,7 @@
 import type React from 'react';
 import { useState } from 'react';
-import { useGame } from '../store/gameContext';
-import { useGameState } from '../store/useGameState';
+import { useGame } from './useGame';
+import { useGameState } from './useGameState';
 import {
   OverlayCloseButton,
   OverlayFlightDeckButton,
@@ -15,7 +15,7 @@ import {
 import { exportBackup, REFUSED_BACKUP_MESSAGE } from '../game/save';
 import { Download, Upload, RotateCcw, AlertTriangle } from 'lucide-react';
 
-export const AnalyticsModal: React.FC = () => {
+export const Analytics: React.FC = () => {
   const game = useGame();
   const { importBackup, wipeAchievements, resetProgress } = game;
   const profile = useGameState((state) => state.profile);

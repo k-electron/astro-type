@@ -19,8 +19,8 @@ import {
   type UpgradeIcon,
   type UpgradeTone,
 } from '../game/catalog';
-import { useGame } from '../store/gameContext';
-import { useGameState } from '../store/useGameState';
+import { useGame } from './useGame';
+import { useGameState } from './useGameState';
 
 const UPGRADE_ICONS: Record<UpgradeIcon, LucideIcon> = {
   shield: Shield,
@@ -121,7 +121,7 @@ const UpgradeCard: React.FC<{
   );
 };
 
-export const HangarUpgradesModal: React.FC = () => {
+export const Hangar: React.FC = () => {
   const { buy } = useGame();
   const { upgrades, totalCredits } = useGameState((state) => ({
     upgrades: state.profile.upgrades,
