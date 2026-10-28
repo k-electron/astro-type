@@ -1,6 +1,7 @@
 import type React from 'react';
 import { RotateCcw } from 'lucide-react';
 import { useGame } from './useGame';
+import { flightDeckLabel } from './closeLabel';
 import { OverlayShell } from './OverlayShell';
 
 /**
@@ -33,7 +34,7 @@ export const PauseMenu: React.FC = () => {
           onClick={() => send({ type: 'PRESS_RESUME' })}
           className="w-full py-2.5 rounded-lg bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-bold text-xs font-mono transition-colors cursor-pointer"
         >
-          Resume Flight
+          {flightDeckLabel(true)}
         </button>
 
         <button

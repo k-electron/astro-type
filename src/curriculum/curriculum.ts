@@ -1496,7 +1496,7 @@ export const CURRICULUM_SECTORS: Sector[] = SECTOR_DEFINITIONS.map(
   }),
 );
 
-/** The first Stage of the first Sector: where a new player starts and where an idle Run sits. */
+/** The first Stage of the first Sector: where a new player starts, and the Stage of the Run the game opens on. */
 export const FIRST_STAGE = CURRICULUM_SECTORS[0].stages[0];
 
 /**

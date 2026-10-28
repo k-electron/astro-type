@@ -204,7 +204,7 @@ describe('the header buttons', () => {
         expect(debriefHeading()).not.toBeNull();
       } else {
         expectPausedHalfway();
-        player.click('Resume Flight');
+        player.click(flightDeckLabel(true));
         expect(progress()).toBe('50%');
       }
     },
@@ -239,7 +239,7 @@ describe('the header buttons', () => {
 
     expect(menuHeading('Hangar')).toBeNull();
     expectPausedHalfway();
-    player.click('Resume Flight');
+    player.click(flightDeckLabel(true));
     expect(progress()).toBe('50%');
   });
 
@@ -263,7 +263,7 @@ describe('menus opened in the middle of a Run', () => {
     expect(Number((scoreMidRun ?? '').replaceAll(',', ''))).toBeGreaterThan(0);
 
     const resume = () => {
-      player.click('Resume Flight');
+      player.click(flightDeckLabel(true));
       expect(pauseMenu()).toBeNull();
       expect(progress()).toBe('50%');
       expect(score()).toBe(scoreMidRun);
@@ -304,7 +304,7 @@ describe('the Pause Menu', () => {
 
     player.click('Pause');
     expectPausedHalfway();
-    player.click('Resume Flight');
+    player.click(flightDeckLabel(true));
 
     expect(pauseMenu()).toBeNull();
     expect(progress()).toBe('50%');
@@ -341,7 +341,7 @@ describe('the Pause Menu', () => {
 
     expect(menuHeading('Sectors')).toBeNull();
     expectPausedHalfway();
-    player.click('Resume Flight');
+    player.click(flightDeckLabel(true));
     expectCarriesOn(player);
   });
 
@@ -434,7 +434,7 @@ describe('Esc', () => {
 
     expect(menuHeading('Sectors')).toBeNull();
     expectPausedHalfway();
-    player.click('Resume Flight');
+    player.click(flightDeckLabel(true));
     expectCarriesOn(player);
   });
 
@@ -525,7 +525,7 @@ describe('leaving the page mid-Run', () => {
 
     expectPausedHalfway();
     expect(accuracy()).toBe('100%');
-    player.click('Resume Flight');
+    player.click(flightDeckLabel(true));
     expectCarriesOn(player);
   });
 
@@ -541,7 +541,7 @@ describe('leaving the page mid-Run', () => {
 
       expectPausedHalfway();
       expect(accuracy()).toBe('100%');
-      player.click('Resume Flight');
+      player.click(flightDeckLabel(true));
       expectCarriesOn(player);
     },
   );
@@ -586,7 +586,7 @@ describe('leaving the page mid-Run', () => {
     player.hideTab();
 
     expectPausedHalfway();
-    player.click('Resume Flight');
+    player.click(flightDeckLabel(true));
     expectCarriesOn(player);
   });
 
@@ -603,7 +603,7 @@ describe('leaving the page mid-Run', () => {
     player.press(' ');
 
     expectPausedHalfway();
-    player.click('Resume Flight');
+    player.click(flightDeckLabel(true));
     expect(progress()).toBe('50%');
     expectCarriesOn(player);
     expect(accuracy()).toBe('100%');

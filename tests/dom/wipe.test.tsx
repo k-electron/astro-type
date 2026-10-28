@@ -3,6 +3,7 @@ import { CURRICULUM_SECTORS } from '../../src/curriculum/curriculum';
 import { RETURNING_PLAYER } from '../shared/saves';
 import { DEBRIEF_TITLE, MENU_HEADINGS } from '../shared/screens';
 import { type Player, renderGame, screen } from './harness';
+import { flightDeckLabel } from '../../src/screens/closeLabel';
 
 // Wiping the Stars asks first. profile.test.tsx guards Factory Reset
 // (confirming); this guards the two Wipe buttons, which clear the Stars and
@@ -119,7 +120,7 @@ describe.each(WIPES)('Wipe on $where', ({ menu, button }) => {
     player.click('Confirm Wipe');
     expect(stars(0)).toBeTruthy();
     player.click(/^Back to /);
-    player.click('Resume Flight');
+    player.click(flightDeckLabel(true));
 
     expect(progress()).toBe(reached);
     expect(stars(0)).toBeTruthy();

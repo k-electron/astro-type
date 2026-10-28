@@ -116,7 +116,7 @@ describe('every overlay screen is a modal dialog over the Flight Deck', () => {
 
     expectOverlay();
     expect(screen.getByRole('dialog', { name: PAUSE_MENU_NAME })).toBeTruthy();
-    player.click('Resume Flight');
+    player.click(flightDeckLabel(true));
     expectFlightDeckLive();
   });
 
@@ -154,7 +154,7 @@ describe('the Flight Deck is inert exactly while an overlay shows', () => {
       ).toBeTruthy();
       expect(flightDeckInert()).toBe(true);
 
-      player.click('Resume Flight');
+      player.click(flightDeckLabel(true));
       expectFlightDeckLive();
     },
   );
@@ -181,7 +181,7 @@ describe('the Flight Deck is inert exactly while an overlay shows', () => {
     player.click(/^Back to /);
     expect(flightDeckInert()).toBe(true);
     player.click(/^Back to /);
-    player.click('Resume Flight');
+    player.click(flightDeckLabel(true));
 
     expectFlightDeckLive();
   });
@@ -251,7 +251,7 @@ describe('the Flight Deck button on an overlay', () => {
       const player = halfwayThroughARun();
       player.openHeader(button);
 
-      player.click('Resume Flight');
+      player.click(flightDeckLabel(true));
 
       expectFlightDeckLive();
       expect(
