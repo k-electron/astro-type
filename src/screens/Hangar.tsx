@@ -1,4 +1,5 @@
 import type React from 'react';
+import type { ReactNode } from 'react';
 import {
   Shield,
   Zap,
@@ -14,11 +15,14 @@ import {
   OverlayShell,
 } from './OverlayShell';
 import {
+  type CoreEntry,
   entriesOf,
+  type TrailEntry,
   type UpgradeEntry,
   type UpgradeIcon,
   type UpgradeTone,
 } from '../game/catalog';
+import { type CosmeticStatus, cosmeticStatus } from '../game/profile';
 import { useGame } from './useGame';
 import { useGameState } from './useGameState';
 
@@ -121,12 +125,52 @@ const UpgradeCard: React.FC<{
   );
 };
 
+/**
+ * One Cosmetic's card: its own heading (`children`), and the button that
+ * buys it, equips it or says it is Active.
+ */
+const CosmeticCard: React.FC<{
+  entry: TrailEntry | CoreEntry;
+  status: CosmeticStatus;
+  onBuy: () => void;
+  children: ReactNode;
+}> = ({ entry, status, onBuy, children }) => {
+  const { owned, equipped, affordable } = status;
+
+  return (
+    <div
+      className={`p-3 rounded-xl border flex flex-col justify-between transition-all ${
+        equipped
+          ? 'border-cyan-400 bg-slate-950 shadow-md shadow-cyan-950/50'
+          : 'border-slate-800 bg-slate-950/40 hover:border-slate-700'
+      }`}
+    >
+      <div>{children}</div>
+
+      <button
+        type="button"
+        disabled={!owned && !affordable}
+        onClick={onBuy}
+        className={`w-full py-1.5 px-2 rounded-lg text-[11px] font-mono transition-colors ${
+          equipped
+            ? 'bg-cyan-950/60 text-cyan-300 border border-cyan-800 cursor-default'
+            : owned
+              ? 'bg-slate-800 hover:bg-slate-700 text-slate-200'
+              : affordable
+                ? 'bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold'
+                : 'bg-slate-800/40 text-slate-600 cursor-not-allowed'
+        }`}
+      >
+        {equipped ? 'Active' : owned ? 'Equip' : `${entry.price} Cr`}
+      </button>
+    </div>
+  );
+};
+
 export const Hangar: React.FC = () => {
   const { buy } = useGame();
-  const { upgrades, totalCredits } = useGameState((state) => ({
-    upgrades: state.profile.upgrades,
-    totalCredits: state.profile.totalCredits,
-  }));
+  const profile = useGameState((state) => state.profile);
+  const { upgrades, totalCredits } = profile;
 
   return (
     <OverlayShell variant="window" width="4xl" labelledBy="hangar-title">
@@ -195,56 +239,30 @@ export const Hangar: React.FC = () => {
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             {entriesOf('trail').map((theme) => {
-              const isUnlocked = upgrades.unlockedThemes.includes(theme.id);
-              const isEquipped = upgrades.equippedTrailTheme === theme.id;
+              const status = cosmeticStatus(profile, theme);
 
               return (
-                <div
+                <CosmeticCard
                   key={theme.id}
-                  className={`p-3 rounded-xl border flex flex-col justify-between transition-all ${
-                    isEquipped
-                      ? 'border-cyan-400 bg-slate-950 shadow-md shadow-cyan-950/50'
-                      : 'border-slate-800 bg-slate-950/40 hover:border-slate-700'
-                  }`}
+                  entry={theme}
+                  status={status}
+                  onBuy={() => buy(theme.id)}
                 >
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <span
-                        className="w-3.5 h-3.5 rounded-full"
-                        style={{ backgroundColor: theme.color }}
-                      />
-                      {isEquipped && (
-                        <span className="text-[10px] font-mono font-bold text-cyan-400 flex items-center gap-0.5">
-                          <Check className="w-3 h-3" /> EQUIPPED
-                        </span>
-                      )}
-                    </div>
-                    <span className="font-semibold text-xs text-slate-200 block mb-2">
-                      {theme.name}
-                    </span>
+                  <div className="flex items-center justify-between mb-2">
+                    <span
+                      className="w-3.5 h-3.5 rounded-full"
+                      style={{ backgroundColor: theme.color }}
+                    />
+                    {status.equipped && (
+                      <span className="text-[10px] font-mono font-bold text-cyan-400 flex items-center gap-0.5">
+                        <Check className="w-3 h-3" /> EQUIPPED
+                      </span>
+                    )}
                   </div>
-
-                  <button
-                    type="button"
-                    disabled={!isUnlocked && totalCredits < theme.price}
-                    onClick={() => buy(theme.id)}
-                    className={`w-full py-1.5 px-2 rounded-lg text-[11px] font-mono transition-colors ${
-                      isEquipped
-                        ? 'bg-cyan-950/60 text-cyan-300 border border-cyan-800 cursor-default'
-                        : isUnlocked
-                          ? 'bg-slate-800 hover:bg-slate-700 text-slate-200'
-                          : totalCredits >= theme.price
-                            ? 'bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold'
-                            : 'bg-slate-800/40 text-slate-600 cursor-not-allowed'
-                    }`}
-                  >
-                    {isEquipped
-                      ? 'Active'
-                      : isUnlocked
-                        ? 'Equip'
-                        : `${theme.price} Cr`}
-                  </button>
-                </div>
+                  <span className="font-semibold text-xs text-slate-200 block mb-2">
+                    {theme.name}
+                  </span>
+                </CosmeticCard>
               );
             })}
           </div>
@@ -261,55 +279,29 @@ export const Hangar: React.FC = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {entriesOf('core').map((core) => {
-              const isUnlocked = upgrades.unlockedAudioCores.includes(core.id);
-              const isEquipped = upgrades.equippedAudioCore === core.id;
+              const status = cosmeticStatus(profile, core);
 
               return (
-                <div
+                <CosmeticCard
                   key={core.id}
-                  className={`p-3 rounded-xl border flex flex-col justify-between transition-all ${
-                    isEquipped
-                      ? 'border-cyan-400 bg-slate-950 shadow-md shadow-cyan-950/50'
-                      : 'border-slate-800 bg-slate-950/40 hover:border-slate-700'
-                  }`}
+                  entry={core}
+                  status={status}
+                  onBuy={() => buy(core.id)}
                 >
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="font-semibold text-xs text-white">
-                        {core.name}
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="font-semibold text-xs text-white">
+                      {core.name}
+                    </span>
+                    {status.equipped && (
+                      <span className="text-[10px] font-mono font-bold text-cyan-400">
+                        ACTIVE
                       </span>
-                      {isEquipped && (
-                        <span className="text-[10px] font-mono font-bold text-cyan-400">
-                          ACTIVE
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-[11px] text-slate-400 mb-3">
-                      {core.description}
-                    </p>
+                    )}
                   </div>
-
-                  <button
-                    type="button"
-                    disabled={!isUnlocked && totalCredits < core.price}
-                    onClick={() => buy(core.id)}
-                    className={`w-full py-1.5 px-2 rounded-lg text-[11px] font-mono transition-colors ${
-                      isEquipped
-                        ? 'bg-cyan-950/60 text-cyan-300 border border-cyan-800 cursor-default'
-                        : isUnlocked
-                          ? 'bg-slate-800 hover:bg-slate-700 text-slate-200'
-                          : totalCredits >= core.price
-                            ? 'bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold'
-                            : 'bg-slate-800/40 text-slate-600 cursor-not-allowed'
-                    }`}
-                  >
-                    {isEquipped
-                      ? 'Active'
-                      : isUnlocked
-                        ? 'Equip'
-                        : `${core.price} Cr`}
-                  </button>
-                </div>
+                  <p className="text-[11px] text-slate-400 mb-3">
+                    {core.description}
+                  </p>
+                </CosmeticCard>
               );
             })}
           </div>

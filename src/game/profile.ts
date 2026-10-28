@@ -18,7 +18,12 @@ import {
   StageProgressSchema,
   totalStarsOf,
 } from './schemas';
-import { type CatalogItemId, catalogEntry } from './catalog';
+import {
+  type CatalogItemId,
+  catalogEntry,
+  type CoreEntry,
+  type TrailEntry,
+} from './catalog';
 import type { Moment } from './moments';
 import {
   type BackupImport,
@@ -159,6 +164,27 @@ const COSMETIC_FIELDS = {
   core: { owned: 'unlockedAudioCores', equipped: 'equippedAudioCore' },
 } as const;
 
+/** Where the player stands with a Cosmetic: whether they own it, wear it, and can pay for it. */
+export interface CosmeticStatus {
+  owned: boolean;
+  equipped: boolean;
+  affordable: boolean;
+}
+
+export function cosmeticStatus(
+  profile: PlayerProfile,
+  entry: TrailEntry | CoreEntry,
+): CosmeticStatus {
+  const { owned, equipped } = COSMETIC_FIELDS[entry.kind];
+  const { upgrades, totalCredits } = profile;
+  const ownedIds: readonly string[] = upgrades[owned];
+  return {
+    owned: ownedIds.includes(entry.id),
+    equipped: upgrades[equipped] === entry.id,
+    affordable: totalCredits >= entry.price,
+  };
+}
+
 /**
  * What the Profile becomes when the player buys an item: an Upgrade's next
  * level at its price, or a Cosmetic bought and equipped (a Cosmetic already
@@ -184,8 +210,9 @@ export function purchaseOf(
 
   const { owned, equipped } = COSMETIC_FIELDS[entry.kind];
   const ownedIds: readonly string[] = upgrades[owned];
-  const isOwned = ownedIds.includes(entry.id);
-  if (!isOwned && totalCredits < entry.price) return null;
+  const status = cosmeticStatus(profile, entry);
+  const isOwned = status.owned;
+  if (!isOwned && !status.affordable) return null;
   return {
     totalCredits: isOwned ? totalCredits : totalCredits - entry.price,
     upgrades: {
