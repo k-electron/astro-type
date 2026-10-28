@@ -27,7 +27,7 @@ export const HUD: React.FC = () => {
     shieldsRemaining: state.run.shieldsRemaining,
     netWpm: state.run.netWpm,
     accuracy: state.run.accuracy,
-    cadence: state.run.cadenceConsistency ?? 100,
+    cadence: state.run.cadenceConsistency,
     keyboardVisible: state.profile.keyboardVisible,
   }));
   const onToggleKeyboard = () =>

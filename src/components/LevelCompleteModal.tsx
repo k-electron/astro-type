@@ -266,25 +266,23 @@ export const LevelCompleteModal: React.FC = () => {
           <span className="text-[11px] font-mono uppercase font-bold text-cyan-400">
             Touch-Typing Technique Assessment
           </span>
-          {result.cadenceConsistency !== undefined && (
-            <span
-              className={`text-[10px] font-mono px-2 py-0.5 rounded border ${
-                result.cadenceConsistency >= 85
-                  ? 'bg-emerald-950/60 border-emerald-500/40 text-emerald-300'
-                  : result.cadenceConsistency >= 70
-                    ? 'bg-cyan-950/60 border-cyan-500/40 text-cyan-300'
-                    : 'bg-amber-950/60 border-amber-500/40 text-amber-300'
-              }`}
-            >
-              Cadence Rhythm: {result.cadenceConsistency}% (
-              {result.cadenceConsistency >= 85
-                ? 'Steady'
+          <span
+            className={`text-[10px] font-mono px-2 py-0.5 rounded border ${
+              result.cadenceConsistency >= 85
+                ? 'bg-emerald-950/60 border-emerald-500/40 text-emerald-300'
                 : result.cadenceConsistency >= 70
-                  ? 'Paced'
-                  : 'Uneven'}
-              )
-            </span>
-          )}
+                  ? 'bg-cyan-950/60 border-cyan-500/40 text-cyan-300'
+                  : 'bg-amber-950/60 border-amber-500/40 text-amber-300'
+            }`}
+          >
+            Cadence Rhythm: {result.cadenceConsistency}% (
+            {result.cadenceConsistency >= 85
+              ? 'Steady'
+              : result.cadenceConsistency >= 70
+                ? 'Paced'
+                : 'Uneven'}
+            )
+          </span>
         </div>
         <p className="text-xs text-slate-300 leading-relaxed">
           {accuracy >= 97

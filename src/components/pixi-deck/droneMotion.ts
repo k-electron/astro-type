@@ -1,4 +1,4 @@
-import type { FallingNote } from '../../types/game';
+import type { FallingNote } from '../../game/rules';
 
 /**
  * Smooths Drone motion between Run clock steps. The store moves Drones in

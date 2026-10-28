@@ -1,5 +1,5 @@
 import type { Grade } from '../game/rules';
-import type { AudioSynthCore, BeatTheme } from '../types/game';
+import type { AudioSynthCore, BeatTheme } from '../store/schemas';
 
 class SoundEngine {
   private ctx: AudioContext | null = null;

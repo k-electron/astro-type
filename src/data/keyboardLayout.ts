@@ -1,6 +1,19 @@
-import type { FingerZone } from '../types/game';
+/** The fingers of the keyboard. Both thumbs are one: they type Space. */
+export type FingerZone =
+  | 'LEFT_PINKY'
+  | 'LEFT_RING'
+  | 'LEFT_MIDDLE'
+  | 'LEFT_INDEX'
+  | 'THUMB'
+  | 'RIGHT_INDEX'
+  | 'RIGHT_MIDDLE'
+  | 'RIGHT_RING'
+  | 'RIGHT_PINKY';
 
-/** One keycap of the Action Deck's keyboard. Drawn by the PixiJS deck. */
+/**
+ * One keycap of the Action Deck's keyboard, and one row of the keyboard's one
+ * key table: the finger and the lane that type it.
+ */
 export interface KeySpec {
   key: string;
   display: string;

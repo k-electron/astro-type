@@ -1,4 +1,4 @@
-import type { Screen } from '../types/game';
+import type { Screen } from '../store/gameMachine';
 
 /**
  * What a menu's back button says, by the screen Close returns to.

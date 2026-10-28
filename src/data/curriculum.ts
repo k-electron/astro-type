@@ -1,6 +1,64 @@
 import { z } from 'zod';
-import type { FingerLaneInfo, FingerZone, Sector, Stage } from '../types/game';
-import { KEYBOARD_ROWS } from './keyboardLayout';
+import { type FingerZone, KEYBOARD_ROWS } from './keyboardLayout';
+
+export interface FingerLaneInfo {
+  laneIndex: number;
+  finger: FingerZone;
+  label: string;
+  hand: 'left' | 'right' | 'thumb';
+  color: string;
+  glowColor: string;
+}
+
+export interface StarRatingThresholds {
+  oneStarAccuracy: number; // e.g. 75
+  twoStarWpm: number; // e.g. 25
+  twoStarAccuracy: number; // e.g. 90
+  threeStarWpm: number; // e.g. 40
+  threeStarAccuracy: number; // e.g. 95
+  threeStarMinStreak: number; // e.g. 25
+}
+
+/** Where a Stage comes from: a Sector of the curriculum, or the player's own Free Flight. */
+export type StageOrigin = 'sector' | 'free-flight';
+
+export interface Stage {
+  id: string; // e.g. "s1-l1"; a Free Flight's is `custom-<launch time>`
+  origin: StageOrigin;
+  sectorId: string; // e.g. "sector-1"
+  stageNumber: number; // 1 to 4
+  title: string;
+  subtitle: string;
+  description: string;
+  targetKeys: string[];
+  sampleText: string;
+  difficulty: 'Beginner' | 'Intermediate' | 'Advanced' | 'Expert';
+  targetWpm: number;
+  starThresholds: StarRatingThresholds;
+  timeLimitSeconds?: number;
+  focusFingers?: string; // e.g. "Left Index (F) & Right Index (J)"
+  techniqueTip?: string; // e.g. "Rest index fingers on F and J bumps. Keep palms level."
+  drillPatternType?:
+    | 'ANCHOR_CALIBRATION'
+    | 'FINGER_EXPANSION'
+    | 'ANCHOR_REACH_RETURN'
+    | 'HAND_ALTERNATION'
+    | 'VOWEL_REACH'
+    | 'CADENCE_FLOW'
+    | 'SHIFT_DISCIPLINE';
+}
+
+export interface Sector {
+  id: string;
+  name: string;
+  codenick: string; // e.g. "Sector 01: Orion Belt"
+  curriculumCategory: string; // e.g. "Home Row Foundations"
+  description: string;
+  requiredStarsToUnlock: number; // Star-gate sector unlock milestone
+  stages: Stage[];
+  accentColor: string;
+  themeSymbol: string;
+}
 
 export const FINGER_COLOR_MAP: Record<FingerZone, string> = {
   LEFT_PINKY: '#ec4899', // Vibrant Pink

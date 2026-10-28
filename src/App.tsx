@@ -13,7 +13,7 @@ import { CustomPracticeModal } from './components/CustomPracticeModal';
 import { LevelCompleteModal } from './components/LevelCompleteModal';
 import { GlobalCosmicBackground } from './components/GlobalCosmicBackground';
 import { useGameState } from './store/useGameState';
-import type { Screen } from './types/game';
+import type { Screen } from './store/gameMachine';
 
 /**
  * The starfield behind everything. It selects the two fields that speed it up

@@ -1,6 +1,6 @@
 import { Container, Graphics, GraphicsPath, Sprite, type Text } from 'pixi.js';
 import { FINGER_COLOR_MAP } from '../../data/curriculum';
-import type { FingerZone } from '../../types/game';
+import type { FingerZone } from '../../data/keyboardLayout';
 import { pulseOpacity } from './animation';
 import { dashedCubic, dashedRoundRect, deckWeight, makeText } from './draw';
 import { boxGlow } from './textures';

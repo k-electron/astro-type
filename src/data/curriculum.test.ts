@@ -10,7 +10,7 @@ import {
 
 // The curriculum is checked here, not at load (#11, #27). Every rule below
 // fails only when a Stage would break for the player. The shape of a Sector
-// and a Stage is the `Sector` and `Stage` types in src/types/game.ts, which
+// and a Stage is the `Sector` and `Stage` types in curriculum.ts, which
 // `CURRICULUM_SECTORS` is declared with, so the typecheck already holds it;
 // what a type cannot say is checked here.
 

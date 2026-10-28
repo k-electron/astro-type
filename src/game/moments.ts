@@ -1,4 +1,4 @@
-import type { FingerZone } from '../types/game';
+import type { FingerZone } from '../data/keyboardLayout';
 import type { Judgement } from './rules';
 
 /**

@@ -10,8 +10,21 @@
  * changes nothing.
  */
 import { assign, setup } from 'xstate';
-import { getStageById } from '../data/curriculum';
-import type { RunPhase, Screen, Stage } from '../types/game';
+import { getStageById, type Stage } from '../data/curriculum';
+
+/** The screens, named as in GLOSSARY.md. The machine decides which one shows. */
+export type Screen =
+  | 'academy-home'
+  | 'flight-deck'
+  | 'pause-menu'
+  | 'galaxy-map'
+  | 'hangar'
+  | 'analytics'
+  | 'free-flight'
+  | 'debrief';
+
+/** Where the Run is: none yet since load, or running, paused, cleared or abandoned. */
+export type RunPhase = 'none' | 'running' | 'paused' | 'cleared' | 'abandoned';
 
 /**
  * The parameter a screen is opened with, by screen. A screen that takes none

@@ -11,7 +11,6 @@ import {
   Home,
   RotateCcw,
 } from 'lucide-react';
-import type { Stage } from '../types/game';
 import { useGame } from '../store/gameContext';
 import { useGameState } from '../store/useGameState';
 import {
@@ -19,7 +18,7 @@ import {
   OverlayFlightDeckButton,
   OverlayShell,
 } from './OverlayShell';
-import { CURRICULUM_SECTORS } from '../data/curriculum';
+import { CURRICULUM_SECTORS, type Stage } from '../data/curriculum';
 import { isSectorUnlocked } from '../game/profile';
 
 export const StageSelectModal: React.FC = () => {

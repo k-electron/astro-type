@@ -449,7 +449,6 @@ export class DeckScene {
     const { resolution } = this.options;
     const seen = new Set<string>();
     state.run.drones.forEach((note, index) => {
-      if (note.status === 'PROCESSED') return;
       const rect = layout.keys.get(keyId(note.char));
       // A character with no keycap of its own (a shifted symbol) has no Drone,
       // as in the DOM deck.

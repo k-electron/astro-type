@@ -18,18 +18,18 @@ import {
   type GameMachineEvent,
   gameMachine,
   type PlayerEvent,
+  type RunPhase,
+  type Screen,
   type ScreenParams,
 } from '../store/gameMachine';
+import type { Stage } from '../data/curriculum';
+import { type Clock, createRunClock, createSteppedClock } from './clock';
 import type {
   FallingNote,
+  KeyOptions,
   LivePerformance,
-  PlayerProfile,
-  RunPhase,
-  Screen,
-  Stage,
-} from '../types/game';
-import { type Clock, createRunClock, createSteppedClock } from './clock';
-import type { KeyOptions, RunState } from './rules';
+  RunState,
+} from './rules';
 import type { Moment } from './moments';
 import {
   cueFor,
@@ -42,7 +42,11 @@ import { createProfileSlice, loadoutOf, type ProfileSlice } from './profile';
 import { createRunSlice, type RunSlice, type VictoryResult } from './run';
 import type { CatalogItemId } from './catalog';
 import type { BackupImport, SaveStorage } from './save';
-import { type Settings, totalStarsOf } from '../store/schemas';
+import {
+  type PlayerProfile,
+  type Settings,
+  totalStarsOf,
+} from '../store/schemas';
 
 export { createMemoryStorage } from './save';
 export type { MemorySaveStorage, SaveStorage } from './save';
@@ -52,7 +56,7 @@ export type { Judgement, KeyOptions } from './rules';
 export type { Moment } from './moments';
 export type { VictoryResult } from './run';
 export type { PlayerEvent } from '../store/gameMachine';
-export type { RunPhase, Screen } from '../types/game';
+export type { RunPhase, Screen } from '../store/gameMachine';
 
 /** The machine refused a move: the event doesn't apply on this screen. A bug in whoever sent it. */
 export class RefusedMoveError extends Error {

@@ -1,6 +1,6 @@
 import type React from 'react';
 import { Check, Lock, Music, Volume2, VolumeX } from 'lucide-react';
-import type { BeatTheme } from '../types/game';
+import type { BeatTheme } from '../store/schemas';
 import { entriesOf } from '../game/catalog';
 import { useGame } from '../store/gameContext';
 import { useGameState } from '../store/useGameState';

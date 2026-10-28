@@ -10,7 +10,8 @@
  * reads nothing of this module.
  */
 import { CURRICULUM_SECTORS } from '../data/curriculum';
-import type { RunPhase, Stage } from '../types/game';
+import type { Stage } from '../data/curriculum';
+import type { RunPhase } from '../store/gameMachine';
 import type { Clock, RunClock } from './clock';
 import type { Moment } from './moments';
 import { type Loadout, loadoutOf, type ProfileSlice } from './profile';
@@ -37,7 +38,7 @@ export interface VictoryResult {
   newStarsAwarded: number;
   /** This Run's Stars took the fleet past a Sector's gate. */
   unlockedSector: boolean;
-  cadenceConsistency?: number;
+  cadenceConsistency: number;
 }
 
 /** The Run's state in the store. */
@@ -196,7 +197,7 @@ export function createRunSlice(
           isNewHighScore,
           newStarsAwarded,
           unlockedSector,
-          cadenceConsistency: performance.cadenceConsistency ?? 100,
+          cadenceConsistency: performance.cadenceConsistency,
         },
       });
     },

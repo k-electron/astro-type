@@ -1,4 +1,4 @@
-import type { RunPhase } from '../../types/game';
+import type { RunPhase } from '../../store/gameMachine';
 import { MAX_CATCH_UP_MS, STEP_MS } from '../../game/clock';
 
 /** What the effect clock reads each frame. */

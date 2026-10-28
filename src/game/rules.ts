@@ -11,14 +11,46 @@
  * The numbers and windows are the original game's, except that every Run now
  * falls at one Drone speed (`DRONE_SPEED`).
  */
-import { getNoteLaneAndFinger } from '../data/curriculum';
-import type { FallingNote, LivePerformance, Stage } from '../types/game';
+import { getNoteLaneAndFinger, type Stage } from '../data/curriculum';
+import type { FingerZone } from '../data/keyboardLayout';
 import { STEP_MS } from './clock';
 import type { Moment } from './moments';
 import type { Loadout } from './profile';
 
 /** How close to the Strike Line a hit landed: Perfect, Great or Good. */
 export type Grade = 'perfect' | 'great' | 'good';
+
+/** A Drone: one character of the Stage's text, falling down its lane. */
+export interface FallingNote {
+  id: string;
+  char: string;
+  displayChar: string; // e.g. "␣" for space
+  lane: number; // 0 to 8
+  finger: FingerZone;
+  yPercent: number; // 0 to 100 on canvas
+  isTargetLocked?: boolean;
+}
+
+/** The live numbers of a Run: score, Streak, Overdrive, keystroke counts, WPM, Accuracy. */
+export interface LivePerformance {
+  score: number;
+  currentStreak: number;
+  maxStreak: number;
+  multiplier: number; // 1, 2, 3, 4
+  hyperspaceActive: boolean;
+  hyperspaceEnergy: number; // 0 to 100
+  shieldsRemaining: number;
+  correctKeystrokes: number;
+  incorrectKeystrokes: number;
+  totalKeystrokes: number;
+  grossWpm: number;
+  netWpm: number;
+  accuracy: number;
+  /** The typed position: the index in the Stage's text of the character to type next. */
+  currentCharIndex: number;
+  timeElapsedSeconds: number;
+  cadenceConsistency: number; // 0 to 100% rhythm regularity between keystrokes
+}
 
 /** Where a Drone waits for the player, as a percentage down the Action Deck. */
 export const STRIKE_LINE_Y = 84;
@@ -157,7 +189,6 @@ function makeDrone(
     lane,
     finger,
     yPercent,
-    status: 'PENDING',
     isTargetLocked,
   };
 }
@@ -192,9 +223,7 @@ function advanceDroneQueue(
   text: string,
   now: number,
 ): FallingNote[] {
-  const remaining = drones.filter(
-    (n) => n.id !== hit?.id && n.status !== 'PROCESSED',
-  );
+  const remaining = drones.filter((n) => n.id !== hit?.id);
   const upcomingIdx = nextCharIndex + 6;
   if (upcomingIdx < text.length) {
     remaining.push(makeDrone(text[upcomingIdx], upcomingIdx, now, 0, false));
@@ -216,8 +245,6 @@ function moveDrones(drones: FallingNote[]): FallingNote[] {
   const { leadStep, followerEasing } = DRONE_SPEED;
 
   return drones.map((note, idx) => {
-    if (note.status === 'PROCESSED') return note;
-
     if (idx === 0) {
       if (note.yPercent >= 83.5) {
         return { ...note, yPercent: STRIKE_LINE_Y, isTargetLocked: true };
@@ -391,7 +418,7 @@ export function strike(
   if (key !== target) {
     const { perf, shielded } = applyMiss(
       performance,
-      cadenceAfterMiss(performance.cadenceConsistency ?? 100),
+      cadenceAfterMiss(performance.cadenceConsistency),
     );
     const judgement = { type: shielded ? 'shield' : 'miss', key } as const;
     return {
@@ -412,9 +439,7 @@ export function strike(
   }
 
   // Judge the Strike against the lead Drone for this character.
-  const drone = run.drones.find(
-    (d) => d.char === target && d.status === 'PENDING',
-  );
+  const drone = run.drones.find((d) => d.char === target);
   const grade = judge(drone?.yPercent, loadout.sensors);
   const streak = performance.currentStreak + 1;
   const multiplier = multiplierForStreak(streak);
@@ -469,7 +494,7 @@ export function strike(
         currentCharIndex: nextIndex,
         cadenceConsistency: cadenceAfterHit(
           keystrokeTimes,
-          performance.cadenceConsistency ?? 100,
+          performance.cadenceConsistency,
         ),
       }),
       drones: advanceDroneQueue(

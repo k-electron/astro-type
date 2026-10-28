@@ -13,7 +13,7 @@ import type {
   AudioSynthCore,
   ShipUpgrades,
   TrailColorTheme,
-} from '../types/game';
+} from '../store/schemas';
 
 /** The Upgrades' ids, as `buy` takes them. */
 export type UpgradeId = 'shields' | 'reactor' | 'sensors';
