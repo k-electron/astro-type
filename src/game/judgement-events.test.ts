@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Judgement, Moment } from './createGame';
+import type { Judgement, Moment } from './game';
 import {
   type Game,
   hitPerfect,
