@@ -100,6 +100,54 @@ export const OverlayShell: React.FC<OverlayShellProps> = ({
 };
 
 /**
+ * A confirm over a screen (Wipe, Factory Reset): the backdrop and the card,
+ * which `children` fill. While it is open, Esc cancels the confirm and nothing
+ * more, wherever focus is (on the card, dropped to the page by a click on the
+ * backdrop, or tabbed out): a listener on the window, ahead of the game's keys,
+ * swallows it (the Esc contract in attachKeyboard.ts). With the confirm gone,
+ * the next Esc goes back from the screen as it always did. The card takes focus
+ * when it opens, and focus goes back to where it was when it closes.
+ */
+export const OverlayConfirm: React.FC<{
+  onCancel: () => void;
+  children: ReactNode;
+}> = ({ onCancel, children }) => {
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const before = document.activeElement;
+    cardRef.current?.focus();
+    return () => {
+      if (before instanceof HTMLElement && before.isConnected) before.focus();
+    };
+  }, []);
+
+  useEffect(() => {
+    // The capture phase runs before the game's listener on the window, which
+    // then sees the Esc was taken. A held key's repeats are swallowed too.
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      if (!event.repeat) onCancel();
+    };
+    window.addEventListener('keydown', onKeyDown, true);
+    return () => window.removeEventListener('keydown', onKeyDown, true);
+  }, [onCancel]);
+
+  return (
+    <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md">
+      <div
+        ref={cardRef}
+        tabIndex={-1}
+        className="w-full max-w-md rounded-2xl border border-rose-900/80 bg-slate-900 shadow-2xl p-6 text-center outline-none animate-in fade-in zoom-in-95 duration-150"
+      >
+        {children}
+      </div>
+    </div>
+  );
+};
+
+/**
  * The button that closes the screen, labelled for where it returns to. `back`
  * is the Galaxy Map's return to the Debrief it was opened from.
  */
@@ -122,17 +170,26 @@ export const OverlayCloseButton: React.FC<{
       </button>
     );
   }
+  // Back to the Pause Menu has the arrow Back to Debrief has.
+  const arrow = opener === 'pause-menu' || opener === 'flight-deck';
   return (
     <button
       type="button"
       onClick={onClose}
-      className={
+      className={`${
         look === 'compact'
           ? 'px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-700 bg-slate-800 text-slate-300 hover:text-white transition-colors cursor-pointer'
           : 'px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer'
-      }
+      }${arrow ? ' flex items-center gap-1' : ''}`}
     >
-      {closeLabel(opener)}
+      {arrow ? (
+        <>
+          <ArrowLeft className="w-3.5 h-3.5" />
+          <span>{closeLabel(opener)}</span>
+        </>
+      ) : (
+        closeLabel(opener)
+      )}
     </button>
   );
 };

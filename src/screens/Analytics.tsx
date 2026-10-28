@@ -4,6 +4,7 @@ import { useGame } from './useGame';
 import { useGameState } from './useGameState';
 import {
   OverlayCloseButton,
+  OverlayConfirm,
   OverlayFlightDeckButton,
   OverlayShell,
 } from './OverlayShell';
@@ -458,54 +459,52 @@ export const Analytics: React.FC = () => {
 
       {/* Confirmation Modal Overlay */}
       {confirmMode !== 'NONE' && (
-        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md">
-          <div className="w-full max-w-md rounded-2xl border border-rose-900/80 bg-slate-900 shadow-2xl p-6 text-center animate-in fade-in zoom-in-95 duration-150">
-            <div className="w-12 h-12 rounded-xl bg-rose-950/60 border border-rose-500/50 flex items-center justify-center mx-auto mb-4 text-rose-400 shadow-[0_0_20px_rgba(244,63,94,0.3)]">
-              <AlertTriangle className="w-6 h-6" />
-            </div>
-
-            <h3 className="text-xl font-bold font-display text-white mb-2">
-              {confirmMode === 'WIPE_ACHIEVEMENTS'
-                ? 'Wipe Curriculum Achievements?'
-                : 'Full Starship Factory Reset?'}
-            </h3>
-
-            <p className="text-xs text-slate-300 leading-relaxed mb-4">
-              {confirmMode === 'WIPE_ACHIEVEMENTS'
-                ? `This will wipe all ${profile.totalStars} ★ stars earned and reset stage completions to 0 so you can experience the classical touch-typing curriculum from the beginning. Your credits and upgrades are preserved.`
-                : 'This will irreversibly wipe ALL starship progress: stars, credits, ship upgrades, accuracy key analytics, and custom themes.'}
-            </p>
-
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => setConfirmMode('NONE')}
-                className="flex-1 py-2.5 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition-colors cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  if (confirmMode === 'WIPE_ACHIEVEMENTS') {
-                    wipeAchievements();
-                  } else {
-                    resetProgress();
-                  }
-                  setConfirmMode('NONE');
-                }}
-                className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold font-mono transition-colors shadow-lg shadow-rose-950/50 cursor-pointer flex items-center justify-center gap-1.5"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-                <span>
-                  {confirmMode === 'WIPE_ACHIEVEMENTS'
-                    ? 'Confirm Wipe'
-                    : 'Confirm Reset'}
-                </span>
-              </button>
-            </div>
+        <OverlayConfirm onCancel={() => setConfirmMode('NONE')}>
+          <div className="w-12 h-12 rounded-xl bg-rose-950/60 border border-rose-500/50 flex items-center justify-center mx-auto mb-4 text-rose-400 shadow-[0_0_20px_rgba(244,63,94,0.3)]">
+            <AlertTriangle className="w-6 h-6" />
           </div>
-        </div>
+
+          <h3 className="text-xl font-bold font-display text-white mb-2">
+            {confirmMode === 'WIPE_ACHIEVEMENTS'
+              ? 'Wipe Curriculum Achievements?'
+              : 'Full Starship Factory Reset?'}
+          </h3>
+
+          <p className="text-xs text-slate-300 leading-relaxed mb-4">
+            {confirmMode === 'WIPE_ACHIEVEMENTS'
+              ? `This will wipe all ${profile.totalStars} ★ stars earned and reset stage completions to 0 so you can experience the classical touch-typing curriculum from the beginning. Your credits and upgrades are preserved.`
+              : 'This will irreversibly wipe ALL starship progress: stars, credits, ship upgrades, accuracy key analytics, and custom themes.'}
+          </p>
+
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setConfirmMode('NONE')}
+              className="flex-1 py-2.5 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition-colors cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (confirmMode === 'WIPE_ACHIEVEMENTS') {
+                  wipeAchievements();
+                } else {
+                  resetProgress();
+                }
+                setConfirmMode('NONE');
+              }}
+              className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold font-mono transition-colors shadow-lg shadow-rose-950/50 cursor-pointer flex items-center justify-center gap-1.5"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>
+                {confirmMode === 'WIPE_ACHIEVEMENTS'
+                  ? 'Confirm Wipe'
+                  : 'Confirm Reset'}
+              </span>
+            </button>
+          </div>
+        </OverlayConfirm>
       )}
     </OverlayShell>
   );

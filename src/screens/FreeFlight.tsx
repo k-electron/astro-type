@@ -9,10 +9,17 @@ import {
   FreeFlightTextSchema,
 } from '../curriculum/curriculum';
 import { useGame } from './useGame';
-import { OverlayCloseButton, OverlayShell } from './OverlayShell';
+import {
+  OverlayCloseButton,
+  OverlayFlightDeckButton,
+  OverlayShell,
+} from './OverlayShell';
+import { useGameState } from './useGameState';
 
 export const FreeFlight: React.FC = () => {
   const { send } = useGame();
+  // A Run waiting (paused) is resumed from here, as from the other menus.
+  const runWaiting = useGameState((state) => state.phase === 'paused');
   const [customText, setCustomText] = useState<string>(
     FREE_FLIGHT_PRESETS[0].text,
   );
@@ -47,7 +54,10 @@ export const FreeFlight: React.FC = () => {
           </p>
         </div>
 
-        <OverlayCloseButton />
+        <div className="flex flex-wrap items-center justify-end gap-2.5">
+          {runWaiting && <OverlayFlightDeckButton />}
+          <OverlayCloseButton />
+        </div>
       </div>
 
       {/* Presets */}

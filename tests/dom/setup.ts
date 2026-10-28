@@ -34,8 +34,13 @@ vi.mock('../../src/deck/deckSession', () => ({
   getDeckSession: () => ({ attach() {}, detach() {} }),
 }));
 
-// 3. STUB: confetti is drawn on a canvas.
-vi.mock('canvas-confetti', () => ({ default: () => null }));
+// 3. STUB: confetti is drawn on a canvas. It has the library's `reset` too (it
+//    stops what is falling and removes the canvas), so a screen that clears
+//    its confetti as it closes does not throw here. Whether the confetti really
+//    stops is a browser fact: see tests/browser/local/campaign.local.spec.ts.
+vi.mock('canvas-confetti', () => ({
+  default: Object.assign(() => null, { reset() {} }),
+}));
 
 // 4. SHIM: the header watches its own size; there is no layout to watch.
 globalThis.ResizeObserver = class {

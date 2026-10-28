@@ -1,8 +1,9 @@
+import { fireEvent } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { CURRICULUM_SECTORS } from '../../src/curriculum/curriculum';
 import { RETURNING_PLAYER } from '../shared/saves';
 import { DEBRIEF_TITLE, MENU_HEADINGS, START_STAGE } from '../shared/screens';
-import { type Player, renderGame, screen } from './harness';
+import { type Player, renderGame, screen, within } from './harness';
 import { flightDeckLabel } from '../../src/screens/closeLabel';
 
 // Wiping the Stars asks first. profile.test.tsx guards Factory Reset
@@ -144,3 +145,103 @@ describe('Cancel on Factory Reset', () => {
     expect(sectorOneStars(player)).toContain('5/12');
   });
 });
+
+// Esc on a confirm cancels the confirm and nothing more. The player's Esc goes
+// to whatever has focus (the button they just clicked, or whatever the screen
+// moved focus to) and bubbles up to the window's keys, so the test sends it
+// there, not straight to the window: an element in the way can then swallow it
+// (the Esc contract in attach-keyboard.test.tsx).
+const CONFIRMS = [
+  {
+    where: 'Wipe on the Galaxy Map',
+    menu: 'Galaxy Map',
+    ask: /^Wipe Achievements/,
+    confirm: 'Confirm Wipe',
+  },
+  {
+    where: 'Wipe Stars on Analytics',
+    menu: 'Analytics',
+    ask: 'Wipe Stars',
+    confirm: 'Confirm Wipe',
+  },
+  {
+    where: 'Factory Reset on Analytics',
+    menu: 'Analytics',
+    ask: 'Factory Reset',
+    confirm: 'Confirm Reset',
+  },
+] as const;
+
+/** A mouse click on a button in the dialog: the button takes focus, then is pressed. */
+function clickLikeAMouse(name: string | RegExp) {
+  const dialog = screen.getByRole('dialog');
+  const button = within(dialog).getByRole('button', { name });
+  button.focus();
+  fireEvent.click(button);
+}
+
+/** Esc as the keyboard sends it: to the focused element, bubbling up to the window. */
+function pressEscWhereFocusIs() {
+  const target = document.activeElement ?? document.body;
+  fireEvent.keyDown(target, { key: 'Escape' });
+  fireEvent.keyUp(target, { key: 'Escape' });
+}
+
+describe.each(CONFIRMS)(
+  'Esc on the $where confirm',
+  ({ menu, ask, confirm }) => {
+    it('cancels the confirm and nothing more: the screen stays and nothing is wiped', () => {
+      const player = renderGame({ profile: RETURNING_PLAYER });
+      player.openHeader(menu);
+      clickLikeAMouse(ask);
+      expect(confirmButton(confirm)).not.toBeNull();
+
+      pressEscWhereFocusIs();
+
+      expect(
+        screen.queryByRole('heading', { name: MENU_HEADINGS[menu] }),
+      ).not.toBeNull();
+      expect(confirmButton(confirm)).toBeNull();
+      expect(stars(5)).toBeTruthy();
+      expect(credits('1,234')).toBeTruthy();
+    });
+
+    it('cancels the confirm wherever focus is: after a click on the backdrop dropped it', () => {
+      const player = renderGame({ profile: RETURNING_PLAYER });
+      player.openHeader(menu);
+      clickLikeAMouse(ask);
+      (document.activeElement as HTMLElement).blur();
+      expect(screen.getByRole('dialog').contains(document.activeElement)).toBe(
+        false,
+      );
+
+      pressEscWhereFocusIs();
+
+      expect(
+        screen.queryByRole('heading', { name: MENU_HEADINGS[menu] }),
+      ).not.toBeNull();
+      expect(confirmButton(confirm)).toBeNull();
+      expect(stars(5)).toBeTruthy();
+
+      pressEscWhereFocusIs();
+
+      expect(
+        screen.queryByRole('heading', { name: MENU_HEADINGS[menu] }),
+      ).toBeNull();
+    });
+
+    it('is only for the confirm: Esc again goes back from the screen as it always did', () => {
+      const player = renderGame({ profile: RETURNING_PLAYER });
+      player.openHeader(menu);
+      clickLikeAMouse(ask);
+      pressEscWhereFocusIs();
+
+      pressEscWhereFocusIs();
+
+      expect(
+        screen.queryByRole('heading', { name: MENU_HEADINGS[menu] }),
+      ).toBeNull();
+      expect(stars(5)).toBeTruthy();
+    });
+  },
+);

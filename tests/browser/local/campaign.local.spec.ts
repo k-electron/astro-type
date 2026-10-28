@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { GALAXY_MAP } from '../../shared/screens';
+import { DEBRIEF_TITLE, GALAXY_MAP } from '../../shared/screens';
 import { clearFirstStage, debrief, startFirstStage } from '../helpers';
 
 // LOCAL ONLY (run by `pnpm verify`, not in CI; docs/agents/testing.md): one full
@@ -37,6 +37,26 @@ test('the first Stage played for real from a fresh Save: its Debrief, and the St
     await expect
       .soft(page.getByRole('button', { name: '3 ★', exact: true }))
       .toBeVisible();
+  });
+
+  await test.step('the confetti of a 3-Star Debrief stops falling when the Debrief closes', async () => {
+    // The library draws it on a canvas of its own, fixed over the page, and
+    // takes the canvas away when it is done (a few seconds) or is reset. The
+    // Debrief has just opened with 3 Stars, so it is still falling.
+    const confetti = page.locator('body > canvas');
+    await expect(confetti, 'confetti is falling over the Debrief').toHaveCount(
+      1,
+      { timeout: 1000 },
+    );
+
+    await result.getByRole('button', { name: 'Replay', exact: true }).click();
+    await expect(page.getByText(DEBRIEF_TITLE)).toBeHidden();
+
+    // Well inside the few seconds it would otherwise take to fall.
+    await expect(
+      confetti,
+      'no confetti is left once the Debrief is gone',
+    ).toHaveCount(0, { timeout: 500 });
   });
 
   await test.step('the Save outlives the page: the Stars are still there after a reload', async () => {

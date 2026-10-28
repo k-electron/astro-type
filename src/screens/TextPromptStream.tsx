@@ -7,6 +7,17 @@ import {
 } from '../curriculum/curriculum';
 import { useGameState } from './useGameState';
 
+/**
+ * The text cut into words, each with the spaces after it, so the prompt can
+ * keep a word whole on one line and wrap between words.
+ */
+function wordGroups(text: string): { start: number; text: string }[] {
+  return [...text.matchAll(/[^ ]+ *| +/g)].map((match) => ({
+    start: match.index,
+    text: match[0],
+  }));
+}
+
 /** The Stage's text and where the player is in it. It selects only what it shows. */
 export const TextPromptStream: React.FC = () => {
   const stage = useGameState((state) => state.run.currentStage);
@@ -46,6 +57,65 @@ export const TextPromptStream: React.FC = () => {
     ? KEY_FINGER_MAP[currentChar] || KEY_FINGER_MAP[currentChar.toLowerCase()]
     : null;
   const laneInfo = charInfo ? FINGER_LANES[charInfo.lane] : null;
+
+  /** One character of the text, as the player sees it. */
+  const renderChar = (char: string, index: number) => {
+    const isTyped = index < currentIndex;
+    const isCurrent = index === currentIndex;
+    const hasError = errorIndices.has(index);
+    const isSpaceChar = char === ' ';
+
+    if (isSpaceChar) {
+      return (
+        <span
+          key={index}
+          ref={isCurrent ? activeCharRef : null}
+          aria-current={isCurrent ? 'true' : undefined}
+          className={`inline-block select-none transition-all duration-75 ${
+            isCurrent
+              ? `px-1.5 py-0.2 mx-0.5 rounded bg-cyan-500/25 ring-cyan-400 font-bold shadow-[0_0_10px_rgba(6,182,212,0.5)] scale-105 ${
+                  hasError
+                    ? 'text-rose-400 line-through decoration-rose-500'
+                    : 'text-cyan-200'
+                }`
+              : isTyped
+                ? hasError
+                  ? 'px-1 text-rose-400 line-through decoration-rose-500 font-bold'
+                  : 'px-1 text-emerald-500/60 font-medium'
+                : 'px-1 text-slate-600/70 hover:text-slate-400 font-normal'
+          }`}
+          title="Space (␣)"
+        >
+          ␣
+        </span>
+      );
+    }
+
+    let charClass = 'text-slate-500';
+    if (isTyped) {
+      charClass = hasError
+        ? 'text-rose-400 line-through decoration-rose-500 bg-rose-950/30'
+        : 'text-emerald-400 font-medium';
+    } else if (isCurrent) {
+      // A wrong key marks the character at once; the cursor stays on it.
+      charClass = `bg-cyan-500/30 ring-2 ring-cyan-400 rounded-sm font-bold shadow-[0_0_12px_rgba(6,182,212,0.6)] ${
+        hasError
+          ? 'text-rose-400 line-through decoration-rose-500'
+          : 'text-white'
+      }`;
+    }
+
+    return (
+      <span
+        key={index}
+        ref={isCurrent ? activeCharRef : null}
+        aria-current={isCurrent ? 'true' : undefined}
+        className={`inline-block px-[2px] transition-colors ${charClass}`}
+      >
+        {char}
+      </span>
+    );
+  };
 
   return (
     <section
@@ -138,65 +208,13 @@ export const TextPromptStream: React.FC = () => {
         ref={containerRef}
         className="p-4 h-32 overflow-y-auto font-mono text-base sm:text-lg leading-relaxed tracking-wider select-none text-slate-400"
       >
-        {fullText.split('').map((char, index) => {
-          const isTyped = index < currentIndex;
-          const isCurrent = index === currentIndex;
-          const hasError = errorIndices.has(index);
-          const isSpaceChar = char === ' ';
-
-          if (isSpaceChar) {
-            return (
-              <span
-                // biome-ignore lint/suspicious/noArrayIndexKey: a character's position is its identity; the text can repeat any character.
-                key={index}
-                ref={isCurrent ? activeCharRef : null}
-                aria-current={isCurrent ? 'true' : undefined}
-                className={`inline-block select-none transition-all duration-75 ${
-                  isCurrent
-                    ? `px-1.5 py-0.2 mx-0.5 rounded bg-cyan-500/25 ring-1.5 ring-cyan-400 font-bold shadow-[0_0_10px_rgba(6,182,212,0.5)] scale-105 ${
-                        hasError
-                          ? 'text-rose-400 line-through decoration-rose-500'
-                          : 'text-cyan-200'
-                      }`
-                    : isTyped
-                      ? hasError
-                        ? 'px-1 text-rose-400 line-through decoration-rose-500 font-bold'
-                        : 'px-1 text-emerald-500/60 font-medium'
-                      : 'px-1 text-slate-600/70 hover:text-slate-400 font-normal'
-                }`}
-                title="Space (␣)"
-              >
-                ␣
-              </span>
-            );
-          }
-
-          let charClass = 'text-slate-500';
-          if (isTyped) {
-            charClass = hasError
-              ? 'text-rose-400 line-through decoration-rose-500 bg-rose-950/30'
-              : 'text-emerald-400 font-medium';
-          } else if (isCurrent) {
-            // A wrong key marks the character at once; the cursor stays on it.
-            charClass = `bg-cyan-500/30 ring-2 ring-cyan-400 rounded-sm font-bold shadow-[0_0_12px_rgba(6,182,212,0.6)] ${
-              hasError
-                ? 'text-rose-400 line-through decoration-rose-500'
-                : 'text-white'
-            }`;
-          }
-
-          return (
-            <span
-              // biome-ignore lint/suspicious/noArrayIndexKey: a character's position is its identity; the text can repeat any character.
-              key={index}
-              ref={isCurrent ? activeCharRef : null}
-              aria-current={isCurrent ? 'true' : undefined}
-              className={`inline-block px-[2px] transition-colors ${charClass}`}
-            >
-              {char}
-            </span>
-          );
-        })}
+        {wordGroups(fullText).map((group) => (
+          <span key={group.start} className="inline-block max-w-full align-top">
+            {[...group.text].map((char, offset) =>
+              renderChar(char, group.start + offset),
+            )}
+          </span>
+        ))}
       </div>
     </section>
   );

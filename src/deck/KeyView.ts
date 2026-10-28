@@ -1,10 +1,10 @@
-import { Container, Graphics, Rectangle, Sprite, type Text } from 'pixi.js';
+import { Container, Graphics, Rectangle, type Text } from 'pixi.js';
 import { FINGER_LANES } from '../curriculum/curriculum';
 import type { KeySpec } from '../curriculum/keyboardLayout';
 import { bounceLift, pulseOpacity } from './animation';
 import { dashedRoundRect, keycapGradient, makeText } from './draw';
 import type { KeyRect } from './layout';
-import { boxGlow } from './textures';
+import { GlowSprite } from './textures';
 
 /** The HOLD SHIFT badge: its height, and where its centre rests (8 px above the keycap's top edge, plus half its height). */
 const HOLD_H = 12.7;
@@ -82,7 +82,7 @@ export class KeyView {
   readonly root = new Container();
   private readonly visual = new Container();
   /** The box-shadow glow of a lit keycap. */
-  private readonly glow = new Sprite();
+  private readonly glow = new GlowSprite();
   private readonly bg = new Graphics();
   /** Blind touch-typing: the dot that marks the next key, pulsing. */
   private readonly dot = new Graphics();
@@ -193,12 +193,13 @@ export class KeyView {
   private drawGlow(target: boolean, modifier: boolean, pressed: boolean): void {
     if (!(target || modifier || pressed)) {
       this.glow.visible = false;
+      this.glow.release();
       return;
     }
     const { w, h } = this.rect;
     // target 0 0 24px lane @ 52 %, modifier 0 0 20px amber @ 65 %, pressed 0 0 20px lane @ 56 %
     const blur = target ? 24 : 20;
-    this.glow.texture = boxGlow(w, h, 6, blur).texture;
+    this.glow.show(w, h, 6, blur);
     this.glow.tint = modifier && !target ? '#fbbf24' : this.laneColor;
     this.glow.alpha = target ? 0.52 : modifier ? 0.65 : 0.565;
     this.glow.visible = true;

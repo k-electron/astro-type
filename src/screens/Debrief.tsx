@@ -42,6 +42,10 @@ export const Debrief: React.FC = () => {
       } catch {
         // Confetti fallback
       }
+      // It falls over whatever screen comes next unless it is stopped.
+      return () => {
+        confetti.reset();
+      };
     }
   }, [earned]);
 

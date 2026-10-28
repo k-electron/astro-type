@@ -1,3 +1,4 @@
+import { fireEvent } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { flightDeckLabel } from '../../src/screens/closeLabel';
 import {
@@ -253,4 +254,46 @@ describe('the Flight Deck button on an overlay', () => {
       ).toBe('50%');
     },
   );
+});
+
+describe('Free Flight over a paused Run', () => {
+  // The other menus keep a "Resume Flight" button inside their dialog (above);
+  // Free Flight has one too. The header has a Resume Flight of its own while a
+  // Run is paused, so these look inside the dialog on purpose.
+  const OVER = [
+    { over: 'a running Run', pause: false },
+    { over: 'the Pause Menu', pause: true },
+  ] as const;
+
+  it.each(OVER)(
+    'opened over $over offers Resume Flight in its dialog, which carries the Run on',
+    ({ pause }) => {
+      const player = halfwayThroughARun();
+      if (pause) player.click('Pause');
+      player.openHeader('Free Flight');
+
+      fireEvent.click(
+        within(dialog()).getByRole('button', { name: flightDeckLabel(true) }),
+      );
+
+      expectFlightDeckLive();
+      expect(
+        screen.getByRole('progressbar', { name: 'Progress' }).textContent,
+      ).toBe('50%');
+      player.type('d');
+      expect(
+        screen.getByRole('progressbar', { name: 'Progress' }).textContent,
+      ).toBe('67%');
+    },
+  );
+
+  it('opened with no Run waiting does not offer Resume Flight', () => {
+    const player = renderGame();
+
+    player.openHeader('Free Flight');
+
+    expect(
+      within(dialog()).queryByRole('button', { name: flightDeckLabel(true) }),
+    ).toBeNull();
+  });
 });

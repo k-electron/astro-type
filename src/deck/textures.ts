@@ -1,4 +1,4 @@
-import { Texture } from 'pixi.js';
+import { Sprite, Texture } from 'pixi.js';
 
 /**
  * The few textures the effects are made from. Each is painted once on a 2D
@@ -35,6 +35,8 @@ function cached(key: string, make: () => Texture): Texture {
 export function resetTextures(): void {
   for (const texture of cache.values()) texture.destroy(true);
   cache.clear();
+  for (const entry of glows.values()) entry.texture.destroy(true);
+  glows.clear();
 }
 
 /** Radius, in texture pixels, of the shapes below. Sprites scale from it. */
@@ -147,50 +149,41 @@ export interface BoxGlow {
   pad: number;
 }
 
+/**
+ * A box glow in the cache. A glow whose size follows the layout (a keycap's, a
+ * Drone's, the keyboard's shadow, the beam's) is held by the `GlowSprite`
+ * showing it, and `holders` counts them. One made by `boxGlow` for a fixed
+ * size is `pinned`: it stays until `resetTextures`.
+ */
+interface GlowEntry extends BoxGlow {
+  holders: number;
+  pinned: boolean;
+  /** The layout generation that last used it. */
+  generation: number;
+}
+
+const glows = new Map<string, GlowEntry>();
+/** Counts layout changes: a glow from an earlier one is dropped once nothing holds it. */
+let generation = 0;
+
 const glowKey = (w: number, h: number, radius: number, blur: number) =>
   `glow|${w}|${h}|${radius}|${blur}`;
 
-/**
- * Drop one box glow's texture. For a glow that follows a size that changes (the
- * keyboard's shadow while the window is dragged), so old sizes don't pile up.
- */
-export function releaseBoxGlow(
+function glowEntry(
   w: number,
   h: number,
   radius: number,
   blur: number,
-): void {
-  const key = glowKey(
-    Math.max(1, Math.round(w)),
-    Math.max(1, Math.round(h)),
-    radius,
-    blur,
-  );
-  const texture = cache.get(key);
-  if (texture) {
-    texture.destroy(true);
-    cache.delete(key);
-  }
-}
-
-/**
- * The glow a CSS `box-shadow: 0 0 <blur>px <colour>` casts, white and ready to
- * tint. Painted by the canvas's own shadow blur, the same Gaussian the browser
- * uses for the DOM deck, so the glow around keycaps and Drones matches.
- */
-export function boxGlow(
-  w: number,
-  h: number,
-  radius: number,
-  blur: number,
-): BoxGlow {
+): { key: string; entry: GlowEntry } {
   const width = Math.max(1, Math.round(w));
   const height = Math.max(1, Math.round(h));
-  const pad = Math.ceil(blur * 1.5);
-  const texture = cached(glowKey(width, height, radius, blur), () =>
-    canvasTexture(width + pad * 2, height + pad * 2, (ctx) => {
-      // The shape is drawn far off to one side; only its shadow lands on the canvas.
-      const away = 4000;
+  const key = glowKey(width, height, radius, blur);
+  let entry = glows.get(key);
+  if (!entry) {
+    const pad = Math.ceil(blur * 1.5);
+    // The shape is drawn far off to one side; only its shadow lands on the canvas.
+    const away = 4000;
+    const texture = canvasTexture(width + pad * 2, height + pad * 2, (ctx) => {
       ctx.shadowColor = '#fff';
       ctx.shadowBlur = blur;
       ctx.shadowOffsetX = away;
@@ -198,9 +191,94 @@ export function boxGlow(
       ctx.beginPath();
       ctx.roundRect(pad - away, pad, width, height, radius);
       ctx.fill();
-    }),
-  );
-  return { texture, pad };
+    });
+    entry = { texture, pad, holders: 0, pinned: false, generation };
+    glows.set(key, entry);
+  }
+  entry.generation = generation;
+  return { key, entry };
+}
+
+function dropGlow(key: string, entry: GlowEntry): void {
+  entry.texture.destroy(true);
+  glows.delete(key);
+}
+
+/**
+ * The layout changed size (the window was dragged, or the hands came or went).
+ * Every glow nothing holds goes now, and one held by a sprite of the old layout
+ * goes when that sprite lets it go, so the glows of sizes that are gone don't
+ * pile up.
+ */
+export function sweepBoxGlows(): void {
+  generation++;
+  for (const [key, entry] of glows) {
+    if (entry.holders === 0 && !entry.pinned) dropGlow(key, entry);
+  }
+}
+
+/**
+ * A sprite that shows a box glow whose size follows the layout. It holds the
+ * glow it shows, takes a new one before letting the old one go, and lets go of
+ * it when it is destroyed or told to. A glow nobody holds stays in the cache
+ * for the next sprite that asks for its size (a keycap lights again on every
+ * key, and must not be painted again each time) until the layout changes.
+ */
+export class GlowSprite extends Sprite {
+  private heldKey: string | null = null;
+
+  /** Show the glow of a `w` by `h` box; the same size as before changes nothing. */
+  show(w: number, h: number, radius: number, blur: number): void {
+    const { key, entry } = glowEntry(w, h, radius, blur);
+    if (key === this.heldKey) return;
+    entry.holders++;
+    const previous = this.heldKey;
+    this.heldKey = key;
+    this.texture = entry.texture;
+    if (previous) letGo(previous);
+  }
+
+  /** Stop showing a glow (the sprite is hidden, or done with its size). */
+  release(): void {
+    const previous = this.heldKey;
+    if (!previous) return;
+    this.heldKey = null;
+    this.texture = Texture.EMPTY;
+    letGo(previous);
+  }
+
+  override destroy(options?: Parameters<Sprite['destroy']>[0]): void {
+    this.release();
+    super.destroy(options);
+  }
+}
+
+function letGo(key: string): void {
+  const entry = glows.get(key);
+  if (!entry) return;
+  entry.holders--;
+  if (entry.holders === 0 && !entry.pinned && entry.generation < generation) {
+    dropGlow(key, entry);
+  }
+}
+
+/**
+ * The glow a CSS `box-shadow: 0 0 <blur>px <colour>` casts, white and ready to
+ * tint. Painted by the canvas's own shadow blur, the same Gaussian the browser
+ * uses for the DOM deck, so the glow around keycaps and Drones matches. This is
+ * for a size that never changes (the hands, a Drone's thruster plumes and eye):
+ * it is made once and kept. A size that follows the layout goes through a
+ * `GlowSprite`.
+ */
+export function boxGlow(
+  w: number,
+  h: number,
+  radius: number,
+  blur: number,
+): BoxGlow {
+  const { entry } = glowEntry(w, h, radius, blur);
+  entry.pinned = true;
+  return { texture: entry.texture, pad: entry.pad };
 }
 
 /**

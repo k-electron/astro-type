@@ -15,6 +15,7 @@ import { useGame } from './useGame';
 import { useGameState } from './useGameState';
 import {
   OverlayCloseButton,
+  OverlayConfirm,
   OverlayFlightDeckButton,
   OverlayShell,
 } from './OverlayShell';
@@ -55,64 +56,60 @@ export const GalaxyMap: React.FC = () => {
 
   // The wipe confirm sits over the panel, inside the shell's frame.
   const wipeConfirm = showWipeConfirm ? (
-    <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md">
-      <div className="w-full max-w-md rounded-2xl border border-rose-900/80 bg-slate-900 shadow-2xl p-6 text-center animate-in fade-in zoom-in-95 duration-150">
-        <div className="w-12 h-12 rounded-xl bg-rose-950/60 border border-rose-500/50 flex items-center justify-center mx-auto mb-4 text-rose-400 shadow-[0_0_20px_rgba(244,63,94,0.3)]">
-          <RotateCcw className="w-6 h-6" />
+    <OverlayConfirm onCancel={() => setShowWipeConfirm(false)}>
+      <div className="w-12 h-12 rounded-xl bg-rose-950/60 border border-rose-500/50 flex items-center justify-center mx-auto mb-4 text-rose-400 shadow-[0_0_20px_rgba(244,63,94,0.3)]">
+        <RotateCcw className="w-6 h-6" />
+      </div>
+
+      <h3 className="text-xl font-bold font-display text-white mb-2">
+        Wipe Curriculum Achievements?
+      </h3>
+
+      <p className="text-xs text-slate-300 leading-relaxed mb-4">
+        The touch-typing curriculum has been upgraded with structured classical
+        finger-building methodology. Wiping achievements will clear all{' '}
+        <span className="text-amber-400 font-bold font-mono">
+          {totalStars} ★ stars earned
+        </span>{' '}
+        and stage records, relocking sectors so you can master the progressive
+        inside-out curriculum from Sector 1.
+      </p>
+
+      <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800 text-[11px] font-mono text-left mb-6 space-y-1.5">
+        <div className="text-rose-400 font-bold flex items-center gap-1.5">
+          <span>•</span> {`All ${CURRICULUM_TOTALS.stages} Stages reset to 0 ★`}
         </div>
-
-        <h3 className="text-xl font-bold font-display text-white mb-2">
-          Wipe Curriculum Achievements?
-        </h3>
-
-        <p className="text-xs text-slate-300 leading-relaxed mb-4">
-          The touch-typing curriculum has been upgraded with structured
-          classical finger-building methodology. Wiping achievements will clear
-          all{' '}
-          <span className="text-amber-400 font-bold font-mono">
-            {totalStars} ★ stars earned
-          </span>{' '}
-          and stage records, relocking sectors so you can master the progressive
-          inside-out curriculum from Sector 1.
-        </p>
-
-        <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800 text-[11px] font-mono text-left mb-6 space-y-1.5">
-          <div className="text-rose-400 font-bold flex items-center gap-1.5">
-            <span>•</span>{' '}
-            {`All ${CURRICULUM_TOTALS.stages} Stages reset to 0 ★`}
-          </div>
-          <div className="text-rose-400 font-bold flex items-center gap-1.5">
-            <span>•</span> Interstellar Sectors relocked to Gate 0
-          </div>
-          <div className="text-emerald-400 flex items-center gap-1.5">
-            <span>•</span> Starship Credits ({totalCredits.toLocaleString()} Cr)
-            & Upgrades are preserved
-          </div>
+        <div className="text-rose-400 font-bold flex items-center gap-1.5">
+          <span>•</span> Interstellar Sectors relocked to Gate 0
         </div>
-
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => setShowWipeConfirm(false)}
-            className="flex-1 py-2.5 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition-colors cursor-pointer"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              onWipeAchievements();
-              setSelectedSectorId('sector-1');
-              setShowWipeConfirm(false);
-            }}
-            className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold font-mono transition-colors shadow-lg shadow-rose-950/50 cursor-pointer flex items-center justify-center gap-1.5"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-            <span>Confirm Wipe</span>
-          </button>
+        <div className="text-emerald-400 flex items-center gap-1.5">
+          <span>•</span> Starship Credits ({totalCredits.toLocaleString()} Cr) &
+          Upgrades are preserved
         </div>
       </div>
-    </div>
+
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={() => setShowWipeConfirm(false)}
+          className="flex-1 py-2.5 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition-colors cursor-pointer"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            onWipeAchievements();
+            setSelectedSectorId('sector-1');
+            setShowWipeConfirm(false);
+          }}
+          className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold font-mono transition-colors shadow-lg shadow-rose-950/50 cursor-pointer flex items-center justify-center gap-1.5"
+        >
+          <RotateCcw className="w-3.5 h-3.5" />
+          <span>Confirm Wipe</span>
+        </button>
+      </div>
+    </OverlayConfirm>
   ) : null;
 
   return (

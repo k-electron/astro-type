@@ -55,11 +55,118 @@ async function enterAndSpaceLeaveItPaused(page: Page) {
   await expect.soft(hud(page)).toContainText(/Accuracy\s*100%/i);
 }
 
+/**
+ * Words of up to ten letters, in a text long enough to need several lines on a
+ * phone: every word fits on a line, so a word split across two lines is a wrap
+ * in the wrong place.
+ */
+const WRAPPING_TEXT =
+  'steady wanderer carries lanterns beyond mountains while thoughtful travellers whisper about distant harbours and quiet gardens';
+
+/** One word of 40 letters: wider than a phone's prompt, and no way to wrap it between words. */
+const LONG_TOKEN = 'abcdefghijklmnopqrstuvwxyzabcdefghijklmn';
+
+/** How far apart (px) two characters can sit and still be on one line. */
+const SAME_LINE = 8;
+
 test('native keys and focus: Space, Esc, Enter and the window losing focus', async ({
   page,
 }) => {
   // The most real-clock keys of any journey: a busy machine can double its time.
   test.setTimeout(120_000);
+  await test.step('the text prompt wraps between words, and inside a word only when it cannot fit a line', async () => {
+    // Launch at a desktop width (the header's buttons are hidden on a phone),
+    // then narrow to a phone's width, so the text takes several lines.
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await launchFreeFlight(page, WRAPPING_TEXT);
+    await page.setViewportSize({ width: 375, height: 800 });
+
+    // Where each drawn character of the prompt sits (the layout is the fact).
+    // The prompt's other single-character text is not drawn at this width.
+    const characters = await textPrompt(page).evaluate((prompt) =>
+      [...prompt.querySelectorAll('span')]
+        .filter(
+          (element) =>
+            element.children.length === 0 &&
+            element.textContent?.length === 1 &&
+            element.getBoundingClientRect().width > 0,
+        )
+        .map((element) => ({
+          character: element.textContent ?? '',
+          top: element.getBoundingClientRect().top,
+        })),
+    );
+    // The two checks below are soft: they do not stop the rest of the journey.
+    expect
+      .soft(
+        characters.map(({ character }) => character).join(''),
+        'the prompt shows the whole text, a space drawn as ␣',
+      )
+      .toBe(WRAPPING_TEXT.replaceAll(' ', '␣'));
+
+    const lines = new Set(
+      characters.map(({ top }) => Math.round(top / SAME_LINE)),
+    );
+    expect
+      .soft(lines.size, 'the text takes several lines')
+      .toBeGreaterThanOrEqual(3);
+
+    let start = 0;
+    for (const word of WRAPPING_TEXT.split(' ')) {
+      const tops = characters
+        .slice(start, start + word.length)
+        .map(({ top }) => top);
+      start += word.length + 1;
+      expect
+        .soft(
+          Math.max(...tops) - Math.min(...tops),
+          `"${word}" is split across two lines`,
+        )
+        .toBeLessThanOrEqual(SAME_LINE);
+    }
+
+    // A word that cannot fit a line at all (a pasted URL) is the one place the
+    // prompt may break inside a word: it must not run off the side, and the
+    // player's place in it must stay on screen as they type through it.
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await launchFreeFlight(page, `go ${LONG_TOKEN} end`);
+    await page.setViewportSize({ width: 375, height: 800 });
+    await typeText(page, `go ${LONG_TOKEN.slice(0, 35)}`);
+    await expect(promptProgress(page)).not.toHaveText('0%');
+
+    const scroller = textPrompt(page)
+      .locator('[aria-current]')
+      .locator('xpath=ancestor::div[1]');
+    const sideways = await scroller.evaluate(
+      (element) => element.scrollWidth - element.clientWidth,
+    );
+    expect
+      .soft(
+        sideways,
+        'a word wider than the prompt does not scroll it sideways',
+      )
+      .toBeLessThanOrEqual(0);
+    await expect
+      .poll(
+        () =>
+          scroller.evaluate((box) => {
+            const current = box
+              .querySelector('[aria-current]')
+              ?.getBoundingClientRect();
+            const area = box.getBoundingClientRect();
+            return (
+              current !== undefined &&
+              current.left >= area.left &&
+              current.right <= area.right &&
+              current.top >= area.top &&
+              current.bottom <= area.bottom
+            );
+          }),
+        { message: 'the current character is inside the prompt' },
+      )
+      .toBe(true);
+  });
+
   await test.step('part A: a missed space is struck through at once, and looks like one that was passed', async () => {
     // A short window, so the Flight Deck is taller than the page and Space
     // would scroll it if the game let the key through.

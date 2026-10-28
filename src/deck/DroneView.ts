@@ -9,7 +9,7 @@ import {
 import type { KeySpec } from '../curriculum/keyboardLayout';
 import { ping, pulseOpacity } from './animation';
 import { makeText, rgba } from './draw';
-import { boxGlow } from './textures';
+import { boxGlow, GlowSprite } from './textures';
 
 /** The plume of an ion thruster: white at its root, the lane colour, then nothing. */
 const plumeGradients = new Map<string, FillGradient>();
@@ -134,7 +134,7 @@ function wingBracket(
 export class DroneView {
   readonly root = new Container();
   private readonly visual = new Container();
-  private readonly glow = new Sprite();
+  private readonly glow = new GlowSprite();
   private readonly body = new Graphics();
   private readonly plumeGroup = new Container();
   private readonly lightGroup = new Container();
@@ -214,8 +214,9 @@ export class DroneView {
     g.roundRect(-w / 2, -h / 2 + (first ? 4 : 3), w, h, 8).fill('#020617');
     // The lead glows (0 0 24px in its lane colour).
     this.glow.visible = first;
+    if (!first) this.glow.release();
     if (first) {
-      this.glow.texture = boxGlow(w, h, 8, 24).texture;
+      this.glow.show(w, h, 8, 24);
       this.glow.tint = laneColor;
       this.glow.alpha = 0.56;
     }

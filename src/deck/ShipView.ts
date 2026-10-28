@@ -5,7 +5,7 @@ import {
   BEAM_AURA_WIDTH,
   beamAuraTexture,
   beamCoreTexture,
-  boxGlow,
+  GlowSprite,
   SOFT_RADIUS,
   softDotTexture,
 } from './textures';
@@ -50,7 +50,7 @@ export class ShipView {
 
   private readonly aura = new Sprite(beamAuraTexture());
   private readonly core = new Sprite(beamCoreTexture());
-  private readonly shadows: Sprite[] = [];
+  private readonly shadows: GlowSprite[] = [];
   private readonly inner = new Container();
   private readonly engine = new Graphics();
   private readonly hull = new Graphics();
@@ -75,7 +75,7 @@ export class ShipView {
     this.aura.anchor.set(0.5, 0);
     this.core.anchor.set(0.5, 0);
     for (const alpha of [1, 0.5, 0.21]) {
-      const shadow = new Sprite();
+      const shadow = new GlowSprite();
       shadow.alpha = alpha;
       this.shadows.push(shadow);
     }
@@ -188,7 +188,7 @@ export class ShipView {
       this.drawnBeamHeight = height;
       BEAM_GLOW_BLURS.forEach((blur, i) => {
         // The glow a 2 px wide box casts, as long as the beam.
-        this.shadows[i].texture = boxGlow(2, height, 1, blur).texture;
+        this.shadows[i].show(2, height, 1, blur);
       });
       // The aura and the core are authored at fixed sizes and stretched to fit.
       this.aura.width = BEAM_AURA_WIDTH;

@@ -1,4 +1,4 @@
-import { Container, Graphics, Sprite } from 'pixi.js';
+import { Container, Graphics } from 'pixi.js';
 import {
   FINGER_COLOR_MAP,
   FINGER_LANES,
@@ -20,7 +20,7 @@ import { HandView, type HandState } from './HandView';
 import { hitPopupColor } from './hitPopups';
 import { KeyView, keycapLabel } from './KeyView';
 import { ShipView } from './ShipView';
-import { boxGlow, releaseBoxGlow } from './textures';
+import { GlowSprite, sweepBoxGlows } from './textures';
 import {
   computeLayout,
   droneTop,
@@ -55,8 +55,7 @@ export interface DeckSceneOptions {
 export class DeckScene {
   readonly root = new Container();
   /** The keyboard's two drop shadows (0 -8px 30px at 80 %, 0 10px 30px at 90 %). */
-  private readonly chassisShadows = [new Sprite(), new Sprite()];
-  private shadowSize: { w: number; h: number } | null = null;
+  private readonly chassisShadows = [new GlowSprite(), new GlowSprite()];
   private readonly chassis = new Graphics();
   private readonly keyLayer = new Container();
   private readonly trench = new Graphics();
@@ -136,6 +135,8 @@ export class DeckScene {
     const { resolution, onPressKey } = this.options;
     const layout = computeLayout(width, height, hands);
     this.layout = layout;
+    // The sizes of the last layout are gone: its glows go once nothing shows them.
+    sweepBoxGlows();
     this.stateKey = '';
     this.ship.snap();
 
@@ -164,21 +165,11 @@ export class DeckScene {
       .lineTo(layout.deckX + layout.deckW - 16, layout.deckY + 1)
       .stroke({ width: 1.5, color: '#475569', alpha: 0.4 });
 
-    // The keyboard's shadows follow its size; the texture of the old size goes.
-    const previous = this.shadowSize;
-    if (
-      !previous ||
-      previous.w !== layout.deckW ||
-      previous.h !== layout.deckH
-    ) {
-      if (previous) releaseBoxGlow(previous.w, previous.h, 16, 30);
-      this.shadowSize = { w: layout.deckW, h: layout.deckH };
-    }
-    const shadowTexture = boxGlow(layout.deckW, layout.deckH, 16, 30).texture;
+    // The keyboard's shadows follow its size.
     const centreX = layout.deckX + layout.deckW / 2;
     const centreY = layout.deckY + layout.deckH / 2;
     this.chassisShadows.forEach((shadow, i) => {
-      shadow.texture = shadowTexture;
+      shadow.show(layout.deckW, layout.deckH, 16, 30);
       shadow.position.set(centreX, centreY + (i === 0 ? -8 : 10));
     });
 

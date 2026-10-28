@@ -3,13 +3,13 @@ import type { Grade } from '../game/rules';
 import { hitPopupLabel, hitPopupsToPrepare, hitPopupStems } from './hitPopups';
 import { Pool } from './pool';
 import {
-  boxGlow,
   CRYSTAL_SIZE,
   DOT_RADIUS,
   diamondTexture,
   dotTexture,
   FLASH_RADIUS,
   flashTexture,
+  GlowSprite,
   SHARD_SIZE,
   SOFT_RADIUS,
   shardTexture,
@@ -160,7 +160,7 @@ interface Flash {
 
 /** The hull of a destroyed Drone, vaporising in white light. */
 interface Ghost {
-  glow: Sprite;
+  glow: GlowSprite;
   x: number;
   y: number;
   w: number;
@@ -417,7 +417,7 @@ export class DeckEffects {
   }
 
   private makeGhost(): Ghost {
-    const glow = new Sprite();
+    const glow = new GlowSprite();
     glow.anchor.set(0.5);
     glow.visible = false;
     this.ghostLayer.addChild(glow);
@@ -630,6 +630,7 @@ export class DeckEffects {
     });
     this.ghosts.clear((g) => {
       g.glow.visible = false;
+      g.glow.release();
     });
     this.popups.clear((p) => this.giveText(p.key, p.text));
     this.draw();
@@ -676,6 +677,7 @@ export class DeckEffects {
       g.life += d;
       if (g.life >= g.maxLife) {
         g.glow.visible = false;
+        g.glow.release();
         this.ghosts.releaseAt(i);
         continue;
       }
@@ -900,7 +902,6 @@ export class DeckEffects {
       // The Drone's hull vaporises where it was held.
       const ghost = this.ghosts.acquire();
       if (ghost) {
-        const glow = boxGlow(w, bolt.h, 0, 20);
         ghost.x = x;
         ghost.y = y;
         ghost.w = w;
@@ -908,7 +909,7 @@ export class DeckEffects {
         ghost.color = color;
         ghost.life = 0;
         ghost.maxLife = 15;
-        ghost.glow.texture = glow.texture;
+        ghost.glow.show(w, bolt.h, 0, 20);
         ghost.glow.tint = color;
         ghost.glow.position.set(x, y);
         ghost.glow.scale.set(1);
