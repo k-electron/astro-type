@@ -47,15 +47,6 @@
   }
 }
 
-@keyframes warpSpeed {
-  0% {
-    transform: translateY(0);
-  }
-  100% {
-    transform: translateY(100%);
-  }
-}
-
 .glow-cyan {
   text-shadow: 0 0 12px rgba(6, 182, 212, 0.6);
 }

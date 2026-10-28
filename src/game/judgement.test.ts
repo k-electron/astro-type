@@ -49,14 +49,14 @@ describe('Overdrive', () => {
   it('fills with hits, starts on the 29th, and doubles the points from the next hit', () => {
     const game = startedGame();
     hitPerfect(game, 28);
-    expect(game.getState().run.hyperspaceActive).toBe(false);
-    expect(game.getState().run.hyperspaceEnergy).toBeCloseTo(98);
+    expect(game.getState().run.overdriveActive).toBe(false);
+    expect(game.getState().run.overdriveEnergy).toBeCloseTo(98);
     expect(game.getState().run.score).toBe(900 + 10 * 200 + 9 * 300);
 
     const before29 = game.getState().run.score;
     hitPerfect(game, 1);
-    expect(game.getState().run.hyperspaceActive).toBe(true);
-    expect(game.getState().run.hyperspaceEnergy).toBe(100);
+    expect(game.getState().run.overdriveActive).toBe(true);
+    expect(game.getState().run.overdriveEnergy).toBe(100);
     // The hit that starts Overdrive is not doubled: Perfect x3.
     expect(game.getState().run.score - before29).toBe(300);
 
@@ -74,24 +74,24 @@ describe('Overdrive', () => {
     [2, 21],
     [3, 18],
   ])(
-    'with Hyperdrive Reactor level %i it starts on hit %i',
+    'with Overdrive Reactor level %i it starts on hit %i',
     (reactor, startsOn) => {
-      const game = startedGame({ hyperdriveReactor: reactor });
+      const game = startedGame({ overdriveReactor: reactor });
       hitPerfect(game, startsOn - 1);
-      expect(game.getState().run.hyperspaceActive).toBe(false);
+      expect(game.getState().run.overdriveActive).toBe(false);
       hitPerfect(game, 1);
-      expect(game.getState().run.hyperspaceActive).toBe(true);
+      expect(game.getState().run.overdriveActive).toBe(true);
     },
   );
 
   it('ends on an unshielded Miss, keeping only part of the energy', () => {
     const game = startedGame();
     hitPerfect(game, 29);
-    expect(game.getState().run.hyperspaceActive).toBe(true);
+    expect(game.getState().run.overdriveActive).toBe(true);
     miss(game);
     const run = game.getState().run;
-    expect(run.hyperspaceActive).toBe(false);
-    expect(run.hyperspaceEnergy).toBe(75);
+    expect(run.overdriveActive).toBe(false);
+    expect(run.overdriveEnergy).toBe(75);
     expect(run.currentStreak).toBe(0);
     expect(run.multiplier).toBe(1);
   });
@@ -103,21 +103,21 @@ describe('Overdrive after a Miss', () => {
     hitPerfect(game, 29);
     miss(game);
     // A Miss costs 25 of the 100 energy, and each hit fills 3.5.
-    expect(game.getState().run.hyperspaceActive).toBe(false);
-    expect(game.getState().run.hyperspaceEnergy).toBe(75);
+    expect(game.getState().run.overdriveActive).toBe(false);
+    expect(game.getState().run.overdriveEnergy).toBe(75);
 
     hitPerfect(game, 7); // 75 + 7 x 3.5 = 99.5: one short
-    expect(game.getState().run.hyperspaceActive).toBe(false);
+    expect(game.getState().run.overdriveActive).toBe(false);
     hitPerfect(game, 1);
-    expect(game.getState().run.hyperspaceActive).toBe(true);
+    expect(game.getState().run.overdriveActive).toBe(true);
     expect(game.getState().run.currentStreak).toBe(8);
 
     // From the next hit, 100 x Multiplier x 2, all the way up the Streak.
     while (game.getState().run.currentStreak < 31) {
       const before = game.getState().run.score;
       hitPerfect(game, 1);
-      const { currentStreak, hyperspaceActive, score } = game.getState().run;
-      expect(hyperspaceActive, `Overdrive at Streak ${currentStreak}`).toBe(
+      const { currentStreak, overdriveActive, score } = game.getState().run;
+      expect(overdriveActive, `Overdrive at Streak ${currentStreak}`).toBe(
         true,
       );
       expect(score - before, `points at Streak ${currentStreak}`).toBe(
@@ -136,14 +136,14 @@ describe('Shields', () => {
       currentStreak: 12,
       multiplier: 2,
     });
-    expect(game.getState().run.hyperspaceEnergy).toBeCloseTo(42);
+    expect(game.getState().run.overdriveEnergy).toBeCloseTo(42);
 
     miss(game);
 
     const run = game.getState().run;
     expect(run.currentStreak).toBe(0);
     expect(run.multiplier).toBe(1);
-    expect(run.hyperspaceEnergy).toBeCloseTo(17);
+    expect(run.overdriveEnergy).toBeCloseTo(17);
     expect(run.score).toBe(1500);
     expect(run.incorrectKeystrokes).toBe(1);
     expect(run.totalKeystrokes).toBe(13);
@@ -159,7 +159,7 @@ describe('Shields', () => {
     expect(run.shieldsRemaining).toBe(0);
     expect(run.currentStreak).toBe(12);
     expect(run.multiplier).toBe(2);
-    expect(run.hyperspaceEnergy).toBeCloseTo(42);
+    expect(run.overdriveEnergy).toBeCloseTo(42);
     expect(run.score).toBe(1500);
 
     miss(game);
@@ -172,8 +172,8 @@ describe('Shields', () => {
     const game = startedGame({ deflectorShields: 1 });
     hitPerfect(game, 29);
     miss(game);
-    expect(game.getState().run.hyperspaceActive).toBe(true);
-    expect(game.getState().run.hyperspaceEnergy).toBe(100);
+    expect(game.getState().run.overdriveActive).toBe(true);
+    expect(game.getState().run.overdriveEnergy).toBe(100);
   });
 
   it('an absorbed Miss still counts against accuracy', () => {

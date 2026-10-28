@@ -27,7 +27,7 @@ import {
   tick,
 } from './rules';
 
-export interface VictoryResult {
+export interface DebriefResult {
   score: number;
   wpm: number;
   accuracy: number;
@@ -45,7 +45,7 @@ export interface VictoryResult {
 export interface RunSliceState {
   run: RunState;
   /** The Debrief of the last cleared Run, or null. */
-  debrief: VictoryResult | null;
+  debrief: DebriefResult | null;
 }
 
 /**

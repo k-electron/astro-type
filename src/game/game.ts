@@ -24,12 +24,7 @@ import {
 } from './machine';
 import type { Stage } from '../curriculum/curriculum';
 import { type Clock, createRunClock, createSteppedClock } from './clock';
-import type {
-  FallingNote,
-  KeyOptions,
-  LivePerformance,
-  RunState,
-} from './rules';
+import type { Drone, KeyOptions, LivePerformance, RunState } from './rules';
 import type { Moment } from './moments';
 import {
   cueFor,
@@ -39,7 +34,7 @@ import {
   soundStateOf,
 } from './sound';
 import { createProfileSlice, loadoutOf, type ProfileSlice } from './profile';
-import { createRunSlice, type RunSlice, type VictoryResult } from './run';
+import { createRunSlice, type RunSlice, type DebriefResult } from './run';
 import type { CatalogItemId } from './catalog';
 import type { BackupImport, SaveStorage } from './save';
 import { type PlayerProfile, type Settings, totalStarsOf } from './schemas';
@@ -50,7 +45,7 @@ export type { Clock } from './clock';
 export type { Cue, Sound, SoundState } from './sound';
 export type { Judgement, KeyOptions } from './rules';
 export type { Moment } from './moments';
-export type { VictoryResult } from './run';
+export type { DebriefResult } from './run';
 export type { PlayerEvent } from './machine';
 export type { RunPhase, Screen } from './machine';
 
@@ -89,8 +84,8 @@ export interface GameOptions {
 
 /** The live Run: the performance numbers, plus the Drones and the Stage. */
 export type Run = LivePerformance & {
-  /** Today's falling notes. The lead Drone is first; the Strike Line is y=84. */
-  drones: FallingNote[];
+  /** Today's Drones. The lead Drone is first; the Strike Line is y=84. */
+  drones: Drone[];
   currentStage: Stage;
   /** The positions in the text where a wrong key was pressed: the Miss marks. */
   errorIndices: ReadonlySet<number>;
@@ -124,7 +119,7 @@ export interface GameState {
    */
   stageAhead: StageAhead;
   run: Run;
-  debrief: VictoryResult | null;
+  debrief: DebriefResult | null;
   profile: GameProfile;
   /** Why the Save was set aside and the player started fresh, or null. */
   loadNotice: string | null;

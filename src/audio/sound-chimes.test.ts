@@ -9,7 +9,7 @@ import {
 } from '../game/testHelpers';
 
 /**
- * Clearing a Stage plays the victory fanfare and then one chime per Star, one
+ * Clearing a Stage plays the Stage clear fanfare and then one chime per Star, one
  * after the other. The pause between them is real wall-clock time in the
  * sound adapter (a setTimeout per chime) and nothing else in the code runs on
  * it, so this is the one test that uses fake timers. It plays the real
@@ -26,7 +26,7 @@ vi.mock('./soundEngine', () => ({
       get:
         (_target, method: string) =>
         (...args: unknown[]) => {
-          if (method === 'playStageVictory') engine.played.push('victory');
+          if (method === 'playStageCleared') engine.played.push('cleared');
           if (method === 'playStarChime')
             engine.played.push(`chime:${args[0]}`);
         },
@@ -59,14 +59,14 @@ it.each([
       'Stars the Debrief shows',
     ).toBe(stars);
     expect(engine.played, 'right at the clear: the fanfare alone').toEqual([
-      'victory',
+      'cleared',
     ]);
 
     // Two seconds in 50 ms slices, so the order the chimes fire in is seen.
     for (let i = 0; i < 40; i++) vi.advanceTimersByTime(50);
     const chimes = Array.from({ length: stars }, (_, i) => `chime:${i + 1}`);
     expect(engine.played, 'fanfare first, then the chimes in order').toEqual([
-      'victory',
+      'cleared',
       ...chimes,
     ]);
   },

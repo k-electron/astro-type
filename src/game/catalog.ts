@@ -82,7 +82,7 @@ export const CATALOG: readonly CatalogEntry[] = [
   {
     kind: 'upgrade',
     id: 'reactor',
-    field: 'hyperdriveReactor',
+    field: 'overdriveReactor',
     name: 'Overdrive Reactor',
     description:
       'Speeds up how fast the Overdrive meter fills, so Overdrive starts sooner.',

@@ -26,7 +26,7 @@ export const Debrief: React.FC = () => {
   const onReplay = () => send({ type: 'PRESS_REPLAY' });
   const onNextStage = () => send({ type: 'PRESS_NEXT_STAGE' });
   const onReturnToMap = () => send({ type: 'OPEN_GALAXY_MAP' });
-  const onReturnToMenu = () => send({ type: 'PRESS_HOME' });
+  const onReturnHome = () => send({ type: 'PRESS_HOME' });
   const earned = result?.starsEarned;
   const thresholds = stage.starThresholds;
 
@@ -70,7 +70,7 @@ export const Debrief: React.FC = () => {
       </h2>
       <p className="text-xs font-mono text-slate-400 mb-5">{stage.subtitle}</p>
 
-      {/* 3-Star Rating Animation Display */}
+      {/* Stars earned animation */}
       <div className="flex items-center justify-center gap-3 mb-5">
         {[1, 2, 3].map((starNum) => {
           const isEarned = starNum <= starsEarned;
@@ -326,7 +326,7 @@ export const Debrief: React.FC = () => {
 
         <button
           type="button"
-          onClick={onReturnToMenu}
+          onClick={onReturnHome}
           className="flex-1 min-w-[120px] px-3.5 py-2.5 rounded-xl border border-slate-800 bg-slate-950 hover:bg-slate-800 text-slate-400 hover:text-slate-200 text-xs sm:text-sm font-medium flex items-center justify-center gap-2 transition-colors cursor-pointer"
         >
           <Home className="w-4 h-4" />

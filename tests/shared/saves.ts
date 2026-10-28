@@ -84,7 +84,7 @@ export function completeSave() {
     },
     upgrades: {
       deflectorShields: 1,
-      hyperdriveReactor: 2,
+      overdriveReactor: 2,
       precisionSensors: 0,
       equippedTrailTheme: 'CYAN',
       equippedAudioCore: 'CYBER_SYNTH',
@@ -144,6 +144,23 @@ export function withOldDroneSpeed<T extends object>(
   speed: string,
 ): T & { highwaySpeed: string } {
   return { ...save, highwaySpeed: speed };
+}
+
+/**
+ * A Save or Backup as production wrote it before the Overdrive Reactor's level
+ * was saved as `overdriveReactor`: the same Save with that level under the old
+ * key, `hyperdriveReactor`, and no new key. The old key is spelled out here on
+ * purpose, as it is the oracle for reading such a file. Returns raw JSON, not a
+ * typed Save.
+ */
+export function withLegacyReactorKey<T extends { upgrades: object }>(
+  save: T,
+  level: number,
+) {
+  const upgrades = Object.fromEntries(
+    Object.entries(save.upgrades).filter(([key]) => key !== 'overdriveReactor'),
+  );
+  return { ...save, upgrades: { ...upgrades, hyperdriveReactor: level } };
 }
 
 /**

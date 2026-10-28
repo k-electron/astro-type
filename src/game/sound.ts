@@ -35,7 +35,7 @@ export type Cue =
   | { type: 'shield' }
   | { type: 'miss' }
   | { type: 'ignition' }
-  | { type: 'victory' }
+  | { type: 'cleared' }
   /** The chimes for the Stars earned, played a beat after the fanfare. */
   | { type: 'stars'; count: number }
   | { type: 'upgrade' }
@@ -66,7 +66,7 @@ export const BEAT_THEMES: Record<BeatTheme, { name: string; bpm: number }> = {
 };
 
 /** What the Run contributes to the sound: only whether Overdrive is on. */
-type RunSound = Pick<LivePerformance, 'hyperspaceActive'>;
+type RunSound = Pick<LivePerformance, 'overdriveActive'>;
 
 export function soundStateOf(
   profile: PlayerProfile,
@@ -85,7 +85,7 @@ export function soundStateOf(
     theme: profile.beatTheme,
     core: profile.upgrades.equippedAudioCore,
     beat: running && musicHeard,
-    overdrive: running && run.hyperspaceActive,
+    overdrive: running && run.overdriveActive,
   };
 }
 
@@ -110,7 +110,7 @@ export function cueFor(moment: Moment): Cue[] {
     case 'ignition':
       return [{ type: moment.type }];
     case 'cleared':
-      return [{ type: 'victory' }, { type: 'stars', count: moment.stars }];
+      return [{ type: 'cleared' }, { type: 'stars', count: moment.stars }];
     case 'upgrade':
       return [{ type: 'upgrade' }];
     case 'equip':

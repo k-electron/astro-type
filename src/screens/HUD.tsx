@@ -11,8 +11,8 @@ export const HUD: React.FC = () => {
     score,
     currentStreak,
     multiplier,
-    hyperspaceActive,
-    hyperspaceEnergy,
+    overdriveActive,
+    overdriveEnergy,
     shieldsRemaining,
     netWpm,
     accuracy,
@@ -22,8 +22,8 @@ export const HUD: React.FC = () => {
     score: state.run.score,
     currentStreak: state.run.currentStreak,
     multiplier: state.run.multiplier,
-    hyperspaceActive: state.run.hyperspaceActive,
-    hyperspaceEnergy: state.run.hyperspaceEnergy,
+    overdriveActive: state.run.overdriveActive,
+    overdriveEnergy: state.run.overdriveEnergy,
     shieldsRemaining: state.run.shieldsRemaining,
     netWpm: state.run.netWpm,
     accuracy: state.run.accuracy,
@@ -54,14 +54,14 @@ export const HUD: React.FC = () => {
         <div className="flex items-center gap-2">
           <div
             className={`flex items-center justify-center px-2 py-0.5 rounded-md font-mono font-bold text-xs sm:text-sm border transition-colors ${
-              hyperspaceActive
+              overdriveActive
                 ? 'border-amber-400 bg-amber-500/20 text-amber-300 shadow-[0_0_12px_rgba(245,158,11,0.5)]'
                 : multiplier > 1
                   ? 'border-cyan-500 bg-cyan-950/50 text-cyan-300'
                   : 'border-slate-800 bg-slate-950 text-slate-400'
             }`}
           >
-            {hyperspaceActive
+            {overdriveActive
               ? `OVERDRIVE x${overdriveScoreFactor(multiplier)}`
               : `x${multiplier}`}
           </div>
@@ -74,11 +74,11 @@ export const HUD: React.FC = () => {
             <div className="w-16 sm:w-20 h-1.5 rounded bg-slate-800 overflow-hidden border border-slate-700/60">
               <div
                 className={`h-full transition-all duration-150 ${
-                  hyperspaceActive
+                  overdriveActive
                     ? 'bg-amber-400 shadow-[0_0_6px_#fbbf24]'
                     : 'bg-cyan-500'
                 }`}
-                style={{ width: `${hyperspaceEnergy}%` }}
+                style={{ width: `${overdriveEnergy}%` }}
               />
             </div>
           </div>

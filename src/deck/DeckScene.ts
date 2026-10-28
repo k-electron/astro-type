@@ -2,7 +2,7 @@ import { Container, Graphics, Sprite } from 'pixi.js';
 import {
   FINGER_COLOR_MAP,
   FINGER_LANES,
-  getNoteLaneAndFinger,
+  getKeyLaneAndFinger,
   KEY_FINGER_MAP,
 } from '../curriculum/curriculum';
 import type { KeySpec } from '../curriculum/keyboardLayout';
@@ -264,7 +264,7 @@ export class DeckScene {
     const text = state.run.currentStage.sampleText;
     const activeChar = text[state.run.currentCharIndex] || null;
     const rect = activeChar ? layout.keys.get(keyId(activeChar)) : undefined;
-    const lane = activeChar ? getNoteLaneAndFinger(activeChar).lane : null;
+    const lane = activeChar ? getKeyLaneAndFinger(activeChar).lane : null;
     // No lane for the next character: the beam takes the equipped trail's colour.
     const color =
       (lane !== null && FINGER_LANES[lane]?.color) ||
@@ -448,19 +448,19 @@ export class DeckScene {
   ): void {
     const { resolution } = this.options;
     const seen = new Set<string>();
-    state.run.drones.forEach((note, index) => {
-      const rect = layout.keys.get(keyId(note.char));
+    state.run.drones.forEach((drone, index) => {
+      const rect = layout.keys.get(keyId(drone.char));
       // A character with no keycap of its own (a shifted symbol) has no Drone,
       // as in the DOM deck.
       if (!rect) return;
-      let view = this.drones.get(note.id);
+      let view = this.drones.get(drone.id);
       if (!view) {
-        view = new DroneView(note.id, note.char, rect.spec, resolution);
-        this.drones.set(note.id, view);
+        view = new DroneView(drone.id, drone.char, rect.spec, resolution);
+        this.drones.set(drone.id, view);
         this.droneLayer.addChild(view.root);
       }
-      seen.add(note.id);
-      const yPercent = motion.yPercent(note.id, fraction) ?? note.yPercent;
+      seen.add(drone.id);
+      const yPercent = motion.yPercent(drone.id, fraction) ?? drone.yPercent;
       const top = droneTop(index, yPercent, layout.deckY);
       view.root.position.set(rect.cx, top + rect.h / 2);
       view.root.zIndex = index === 0 ? 30 : 20;
@@ -468,7 +468,7 @@ export class DeckScene {
         rect.w,
         rect.h,
         index,
-        FINGER_LANES[note.lane]?.color || '#06b6d4',
+        FINGER_LANES[drone.lane]?.color || '#06b6d4',
       );
       view.animate(this.timeMs);
     });

@@ -40,17 +40,17 @@ export interface Loadout {
   shields: number;
   /** Precision Sensors: widen the Judgement windows. */
   sensors: number;
-  /** Hyperdrive Reactor: charges Overdrive faster. */
+  /** Overdrive Reactor: charges Overdrive faster. */
   reactor: number;
 }
 
 export function loadoutOf(profile: PlayerProfile): Loadout {
-  const { deflectorShields, precisionSensors, hyperdriveReactor } =
+  const { deflectorShields, precisionSensors, overdriveReactor } =
     profile.upgrades;
   return {
     shields: deflectorShields,
     sensors: precisionSensors,
-    reactor: hyperdriveReactor,
+    reactor: overdriveReactor,
   };
 }
 

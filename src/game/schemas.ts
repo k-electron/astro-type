@@ -34,7 +34,7 @@ const UpgradeLevelSchema = z
 
 export const UpgradesSchema = z.object({
   deflectorShields: UpgradeLevelSchema,
-  hyperdriveReactor: UpgradeLevelSchema,
+  overdriveReactor: UpgradeLevelSchema,
   precisionSensors: UpgradeLevelSchema,
   equippedTrailTheme: TrailColorThemeSchema.default('CYAN'),
   equippedAudioCore: AudioSynthCoreSchema.default('CYBER_SYNTH'),
@@ -81,6 +81,18 @@ export const SettingsSchema = z.object({
 });
 
 /**
+ * Saves and Backups made before the Reactor was renamed hold its level as
+ * `hyperdriveReactor`. It is read as `overdriveReactor` (the new key wins when
+ * both are there), so no version bump is needed; the old key is never written.
+ */
+function readLegacyReactorKey(upgrades: unknown): unknown {
+  if (typeof upgrades !== 'object' || upgrades === null) return upgrades;
+  const { hyperdriveReactor, ...rest } = upgrades as Record<string, unknown>;
+  if (hyperdriveReactor === undefined) return upgrades;
+  return { overdriveReactor: hyperdriveReactor, ...rest };
+}
+
+/**
  * The Save: the only definition of what a Profile is. Unknown fields are
  * dropped, a missing field takes its default, and a field that is present but
  * wrong fails the parse (the Save module then treats the Save as unreadable).
@@ -99,7 +111,7 @@ export const SaveFieldsSchema = z.object({
   highestWpmAllTime: z.number().min(0).default(0),
   stagesProgress: z.record(z.string(), StageProgressSchema).default({}),
   keyAnalytics: z.record(z.string(), KeyAnalyticsSchema).default({}),
-  upgrades: UpgradesSchema.prefault({}),
+  upgrades: z.preprocess(readLegacyReactorKey, UpgradesSchema.prefault({})),
   ...SettingsSchema.shape,
 });
 

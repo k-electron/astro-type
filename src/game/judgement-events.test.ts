@@ -126,7 +126,7 @@ describe('a hit says the points it scored', () => {
     const game = startedGame();
     hitPerfect(game, 28);
     const igniting = strike(game);
-    expect(game.getState().run.hyperspaceActive).toBe(true);
+    expect(game.getState().run.overdriveActive).toBe(true);
     expect(igniting.event).toMatchObject({ points: 300, overdrive: false });
     expect(igniting.event.points).toBe(igniting.added);
 

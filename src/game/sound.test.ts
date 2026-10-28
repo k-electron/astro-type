@@ -143,7 +143,7 @@ it('sounds right at every moment of a Run', () => {
   heard('Stage cleared', {
     beat: false,
     overdrive: false,
-    cues: [HIT, 'victory', `stars:${debrief?.starsEarned}`],
+    cues: [HIT, 'cleared', `stars:${debrief?.starsEarned}`],
   });
 
   // Buying an Upgrade in the Debrief: its own cue, and the music stays off.

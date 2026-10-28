@@ -20,16 +20,16 @@ import type { Screen } from '../game/machine';
  * itself, so a change to either re-renders only the starfield, not the app.
  */
 function CosmicBackdrop() {
-  const { onFlightDeck, hyperspaceActive, multiplier } = useGameState(
+  const { onFlightDeck, overdriveActive, multiplier } = useGameState(
     (state) => ({
       onFlightDeck: state.screen === 'flight-deck',
-      hyperspaceActive: state.run.hyperspaceActive,
+      overdriveActive: state.run.overdriveActive,
       multiplier: state.run.multiplier,
     }),
   );
   return (
     <GlobalCosmicBackground
-      hyperspaceActive={onFlightDeck && hyperspaceActive}
+      overdriveActive={onFlightDeck && overdriveActive}
       multiplier={onFlightDeck ? multiplier : 1}
     />
   );
@@ -66,7 +66,7 @@ export default function App() {
 
   return (
     <div className="relative min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-cyan-500/30 selection:text-cyan-200 overflow-x-hidden">
-      {/* Global Cosmic Starfield Background: tranquil on home & modals; hyperwarp ONLY during active flight */}
+      {/* Global Cosmic Starfield Background: tranquil on home & modals; streaking stars ONLY during active flight */}
       <CosmicBackdrop />
 
       {/* Strict Top Bar Contract */}

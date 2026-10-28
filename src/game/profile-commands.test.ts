@@ -27,7 +27,7 @@ type UpgradeField = keyof typeof UpgradesSchema.shape;
 /** An Upgrade's item id, the Profile field that holds its level, and the price of levels 1 to 3. */
 const UPGRADES = [
   ['shields', 'deflectorShields', [250, 650, 1200]],
-  ['reactor', 'hyperdriveReactor', [300, 750, 1400]],
+  ['reactor', 'overdriveReactor', [300, 750, 1400]],
   ['sensors', 'precisionSensors', [200, 500, 950]],
 ] as const satisfies ReadonlyArray<
   readonly [string, UpgradeField, readonly number[]]
@@ -235,14 +235,19 @@ describe('a purchase and the Save', () => {
   ] as const;
 
   it.each([
-    ['a complete Save', completeSave()],
+    [
+      'a complete Save',
+      completeSave(),
+      completeSave().upgrades.overdriveReactor,
+    ],
     [
       'an export of the live game from before versions existed',
       OLD_LIVE_EXPORT,
+      OLD_LIVE_EXPORT.upgrades.hyperdriveReactor,
     ],
   ])(
     're-saves %s under today’s keys after each kind of purchase',
-    (_, save) => {
+    (_, save, reactor) => {
       const { game, storage } = loadGame({ ...save, totalCredits: 5000 });
       expect(game.getState().loadNotice).toBeNull();
 
@@ -254,7 +259,7 @@ describe('a purchase and the Save', () => {
       expect(storage.saved?.totalCredits).toBe(5000 - 200 - 350 - 300);
       expect(storage.saved?.upgrades).toEqual({
         deflectorShields: save.upgrades.deflectorShields,
-        hyperdriveReactor: save.upgrades.hyperdriveReactor,
+        overdriveReactor: reactor,
         precisionSensors: 1,
         equippedTrailTheme: 'AMBER',
         equippedAudioCore: 'RETRO_8BIT',
@@ -294,11 +299,11 @@ describe('a purchase during a Run', () => {
     hitPerfect(game, 10);
     buyFromHangar(game, 'reactor');
     hitPerfect(game, 15);
-    expect(game.getState().run.hyperspaceActive, 'after 25 hits').toBe(false);
+    expect(game.getState().run.overdriveActive, 'after 25 hits').toBe(false);
 
     hitPerfect(game, 1);
 
-    expect(game.getState().run.hyperspaceActive, 'after 26 hits').toBe(true);
+    expect(game.getState().run.overdriveActive, 'after 26 hits').toBe(true);
   });
 
   it('Deflector Shields are taken on when a Run starts, so this Run goes without and the next has one', () => {

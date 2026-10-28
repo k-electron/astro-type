@@ -40,7 +40,7 @@ export const GalaxyMap: React.FC = () => {
     send({ type: 'PICK_STAGE', stageId: stage.id });
   const onOpenHangar = () => send({ type: 'OPEN_HANGAR' });
   const onOpenAnalytics = () => send({ type: 'OPEN_ANALYTICS' });
-  const onReturnToMenu = () => send({ type: 'PRESS_HOME' });
+  const onReturnHome = () => send({ type: 'PRESS_HOME' });
   const onWipeAchievements = game.wipeAchievements;
   const [selectedSectorId, setSelectedSectorId] = useState<string>('sector-1');
   const [showWipeConfirm, setShowWipeConfirm] = useState<boolean>(false);
@@ -202,7 +202,7 @@ export const GalaxyMap: React.FC = () => {
                 <OverlayCloseButton look="back" />
                 <button
                   type="button"
-                  onClick={onReturnToMenu}
+                  onClick={onReturnHome}
                   className="px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-700 bg-slate-800 text-slate-300 hover:text-white transition-colors flex items-center gap-1 cursor-pointer whitespace-nowrap"
                 >
                   <Home className="w-3.5 h-3.5" />
@@ -215,7 +215,7 @@ export const GalaxyMap: React.FC = () => {
                 {opener !== 'academy-home' && (
                   <button
                     type="button"
-                    onClick={onReturnToMenu}
+                    onClick={onReturnHome}
                     className="px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-700 bg-slate-800 text-slate-300 hover:text-white transition-colors flex items-center gap-1 cursor-pointer whitespace-nowrap"
                   >
                     <Home className="w-3.5 h-3.5" />

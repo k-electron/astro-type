@@ -2,7 +2,7 @@ import type React from 'react';
 import { useEffect, useRef } from 'react';
 
 interface GlobalCosmicBackgroundProps {
-  hyperspaceActive: boolean;
+  overdriveActive: boolean;
   multiplier: number;
 }
 
@@ -18,17 +18,17 @@ interface CosmicStar {
 }
 
 export const GlobalCosmicBackground: React.FC<GlobalCosmicBackgroundProps> = ({
-  hyperspaceActive,
+  overdriveActive,
   multiplier,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const starsRef = useRef<CosmicStar[]>([]);
-  const stateRef = useRef({ hyperspaceActive, multiplier });
+  const stateRef = useRef({ overdriveActive, multiplier });
 
   // Update live speed state without resetting star positions or re-triggering canvas mount
   useEffect(() => {
-    stateRef.current = { hyperspaceActive, multiplier };
-  }, [hyperspaceActive, multiplier]);
+    stateRef.current = { overdriveActive, multiplier };
+  }, [overdriveActive, multiplier]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -80,20 +80,20 @@ export const GlobalCosmicBackground: React.FC<GlobalCosmicBackgroundProps> = ({
 
       ctx.clearRect(0, 0, width, height);
 
-      const targetHyperspace = stateRef.current.hyperspaceActive;
+      const targetOverdrive = stateRef.current.overdriveActive;
       const targetMultiplier = stateRef.current.multiplier;
 
-      const targetWarpSpeed = targetHyperspace
+      const targetStarSpeed = targetOverdrive
         ? 6.0
         : targetMultiplier > 1
           ? 1.0 + (targetMultiplier - 1) * 0.5
           : 1.0;
 
       // Smooth acceleration / deceleration
-      currentSpeed += (targetWarpSpeed - currentSpeed) * 0.08;
+      currentSpeed += (targetStarSpeed - currentSpeed) * 0.08;
 
-      const isWarping =
-        targetHyperspace || targetMultiplier >= 3 || currentSpeed > 2.0;
+      const isStreaking =
+        targetOverdrive || targetMultiplier >= 3 || currentSpeed > 2.0;
 
       // Draw all stars across the whole viewport
       starsRef.current.forEach((star) => {
@@ -104,8 +104,8 @@ export const GlobalCosmicBackground: React.FC<GlobalCosmicBackgroundProps> = ({
           star.x = Math.random();
         }
 
-        // Twinkle effect when not in hyperspace
-        if (!isWarping) {
+        // Twinkle effect when the stars are not streaking
+        if (!isStreaking) {
           star.alpha =
             star.baseAlpha + Math.sin(frame * star.twinkleSpeed) * 0.15;
         }
@@ -113,8 +113,8 @@ export const GlobalCosmicBackground: React.FC<GlobalCosmicBackgroundProps> = ({
         const sx = star.x * width;
         const sy = star.y * height;
 
-        if (isWarping) {
-          // Hyperwarp light streak
+        if (isStreaking) {
+          // Light streak at speed
           const streakLength = star.speed * height * 45 * currentSpeed;
           ctx.strokeStyle = star.color;
           ctx.lineWidth = Math.max(1, star.size * 0.85);

@@ -877,7 +877,7 @@ class SoundEngine {
     }
   }
 
-  public playHyperspaceIgnition() {
+  public playOverdriveIgnition() {
     if (this.globalMuted || !this.soundEnabled) return;
     this.init();
     if (!this.ctx || !this.sfxGain) return;
@@ -938,7 +938,7 @@ class SoundEngine {
     }
   }
 
-  public playStageVictory() {
+  public playStageCleared() {
     if (this.globalMuted || !this.soundEnabled) return;
     this.init();
     if (!this.ctx || !this.sfxGain) return;

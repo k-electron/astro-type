@@ -36,10 +36,10 @@ export const engineSound: Sound = {
         soundEngine.playMiss();
         return;
       case 'ignition':
-        soundEngine.playHyperspaceIgnition();
+        soundEngine.playOverdriveIgnition();
         return;
-      case 'victory':
-        soundEngine.playStageVictory();
+      case 'cleared':
+        soundEngine.playStageCleared();
         return;
       case 'stars':
         // One chime per Star, a beat after the fanfare.

@@ -1,4 +1,4 @@
-import type { FallingNote } from '../game/rules';
+import type { Drone } from '../game/rules';
 
 /**
  * Smooths Drone motion between Run clock steps. The rules move Drones in
@@ -20,7 +20,7 @@ export class DroneMotion {
    * a hit sending the lead away) leaves the Drones that stay gliding as before
    * and puts new ones where they are.
    */
-  update(drones: readonly FallingNote[], stepped: boolean): void {
+  update(drones: readonly Drone[], stepped: boolean): void {
     const next = new Map<string, number>();
     for (const drone of drones) next.set(drone.id, drone.yPercent);
     // A Drone the deck hasn't seen before has nowhere to glide from.

@@ -5,6 +5,7 @@ import {
   OLD_DRONE_SPEEDS,
   RETURNING_PLAYER,
   stageProgress,
+  withLegacyReactorKey,
   withOldDroneSpeed,
 } from '../../tests/shared/saves';
 import type { Game } from './game';
@@ -53,7 +54,7 @@ describe('a Save that is readable', () => {
     expect(profile.stagesProgress['s1-l1'].starsEarned).toBe(3);
     expect(profile.stagesProgress['s1-l2'].starsEarned).toBe(2);
     expect(profile.upgrades.deflectorShields).toBe(1);
-    expect(profile.upgrades.hyperdriveReactor).toBe(2);
+    expect(profile.upgrades.overdriveReactor).toBe(2);
     expect(profile.globalMuted).toBe(true);
     expect(game.getState().loadNotice).toBeNull();
     expect(storage.movedAside).toBeUndefined();
@@ -133,7 +134,7 @@ describe('a Save that is readable', () => {
     const { game } = load(
       withUpgrades(completeSave(), {
         deflectorShields: 3,
-        hyperdriveReactor: 3,
+        overdriveReactor: 3,
         precisionSensors: 3,
       }),
     );
@@ -198,6 +199,51 @@ describe('a Save made when the player could choose a Drone speed', () => {
   );
 });
 
+describe('a Save that keeps the Overdrive Reactor under its old key', () => {
+  // The Reactor's level used to be saved as `hyperdriveReactor`. Saves made
+  // then keep loading with the level intact, and the next write uses only the
+  // new key, `overdriveReactor`. The Save's version stays 1.
+  it('loads with the Reactor’s level and the rest of the Save intact, without a notice', () => {
+    const { game, storage } = load(withLegacyReactorKey(completeSave(), 3));
+
+    const profile = game.getState().profile;
+    expect(game.getState().loadNotice).toBeNull();
+    expect(storage.movedAside).toBeUndefined();
+    expect(profile.upgrades.overdriveReactor).toBe(3);
+    expect(profile.upgrades.deflectorShields).toBe(1);
+    expect(profile.totalStars).toBe(5);
+    expect(profile.totalCredits).toBe(1234);
+  });
+
+  it('writes the level under the new key and no longer writes the old one', () => {
+    const { game, storage } = load(withLegacyReactorKey(completeSave(), 3));
+
+    game.buy('sensors'); // 200 Credits, and the game saves
+
+    expect(storage.saved?.version).toBe(1);
+    expect(storage.saved?.upgrades.overdriveReactor).toBe(3);
+    expect(storage.saved?.upgrades).not.toHaveProperty('hyperdriveReactor');
+    expect(game.getState().profile.upgrades).not.toHaveProperty(
+      'hyperdriveReactor',
+    );
+  });
+
+  it('takes the new key’s level when the Save has both keys', () => {
+    const save = completeSave();
+    const { game, storage } = load({
+      ...save,
+      upgrades: { ...save.upgrades, overdriveReactor: 3, hyperdriveReactor: 1 },
+    });
+
+    expect(game.getState().loadNotice).toBeNull();
+    expect(game.getState().profile.upgrades.overdriveReactor).toBe(3);
+
+    game.buy('sensors');
+    expect(storage.saved?.upgrades.overdriveReactor).toBe(3);
+    expect(storage.saved?.upgrades).not.toHaveProperty('hyperdriveReactor');
+  });
+});
+
 describe('a Save with every key the game has since retired', () => {
   // Saves from before: a stored `totalStars` (here one that is wrong),
   // `ambientMusicVolume`, the Drone speed and the old Upgrade key names. None
@@ -230,8 +276,8 @@ describe('a Save with every key the game has since retired', () => {
       expect(profile?.upgrades.deflectorShields).toBe(
         save.upgrades.deflectorShields,
       );
-      expect(profile?.upgrades.hyperdriveReactor).toBe(
-        save.upgrades.hyperdriveReactor,
+      expect(profile?.upgrades.overdriveReactor).toBe(
+        save.upgrades.overdriveReactor,
       );
       for (const field of SETTINGS) {
         expect(profile?.[field], field).toEqual(save[field]);
@@ -293,7 +339,7 @@ describe('a Save with a field missing', () => {
 
     expect(game.getState().loadNotice).toBeNull();
     expect(game.getState().profile.upgrades.deflectorShields).toBe(0);
-    expect(game.getState().profile.upgrades.hyperdriveReactor).toBe(0);
+    expect(game.getState().profile.upgrades.overdriveReactor).toBe(0);
     expect(game.getState().profile.upgrades.precisionSensors).toBe(0);
     expect(game.getState().profile.totalCredits).toBe(1234);
   });
@@ -320,7 +366,11 @@ describe('a Save that cannot be read', () => {
     ],
     [
       'a reactor Upgrade at level 7',
-      withUpgrades(completeSave(), { hyperdriveReactor: 7 }),
+      withUpgrades(completeSave(), { overdriveReactor: 7 }),
+    ],
+    [
+      'a reactor Upgrade at level 7 under its old key',
+      withLegacyReactorKey(completeSave(), 7),
     ],
     [
       'a sensors Upgrade at level -1',

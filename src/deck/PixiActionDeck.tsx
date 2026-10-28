@@ -16,9 +16,9 @@ import { getDeckSession } from './deckSession';
 export const PixiActionDeck = memo(function PixiActionDeck() {
   const game = useGame();
   const onFrame = useOnFrame();
-  const { hyperspaceActive, multiplier, currentStreak, handsVisible } =
+  const { overdriveActive, multiplier, currentStreak, handsVisible } =
     useGameState((state) => ({
-      hyperspaceActive: state.run.hyperspaceActive,
+      overdriveActive: state.run.overdriveActive,
       multiplier: state.run.multiplier,
       currentStreak: state.run.currentStreak,
       handsVisible: state.profile.handsVisible,
@@ -44,7 +44,7 @@ export const PixiActionDeck = memo(function PixiActionDeck() {
             <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
             <span>Tactile Rhythm Flight Deck</span>
           </div>
-          {hyperspaceActive && (
+          {overdriveActive && (
             <span className="flex items-center gap-1 text-[11px] font-mono font-extrabold text-amber-300 bg-amber-950/80 px-2 py-0.5 rounded border border-amber-500 shadow-[0_0_12px_rgba(245,158,11,0.4)] animate-pulse">
               <Flame className="w-3.5 h-3.5 text-amber-400 fill-current" />
               OVERDRIVE x{overdriveScoreFactor(multiplier)}

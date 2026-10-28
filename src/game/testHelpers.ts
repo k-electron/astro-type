@@ -41,7 +41,7 @@ const STEPS_TO_REACH_LINE = 30;
 
 export interface Upgrades {
   deflectorShields?: number;
-  hyperdriveReactor?: number;
+  overdriveReactor?: number;
   precisionSensors?: number;
 }
 

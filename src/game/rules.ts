@@ -11,7 +11,7 @@
  * The numbers and windows are the original game's, except that every Run now
  * falls at one Drone speed (`DRONE_SPEED`).
  */
-import { getNoteLaneAndFinger, type Stage } from '../curriculum/curriculum';
+import { getKeyLaneAndFinger, type Stage } from '../curriculum/curriculum';
 import type { FingerZone } from '../curriculum/keyboardLayout';
 import { STEP_MS } from './clock';
 import type { Moment } from './moments';
@@ -21,7 +21,7 @@ import type { Loadout } from './profile';
 export type Grade = 'perfect' | 'great' | 'good';
 
 /** A Drone: one character of the Stage's text, falling down its lane. */
-export interface FallingNote {
+export interface Drone {
   id: string;
   char: string;
   lane: number; // 0 to 8
@@ -36,8 +36,8 @@ export interface LivePerformance {
   currentStreak: number;
   maxStreak: number;
   multiplier: number; // 1, 2, 3, 4
-  hyperspaceActive: boolean;
-  hyperspaceEnergy: number; // 0 to 100
+  overdriveActive: boolean;
+  overdriveEnergy: number; // 0 to 100
   shieldsRemaining: number;
   correctKeystrokes: number;
   incorrectKeystrokes: number;
@@ -107,7 +107,7 @@ export type KeyStats = Record<string, { hits: number; misses: number }>;
 export interface RunState {
   performance: LivePerformance;
   /** The lead Drone is first; the Strike Line is y=84. */
-  drones: FallingNote[];
+  drones: Drone[];
   stage: Stage;
   /** The positions in the text where a wrong key was pressed: the Miss marks. */
   errorIndices: ReadonlySet<number>;
@@ -154,8 +154,8 @@ function freshPerformance(shields: number): LivePerformance {
     currentStreak: 0,
     maxStreak: 0,
     multiplier: 1,
-    hyperspaceActive: false,
-    hyperspaceEnergy: 0,
+    overdriveActive: false,
+    overdriveEnergy: 0,
     shieldsRemaining: shields,
     correctKeystrokes: 0,
     incorrectKeystrokes: 0,
@@ -175,10 +175,10 @@ function makeDrone(
   now: number,
   yPercent: number,
   isTargetLocked: boolean,
-): FallingNote {
-  const { lane, finger } = getNoteLaneAndFinger(char);
+): Drone {
+  const { lane, finger } = getKeyLaneAndFinger(char);
   return {
-    id: `note-${index}-${char}-${now}`,
+    id: `drone-${index}-${char}-${now}`,
     char,
     lane,
     finger,
@@ -188,9 +188,9 @@ function makeDrone(
 }
 
 /** The first seven Drones of a Run. */
-function seedDrones(stage: Stage, now: number): FallingNote[] {
+function seedDrones(stage: Stage, now: number): Drone[] {
   const text = stage.sampleText.slice(0, 7);
-  const drones: FallingNote[] = [];
+  const drones: Drone[] = [];
   for (let i = 0; i < text.length; i++) {
     const isTarget = i === 0;
     drones.push(
@@ -211,12 +211,12 @@ function seedDrones(stage: Stage, now: number): FallingNote[] {
  * enters at the top for the character six ahead, and the new lead is locked.
  */
 function advanceDroneQueue(
-  drones: FallingNote[],
-  hit: FallingNote | undefined,
+  drones: Drone[],
+  hit: Drone | undefined,
   nextCharIndex: number,
   text: string,
   now: number,
-): FallingNote[] {
+): Drone[] {
   const remaining = drones.filter((n) => n.id !== hit?.id);
   const upcomingIdx = nextCharIndex + 6;
   if (upcomingIdx < text.length) {
@@ -235,26 +235,26 @@ function advanceDroneQueue(
 const DRONE_SPEED = { leadStep: 2.2, followerEasing: 0.22 } as const;
 
 /** One 60 Hz step of Drone movement. */
-function moveDrones(drones: FallingNote[]): FallingNote[] {
+function moveDrones(drones: Drone[]): Drone[] {
   const { leadStep, followerEasing } = DRONE_SPEED;
 
-  return drones.map((note, idx) => {
+  return drones.map((drone, idx) => {
     if (idx === 0) {
-      if (note.yPercent >= 83.5) {
-        return { ...note, yPercent: STRIKE_LINE_Y, isTargetLocked: true };
+      if (drone.yPercent >= 83.5) {
+        return { ...drone, yPercent: STRIKE_LINE_Y, isTargetLocked: true };
       }
-      const nextY = Math.min(STRIKE_LINE_Y, note.yPercent + leadStep);
+      const nextY = Math.min(STRIKE_LINE_Y, drone.yPercent + leadStep);
       return {
-        ...note,
+        ...drone,
         yPercent: nextY,
         isTargetLocked: nextY >= 83.5,
       };
     }
 
     const slotY = Math.max(6, STRIKE_LINE_Y - idx * 16);
-    const nextY = note.yPercent + (slotY - note.yPercent) * followerEasing;
+    const nextY = drone.yPercent + (slotY - drone.yPercent) * followerEasing;
     return {
-      ...note,
+      ...drone,
       yPercent: nextY,
       isTargetLocked: false,
     };
@@ -360,8 +360,8 @@ function applyMiss(
       ...perf,
       currentStreak: 0,
       multiplier: 1,
-      hyperspaceActive: false,
-      hyperspaceEnergy: Math.max(0, perf.hyperspaceEnergy - 25),
+      overdriveActive: false,
+      overdriveEnergy: Math.max(0, perf.overdriveEnergy - 25),
       ...base,
     },
   };
@@ -439,10 +439,10 @@ export function strike(
   const grade = judge(drone.yPercent, loadout.sensors);
   const streak = performance.currentStreak + 1;
   const multiplier = multiplierForStreak(streak);
-  const points = scoreForHit(grade, multiplier, performance.hyperspaceActive);
+  const points = scoreForHit(grade, multiplier, performance.overdriveActive);
   const charge = chargeOverdrive(
-    performance.hyperspaceEnergy,
-    performance.hyperspaceActive,
+    performance.overdriveEnergy,
+    performance.overdriveActive,
     loadout.reactor,
   );
   const nextIndex = index + 1;
@@ -458,7 +458,7 @@ export function strike(
     grade,
     key,
     points,
-    overdrive: performance.hyperspaceActive,
+    overdrive: performance.overdriveActive,
   };
   // The Drone carries its lane and finger.
   const moments: Moment[] = [
@@ -481,8 +481,8 @@ export function strike(
         currentStreak: streak,
         maxStreak: Math.max(performance.maxStreak, streak),
         multiplier,
-        hyperspaceActive: charge.ignites ? true : performance.hyperspaceActive,
-        hyperspaceEnergy: charge.energy,
+        overdriveActive: charge.ignites ? true : performance.overdriveActive,
+        overdriveEnergy: charge.energy,
         correctKeystrokes: performance.correctKeystrokes + 1,
         totalKeystrokes: performance.totalKeystrokes + 1,
         currentCharIndex: nextIndex,
@@ -534,8 +534,8 @@ export function tick(run: RunState, steps: number): RunState {
 export function clearedPerformance(perf: LivePerformance): LivePerformance {
   return {
     ...perf,
-    hyperspaceActive: false,
-    hyperspaceEnergy: 0,
+    overdriveActive: false,
+    overdriveEnergy: 0,
     multiplier: 1,
     currentStreak: 0,
   };

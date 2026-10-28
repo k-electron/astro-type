@@ -13,7 +13,7 @@ export interface FingerLaneInfo {
   glowColor: string;
 }
 
-export interface StarRatingThresholds {
+export interface StarThresholds {
   oneStarAccuracy: number; // e.g. 75
   twoStarWpm: number; // e.g. 25
   twoStarAccuracy: number; // e.g. 90
@@ -37,11 +37,11 @@ export interface Stage {
   sampleText: string;
   difficulty: 'Beginner' | 'Intermediate' | 'Advanced' | 'Expert';
   targetWpm: number;
-  starThresholds: StarRatingThresholds;
+  starThresholds: StarThresholds;
   timeLimitSeconds?: number;
   focusFingers?: string; // e.g. "Left Index (F) & Right Index (J)"
   techniqueTip?: string; // e.g. "Rest index fingers on F and J bumps. Keep palms level."
-  drillPatternType?:
+  patternType?:
     | 'ANCHOR_CALIBRATION'
     | 'FINGER_EXPANSION'
     | 'ANCHOR_REACH_RETURN'
@@ -209,7 +209,7 @@ for (const { key, subDisplay, finger, lane } of KEYBOARD_ROWS.flat()) {
   }
 }
 
-export function getNoteLaneAndFinger(char: string): KeyFinger {
+export function getKeyLaneAndFinger(char: string): KeyFinger {
   if (KEY_FINGER_MAP[char]) {
     return KEY_FINGER_MAP[char];
   }
@@ -264,7 +264,7 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         focusFingers: 'Left Index (F) & Right Index (J)',
         techniqueTip:
           'Feel the small raised bump on F and J. Rest your thumbs gently over the spacebar. Focus on relaxed, alternating rhythm.',
-        drillPatternType: 'ANCHOR_CALIBRATION',
+        patternType: 'ANCHOR_CALIBRATION',
         starThresholds: {
           oneStarAccuracy: 85,
           twoStarWpm: 10,
@@ -290,7 +290,7 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         focusFingers: 'Left Middle (D) & Right Middle (K)',
         techniqueTip:
           'Keep index fingers anchored on F and J while middle fingers rest on D and K. Move only the striking finger.',
-        drillPatternType: 'FINGER_EXPANSION',
+        patternType: 'FINGER_EXPANSION',
         starThresholds: {
           oneStarAccuracy: 85,
           twoStarWpm: 12,
@@ -316,7 +316,7 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         focusFingers: 'Ring Fingers (S, L) & Pinkies (A, ;)',
         techniqueTip:
           'Ring and pinky fingers are naturally weaker. Resist reaching with your index finger—let each finger strike its dedicated home key.',
-        drillPatternType: 'FINGER_EXPANSION',
+        patternType: 'FINGER_EXPANSION',
         starThresholds: {
           oneStarAccuracy: 85,
           twoStarWpm: 14,
@@ -342,7 +342,7 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         focusFingers: 'Index Reaches: L.Index (G) & R.Index (H)',
         techniqueTip:
           'Touch-Typing Law: Anchor, Reach, Return! Strike G with your left index finger, then immediately return to the F bump.',
-        drillPatternType: 'ANCHOR_REACH_RETURN',
+        patternType: 'ANCHOR_REACH_RETURN',
         starThresholds: {
           oneStarAccuracy: 85,
           twoStarWpm: 16,
@@ -381,7 +381,7 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         focusFingers: 'L.Middle (E) & R.Middle (I)',
         techniqueTip:
           'Reach upward from D to E with left middle finger. Reach from K to I with right middle finger. Keep wrists elevated.',
-        drillPatternType: 'VOWEL_REACH',
+        patternType: 'VOWEL_REACH',
         starThresholds: {
           oneStarAccuracy: 85,
           twoStarWpm: 18,
@@ -420,7 +420,7 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         focusFingers: 'L.Index (R) & R.Index (U)',
         techniqueTip:
           'Extend your index finger forward to strike R or U, then immediately return to the home bump. Never let your hands drift forward.',
-        drillPatternType: 'ANCHOR_REACH_RETURN',
+        patternType: 'ANCHOR_REACH_RETURN',
         starThresholds: {
           oneStarAccuracy: 85,
           twoStarWpm: 20,
@@ -463,7 +463,7 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         focusFingers: 'L.Index (T) & R.Index (Y)',
         techniqueTip:
           'Diagonal reaches require light touches. Keep the opposite hand resting comfortably on home row to preserve spatial orientation.',
-        drillPatternType: 'ANCHOR_REACH_RETURN',
+        patternType: 'ANCHOR_REACH_RETURN',
         starThresholds: {
           oneStarAccuracy: 86,
           twoStarWpm: 22,
@@ -508,7 +508,7 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         focusFingers: 'Ring (W, O) & Pinkies (Q, P)',
         techniqueTip:
           'Ring and pinky upward reaches are easiest when your palms are floating slightly above the desk, not pinned down.',
-        drillPatternType: 'ANCHOR_REACH_RETURN',
+        patternType: 'ANCHOR_REACH_RETURN',
         starThresholds: {
           oneStarAccuracy: 86,
           twoStarWpm: 24,
@@ -547,7 +547,7 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         focusFingers: 'Index Down (V, M) & Middle Down (C, Comma)',
         techniqueTip:
           'Curl your fingers inward rather than dropping your whole wrist. Snap right back to the home row baseline.',
-        drillPatternType: 'ANCHOR_REACH_RETURN',
+        patternType: 'ANCHOR_REACH_RETURN',
         starThresholds: {
           oneStarAccuracy: 86,
           twoStarWpm: 22,
@@ -573,7 +573,7 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         focusFingers: 'Index Extension (B, N) & Ring Down (X, Period)',
         techniqueTip:
           'The B and N reaches are center-bottom. Always return to F and J bumps so your hands remain properly calibrated.',
-        drillPatternType: 'ANCHOR_REACH_RETURN',
+        patternType: 'ANCHOR_REACH_RETURN',
         starThresholds: {
           oneStarAccuracy: 86,
           twoStarWpm: 24,
@@ -599,7 +599,7 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         focusFingers: 'Pinkies Down: L.Pinky (Z) & R.Pinky (Slash)',
         techniqueTip:
           'Do not twist your wrist outward to reach Z or Slash. Curl your pinky downward under the ring finger.',
-        drillPatternType: 'ANCHOR_REACH_RETURN',
+        patternType: 'ANCHOR_REACH_RETURN',
         starThresholds: {
           oneStarAccuracy: 87,
           twoStarWpm: 26,
@@ -655,7 +655,7 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         focusFingers: 'Full 10-Finger Matrix Coordination',
         techniqueTip:
           'Do not look down at the keyboard. Trust the small hand visualizer on screen and let muscle memory guide your strokes.',
-        drillPatternType: 'CADENCE_FLOW',
+        patternType: 'CADENCE_FLOW',
         starThresholds: {
           oneStarAccuracy: 87,
           twoStarWpm: 28,
@@ -722,7 +722,7 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         focusFingers: 'Left-Right Hand Alternation',
         techniqueTip:
           'Feel the rhythm like walking: left, right, left, right. Hand alternation builds effortless speed without pecking.',
-        drillPatternType: 'HAND_ALTERNATION',
+        patternType: 'HAND_ALTERNATION',
         starThresholds: {
           oneStarAccuracy: 88,
           twoStarWpm: 28,
@@ -776,7 +776,7 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         focusFingers: 'Word Level Chunking',
         techniqueTip:
           'Read one word ahead. Think of words as single finger sequences rather than individual separate letters.',
-        drillPatternType: 'CADENCE_FLOW',
+        patternType: 'CADENCE_FLOW',
         starThresholds: {
           oneStarAccuracy: 88,
           twoStarWpm: 30,
@@ -830,7 +830,7 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         focusFingers: 'Multi-Finger Rolling Transitions',
         techniqueTip:
           'Let your fingers roll smoothly through syllables like playing a piano chord progression.',
-        drillPatternType: 'CADENCE_FLOW',
+        patternType: 'CADENCE_FLOW',
         starThresholds: {
           oneStarAccuracy: 88,
           twoStarWpm: 32,
@@ -886,7 +886,7 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         focusFingers: 'Unbroken Rhythm Flow',
         techniqueTip:
           'Avoid sprinting and pausing. A steady, unhurried cadence achieves higher final WPM and near-perfect accuracy.',
-        drillPatternType: 'CADENCE_FLOW',
+        patternType: 'CADENCE_FLOW',
         starThresholds: {
           oneStarAccuracy: 88,
           twoStarWpm: 34,
@@ -924,7 +924,7 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         focusFingers: 'L.Index (4, 5) & R.Index (6, 7)',
         techniqueTip:
           'F reaches up to 4 and 5; J reaches up to 6 and 7. Keep your remaining fingers resting on the home row.',
-        drillPatternType: 'ANCHOR_REACH_RETURN',
+        patternType: 'ANCHOR_REACH_RETURN',
         starThresholds: {
           oneStarAccuracy: 82,
           twoStarWpm: 22,
@@ -949,7 +949,7 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         focusFingers: 'Middle (3, 8) & Ring (2, 9)',
         techniqueTip:
           'Maintain your index finger anchors on F and J while middle and ring fingers reach upward.',
-        drillPatternType: 'ANCHOR_REACH_RETURN',
+        patternType: 'ANCHOR_REACH_RETURN',
         starThresholds: {
           oneStarAccuracy: 82,
           twoStarWpm: 24,
@@ -974,7 +974,7 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         focusFingers: 'Pinkies: L.Pinky (1) & R.Pinky (0)',
         techniqueTip:
           'Pinky reaches to the number row require a slight forearm shift. Keep your index finger anchored.',
-        drillPatternType: 'ANCHOR_REACH_RETURN',
+        patternType: 'ANCHOR_REACH_RETURN',
         starThresholds: {
           oneStarAccuracy: 82,
           twoStarWpm: 26,
@@ -1038,7 +1038,7 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         focusFingers: 'Seamless Letter-to-Number Transitions',
         techniqueTip:
           'Transition smoothly between the home row and top number row without looking down.',
-        drillPatternType: 'CADENCE_FLOW',
+        patternType: 'CADENCE_FLOW',
         starThresholds: {
           oneStarAccuracy: 84,
           twoStarWpm: 28,
@@ -1105,7 +1105,7 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         focusFingers: 'Opposite-Hand Shift Pinkies',
         techniqueTip:
           'Cardinal Touch-Typing Rule: Hold Shift with the pinky of the opposite hand from the key you are striking.',
-        drillPatternType: 'SHIFT_DISCIPLINE',
+        patternType: 'SHIFT_DISCIPLINE',
         starThresholds: {
           oneStarAccuracy: 84,
           twoStarWpm: 24,
@@ -1131,7 +1131,7 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         focusFingers: 'Right Pinky Punctuation + Shift Pairs',
         techniqueTip:
           'Notice the dotted modifier highlight for Shift keys. Hold Shift firmly before striking the target symbol.',
-        drillPatternType: 'SHIFT_DISCIPLINE',
+        patternType: 'SHIFT_DISCIPLINE',
         starThresholds: {
           oneStarAccuracy: 85,
           twoStarWpm: 26,
@@ -1173,7 +1173,7 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         focusFingers: 'Symbol Matrix Reaches',
         techniqueTip:
           'Do not hurry through code syntax. Accuracy is far more important than speed when typing code tokens.',
-        drillPatternType: 'SHIFT_DISCIPLINE',
+        patternType: 'SHIFT_DISCIPLINE',
         starThresholds: {
           oneStarAccuracy: 85,
           twoStarWpm: 28,
@@ -1221,7 +1221,7 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         focusFingers: 'Total Keyboard Matrix Mastery',
         techniqueTip:
           'Stay calm. Maintain an even breathing cadence and trust the hand visualizers.',
-        drillPatternType: 'CADENCE_FLOW',
+        patternType: 'CADENCE_FLOW',
         starThresholds: {
           oneStarAccuracy: 86,
           twoStarWpm: 30,
@@ -1290,7 +1290,7 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         focusFingers: 'Continuous Expressive Prose Flow',
         techniqueTip:
           'Read ahead by full clauses. Allow your subconscious muscle memory to handle the physical key strikes.',
-        drillPatternType: 'CADENCE_FLOW',
+        patternType: 'CADENCE_FLOW',
         starThresholds: {
           oneStarAccuracy: 88,
           twoStarWpm: 34,
@@ -1348,7 +1348,7 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         focusFingers: 'Complex Scientific Polysyllables',
         techniqueTip:
           'Keep your palms floating lightly. Do not press hard on the keys—touch typing is a light, swift tap.',
-        drillPatternType: 'CADENCE_FLOW',
+        patternType: 'CADENCE_FLOW',
         starThresholds: {
           oneStarAccuracy: 89,
           twoStarWpm: 38,
@@ -1404,7 +1404,7 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         focusFingers: 'Sustained Flow & Rhythm Endurance',
         techniqueTip:
           'Notice how steady cadence creates speed naturally. Never rush—let the words flow effortlessly.',
-        drillPatternType: 'CADENCE_FLOW',
+        patternType: 'CADENCE_FLOW',
         starThresholds: {
           oneStarAccuracy: 90,
           twoStarWpm: 42,
@@ -1472,7 +1472,7 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         focusFingers: 'Supreme 10-Finger Touch Typing Fluency',
         techniqueTip:
           'You have mastered the complete keyboard. Flawless finger selection, perfect posture, and cosmic speed.',
-        drillPatternType: 'CADENCE_FLOW',
+        patternType: 'CADENCE_FLOW',
         starThresholds: {
           oneStarAccuracy: 92,
           twoStarWpm: 46,
@@ -1690,7 +1690,7 @@ export function freeFlightStage(text: string, targetWpm: number): Stage {
     focusFingers: 'Free Flight Custom Selection',
     techniqueTip:
       'Maintain relaxed posture and steady keystroke cadence across your custom text.',
-    drillPatternType: 'CADENCE_FLOW',
+    patternType: 'CADENCE_FLOW',
     starThresholds: {
       oneStarAccuracy: 75,
       twoStarWpm: targetWpm,

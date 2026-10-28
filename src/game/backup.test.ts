@@ -3,6 +3,7 @@ import {
   clearedStages,
   OLD_DRONE_SPEEDS,
   OLD_LIVE_EXPORT,
+  withLegacyReactorKey,
   withOldDroneSpeed,
 } from '../../tests/shared/saves';
 import { exportBackup, REFUSED_BACKUP_MESSAGE } from './save';
@@ -106,9 +107,15 @@ describe('importing a Backup', () => {
       'beatTheme',
       'globalMuted',
     ] as const;
+    // The export names the Reactor's level by its old key; today's Save keeps it as `overdriveReactor`.
+    const { hyperdriveReactor, ...otherUpgrades } = OLD_LIVE_EXPORT.upgrades;
+    const upgradesToday = {
+      ...otherUpgrades,
+      overdriveReactor: hyperdriveReactor,
+    };
     const expectIntact = (profile: Profile | null) => {
       expect(profile?.totalCredits).toBe(OLD_LIVE_EXPORT.totalCredits);
-      expect(profile?.upgrades).toEqual(OLD_LIVE_EXPORT.upgrades);
+      expect(profile?.upgrades).toEqual(upgradesToday);
       expect(profile?.keyAnalytics).toEqual(OLD_LIVE_EXPORT.keyAnalytics);
       expect(profile?.stagesProgress).toEqual(OLD_LIVE_EXPORT.stagesProgress);
       for (const field of SETTINGS) {
@@ -119,6 +126,54 @@ describe('importing a Backup', () => {
     expectIntact(game.getState().profile);
     expectIntact(storage.saved);
     expectIntact(JSON.parse(exportBackup(game.getState().profile)));
+  });
+
+  // The Overdrive Reactor's level used to be saved as `hyperdriveReactor`.
+  // Backups made then still import, with the level intact, and leave the old
+  // key behind in the Save and in the next Backup.
+  it('reads an export of the live game that has the Reactor under its old key, keeping its level', () => {
+    const { game, storage } = gameWith();
+
+    const outcome = game.importBackup(
+      JSON.stringify(withLegacyReactorKey(OLD_LIVE_EXPORT, 2)),
+    );
+
+    expect(outcome.ok).toBe(true);
+    expect(game.getState().profile.upgrades.overdriveReactor).toBe(2);
+    expect(storage.saved?.upgrades.overdriveReactor).toBe(2);
+  });
+
+  it('reads a versioned Backup that has the Reactor under its old key, keeping its level', () => {
+    const { game: playedGame } = gameWith({
+      totalCredits: 900,
+      ...clearedStages({ 's1-l1': 3 }),
+    });
+    const backup = withLegacyReactorKey(
+      JSON.parse(exportBackup(playedGame.getState().profile)),
+      3,
+    );
+
+    const { game } = gameWith();
+    const outcome = game.importBackup(JSON.stringify(backup));
+
+    expect(outcome.ok).toBe(true);
+    expect(backup.version).toBe(1);
+    expect(game.getState().profile.upgrades.overdriveReactor).toBe(3);
+    expect(game.getState().profile.totalCredits).toBe(900);
+  });
+
+  it('leaves the old Reactor key behind in the Save and in the next Backup', () => {
+    const { game, storage } = gameWith();
+
+    game.importBackup(JSON.stringify(withLegacyReactorKey(OLD_LIVE_EXPORT, 2)));
+
+    expect(storage.saved?.upgrades).not.toHaveProperty('hyperdriveReactor');
+    expect(game.getState().profile.upgrades).not.toHaveProperty(
+      'hyperdriveReactor',
+    );
+    const nextBackup = JSON.parse(exportBackup(game.getState().profile));
+    expect(nextBackup.upgrades.overdriveReactor).toBe(2);
+    expect(nextBackup.upgrades).not.toHaveProperty('hyperdriveReactor');
   });
 
   it('reads a versioned Backup carrying a speed the same way', () => {

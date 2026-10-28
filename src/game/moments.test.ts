@@ -122,10 +122,10 @@ describe('ignition', () => {
     const game = startedGame();
     hitPerfect(game, 28);
     const moments = listen(game);
-    expect(game.getState().run.hyperspaceActive).toBe(false);
+    expect(game.getState().run.overdriveActive).toBe(false);
 
     hitPerfect(game, 1); // the 29th hit starts Overdrive
-    expect(game.getState().run.hyperspaceActive).toBe(true);
+    expect(game.getState().run.overdriveActive).toBe(true);
     expect(typesOf(moments)).toEqual(['hit', 'ignition']);
 
     hitPerfect(game, 6); // on in Overdrive: only hits
@@ -153,7 +153,7 @@ describe('ignition', () => {
     hitPerfect(game, 29);
     const moments = listen(game);
     miss(game);
-    expect(game.getState().run.hyperspaceActive).toBe(false);
+    expect(game.getState().run.overdriveActive).toBe(false);
 
     // Hit on, stopping short of the last character, until it catches again.
     const budget =
@@ -166,7 +166,7 @@ describe('ignition', () => {
     expect(types[0]).toBe('miss');
     expect(types.filter((type) => type === 'ignition')).toHaveLength(1);
     expect(types.at(-1)).toBe('ignition');
-    expect(game.getState().run.hyperspaceActive).toBe(true);
+    expect(game.getState().run.overdriveActive).toBe(true);
   });
 });
 
