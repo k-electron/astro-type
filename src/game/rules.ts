@@ -440,7 +440,9 @@ export function strike(
 
   // Judge the Strike against the lead Drone for this character.
   const drone = run.drones.find((d) => d.char === target);
-  const grade = judge(drone?.yPercent, loadout.sensors);
+  // A Run that is running always has a Drone for the character to type.
+  if (!drone) throw new Error(`No Drone for "${target}" in a running Run`);
+  const grade = judge(drone.yPercent, loadout.sensors);
   const streak = performance.currentStreak + 1;
   const multiplier = multiplierForStreak(streak);
   const points = scoreForHit(grade, multiplier, performance.hyperspaceActive);
@@ -464,15 +466,13 @@ export function strike(
     points,
     overdrive: performance.hyperspaceActive,
   };
-  // The Drone carries its lane and finger. The Run always keeps a Drone for
-  // the next character; the key table is the fallback.
-  const fallback = getNoteLaneAndFinger(target);
+  // The Drone carries its lane and finger.
   const moments: Moment[] = [
     {
       ...judgement,
-      droneId: drone?.id ?? '',
-      lane: drone?.lane ?? fallback.lane,
-      finger: drone?.finger ?? fallback.finger,
+      droneId: drone.id,
+      lane: drone.lane,
+      finger: drone.finger,
     },
   ];
   // Overdrive catching fire comes right after the hit that lit it.
