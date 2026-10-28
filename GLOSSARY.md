@@ -71,7 +71,7 @@ A Profile exported to a file, which can be imported again.
 _Avoid_: Export, save file
 
 **Stars**:
-The 0–3 rating a Stage earns from a cleared Run; a Stage keeps its best. Stars open new Sectors.
+The 0–3 result a Stage earns from a cleared Run; a Stage keeps its best. Stars open new Sectors.
 _Avoid_: Rating, score
 
 **Credits**:
@@ -113,5 +113,5 @@ The screen where the player sets up a Stage from their own text and a target WPM
 _Avoid_: Custom practice, free flight drill
 
 **Debrief**:
-The screen shown when a Run is cleared, with its result and the stars earned.
+The screen shown when a Run is cleared, with its result, the Stars earned and the Credits paid.
 _Avoid_: Victory, level complete, mission debriefing

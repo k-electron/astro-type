@@ -1,6 +1,6 @@
 # Testing
 
-How tests are written and when a change counts as done. Decided in [#5](https://github.com/k-electron/astro-type/issues/5); use the terms in `GLOSSARY.md`. Two commands and one rule: `pnpm check` while you work (typecheck, Biome, and the unit and screen tests in Vitest, about 10 s), and `pnpm verify` before every push. `verify` runs `check`, then one Playwright run of the CI browser journeys and the local-only suite (below) against a fresh build, then the screenshot checks last, so they don't compete with the browser tests for the CPU. The scripts are listed in `package.json`. Which layer a test belongs in is decided in [ADR-0002](../adr/0002-tests-at-the-lowest-layer-that-sees-the-behaviour.md): the lowest one that can see the behaviour, and each layer has one job. This file is the only how-to for writing a test.
+How tests are written and when a change counts as done. Decided in [#5](https://github.com/k-electron/astro-type/issues/5); use the terms in `GLOSSARY.md`. `pnpm check` (typecheck, Biome, and the unit and screen tests in Vitest, about 10 s) is the loop while you work. `pnpm verify` is the gate before every push: it runs `check`, then one Playwright run of the CI browser journeys and the local-only suite (below) against a fresh build, then the screenshot checks last, so they don't compete with the browser tests for the CPU. Which layer a test belongs in is decided in [ADR-0002](../adr/0002-tests-at-the-lowest-layer-that-sees-the-behaviour.md): the lowest one that can see the behaviour, and each layer has one job. This file is the only how-to for writing a test.
 
 ## The rule
 
@@ -10,7 +10,7 @@ A test that restates the code is a change detector: delete it. That covers check
 
 **What a test may restate, and what it must import.** A test restates **rule numbers**, because it is their oracle: prices, Multiplier steps, Judgement windows and Star thresholds. If a rule changes, the test should go red. It **imports** everything incidental: Stage text, copy strings, the Save key, defaults, headings and types. A test that spells those out breaks when someone rewords a screen, and says nothing about the game. Where the source doesn't export one yet, note the gap on the ticket rather than copy it a second time.
 
-**The overlap rule.** A higher-layer test stays only if it proves something the lower layer can't see. A rule that only a browser test guards gets a headless test before the browser test is deleted.
+**The overlap rule.** A higher-layer test stays only if it proves something the lower layer can't see. A rule that only a browser test guards gets a headless test before the browser test is deleted. Before a test is deleted or merged, say what it guarded and which test guards it now.
 
 ## Starting a test
 
