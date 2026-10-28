@@ -4,6 +4,9 @@
  * This imports from no test runner, so unit, DOM and browser tests can share it.
  */
 
+import { entriesOf } from '../../src/game/catalog';
+import type { AudioSynthCore } from '../../src/game/schemas';
+
 /** Each header button that opens a screen, and the heading of that screen. */
 export const MENU_HEADINGS = {
   Sectors: 'Flight Sectors & Missions',
@@ -29,3 +32,13 @@ export const ACADEMY_HOME_HEADING = /AstroType: Cosmic Touch Typing/;
 
 /** The Flight Deck's HUD region. */
 export const HUD_NAME = 'HUD';
+
+/**
+ * How the header's audio panel names a Synthesizer Voice. A pattern, because
+ * the voice's button also shows its price or a check.
+ */
+export function voiceName(id: AudioSynthCore): RegExp {
+  const core = entriesOf('core').find((entry) => entry.id === id);
+  if (!core) throw new Error(`No Synthesizer Voice ${id}`);
+  return new RegExp(core.shortName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+}

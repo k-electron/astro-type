@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CURRICULUM_SECTORS } from '../../src/curriculum/curriculum';
+import { flightDeckLabel } from '../../src/screens/closeLabel';
 import { fireEvent } from '@testing-library/react';
 import {
   ACADEMY_HOME_HEADING,
@@ -357,9 +358,11 @@ describe('the Pause Menu', () => {
     // There is no Run waiting to be resumed.
     player.openHeader('Sectors');
     expect(
-      screen.getByRole('button', { name: 'Enter Flight Deck' }),
+      screen.getByRole('button', { name: flightDeckLabel(false) }),
     ).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Resume Flight' })).toBeNull();
+    expect(
+      screen.queryByRole('button', { name: flightDeckLabel(true) }),
+    ).toBeNull();
     closeMenu(player);
     player.click('Start Mission');
 

@@ -3,6 +3,7 @@ import { expect, it, vi } from 'vitest';
 import { engineSound } from '../../src/audio/engineSound';
 import { STAGE_ID } from '../../src/game/testHelpers';
 import { OWNS_RETRO_AUDIO_CORE } from '../shared/saves';
+import { voiceName } from '../shared/screens';
 import { renderGame, screen } from './harness';
 import {
   OPEN_AUDIO_PANEL,
@@ -63,7 +64,7 @@ const CUSTOM_SAVE = {
 };
 
 it('a Save with its own voice, theme and volumes reaches the engine when a Run starts', () => {
-  const player = renderGame({ profile: CUSTOM_SAVE, effects: engineSound });
+  const player = renderGame({ profile: CUSTOM_SAVE, sound: engineSound });
 
   player.startStage(STAGE_ID);
 
@@ -81,7 +82,7 @@ it('a Save with its own voice, theme and volumes reaches the engine when a Run s
 it('a muted Save reaches the engine muted when a Run starts', () => {
   const player = renderGame({
     profile: { ...CUSTOM_SAVE, globalMuted: true },
-    effects: engineSound,
+    sound: engineSound,
   });
 
   player.startStage(STAGE_ID);
@@ -92,12 +93,12 @@ it('a muted Save reaches the engine muted when a Run starts', () => {
 it('each control in the panel sets the engine', () => {
   const player = renderGame({
     profile: OWNS_RETRO_AUDIO_CORE,
-    effects: engineSound,
+    sound: engineSound,
   });
   player.startStage(STAGE_ID);
   player.click(OPEN_AUDIO_PANEL);
 
-  player.click(/Retro 8-Bit/);
+  player.click(voiceName('RETRO_8BIT'));
   expect(engineSettings().voice, 'voice').toBe('RETRO_8BIT');
 
   player.click(/Cyber Pulse/);

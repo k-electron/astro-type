@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { OWNS_RETRO_AUDIO_CORE, RETURNING_PLAYER } from '../shared/saves';
+import { voiceName } from '../shared/screens';
 import { renderGame, screen } from './harness';
 import { OPEN_AUDIO_PANEL } from '../../src/screens/audioLabels';
 
@@ -13,10 +14,10 @@ import { OPEN_AUDIO_PANEL } from '../../src/screens/audioLabels';
 
 /** The panel's voices, as the player reads them, with the Hangar price of each. */
 const VOICES = {
-  cyber: { name: /Cyber Synth/, price: null },
-  retro: { name: /Retro 8-Bit/, price: 300 },
-  deep: { name: /Deep Space/, price: 450 },
-  neo: { name: /Neo Acoustic/, price: 600 },
+  cyber: { name: voiceName('CYBER_SYNTH'), price: null },
+  retro: { name: voiceName('RETRO_8BIT'), price: 300 },
+  deep: { name: voiceName('DEEP_SPACE'), price: 450 },
+  neo: { name: voiceName('NEO_ACOUSTIC'), price: 600 },
 } as const;
 const UNOWNED_BY_RETURNING_PLAYER = ['retro', 'deep', 'neo'] as const;
 

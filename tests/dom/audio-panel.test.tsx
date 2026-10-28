@@ -2,6 +2,7 @@ import { fireEvent } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_PROFILE } from '../../src/game/profile';
 import { OWNS_EVERY_AUDIO_CORE, RETURNING_PLAYER } from '../shared/saves';
+import { voiceName } from '../shared/screens';
 import { type Player, renderGame, screen } from './harness';
 import {
   OPEN_AUDIO_PANEL,
@@ -174,7 +175,7 @@ describe('picking a Synthesizer core in the panel', () => {
 
     player.click(OPEN_AUDIO_PANEL);
     // The panel's cores are buttons named for the voice and its sound.
-    player.click(/Retro 8-Bit/);
+    player.click(voiceName('RETRO_8BIT'));
     player.click(OPEN_AUDIO_PANEL);
     player.openHeader('Hangar');
     expect(equippedCoreIndex()).toBe(1);

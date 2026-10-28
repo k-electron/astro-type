@@ -62,9 +62,9 @@ export interface RenderGameOptions {
   text?: string;
   /**
    * Where the game's sound goes, when a test listens to it (the recording
-   * sound adapter's `effects`). Left out, the game is silent.
+   * sound adapter's `effects` port). Left out, the game is silent.
    */
-  effects?: Sound;
+  sound?: Sound;
 }
 
 export interface PressOptions {
@@ -184,7 +184,7 @@ export function renderGame(options: RenderGameOptions = {}): Player {
   const mount = () => {
     game = createGame({
       storage,
-      sound: options.effects,
+      sound: options.sound,
       // A throw inside a React click handler would not reliably reach the
       // test, so a refused move is collected and fails the test when it ends.
       onRefusedMove: (error) => refusals.push(error),

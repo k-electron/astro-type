@@ -30,7 +30,7 @@ const setMusicVolume = (value: number) => {
 /** A Run in progress with the audio panel open over it. */
 const flyWith = (profile: Record<string, unknown> = RETURNING_PLAYER) => {
   const sound = createRecordingSound();
-  const player = renderGame({ profile, effects: sound.effects });
+  const player = renderGame({ profile, sound: sound.effects });
   player.startStage(STAGE_ID);
   player.click(OPEN_AUDIO_PANEL);
   return { player, sound };

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { flightDeckLabel } from '../../src/screens/closeLabel';
 import {
   DEBRIEF_TITLE,
   HUD_NAME,
@@ -90,8 +91,8 @@ describe('every overlay screen is a modal dialog over the Flight Deck', () => {
 
   const FLIGHT_DECK_BUTTONS = ['Sectors', 'Hangar', 'Analytics'].flatMap(
     (button) => [
-      { button, from: 'Academy Home', label: 'Enter Flight Deck' },
-      { button, from: 'a Run', label: 'Resume Flight' },
+      { button, from: 'Academy Home', label: flightDeckLabel(false) },
+      { button, from: 'a Run', label: flightDeckLabel(true) },
     ],
   ) as { button: MenuButton; from: string; label: string }[];
 
@@ -237,7 +238,7 @@ describe('the Flight Deck button on an overlay', () => {
       const player = renderGame();
       player.openHeader(button);
 
-      player.click('Enter Flight Deck');
+      player.click(flightDeckLabel(false));
 
       expectFlightDeckLive();
       expect(screen.getByRole('button', { name: 'Pause' })).toBeTruthy();
