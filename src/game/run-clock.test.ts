@@ -170,7 +170,7 @@ describe('the Run clock steps only while the Run is running', () => {
     expect(droneHeights(game)).not.toEqual(inFlight);
   });
 
-  it('leaves the telemetry where it was during a pause', () => {
+  it('leaves the live WPM where it was during a pause', () => {
     const game = startedGame();
     game.pressKey(targetKey(game));
     game.send({ type: 'PRESS_PAUSE' });
@@ -182,7 +182,7 @@ describe('the Run clock steps only while the Run is running', () => {
     expect(game.getState().run.netWpm).toBe(12);
   });
 
-  it('refreshes the telemetry every 30 steps, which is 500 ms', () => {
+  it('refreshes the live WPM every 30 steps, which is 500 ms', () => {
     const game = startedGame();
     game.pressKey(targetKey(game));
 

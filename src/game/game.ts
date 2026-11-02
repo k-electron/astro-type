@@ -142,7 +142,7 @@ export interface Game {
   onMoment(listener: (moment: Moment) => void): () => void;
   /**
    * Advance the Run clock by `count` steps of 1/60 s. Does nothing unless the
-   * Run phase is running: Run Time, the Drones and the telemetry stand still.
+   * Run phase is running: Run Time, the Drones and the live WPM stand still.
    */
   step(count?: number): void;
   /** The settled snapshot. The same object until a move changes something in it. */
@@ -223,7 +223,7 @@ export function createGame(options: GameOptions): Game {
   // Moments are queued as the store makes them and heard when the move has
   // settled (see `heardAfter`): sound plays their cues first, then everyone
   // else hears them. The continuous sound (the beat, its Overdrive layer,
-  // mute, volumes, theme, voice) is not played from moments: it is derived
+  // mute, volumes, beat theme, Sound Kit) is not played from moments: it is derived
   // from the snapshot and synced when that changes.
   const momentListeners = new Set<(moment: Moment) => void>();
   const happened: Moment[] = [];

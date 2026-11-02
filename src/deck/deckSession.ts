@@ -88,8 +88,8 @@ class DeckSession {
   private lastRunTime = 0;
 
   constructor(
-    readonly game: Game,
-    readonly onFrame: OnFrame,
+    private readonly game: Game,
+    private readonly onFrame: OnFrame,
   ) {
     this.wrapper.style.cssText = 'position:absolute;inset:0;overflow:hidden;';
     this.wrapper.appendChild(this.canvas);
@@ -195,6 +195,11 @@ class DeckSession {
     this.dirty = true;
   }
 
+  /** Is this session drawing `game` on `onFrame`'s frames? */
+  isFor(game: Game, onFrame: OnFrame): boolean {
+    return this.game === game && this.onFrame === onFrame;
+  }
+
   /** Put the deck in the page, inside `slot`, and start drawing it. */
   attach(slot: HTMLElement): void {
     slot.appendChild(this.wrapper);
@@ -271,7 +276,7 @@ export function getDeckSession({
   game: Game;
   onFrame: OnFrame;
 }): DeckSession {
-  if (session && (session.game !== game || session.onFrame !== onFrame)) {
+  if (session && !session.isFor(game, onFrame)) {
     session.destroy();
     session = null;
   }

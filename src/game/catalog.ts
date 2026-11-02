@@ -9,7 +9,7 @@
  * Nothing in this module's imports touches React: an icon or a tone is a name
  * that the screen draws.
  */
-import type { SoundKit, ShipUpgrades, TrailColorTheme } from './schemas';
+import type { SoundKit, ShipUpgrades, TrailId } from './schemas';
 
 /** The Upgrades' ids, as `buy` takes them. */
 export type UpgradeId = 'shields' | 'reactor' | 'sensors';
@@ -40,9 +40,12 @@ export interface UpgradeEntry {
   prices: readonly number[];
 }
 
+/** The Trail a new Save equips and owns. */
+export const DEFAULT_TRAIL: TrailId = 'CYAN';
+
 export interface TrailEntry {
   kind: 'trail';
-  id: TrailColorTheme;
+  id: TrailId;
   name: string;
   price: number;
   /** The colour of the laser trail, and of the Action Deck's beam. */
@@ -191,9 +194,9 @@ export function entriesOf<Kind extends CatalogKind>(
 }
 
 /** The colour of a Trail, for the lasers the Action Deck fires on each hit. */
-export function trailColor(theme: TrailColorTheme): string {
-  const entry = catalogEntry(theme);
-  if (entry.kind !== 'trail') throw new Error(`${theme} is not a trail colour`);
+export function trailColor(id: TrailId): string {
+  const entry = catalogEntry(id);
+  if (entry.kind !== 'trail') throw new Error(`${id} is not a Trail`);
   return entry.color;
 }
 

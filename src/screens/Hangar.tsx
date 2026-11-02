@@ -238,20 +238,20 @@ export const Hangar: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-            {entriesOf('trail').map((theme) => {
-              const status = cosmeticStatus(profile, theme);
+            {entriesOf('trail').map((trail) => {
+              const status = cosmeticStatus(profile, trail);
 
               return (
                 <CosmeticCard
-                  key={theme.id}
-                  entry={theme}
+                  key={trail.id}
+                  entry={trail}
                   status={status}
-                  onBuy={() => buy(theme.id)}
+                  onBuy={() => buy(trail.id)}
                 >
                   <div className="flex items-center justify-between mb-2">
                     <span
                       className="w-3.5 h-3.5 rounded-full"
-                      style={{ backgroundColor: theme.color }}
+                      style={{ backgroundColor: trail.color }}
                     />
                     {status.equipped && (
                       <span className="text-[10px] font-mono font-bold text-cyan-400 flex items-center gap-0.5">
@@ -260,7 +260,7 @@ export const Hangar: React.FC = () => {
                     )}
                   </div>
                   <span className="font-semibold text-xs text-slate-200 block mb-2">
-                    {theme.name}
+                    {trail.name}
                   </span>
                 </CosmeticCard>
               );

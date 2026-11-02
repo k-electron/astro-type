@@ -5,7 +5,7 @@ import {
   keyForCharacter,
 } from '../curriculum/curriculum';
 import type { KeySpec } from '../curriculum/keyboardLayout';
-import { trailColor } from '../game/catalog';
+import { DEFAULT_TRAIL, trailColor } from '../game/catalog';
 import { STEP_MS } from '../game/clock';
 import type { JudgementMoment } from '../game/moments';
 import { STRIKE_LINE_Y } from '../game/rules';
@@ -29,6 +29,9 @@ import {
   STAGE_HEIGHT,
   TRENCH_H,
 } from './layout';
+
+/** The cyan the beam, the ship and a Drone fall back to when no finger colour applies. */
+const DEFAULT_COLOR = trailColor(DEFAULT_TRAIL);
 
 export interface DeckSceneOptions {
   resolution: number;
@@ -252,14 +255,13 @@ export class DeckScene {
   }
 
   private updateShip(state: GameState, layout: Layout, d: number): void {
-    const text = state.run.currentStage.sampleText;
-    const activeChar = text[state.run.currentCharIndex] || null;
+    const activeChar = currentChar(state);
     const rect = activeChar ? keyRectOf(layout, activeChar) : undefined;
     const lane = activeChar
       ? (keyForCharacter(activeChar)?.lane ?? null)
       : null;
     // The beam and the ship take the next character's finger colour.
-    const color = (lane !== null && FINGER_LANES[lane]?.color) || '#06b6d4';
+    const color = (lane !== null && FINGER_LANES[lane]?.color) || DEFAULT_COLOR;
     this.ship.update({
       targetX: rect ? rect.cx : null,
       color,
@@ -329,8 +331,7 @@ export class DeckScene {
     // A Miss, or a shield that took it: the ship fires at the key that was struck.
     const pressed = judgement.key;
     const pressedRect = keyRectOf(layout, pressed);
-    const text = state.run.currentStage.sampleText;
-    const activeChar = text[state.run.currentCharIndex] || null;
+    const activeChar = currentChar(state);
     const expected = activeChar ? keyRectOf(layout, activeChar) : undefined;
     const shipX = expected ? expected.cx : this.ship.x;
     const x = pressedRect
@@ -370,7 +371,7 @@ export class DeckScene {
     this.drawnFrom = inputs;
 
     const index = run.currentCharIndex;
-    const activeChar = text[index] || null;
+    const activeChar = currentChar(state);
     const previousChar = index > 0 ? text[index - 1] : null;
     const nextChar = index + 1 < text.length ? text[index + 1] : null;
     const info = activeChar ? (keyForCharacter(activeChar) ?? null) : null;
@@ -457,7 +458,7 @@ export class DeckScene {
         rect.w,
         rect.h,
         index,
-        FINGER_LANES[drone.lane]?.color || '#06b6d4',
+        FINGER_LANES[drone.lane]?.color || DEFAULT_COLOR,
       );
       view.animate(this.timeMs);
     });
@@ -468,6 +469,11 @@ export class DeckScene {
       }
     }
   }
+}
+
+/** The character the Run is waiting for, or null once the text is typed. */
+function currentChar({ run }: GameState): string | null {
+  return run.currentStage.sampleText[run.currentCharIndex] || null;
 }
 
 /**

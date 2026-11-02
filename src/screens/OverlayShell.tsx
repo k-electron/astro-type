@@ -186,6 +186,7 @@ export const OverlayFlightDeckButton: React.FC<{
   // A paused Run is waiting, so the button resumes it.
   const runPaused = useGameState((state) => state.phase === 'paused');
   const compact = look === 'compact';
+  const label = flightDeckLabel(runPaused);
 
   return (
     <button
@@ -196,10 +197,10 @@ export const OverlayFlightDeckButton: React.FC<{
           ? 'px-3 py-1.5 text-xs font-bold rounded-lg bg-cyan-400 hover:bg-cyan-300 text-slate-950 transition-all flex items-center gap-1 cursor-pointer shadow-sm shadow-cyan-950 whitespace-nowrap'
           : 'px-3.5 py-1.5 text-xs font-bold rounded-lg bg-cyan-400 hover:bg-cyan-300 text-slate-950 transition-all flex items-center gap-1.5 cursor-pointer shadow-md shadow-cyan-950/60'
       }
-      title="Go straight to the Flight Deck"
+      title={label}
     >
       <Play className="w-3.5 h-3.5 fill-current" />
-      <span>{flightDeckLabel(runPaused)}</span>
+      <span>{label}</span>
     </button>
   );
 };

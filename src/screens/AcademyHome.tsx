@@ -100,7 +100,7 @@ export const AcademyHome: React.FC = () => {
             Sector Fleet Progression
           </span>
           <p className="text-xs text-slate-400">
-            {`Earn ${MAX_STARS_PER_STAGE} Stars per Stage, unlock gated Sectors, install Deflector Shields, and equip custom audio synths.`}
+            {`Earn ${MAX_STARS_PER_STAGE} Stars per Stage, unlock gated Sectors, install Deflector Shields, and equip Sound Kits.`}
           </p>
         </div>
       </div>
