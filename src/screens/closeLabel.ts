@@ -7,6 +7,9 @@ import type { Screen } from '../game/machine';
  * with that screen's name as the player sees it. This covers the Galaxy
  * Map's Close and Free Flight's Cancel too. The Cancel on a confirm dialog is
  * not a back button and keeps its name.
+ *
+ * Every screen has a case and there is no default, so a new screen without a
+ * label fails the build.
  */
 export function closeLabel(opener: Screen | null): string {
   switch (opener) {
@@ -23,7 +26,8 @@ export function closeLabel(opener: Screen | null): string {
       return 'Back to Analytics';
     case 'free-flight':
       return 'Back to Free Flight';
-    default:
+    case 'academy-home':
+    case null:
       return 'Back to Academy Home';
   }
 }
