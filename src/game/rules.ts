@@ -271,6 +271,11 @@ export const MULTIPLIER_STEPS = [
   { streak: 30, multiplier: 4 },
 ] as const;
 
+/** The x2 step of the table, for the badges that start there. */
+export const X2_STEP = MULTIPLIER_STEPS[1];
+/** The x3 step of the table, for what lights up from there. */
+export const X3_STEP = MULTIPLIER_STEPS[2];
+
 function multiplierForStreak(streak: number): number {
   let multiplier = 1;
   for (const step of MULTIPLIER_STEPS) {

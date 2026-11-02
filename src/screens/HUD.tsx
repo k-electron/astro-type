@@ -2,7 +2,7 @@ import type React from 'react';
 import { Shield, Zap, Pause } from 'lucide-react';
 import { useGame } from '../app/useGame';
 import {
-  MULTIPLIER_STEPS,
+  X3_STEP,
   overdriveScoreFactor,
   type RhythmBand,
   rhythmBand,
@@ -23,7 +23,7 @@ const RHYTHM_LOOK: Record<RhythmBand, { dot: string; text: string }> = {
 };
 
 /** The Streak's bolt lights at the x3 step. */
-const BOLT_LIT_FROM = MULTIPLIER_STEPS[2].streak;
+const BOLT_LIT_FROM = X3_STEP.streak;
 
 /** The readouts above the deck. It selects only the fields it shows, so it re-renders when one of them changes. */
 export const HUD: React.FC = () => {

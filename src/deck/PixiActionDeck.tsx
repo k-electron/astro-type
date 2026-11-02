@@ -2,12 +2,12 @@ import { Award, Flame, Hand, Sparkles } from 'lucide-react';
 import { memo, useLayoutEffect, useRef } from 'react';
 import { useGame, useOnFrame } from '../app/useGame';
 import { FINGER_COLOR_MAP } from '../curriculum/curriculum';
-import { MULTIPLIER_STEPS, overdriveScoreFactor } from '../game/rules';
+import { overdriveScoreFactor, X2_STEP } from '../game/rules';
 import { useGameState } from '../app/useGameState';
 import { getDeckSession } from './deckSession';
 
 /** The header bar badges the Streak from the x2 step. */
-const STREAK_BADGE_FROM = MULTIPLIER_STEPS[1].streak;
+const STREAK_BADGE_FROM = X2_STEP.streak;
 
 /**
  * The Action Deck: a card with a header bar around a stage that the session's

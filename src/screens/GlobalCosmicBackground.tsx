@@ -1,5 +1,6 @@
 import type React from 'react';
 import { useEffect, useRef } from 'react';
+import { X3_STEP } from '../game/rules';
 
 interface GlobalCosmicBackgroundProps {
   overdriveActive: boolean;
@@ -93,7 +94,9 @@ export const GlobalCosmicBackground: React.FC<GlobalCosmicBackgroundProps> = ({
       currentSpeed += (targetStarSpeed - currentSpeed) * 0.08;
 
       const isStreaking =
-        targetOverdrive || targetMultiplier >= 3 || currentSpeed > 2.0;
+        targetOverdrive ||
+        targetMultiplier >= X3_STEP.multiplier ||
+        currentSpeed > 2.0;
 
       // Draw all stars across the whole viewport
       starsRef.current.forEach((star) => {
