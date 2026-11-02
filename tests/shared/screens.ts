@@ -7,7 +7,7 @@
  */
 
 import { entriesOf } from '../../src/game/catalog';
-import type { AudioSynthCore } from '../../src/game/schemas';
+import type { SoundKit } from '../../src/game/schemas';
 
 /** Each header button that opens a screen, and the heading of that screen. */
 export const MENU_HEADINGS = {
@@ -103,6 +103,9 @@ export const HANGAR_TRAILS_HEADING = 'Trails';
 /** The label of the Free Flight screen's text box. */
 export const YOUR_TEXT = 'Your Text';
 
+/** The Free Flight screen's button that starts the Run. */
+export const START_FREE_FLIGHT = 'Start Free Flight';
+
 // ---- Names that stay -------------------------------------------------------
 
 /** Names the Glossary doesn't conflict with, so they stay on screen. */
@@ -110,11 +113,11 @@ export const STREAK_ALARMS = 'Streak alarms';
 export const PRACTICE_TIME = 'Practice Time';
 
 /**
- * How the header's audio panel names a Synthesizer Voice. A pattern, because
- * the voice's button also shows its price or a check.
+ * How the header's audio panel names a Sound Kit. A pattern, because the
+ * kit's button also shows its price or a check.
  */
-export function voiceName(id: AudioSynthCore): RegExp {
-  const core = entriesOf('core').find((entry) => entry.id === id);
-  if (!core) throw new Error(`No Synthesizer Voice ${id}`);
-  return new RegExp(core.shortName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+export function soundKitName(id: SoundKit): RegExp {
+  const kit = entriesOf('soundKit').find((entry) => entry.id === id);
+  if (!kit) throw new Error(`No Sound Kit ${id}`);
+  return new RegExp(kit.shortName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
 }

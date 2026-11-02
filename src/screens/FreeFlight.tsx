@@ -114,7 +114,7 @@ export const FreeFlight: React.FC = () => {
         <div className="p-3.5 rounded-xl border border-slate-800 bg-slate-950/60">
           <div className="flex justify-between items-center mb-2">
             <span className="text-xs font-mono uppercase text-slate-400">
-              Target Cadence
+              Target WPM
             </span>
             <span className="text-sm font-bold font-mono text-cyan-400">
               {targetWpm} WPM
@@ -146,7 +146,7 @@ export const FreeFlight: React.FC = () => {
         className="w-full py-3 px-4 rounded-xl bg-cyan-500 hover:bg-cyan-400 disabled:bg-slate-800 disabled:text-slate-500 text-slate-950 font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-cyan-950/50 transition-all cursor-pointer"
       >
         <Play className="w-4 h-4 fill-current" />
-        <span>Launch Custom Flight</span>
+        <span>Start Free Flight</span>
       </button>
     </OverlayShell>
   );

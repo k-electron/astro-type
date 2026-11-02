@@ -46,7 +46,7 @@ export interface LivePerformance {
   accuracy: number;
   /** The typed position: the index in the Stage's text of the character to type next. */
   currentCharIndex: number;
-  cadenceConsistency: number; // 0 to 100% rhythm regularity between keystrokes
+  rhythm: number; // 0 to 100% rhythm regularity between keystrokes
 }
 
 /** Where a Drone waits for the player, as a percentage down the Action Deck. */
@@ -112,7 +112,7 @@ export interface RunState {
   /** The positions in the text where a wrong key was pressed: the Miss marks. */
   errorIndices: ReadonlySet<number>;
   keyStats: KeyStats;
-  /** Run Time (ms) of the last ten hits, for cadence. */
+  /** Run Time (ms) of the last ten hits, for Rhythm. */
   recentKeystrokeTimes: number[];
   /** The key the player has down, or null. */
   lastPressedKey: string | null;
@@ -163,7 +163,7 @@ function freshPerformance(shields: number): LivePerformance {
     netWpm: 0,
     accuracy: 100,
     currentCharIndex: 0,
-    cadenceConsistency: 100,
+    rhythm: 100,
   };
 }
 
@@ -318,7 +318,7 @@ function chargeOverdrive(
 }
 
 /** Rhythm regularity from the last ten keystroke times. */
-function cadenceAfterHit(times: number[], previous: number): number {
+function rhythmAfterHit(times: number[], previous: number): number {
   if (times.length < 4) return previous;
   const intervals: number[] = [];
   for (let i = 1; i < times.length; i++) {
@@ -334,19 +334,19 @@ function cadenceAfterHit(times: number[], previous: number): number {
   return previous;
 }
 
-function cadenceAfterMiss(previous: number): number {
+function rhythmAfterMiss(previous: number): number {
   return Math.max(25, previous - 15);
 }
 
 /** The Run's numbers after a Miss: shields absorb it, otherwise the Streak breaks. */
 function applyMiss(
   perf: LivePerformance,
-  cadence: number,
+  rhythm: number,
 ): { perf: LivePerformance; shielded: boolean } {
   const base = {
     incorrectKeystrokes: perf.incorrectKeystrokes + 1,
     totalKeystrokes: perf.totalKeystrokes + 1,
-    cadenceConsistency: cadence,
+    rhythm,
   };
   if (perf.shieldsRemaining > 0) {
     return {
@@ -416,7 +416,7 @@ export function strike(
   if (key !== target) {
     const { perf, shielded } = applyMiss(
       performance,
-      cadenceAfterMiss(performance.cadenceConsistency),
+      rhythmAfterMiss(performance.rhythm),
     );
     const judgement = { type: shielded ? 'shield' : 'miss', key } as const;
     return {
@@ -451,7 +451,7 @@ export function strike(
   );
   const nextIndex = index + 1;
 
-  // Inter-keystroke intervals, for steady cadence and rhythm scoring.
+  // Inter-keystroke intervals, for rhythm scoring.
   const keystrokeTimes = [
     ...run.recentKeystrokeTimes,
     time.steps * STEP_MS,
@@ -490,10 +490,7 @@ export function strike(
         correctKeystrokes: performance.correctKeystrokes + 1,
         totalKeystrokes: performance.totalKeystrokes + 1,
         currentCharIndex: nextIndex,
-        cadenceConsistency: cadenceAfterHit(
-          keystrokeTimes,
-          performance.cadenceConsistency,
-        ),
+        rhythm: rhythmAfterHit(keystrokeTimes, performance.rhythm),
       }),
       drones: advanceDroneQueue(
         run.drones,
@@ -520,7 +517,7 @@ const TELEMETRY_EVERY_STEPS = 30;
 
 /**
  * The whole step: the Drones move one step of 1/60 s, and every 30th step of
- * Run Time WPM refreshes. Accuracy is not on this cadence: a keystroke
+ * Run Time WPM refreshes. Accuracy is not on this schedule: a keystroke
  * refreshes it. `steps` is the Run's step count, this step included,
  * so a pause doesn't shift the rhythm.
  */

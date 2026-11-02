@@ -2,8 +2,8 @@ import { fireEvent } from '@testing-library/react';
 import { expect, it, vi } from 'vitest';
 import { engineSound } from '../../src/audio/engineSound';
 import { STAGE_ID } from '../../src/game/testHelpers';
-import { OWNS_RETRO_AUDIO_CORE } from '../shared/saves';
-import { voiceName } from '../shared/screens';
+import { OWNS_RETRO_SOUND_KIT } from '../shared/saves';
+import { soundKitName } from '../shared/screens';
 import { renderGame, screen } from './harness';
 import {
   OPEN_AUDIO_PANEL,
@@ -12,7 +12,7 @@ import {
   rhythmBeatsLabel,
 } from '../../src/screens/audioLabels';
 
-// What the sound engine ends up set to: the Synthesizer Voice, the beat theme,
+// What the sound engine ends up set to: the Sound Kit, the beat theme,
 // both volumes and their on/off, and mute. A Save's settings must reach it at
 // the start of a Run, and a click in the header's audio panel must change it,
 // whoever does the pushing (the app, the game). The engine needs an
@@ -43,7 +43,7 @@ const engineSettings = () => ({
   beats: engine.last.get('setMusicEnabled'),
   beatsVolume: engine.last.get('setMusicVolume'),
   beatTheme: engine.last.get('setBeatTheme'),
-  voice: engine.last.get('setCore'),
+  voice: engine.last.get('setSoundKit'),
 });
 
 const slider = (which: 'laser' | 'beats', value: number) =>
@@ -51,9 +51,9 @@ const slider = (which: 'laser' | 'beats', value: number) =>
     target: { value: String(value) },
   });
 
-/** A Save with the 8-Bit Retro voice equipped and the other settings off their defaults. */
+/** A Save with the 8-Bit Retro Sound Kit equipped and the other settings off their defaults. */
 const CUSTOM_SAVE = {
-  ...OWNS_RETRO_AUDIO_CORE,
+  ...OWNS_RETRO_SOUND_KIT,
   upgrades: {
     unlockedAudioCores: ['CYBER_SYNTH', 'RETRO_8BIT'],
     equippedAudioCore: 'RETRO_8BIT',
@@ -63,7 +63,7 @@ const CUSTOM_SAVE = {
   musicVolume: 0.7,
 };
 
-it('a Save with its own voice, theme and volumes reaches the engine when a Run starts', () => {
+it('a Save with its own Sound Kit, theme and volumes reaches the engine when a Run starts', () => {
   const player = renderGame({ profile: CUSTOM_SAVE, sound: engineSound });
 
   player.startStage(STAGE_ID);
@@ -92,13 +92,13 @@ it('a muted Save reaches the engine muted when a Run starts', () => {
 
 it('each control in the panel sets the engine', () => {
   const player = renderGame({
-    profile: OWNS_RETRO_AUDIO_CORE,
+    profile: OWNS_RETRO_SOUND_KIT,
     sound: engineSound,
   });
   player.startStage(STAGE_ID);
   player.click(OPEN_AUDIO_PANEL);
 
-  player.click(voiceName('RETRO_8BIT'));
+  player.click(soundKitName('RETRO_8BIT'));
   expect(engineSettings().voice, 'voice').toBe('RETRO_8BIT');
 
   player.click(/Cyber Pulse/);

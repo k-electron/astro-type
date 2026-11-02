@@ -6,7 +6,7 @@
  */
 
 /** The header's button that opens the audio panel. */
-export const OPEN_AUDIO_PANEL = 'Open Audio Flight Deck Settings';
+export const OPEN_AUDIO_PANEL = 'Open Audio Settings';
 
 /** The header's mute button: Unmute while all audio is muted. */
 export function muteAllLabel(muted: boolean): string {

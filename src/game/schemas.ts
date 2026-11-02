@@ -9,7 +9,7 @@ export const TrailColorThemeSchema = z.enum([
   'SUPERNOVA',
 ]);
 
-export const AudioSynthCoreSchema = z.enum([
+export const SoundKitSchema = z.enum([
   'CYBER_SYNTH',
   'RETRO_8BIT',
   'DEEP_SPACE',
@@ -37,9 +37,9 @@ export const UpgradesSchema = z.object({
   overdriveReactor: UpgradeLevelSchema,
   precisionSensors: UpgradeLevelSchema,
   equippedTrailTheme: TrailColorThemeSchema.default('CYAN'),
-  equippedAudioCore: AudioSynthCoreSchema.default('CYBER_SYNTH'),
+  equippedAudioCore: SoundKitSchema.default('CYBER_SYNTH'),
   unlockedThemes: z.array(TrailColorThemeSchema).default(['CYAN']),
-  unlockedAudioCores: z.array(AudioSynthCoreSchema).default(['CYBER_SYNTH']),
+  unlockedAudioCores: z.array(SoundKitSchema).default(['CYBER_SYNTH']),
 });
 
 /**
@@ -149,6 +149,6 @@ export type ShipUpgrades = z.output<typeof UpgradesSchema>;
 export type StageProgress = z.output<typeof StageProgressSchema>;
 export type KeyAnalytics = z.output<typeof KeyAnalyticsSchema>;
 export type TrailColorTheme = z.output<typeof TrailColorThemeSchema>;
-export type AudioSynthCore = z.output<typeof AudioSynthCoreSchema>;
+export type SoundKit = z.output<typeof SoundKitSchema>;
 export type BeatTheme = z.output<typeof BeatThemeSchema>;
 export type Settings = z.output<typeof SettingsSchema>;

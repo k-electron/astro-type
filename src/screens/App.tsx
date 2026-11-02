@@ -89,7 +89,7 @@ export default function App() {
             {/* Text Prompt Stream */}
             <TextPromptStream />
 
-            {/* Interactive Rhythm Keyboard Flight Deck */}
+            {/* Action Deck */}
             <PixiActionDeck />
           </div>
         )}

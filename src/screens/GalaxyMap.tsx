@@ -191,7 +191,7 @@ export const GalaxyMap: React.FC = () => {
               onClick={onOpenAnalytics}
               className="px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700 transition-colors whitespace-nowrap cursor-pointer"
             >
-              Report
+              Analytics
             </button>
 
             {opener === 'debrief' ? (
@@ -413,7 +413,7 @@ export const GalaxyMap: React.FC = () => {
                       </div>
                     )}
 
-                    {/* Keys Trained & Cadence Requirement */}
+                    {/* Keys Trained & Target WPM */}
                     <div className="flex flex-wrap items-center justify-between gap-2 mb-3 text-[11px] font-mono">
                       <div className="flex flex-wrap items-center gap-1">
                         <span className="text-slate-500 mr-0.5">Keys:</span>
@@ -427,7 +427,7 @@ export const GalaxyMap: React.FC = () => {
                         ))}
                       </div>
                       <span className="text-cyan-400/90 font-semibold bg-cyan-950/40 px-2 py-0.5 rounded border border-cyan-800/40">
-                        Cadence: {stage.targetWpm} WPM (Acc &ge;{' '}
+                        Target WPM: {stage.targetWpm} (Acc &ge;{' '}
                         {stage.starThresholds.threeStarAccuracy}%)
                       </span>
                     </div>

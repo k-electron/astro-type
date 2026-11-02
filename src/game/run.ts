@@ -38,7 +38,7 @@ export interface DebriefResult {
   newStarsAwarded: number;
   /** This Run's Stars took the fleet past a Sector's gate. */
   unlockedSector: boolean;
-  cadenceConsistency: number;
+  rhythm: number;
 }
 
 /** The Run's state in the store. */
@@ -78,7 +78,7 @@ export interface RunDeps {
   reportRunCleared: () => void;
   /** Timestamps only: when a Stage was last played, a Drone's id. */
   clock: Clock;
-  /** Run Time: what WPM, Stars, cadence and keystroke intervals are measured in. */
+  /** Run Time: what WPM, Stars, Rhythm and keystroke intervals are measured in. */
   runClock: RunClock;
   /** Told of each moment as it happens: a launch, the Judgement, Overdrive catching fire, a clear. */
   emit: (moment: Moment) => void;
@@ -197,7 +197,7 @@ export function createRunSlice(
           isNewHighScore,
           newStarsAwarded,
           unlockedSector,
-          cadenceConsistency: performance.cadenceConsistency,
+          rhythm: performance.rhythm,
         },
       });
     },

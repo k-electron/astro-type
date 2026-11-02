@@ -21,7 +21,7 @@ import {
 //
 // The HUD has no timer to read. What the player sees of Run Time is the
 // Speed in the HUD and on the Debrief (WPM is measured against Run Time) and
-// the Rhythm (cadence is measured between keystrokes in Run Time).
+// the Rhythm (Rhythm is measured between keystrokes in Run Time).
 //
 // What is guarded here: a capped catch-up after a stall, and a pause not
 // dragging down the final Speed or the Rhythm.

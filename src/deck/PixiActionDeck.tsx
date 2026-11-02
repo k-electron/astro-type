@@ -42,7 +42,7 @@ export const PixiActionDeck = memo(function PixiActionDeck() {
         <div className="flex items-center gap-2">
           <div className="px-2.5 py-1 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 font-mono text-xs font-bold uppercase tracking-wider flex items-center gap-2 shadow-[0_0_12px_rgba(6,182,212,0.15)]">
             <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-            <span>Tactile Rhythm Flight Deck</span>
+            <span>Action Deck</span>
           </div>
           {overdriveActive && (
             <span className="flex items-center gap-1 text-[11px] font-mono font-extrabold text-amber-300 bg-amber-950/80 px-2 py-0.5 rounded border border-amber-500 shadow-[0_0_12px_rgba(245,158,11,0.4)] animate-pulse">

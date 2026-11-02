@@ -26,7 +26,7 @@ _Avoid_: Cockpit, play screen, game view
 
 **Action Deck**:
 The lower part of the Flight Deck: the lanes, the Drones, the keyboard and the hands showing which finger to use.
-_Avoid_: Highway, keyboard area, lanes keyboard
+_Avoid_: Highway, keyboard area, lanes keyboard, Tactile Rhythm Flight Deck, Audio Flight Deck
 
 **Drone**:
 A falling target in the Action Deck that carries one character for the player to type.
@@ -56,6 +56,10 @@ _Avoid_: Hyperspace, warp, hyperdrive
 The time a Run has spent running, with pauses left out. WPM and Stars are measured against it.
 _Avoid_: Elapsed time, stage time
 
+**Rhythm**:
+How evenly the player types, from 0 to 100%: the HUD shows it as Steady, Paced or Uneven, and the Debrief gives the percentage. It is measured in Run Time.
+_Avoid_: Cadence
+
 ### Progress
 
 **Profile**:
@@ -83,12 +87,16 @@ A Hangar purchase that changes play: shields, reactor or sensors.
 _Avoid_: Power-up, perk
 
 **Cosmetic**:
-A Hangar purchase that changes only the look or sound: a Trail or an audio core.
+A Hangar purchase that changes only the look or sound: a Trail or a Sound Kit.
 _Avoid_: Skin, theme, upgrade
 
 **Trail**:
 A Cosmetic colour for the lasers fired on each hit.
 _Avoid_: Trail theme
+
+**Sound Kit**:
+A Cosmetic set of sounds for the lasers and the music.
+_Avoid_: Audio core, synthesizer voice
 
 ### Screens
 
@@ -110,11 +118,11 @@ _Avoid_: Shop, upgrades screen
 
 **Analytics**:
 The screen showing the player's lifetime totals, hand balance and per-key stats.
-_Avoid_: Telemetry, stats screen
+_Avoid_: Telemetry, stats screen, Report
 
 **Free Flight**:
 The screen where the player sets up a Stage from their own text and a target WPM. A Free Flight is practice: it earns no Stars and leaves no record, and pays Credits for its score alone.
-_Avoid_: Custom practice, free flight drill
+_Avoid_: Custom practice, free flight drill, custom flight
 
 **Debrief**:
 The screen shown when a Run is cleared, with its result, the Credits paid and, for a Sector Stage, the Stars earned.

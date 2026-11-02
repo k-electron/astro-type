@@ -45,7 +45,7 @@ export const engineSound: Sound = {
     soundEngine.setMusicEnabled(state.musicOn);
     soundEngine.setMusicVolume(state.musicVolume);
     soundEngine.setBeatTheme(state.theme);
-    soundEngine.setCore(state.core);
+    soundEngine.setSoundKit(state.soundKit);
     soundEngine.setOverdrive(state.overdrive);
     if (state.beat) soundEngine.startBeat();
     else soundEngine.stopBeat();

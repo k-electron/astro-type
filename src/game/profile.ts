@@ -22,7 +22,7 @@ import {
   type CatalogItemId,
   type CatalogKind,
   catalogEntry,
-  type CoreEntry,
+  type SoundKitEntry,
   type TrailEntry,
 } from './catalog';
 import type { Moment } from './moments';
@@ -176,7 +176,7 @@ const clampVolume = (volume: number): number =>
 /** Where a Cosmetic's kind keeps what the player owns and what is equipped, in the Save. */
 const COSMETIC_FIELDS = {
   trail: { owned: 'unlockedThemes', equipped: 'equippedTrailTheme' },
-  core: { owned: 'unlockedAudioCores', equipped: 'equippedAudioCore' },
+  soundKit: { owned: 'unlockedAudioCores', equipped: 'equippedAudioCore' },
 } as const;
 
 /**
@@ -186,8 +186,8 @@ const COSMETIC_FIELDS = {
 const PURCHASE_MOMENT: Record<CatalogKind, Moment | null> = {
   upgrade: { type: 'upgrade' },
   trail: { type: 'equip' },
-  // A Synthesizer Voice is sound state, not a moment: it just starts sounding.
-  core: null,
+  // A Sound Kit is sound state, not a moment: it just starts sounding.
+  soundKit: null,
 };
 
 /** Where the player stands with a Cosmetic: whether they own it, wear it, and can pay for it. */
@@ -199,7 +199,7 @@ export interface CosmeticStatus {
 
 export function cosmeticStatus(
   profile: PlayerProfile,
-  entry: TrailEntry | CoreEntry,
+  entry: TrailEntry | SoundKitEntry,
 ): CosmeticStatus {
   const { owned, equipped } = COSMETIC_FIELDS[entry.kind];
   const { upgrades, totalCredits } = profile;

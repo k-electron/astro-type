@@ -196,7 +196,7 @@ describe('the key for a character', () => {
 });
 
 // Free Flight is part of the curriculum (#73): the Stage it flies is built
-// here, from the player's text and Target Cadence, and judged by the same
+// here, from the player's text and Target WPM, and judged by the same
 // rules as a Sector's.
 describe('a Free Flight Stage', () => {
   it('names itself as the Glossary does', () => {

@@ -281,6 +281,24 @@ describe('the header buttons', () => {
     },
   );
 
+  it("the Galaxy Map's own Analytics button opens Analytics, and Close goes back to the map", () => {
+    const player = renderGame();
+    player.openHeader('Galaxy Map');
+
+    // In the map's own dialog: the header has an Analytics button too, and
+    // would open it even if the map had none.
+    fireEvent.click(
+      within(screen.getByRole('dialog')).getByRole('button', {
+        name: 'Analytics',
+      }),
+    );
+    expect(menuHeading('Analytics')).not.toBeNull();
+    closeMenu(player);
+
+    expect(menuHeading('Analytics')).toBeNull();
+    expect(menuHeading('Galaxy Map')).not.toBeNull();
+  });
+
   it.each(MENU_BUTTONS)(
     '%s, pressed again on its own screen, changes nothing: one Close returns to Academy Home',
     (button) => {

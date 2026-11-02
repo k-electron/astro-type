@@ -6,10 +6,7 @@
  * every layer of tests can use it.
  */
 import { CURRICULUM_SECTORS } from '../../src/curriculum/curriculum';
-import {
-  AudioSynthCoreSchema,
-  type TrailColorTheme,
-} from '../../src/game/schemas';
+import { SoundKitSchema, type TrailColorTheme } from '../../src/game/schemas';
 
 /** One Stage's progress, cleared with `stars` Stars. `overrides` change any field. */
 export function stageProgress(
@@ -60,18 +57,18 @@ export const RETURNING_PLAYER = {
   ...clearedStages({ 's1-l1': 3, 's1-l2': 2 }),
 };
 
-/** RETURNING_PLAYER with every Synthesizer core owned, so any can be equipped. */
-export const OWNS_EVERY_AUDIO_CORE = {
+/** RETURNING_PLAYER with every Sound Kit owned, so any can be equipped. */
+export const OWNS_EVERY_SOUND_KIT = {
   ...RETURNING_PLAYER,
-  upgrades: { unlockedAudioCores: [...AudioSynthCoreSchema.options] },
+  upgrades: { unlockedAudioCores: [...SoundKitSchema.options] },
 };
 
 /**
- * RETURNING_PLAYER who has bought the 8-Bit Retro core (300 Cr) and so owns
- * two Synthesizer cores, Cyber Synth and 8-Bit Retro; Deep Space and Neo
- * Acoustic are still the Hangar's to sell. The Credits are left as they were.
+ * RETURNING_PLAYER who has bought the 8-Bit Retro Sound Kit (300 Cr) and so owns
+ * two Sound Kits, Cyber Synth and 8-Bit Retro; Deep Space and Neo Acoustic are
+ * still the Hangar's to sell. The Credits are left as they were.
  */
-export const OWNS_RETRO_AUDIO_CORE = {
+export const OWNS_RETRO_SOUND_KIT = {
   ...RETURNING_PLAYER,
   upgrades: { unlockedAudioCores: ['CYBER_SYNTH', 'RETRO_8BIT'] },
 };

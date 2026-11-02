@@ -14,7 +14,7 @@ const BEAT_OPTIONS = BeatThemeSchema.options.map((id) => ({
 
 /**
  * The audio settings: master mute, volume for the laser sounds and for the
- * rhythm beats (each with its own mute), the Synthesizer core and the beat
+ * rhythm beats (each with its own mute), the Sound Kit and the beat
  * theme. It renders no frame of its own, only its sections, so whatever hosts
  * it (today the header's popover) owns the box and the place on the page.
  */
@@ -27,8 +27,8 @@ export const AudioPanel: React.FC = () => {
     soundVolume,
     musicVolume,
     beatTheme,
-    audioCore,
-    ownedCores,
+    soundKit,
+    ownedSoundKits,
   } = useGameState((state) => ({
     isMuted: state.profile.globalMuted,
     soundEnabled: state.profile.soundEnabled,
@@ -36,8 +36,8 @@ export const AudioPanel: React.FC = () => {
     soundVolume: state.profile.soundVolume,
     musicVolume: state.profile.musicVolume,
     beatTheme: state.profile.beatTheme,
-    audioCore: state.profile.upgrades.equippedAudioCore,
-    ownedCores: state.profile.upgrades.unlockedAudioCores,
+    soundKit: state.profile.upgrades.equippedAudioCore,
+    ownedSoundKits: state.profile.upgrades.unlockedAudioCores,
   }));
 
   return (
@@ -136,21 +136,21 @@ export const AudioPanel: React.FC = () => {
           />
         </div>
 
-        {/* Quick Synthesizer Core Selector */}
+        {/* Quick Sound Kit Selector */}
         <div className="pt-2 border-t border-slate-800/80 mt-1">
           <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block mb-1.5">
-            Synthesizer Voice
+            Sound Kit
           </span>
           <div className="grid grid-cols-2 gap-1.5">
-            {entriesOf('core').map((core) => {
-              const isEquipped = audioCore === core.id;
-              const isOwned = ownedCores.includes(core.id);
+            {entriesOf('soundKit').map((kit) => {
+              const isEquipped = soundKit === kit.id;
+              const isOwned = ownedSoundKits.includes(kit.id);
               return (
                 <button
                   type="button"
-                  key={core.id}
+                  key={kit.id}
                   disabled={isMuted || !soundEnabled || !isOwned}
-                  onClick={() => buy(core.id)}
+                  onClick={() => buy(kit.id)}
                   className={`p-1.5 rounded-lg border text-left transition-all cursor-pointer ${
                     isEquipped && !isMuted && soundEnabled
                       ? 'border-cyan-500/60 bg-cyan-950/50 text-cyan-200'
@@ -159,7 +159,7 @@ export const AudioPanel: React.FC = () => {
                 >
                   <div className="flex items-center justify-between">
                     <span className="text-[11px] font-bold block truncate">
-                      {core.shortName}
+                      {kit.shortName}
                     </span>
                     {isEquipped && (
                       <Check className="w-3 h-3 text-cyan-400 shrink-0" />
@@ -169,7 +169,7 @@ export const AudioPanel: React.FC = () => {
                     )}
                   </div>
                   <span className="text-[9px] font-mono text-slate-500 block truncate">
-                    {isOwned ? core.character : `Locked · ${core.price} Cr`}
+                    {isOwned ? kit.character : `Locked · ${kit.price} Cr`}
                   </span>
                 </button>
               );

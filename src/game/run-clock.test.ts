@@ -12,7 +12,7 @@ import {
 
 /**
  * The Run clock: Run Time is the time a Run has spent running, pauses left
- * out. It drives the HUD timer, live and final WPM, Stars and cadence. The
+ * out. It drives the HUD timer, live and final WPM, Stars and Rhythm. The
  * tests step the clock by hand, 60 steps a second.
  */
 
@@ -27,13 +27,13 @@ function pauseFor(game: Game, steps = TEN_MINUTES_OF_STEPS): void {
   game.send({ type: 'PRESS_RESUME' });
 }
 
-/** What the HUD shows (Speed, Accuracy), and the cadence reading, all measured in Run Time. */
+/** What the HUD shows (Speed, Accuracy), and the Rhythm reading, all measured in Run Time. */
 function readings(game: Game) {
   const run = game.getState().run;
   return {
     netWpm: run.netWpm,
     accuracy: run.accuracy,
-    cadenceConsistency: run.cadenceConsistency,
+    rhythm: run.rhythm,
   };
 }
 
@@ -202,7 +202,7 @@ describe('the Run clock steps only while the Run is running', () => {
   });
 });
 
-describe('a pause in the middle of a Run leaves WPM, accuracy and cadence unchanged', () => {
+describe('a pause in the middle of a Run leaves WPM, accuracy and Rhythm unchanged', () => {
   /** 3 hits, a gap, 3 more hits and 2 wrong keys: 4 s of Run Time, in 3 stretches of whole half seconds. */
   function play(game: Game, pauseInTheMiddle: boolean): void {
     hitPerfect(game, 3);
@@ -212,18 +212,18 @@ describe('a pause in the middle of a Run leaves WPM, accuracy and cadence unchan
     game.step(60);
   }
 
-  it('shows the same live WPM, accuracy, cadence and HUD timer as the same Run without the pause', () => {
+  it('shows the same live WPM, accuracy, Rhythm and HUD timer as the same Run without the pause', () => {
     const straight = startedGame();
     play(straight, false);
     const paused = startedGame();
     play(paused, true);
 
     // 6 right and 2 wrong keys in 4 s: net (6 - 2) / 5 / (4 / 60) = 12.
-    // Each wrong key costs the cadence 15.
+    // Each wrong key costs the Rhythm 15.
     expect(readings(straight)).toEqual({
       netWpm: 12,
       accuracy: 75,
-      cadenceConsistency: 70,
+      rhythm: 70,
     });
     expect(readings(paused)).toEqual(readings(straight));
     expect(paused.getState().runTime).toBeCloseTo(
@@ -282,10 +282,10 @@ describe('a pause in the middle of a Run leaves WPM, accuracy and cadence unchan
     hitPerfect(game, 5);
 
     // Ten keystrokes 30 steps apart: perfectly even typing.
-    expect(game.getState().run.cadenceConsistency).toBe(100);
+    expect(game.getState().run.rhythm).toBe(100);
   });
 
-  it('measures the same cadence for uneven typing with or without a pause between keystrokes', () => {
+  it('measures the same Rhythm for uneven typing with or without a pause between keystrokes', () => {
     /** Keystrokes alternately 10 and 40 steps apart. */
     function unevenTyping(pauseBeforeKey: number | null): Game {
       const game = startedGame();
@@ -297,12 +297,12 @@ describe('a pause in the middle of a Run leaves WPM, accuracy and cadence unchan
       return game;
     }
 
-    const straight = unevenTyping(null).getState().run.cadenceConsistency;
+    const straight = unevenTyping(null).getState().run.rhythm;
     // Steady typing is 100; this alternates 4:1, so it reads well under.
     expect(straight).toBeLessThan(100);
     expect(straight).toBeGreaterThanOrEqual(30);
 
-    expect(unevenTyping(5).getState().run.cadenceConsistency).toBe(straight);
-    expect(unevenTyping(6).getState().run.cadenceConsistency).toBe(straight);
+    expect(unevenTyping(5).getState().run.rhythm).toBe(straight);
+    expect(unevenTyping(6).getState().run.rhythm).toBe(straight);
   });
 });

@@ -19,6 +19,7 @@ import {
   HUD_NAME,
   MENU_HEADINGS,
   NEXT_STAGE,
+  START_FREE_FLIGHT,
   START_STAGE,
   YOUR_TEXT,
 } from '../shared/screens';
@@ -363,7 +364,7 @@ describe('Free Flight', () => {
     let panel: HTMLElement | null = screen.getByRole('textbox');
     while (
       panel &&
-      !within(panel).queryByRole('button', { name: 'Launch Custom Flight' })
+      !within(panel).queryByRole('button', { name: START_FREE_FLIGHT })
     ) {
       panel = panel.parentElement;
     }
@@ -375,7 +376,7 @@ describe('Free Flight', () => {
         .map((button) => button.textContent),
     ).toEqual([]);
     expect(panel.textContent).not.toMatch(/note speed/i);
-    // What stays: the text and the Target Cadence slider are still set here.
+    // What stays: the text and the Target WPM slider are still set here.
     expect(within(panel).getByRole('slider')).toBeTruthy();
   });
 
@@ -390,7 +391,7 @@ describe('Free Flight', () => {
     expect(
       (
         screen.getByRole('button', {
-          name: 'Launch Custom Flight',
+          name: START_FREE_FLIGHT,
         }) as HTMLButtonElement
       ).disabled,
     ).toBe(true);
