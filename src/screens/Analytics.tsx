@@ -9,12 +9,22 @@ import {
   OverlayShell,
 } from './OverlayShell';
 import {
-  KEY_FINGER_MAP,
+  keyForCharacter,
   FINGER_COLOR_MAP,
   FINGER_DISPLAY_NAMES,
 } from '../curriculum/curriculum';
+import { KEYBOARD_ROWS } from '../curriculum/keyboardLayout';
 import { exportBackup, REFUSED_BACKUP_MESSAGE } from '../game/save';
 import { Download, Upload, RotateCcw, AlertTriangle } from 'lucide-react';
+
+/**
+ * The keyboard's keys for the heatmap, row by row: the letters, the digits and
+ * the three punctuation keys ; , . (the other punctuation keys are not shown).
+ */
+const HEATMAP_KEY = /^[a-z0-9;,.]$/;
+const KEYBOARD_HEATMAP_ROWS = KEYBOARD_ROWS.map((row) =>
+  row.map(({ key }) => key).filter((key) => HEATMAP_KEY.test(key)),
+).filter((row) => row.length > 0);
 
 export const Analytics: React.FC = () => {
   const game = useGame();
@@ -61,7 +71,7 @@ export const Analytics: React.FC = () => {
   let rightMisses = 0;
 
   Object.entries(keyAnalytics).forEach(([char, stats]) => {
-    const info = KEY_FINGER_MAP[char] || KEY_FINGER_MAP[char.toLowerCase()];
+    const info = keyForCharacter(char);
     if (info) {
       if (info.hand === 'left') {
         leftHits += stats.hits;
@@ -94,14 +104,6 @@ export const Analytics: React.FC = () => {
         a[1].misses / (a[1].hits + a[1].misses),
     )
     .slice(0, 6);
-
-  // Common keyboard keys for heatmap
-  const keyboardHeatmapRows = [
-    ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'],
-    ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'],
-    ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';'],
-    ['z', 'x', 'c', 'v', 'b', 'n', 'm', ',', '.'],
-  ];
 
   const handleExport = () => {
     const dataStr =
@@ -266,7 +268,7 @@ export const Analytics: React.FC = () => {
           </div>
 
           <div className="flex flex-col gap-1.5 items-center select-none overflow-x-auto py-2">
-            {keyboardHeatmapRows.map((row) => (
+            {KEYBOARD_HEATMAP_ROWS.map((row) => (
               <div key={row.join('')} className="flex gap-1.5">
                 {row.map((k) => {
                   const stats = keyAnalytics[k] ||
@@ -326,8 +328,7 @@ export const Analytics: React.FC = () => {
                 {troubleKeys.map(([char, stats]) => {
                   const total = stats.hits + stats.misses;
                   const missRate = Math.round((stats.misses / total) * 100);
-                  const info =
-                    KEY_FINGER_MAP[char] || KEY_FINGER_MAP[char.toLowerCase()];
+                  const info = keyForCharacter(char);
 
                   return (
                     <div

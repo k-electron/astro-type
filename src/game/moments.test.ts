@@ -9,6 +9,7 @@ import {
   newGame,
   SAMPLE_TEXT,
   startedGame,
+  startFreeFlight,
   targetKey,
 } from './testHelpers';
 
@@ -68,6 +69,49 @@ describe('a hit', () => {
       droneIds.push(hit.droneId);
     }
     expect(new Set(droneIds).size, 'each hit is a different Drone').toBe(6);
+  });
+
+  it("names the base key's lane and finger for a character that needs Shift, as it does for a capital", () => {
+    // Each character with the key a player presses (with Shift held) to type it.
+    const shifted: Array<[character: string, baseKey: string]> = [
+      ['!', '1'],
+      ['?', '/'],
+      ['(', '9'],
+      ['{', '['],
+      ['"', "'"],
+      [':', ';'],
+      ['A', 'a'],
+      ['P', 'p'],
+    ];
+    const game = newGame();
+    startFreeFlight(game, shifted.map(([character]) => character).join(''));
+    const moments = listen(game);
+
+    for (const [character, baseKey] of shifted) {
+      game.step(30);
+      const lead = game.getState().run.drones[0];
+      expect(lead.char, 'the lead Drone is the one to hit').toBe(character);
+      moments.length = 0;
+
+      game.pressKey(character);
+
+      // (The last character also clears the Run, so look at the hits only.)
+      const hits = moments.filter(
+        (moment): moment is Hit => moment.type === 'hit',
+      );
+      expect(hits, `typing ${character}`).toHaveLength(1);
+      const [hit] = hits;
+      // The Drone and the hit both sit where the base key sits.
+      const expected = keyOnTheKeyboard(baseKey);
+      expect([hit.lane, hit.finger], `the hit on ${character}`).toEqual([
+        expected.lane,
+        expected.finger,
+      ]);
+      expect([lead.lane, lead.finger], `the Drone for ${character}`).toEqual([
+        expected.lane,
+        expected.finger,
+      ]);
+    }
   });
 
   it('still carries the grade, the points and the Overdrive flag', () => {
