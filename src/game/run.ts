@@ -162,13 +162,13 @@ export function createRunSlice(
         accuracy: finalAccuracy,
         starsEarned,
         creditsEarned,
-      } = scoreRun(performance, elapsedSeconds, stage.starThresholds);
+      } = scoreRun(performance, elapsedSeconds, stage);
 
       emit({ type: 'cleared', stars: starsEarned });
 
       const { newStarsAwarded, isNewHighScore, unlockedSector } =
         get().recordStageResult(
-          stage.id,
+          stage.origin === 'sector' ? stage.id : null,
           {
             score: performance.score,
             wpm: finalNetWpm,

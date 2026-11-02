@@ -44,8 +44,8 @@ export const UpgradesSchema = z.object({
 
 /**
  * One Stage's progress. Only the shape is checked: the id is not looked up in
- * the curriculum, so Free Flight entries stay valid. A missing `stageId` is
- * filled in from the entry's key, in the Save schema below.
+ * the curriculum. A missing `stageId` is filled in from the entry's key, in the
+ * Save schema below.
  */
 export const StageProgressSchema = z.object({
   stageId: z.string().default(''),
@@ -121,12 +121,21 @@ export const totalStarsOf = (
 ): number =>
   Object.values(stagesProgress).reduce((sum, sp) => sum + sp.starsEarned, 0);
 
+/**
+ * Saves and Backups made before Free Flight became practice (#86) hold an
+ * entry for each Free Flight, keyed `custom-<launch time>`. They are dropped on
+ * read, so their Stars stop counting; the game never writes one.
+ */
+const FREE_FLIGHT_ENTRY_PREFIX = 'custom-';
+
 export const PlayerProfileSchema = SaveFieldsSchema.transform((save) => {
   const stagesProgress = Object.fromEntries(
-    Object.entries(save.stagesProgress).map(([id, progress]) => [
-      id,
-      { ...progress, stageId: progress.stageId || id },
-    ]),
+    Object.entries(save.stagesProgress)
+      .filter(([id]) => !id.startsWith(FREE_FLIGHT_ENTRY_PREFIX))
+      .map(([id, progress]) => [
+        id,
+        { ...progress, stageId: progress.stageId || id },
+      ]),
   );
   return { ...save, stagesProgress };
 });

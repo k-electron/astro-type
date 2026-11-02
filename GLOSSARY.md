@@ -11,7 +11,7 @@ A themed group of Stages that forms one step of the curriculum.
 _Avoid_: Zone, world, chapter
 
 **Stage**:
-A fixed text to type with its own goal and star thresholds, either from a Sector or set up by the player in Free Flight.
+A fixed text to type, either from a Sector or set up by the player in Free Flight. Only a Sector Stage has its own goal and star thresholds.
 _Avoid_: Level, mission, lesson
 
 ### Play
@@ -71,7 +71,7 @@ A Profile exported to a file, which can be imported again.
 _Avoid_: Export, save file
 
 **Stars**:
-The 0–3 result a Stage earns from a cleared Run; a Stage keeps its best. Stars open new Sectors.
+The 0–3 result a Sector Stage earns from a cleared Run; a Stage keeps its best. Stars open new Sectors. A Free Flight earns none.
 _Avoid_: Rating, score
 
 **Credits**:
@@ -109,9 +109,9 @@ The screen showing the player's lifetime totals, hand balance and per-key stats.
 _Avoid_: Telemetry, stats screen
 
 **Free Flight**:
-The screen where the player sets up a Stage from their own text and a target WPM.
+The screen where the player sets up a Stage from their own text and a target WPM. A Free Flight is practice: it earns no Stars and leaves no record, and pays Credits for its score alone.
 _Avoid_: Custom practice, free flight drill
 
 **Debrief**:
-The screen shown when a Run is cleared, with its result, the Stars earned and the Credits paid.
+The screen shown when a Run is cleared, with its result, the Credits paid and, for a Sector Stage, the Stars earned.
 _Avoid_: Victory, level complete, mission debriefing

@@ -28,7 +28,8 @@ export const Debrief: React.FC = () => {
   const onReturnToMap = () => send({ type: 'OPEN_GALAXY_MAP' });
   const onReturnHome = () => send({ type: 'PRESS_HOME' });
   const earned = result?.starsEarned;
-  const thresholds = stage.starThresholds;
+  // A Free Flight is practice: it has no Stars to show.
+  const thresholds = stage.origin === 'sector' ? stage.starThresholds : null;
 
   useEffect(() => {
     if (earned === 3) {
@@ -67,157 +68,170 @@ export const Debrief: React.FC = () => {
         id="debrief-title"
         className="text-xs uppercase font-mono tracking-wider text-cyan-400 mb-1"
       >
-        Debrief · {stage.id.toUpperCase()}
+        Debrief ·{' '}
+        {stage.origin === 'sector' ? stage.id.toUpperCase() : stage.title}
       </span>
       <h2 className="text-2xl sm:text-3xl font-bold font-display text-white mb-1">
         {stage.title}
       </h2>
       <p className="text-xs font-mono text-slate-400 mb-5">{stage.subtitle}</p>
 
-      {/* Stars earned animation */}
-      <div className="flex items-center justify-center gap-3 mb-5">
-        {[1, 2, 3].map((starNum) => {
-          const isEarned = starNum <= starsEarned;
-          return (
-            <div
-              key={starNum}
-              className={`p-3 rounded-2xl border transition-all transform ${
-                isEarned
-                  ? 'border-amber-400/80 bg-amber-500/20 scale-110 shadow-[0_0_20px_rgba(245,158,11,0.5)]'
-                  : 'border-slate-800 bg-slate-950/60 opacity-40'
-              }`}
-            >
-              <Star
-                className={`w-8 h-8 sm:w-10 sm:h-10 ${
-                  isEarned
-                    ? 'fill-amber-400 text-amber-400'
-                    : 'text-slate-600 fill-slate-800'
-                }`}
-              />
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Auto-Save & Stars Collection Notification Banner */}
-      <div className="w-full mb-5 p-3.5 rounded-xl border border-emerald-500/40 bg-emerald-950/30 text-left flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-[0_0_20px_rgba(16,185,129,0.12)]">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-emerald-500/20 border border-emerald-400/50 flex items-center justify-center shrink-0">
-            <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+      {thresholds && (
+        <>
+          {/* Stars earned animation */}
+          <div className="flex items-center justify-center gap-3 mb-5">
+            {[1, 2, 3].map((starNum) => {
+              const isEarned = starNum <= starsEarned;
+              return (
+                <div
+                  key={starNum}
+                  className={`p-3 rounded-2xl border transition-all transform ${
+                    isEarned
+                      ? 'border-amber-400/80 bg-amber-500/20 scale-110 shadow-[0_0_20px_rgba(245,158,11,0.5)]'
+                      : 'border-slate-800 bg-slate-950/60 opacity-40'
+                  }`}
+                >
+                  <Star
+                    className={`w-8 h-8 sm:w-10 sm:h-10 ${
+                      isEarned
+                        ? 'fill-amber-400 text-amber-400'
+                        : 'text-slate-600 fill-slate-800'
+                    }`}
+                  />
+                </div>
+              );
+            })}
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold font-mono uppercase tracking-wide text-emerald-300">
-                Stars Collected & Auto-Saved
-              </span>
-              <span className="px-1.5 py-0.2 rounded text-[10px] font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
-                Saved
-              </span>
-            </div>
-            <p className="text-[11px] text-slate-300 mt-0.5">
-              All stars, credits, and unlocked sectors are securely recorded in
-              your starship log.
-            </p>
-          </div>
-        </div>
 
-        <div className="flex items-center gap-3 sm:border-l sm:border-emerald-500/30 sm:pl-4 shrink-0">
-          <div className="text-left font-mono">
-            <span className="text-[10px] text-slate-400 uppercase block">
-              Total Fleet Stars
-            </span>
-            <div className="flex items-center gap-1.5 text-amber-300 font-bold text-sm">
-              <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-              <span>{totalStars} ★</span>
-              {newStarsAwarded > 0 && (
-                <span className="text-[10px] text-emerald-400 font-semibold">
-                  (+{newStarsAwarded} new)
+          {/* Auto-Save & Stars Collection Notification Banner */}
+          <div className="w-full mb-5 p-3.5 rounded-xl border border-emerald-500/40 bg-emerald-950/30 text-left flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-[0_0_20px_rgba(16,185,129,0.12)]">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-lg bg-emerald-500/20 border border-emerald-400/50 flex items-center justify-center shrink-0">
+                <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold font-mono uppercase tracking-wide text-emerald-300">
+                    Stars Collected & Auto-Saved
+                  </span>
+                  <span className="px-1.5 py-0.2 rounded text-[10px] font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                    Saved
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-300 mt-0.5">
+                  All stars, credits, and unlocked sectors are securely recorded
+                  in your starship log.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 sm:border-l sm:border-emerald-500/30 sm:pl-4 shrink-0">
+              <div className="text-left font-mono">
+                <span className="text-[10px] text-slate-400 uppercase block">
+                  Total Fleet Stars
                 </span>
-              )}
+                <div className="flex items-center gap-1.5 text-amber-300 font-bold text-sm">
+                  <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                  <span>{totalStars} ★</span>
+                  {newStarsAwarded > 0 && (
+                    <span className="text-[10px] text-emerald-400 font-semibold">
+                      (+{newStarsAwarded} new)
+                    </span>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* Star Objectives Breakdown */}
-      <div className="w-full bg-slate-950/60 border border-slate-800 rounded-xl p-3 mb-5 text-xs font-mono text-left space-y-1.5">
-        <div className="flex items-center justify-between text-slate-300">
-          <span className="flex items-center gap-2">
-            <span
-              className={
-                starsEarned >= 1 ? 'text-amber-400 font-bold' : 'text-slate-600'
-              }
-            >
-              ★ 1
-            </span>
-            <span>
-              Baseline Touch Form (Acc &ge; {thresholds.oneStarAccuracy}%)
-            </span>
-          </span>
-          <span
-            className={
-              accuracy >= thresholds.oneStarAccuracy
-                ? 'text-emerald-400 font-bold'
-                : 'text-rose-400'
-            }
-          >
-            {accuracy >= thresholds.oneStarAccuracy ? 'ACHIEVED' : 'MISSED'}
-          </span>
-        </div>
+          {/* Star Objectives Breakdown */}
+          <div className="w-full bg-slate-950/60 border border-slate-800 rounded-xl p-3 mb-5 text-xs font-mono text-left space-y-1.5">
+            <div className="flex items-center justify-between text-slate-300">
+              <span className="flex items-center gap-2">
+                <span
+                  className={
+                    starsEarned >= 1
+                      ? 'text-amber-400 font-bold'
+                      : 'text-slate-600'
+                  }
+                >
+                  ★ 1
+                </span>
+                <span>
+                  Baseline Touch Form (Acc &ge; {thresholds.oneStarAccuracy}%)
+                </span>
+              </span>
+              <span
+                className={
+                  accuracy >= thresholds.oneStarAccuracy
+                    ? 'text-emerald-400 font-bold'
+                    : 'text-rose-400'
+                }
+              >
+                {accuracy >= thresholds.oneStarAccuracy ? 'ACHIEVED' : 'MISSED'}
+              </span>
+            </div>
 
-        <div className="flex items-center justify-between text-slate-300">
-          <span className="flex items-center gap-2">
-            <span
-              className={
-                starsEarned >= 2 ? 'text-amber-400 font-bold' : 'text-slate-600'
-              }
-            >
-              ★ 2
-            </span>
-            <span>
-              Steady Cadence & Flow (Speed &ge; {thresholds.twoStarWpm} WPM &
-              Acc &ge; {thresholds.twoStarAccuracy}%)
-            </span>
-          </span>
-          <span
-            className={
-              wpm >= thresholds.twoStarWpm &&
-              accuracy >= thresholds.twoStarAccuracy
-                ? 'text-emerald-400 font-bold'
-                : 'text-slate-500'
-            }
-          >
-            {wpm >= thresholds.twoStarWpm &&
-            accuracy >= thresholds.twoStarAccuracy
-              ? 'ACHIEVED'
-              : 'INCOMPLETE'}
-          </span>
-        </div>
+            <div className="flex items-center justify-between text-slate-300">
+              <span className="flex items-center gap-2">
+                <span
+                  className={
+                    starsEarned >= 2
+                      ? 'text-amber-400 font-bold'
+                      : 'text-slate-600'
+                  }
+                >
+                  ★ 2
+                </span>
+                <span>
+                  Steady Cadence & Flow (Speed &ge; {thresholds.twoStarWpm} WPM
+                  & Acc &ge; {thresholds.twoStarAccuracy}%)
+                </span>
+              </span>
+              <span
+                className={
+                  wpm >= thresholds.twoStarWpm &&
+                  accuracy >= thresholds.twoStarAccuracy
+                    ? 'text-emerald-400 font-bold'
+                    : 'text-slate-500'
+                }
+              >
+                {wpm >= thresholds.twoStarWpm &&
+                accuracy >= thresholds.twoStarAccuracy
+                  ? 'ACHIEVED'
+                  : 'INCOMPLETE'}
+              </span>
+            </div>
 
-        <div className="flex items-center justify-between text-slate-300">
-          <span className="flex items-center gap-2">
-            <span
-              className={
-                starsEarned >= 3 ? 'text-amber-400 font-bold' : 'text-slate-600'
-              }
-            >
-              ★ 3
-            </span>
-            <span>
-              Finger Form Mastery (Speed &ge; {thresholds.threeStarWpm} WPM, Acc
-              &ge; {thresholds.threeStarAccuracy}%, Streak &ge;{' '}
-              {thresholds.threeStarMinStreak})
-            </span>
-          </span>
-          <span
-            className={
-              starsEarned >= 3 ? 'text-emerald-400 font-bold' : 'text-slate-500'
-            }
-          >
-            {starsEarned >= 3 ? 'ACHIEVED' : 'INCOMPLETE'}
-          </span>
-        </div>
-      </div>
+            <div className="flex items-center justify-between text-slate-300">
+              <span className="flex items-center gap-2">
+                <span
+                  className={
+                    starsEarned >= 3
+                      ? 'text-amber-400 font-bold'
+                      : 'text-slate-600'
+                  }
+                >
+                  ★ 3
+                </span>
+                <span>
+                  Finger Form Mastery (Speed &ge; {thresholds.threeStarWpm} WPM,
+                  Acc &ge; {thresholds.threeStarAccuracy}%, Streak &ge;{' '}
+                  {thresholds.threeStarMinStreak})
+                </span>
+              </span>
+              <span
+                className={
+                  starsEarned >= 3
+                    ? 'text-emerald-400 font-bold'
+                    : 'text-slate-500'
+                }
+              >
+                {starsEarned >= 3 ? 'ACHIEVED' : 'INCOMPLETE'}
+              </span>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Performance Metrics Grid */}
       <div className="w-full grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
