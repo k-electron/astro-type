@@ -90,7 +90,7 @@ test('the Action Deck draws, moves and answers keys and clicks', async ({
     const before = await bottomEdge(drone(page, 'b'));
     expect.soft(before).toBeGreaterThan(0);
 
-    // The lead Drone is "!": typed, as a player does, by the character itself.
+    // The lead Drone is "!". The key arrives as "!" (a player holds Shift to type it).
     await page.keyboard.press('!');
     await expect(promptProgress(page)).toHaveText('17%');
 

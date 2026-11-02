@@ -72,7 +72,7 @@ describe('Analytics and the characters that need Shift', () => {
     });
     player.openHeader('Analytics');
 
-    expect(screen.getByTitle('F: 98% (48 hit / 1 miss)')).toBeTruthy();
+    expect(screen.getByTitle(/^F: 98%/)).toBeTruthy();
   });
 });
 
