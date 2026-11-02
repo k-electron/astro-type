@@ -5,7 +5,11 @@ import {
 } from '../../src/game/save';
 import { BEGIN_HOME_ROW, START_STAGE } from '../shared/screens';
 import { type Player, renderGame, screen } from './harness';
-import { OLD_LIVE_EXPORT, RETURNING_PLAYER } from '../shared/saves';
+import {
+  FREE_FLIGHT_SAVE,
+  OLD_LIVE_EXPORT,
+  RETURNING_PLAYER,
+} from '../shared/saves';
 import { muteAllLabel } from '../../src/screens/audioLabels';
 import { closeLabel } from '../../src/screens/closeLabel';
 
@@ -40,6 +44,19 @@ describe('a returning player', () => {
     expect(stars(5)).toBeTruthy();
     player.openHeader('Galaxy Map');
     // Sector 02 needs 6 Stars; the Save's claim of 40 does not count.
+    expect(
+      screen.getByRole('button', { name: /Sector 02.*Needs 6★/ }),
+    ).toBeTruthy();
+  });
+
+  it("does not count a Save's old Free Flight Stars, and a Sector they alone opened is locked again", () => {
+    // FREE_FLIGHT_SAVE: 5 Stars from the Stages and 5 more from Free Flight.
+    const player = renderGame({ profile: FREE_FLIGHT_SAVE });
+
+    expect(stars(5)).toBeTruthy();
+    expect(credits('1,234')).toBeTruthy();
+    player.openHeader('Galaxy Map');
+    // Sector 02 needs 6 Stars; 10 would have opened it.
     expect(
       screen.getByRole('button', { name: /Sector 02.*Needs 6★/ }),
     ).toBeTruthy();

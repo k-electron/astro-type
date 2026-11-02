@@ -171,12 +171,11 @@ describe('a Free Flight Stage', () => {
 
   const text = 'the quick fox';
 
-  it('is a Stage of the text it was built from, marked as Free Flight with a custom id', () => {
+  it('is a Stage of the text it was built from, marked as Free Flight', () => {
     const stage = freeFlightStage(text, 30);
     expect(stage.sampleText).toBe(text);
     expect(stage.targetWpm).toBe(30);
     expect(stage.origin).toBe('free-flight');
-    expect(stage.id).toMatch(/^custom-/);
   });
 
   it('has a lane and a finger for every character of the text, as a Sector Stage does', () => {
@@ -185,17 +184,6 @@ describe('a Free Flight Stage', () => {
     const problems = [...chars].filter((char) => !keyFor(char));
     expect(problems).toEqual([]);
   });
-
-  it.each([20, 40, 80])(
-    'asks for more at each star level at %i WPM',
-    (targetWpm) => {
-      const { starThresholds: t } = freeFlightStage(text, targetWpm);
-      expect(t.oneStarAccuracy).toBeLessThan(t.twoStarAccuracy);
-      expect(t.twoStarAccuracy).toBeLessThan(t.threeStarAccuracy);
-      expect(t.twoStarWpm).toBeLessThan(t.threeStarWpm);
-      expect(t.threeStarAccuracy).toBeLessThanOrEqual(100);
-    },
-  );
 
   it('is offered by every preset as text that can be typed', () => {
     expect(FREE_FLIGHT_PRESETS.length).toBeGreaterThan(0);

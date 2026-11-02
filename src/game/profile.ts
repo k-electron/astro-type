@@ -68,10 +68,15 @@ export interface StageResult {
   keyStats: Record<string, { hits: number; misses: number }>;
 }
 
-/** The Profile after a cleared Run, and what the clear means for the Debrief. */
+/**
+ * The Profile after a cleared Run, and what the clear means for the Debrief.
+ * `stageId` is the Sector Stage that was cleared, whose entry keeps the best
+ * result and its Stars; null for a Free Flight, which is practice: it leaves no
+ * Stage entry and earns no Stars, but its Credits and keystrokes count.
+ */
 export function recordStageResult(
   currentProfile: PlayerProfile,
-  stageId: string,
+  stageId: string | null,
   result: StageResult,
   now: number,
 ): {
@@ -79,6 +84,38 @@ export function recordStageResult(
   newStarsAwarded: number;
   isNewHighScore: boolean;
 } {
+  // Merge key analytics
+  const mergedKeyAnalytics: Record<string, KeyAnalytics> = {
+    ...currentProfile.keyAnalytics,
+  };
+  Object.entries(result.keyStats).forEach(([char, stats]) => {
+    const existing = mergedKeyAnalytics[char] ?? KeyAnalyticsSchema.parse({});
+    mergedKeyAnalytics[char] = {
+      hits: existing.hits + stats.hits,
+      misses: existing.misses + stats.misses,
+    };
+  });
+
+  const afterRun: PlayerProfile = {
+    ...currentProfile,
+    totalCredits: currentProfile.totalCredits + result.creditsEarned,
+    totalKeystrokes: currentProfile.totalKeystrokes + result.keystrokesCount,
+    totalErrors: currentProfile.totalErrors + result.errorsCount,
+    totalWordsTyped:
+      currentProfile.totalWordsTyped + Math.round(result.keystrokesCount / 5),
+    totalPracticeSeconds:
+      currentProfile.totalPracticeSeconds + result.practiceSeconds,
+    highestWpmAllTime: Math.max(currentProfile.highestWpmAllTime, result.wpm),
+    keyAnalytics: mergedKeyAnalytics,
+  };
+  if (stageId === null) {
+    return {
+      updatedProfile: afterRun,
+      newStarsAwarded: 0,
+      isNewHighScore: false,
+    };
+  }
+
   const prevProgress =
     currentProfile.stagesProgress[stageId] ??
     StageProgressSchema.parse({ stageId });
@@ -99,35 +136,12 @@ export function recordStageResult(
     lastPlayedAt: now,
   };
 
-  const newStagesProgress = {
-    ...currentProfile.stagesProgress,
-    [stageId]: updatedStageProgress,
-  };
-
-  // Merge key analytics
-  const mergedKeyAnalytics: Record<string, KeyAnalytics> = {
-    ...currentProfile.keyAnalytics,
-  };
-  Object.entries(result.keyStats).forEach(([char, stats]) => {
-    const existing = mergedKeyAnalytics[char] ?? KeyAnalyticsSchema.parse({});
-    mergedKeyAnalytics[char] = {
-      hits: existing.hits + stats.hits,
-      misses: existing.misses + stats.misses,
-    };
-  });
-
   const updatedProfile: PlayerProfile = {
-    ...currentProfile,
-    totalCredits: currentProfile.totalCredits + result.creditsEarned,
-    totalKeystrokes: currentProfile.totalKeystrokes + result.keystrokesCount,
-    totalErrors: currentProfile.totalErrors + result.errorsCount,
-    totalWordsTyped:
-      currentProfile.totalWordsTyped + Math.round(result.keystrokesCount / 5),
-    totalPracticeSeconds:
-      currentProfile.totalPracticeSeconds + result.practiceSeconds,
-    highestWpmAllTime: Math.max(currentProfile.highestWpmAllTime, result.wpm),
-    stagesProgress: newStagesProgress,
-    keyAnalytics: mergedKeyAnalytics,
+    ...afterRun,
+    stagesProgress: {
+      ...currentProfile.stagesProgress,
+      [stageId]: updatedStageProgress,
+    },
   };
 
   return { updatedProfile, newStarsAwarded, isNewHighScore };
@@ -259,9 +273,13 @@ export interface ProfileCommands {
   wipeCurriculumAchievements: () => void;
   /** Back to a fresh Profile. */
   resetProgress: () => void;
-  /** Takes in a cleared Stage's result: Credits, Stars, bests, key analytics. */
+  /**
+   * Takes in a cleared Run's result: Credits, key analytics and, for a Sector
+   * Stage, its Stars and bests. `stageId` is null for a Free Flight, which
+   * leaves no Stage entry.
+   */
   recordStageResult: (
-    stageId: string,
+    stageId: string | null,
     result: StageResult,
     now: number,
   ) => StageRecord;

@@ -127,10 +127,17 @@ export function clearStage(
   game.pressKey(targetKey(game));
 }
 
-/** Type `text` key by key, each key after the lead Drone has reached the Strike Line. */
-export function typeText(game: Game, text: string): void {
+/**
+ * Type `text` key by key, each key after `stepsPerKey` steps: by default enough
+ * for the lead Drone to reach the Strike Line (24 WPM); fewer steps type faster.
+ */
+export function typeText(
+  game: Game,
+  text: string,
+  stepsPerKey = STEPS_TO_REACH_LINE,
+): void {
   for (const key of Array.from(text)) {
-    game.step(STEPS_TO_REACH_LINE);
+    game.step(stepsPerKey);
     game.pressKey(key);
   }
 }

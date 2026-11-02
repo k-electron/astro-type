@@ -583,11 +583,14 @@ export interface RunOutcome {
   creditsEarned: number;
 }
 
-/** WPM, accuracy, Stars and Credits for a cleared Run. */
+/**
+ * WPM, accuracy, Stars and Credits for a cleared Run of `stage`. A Free Flight
+ * is practice: no Stars, and Credits for the score alone.
+ */
 export function scoreRun(
   perf: LivePerformance,
   elapsedSeconds: number,
-  thresholds: Stage['starThresholds'],
+  stage: Stage,
 ): RunOutcome {
   const minutes = elapsedSeconds / 60;
   const wpm = Math.max(
@@ -597,7 +600,13 @@ export function scoreRun(
     ),
   );
   const accuracy = accuracyOf(perf);
+  const scoreCredits = Math.round(perf.score / 200);
 
+  if (stage.origin === 'free-flight') {
+    return { wpm, accuracy, starsEarned: 0, creditsEarned: scoreCredits };
+  }
+
+  const thresholds = stage.starThresholds;
   let starsEarned = 0;
   if (accuracy >= thresholds.oneStarAccuracy) starsEarned = 1;
   if (
@@ -616,6 +625,6 @@ export function scoreRun(
     starsEarned = 3;
   }
 
-  const creditsEarned = 100 + starsEarned * 75 + Math.round(perf.score / 200);
+  const creditsEarned = 100 + starsEarned * 75 + scoreCredits;
   return { wpm, accuracy, starsEarned, creditsEarned };
 }

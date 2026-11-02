@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { stageProgress } from '../../tests/shared/saves';
+import { getStageById } from '../curriculum/curriculum';
 import {
   clearStage,
+  miss,
   newGame,
   STAGE_ID,
   startedGame,
@@ -110,20 +112,41 @@ describe('Stars from WPM, accuracy and Streak', () => {
     expect(debrief.starsEarned).toBe(3);
   });
 
-  it('the 3rd Star also needs the Streak: the same clean Run falls to 2 Stars when the Streak asked is out of reach', () => {
-    // On the real Stage, accuracy always trips before the Streak can, so fly a
-    // Free Flight whose text is 19 characters, one short of the Streak its 3rd
-    // Star asks for (20), to see the Streak gate on its own.
-    const text = 'fj fj fj fj fj fj f';
+  it('the 3rd Star also needs the Streak: a Run that clears every other bar falls to 2 Stars when the Streak stays short of it', () => {
+    // On Stage 1 accuracy trips before the Streak can. Stage s5-l1 (57
+    // characters) asks 96% accuracy, 28 WPM and a Streak of 20 for its 3rd
+    // Star: two Misses, one a third of the way through and one at two thirds,
+    // keep accuracy at 97% and the Streak at 19, with the typing fast enough.
+    const stage = getStageById('s5-l1');
+    if (!stage) throw new Error('No Stage s5-l1');
+    const text = stage.sampleText;
+    const third = Math.floor(text.length / 3);
+    const STEPS_PER_KEY = 20;
+    const fly = (missesAt: number[]) => {
+      const game = newGame();
+      startStage(game, stage.id);
+      let from = 0;
+      for (const at of [...missesAt, text.length]) {
+        typeText(game, text.slice(from, at), STEPS_PER_KEY);
+        if (at < text.length) miss(game);
+        from = at;
+      }
+      return debriefOf(game);
+    };
 
-    const game = newGame();
-    game.send({ type: 'LAUNCH_FREE_FLIGHT', text, targetWpm: 15 });
-    typeText(game, text);
-    const debrief = debriefOf(game);
-    expect(debrief.wpm).toBe(24);
-    expect(debrief.accuracy).toBe(100);
-    expect(debrief.maxStreak).toBe(19);
-    expect(debrief.starsEarned).toBe(2);
+    const clean = fly([]);
+    expect(clean.maxStreak).toBe(text.length);
+    expect(clean.starsEarned).toBe(3);
+
+    const short = fly([third, 2 * third]);
+    expect(short.accuracy).toBeGreaterThanOrEqual(
+      stage.starThresholds.threeStarAccuracy,
+    );
+    expect(short.wpm).toBeGreaterThanOrEqual(stage.starThresholds.threeStarWpm);
+    expect(short.maxStreak).toBeLessThan(
+      stage.starThresholds.threeStarMinStreak,
+    );
+    expect(short.starsEarned).toBe(2);
   });
 
   it('a worse replay keeps the best result and awards no new Stars', () => {

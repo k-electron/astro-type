@@ -22,25 +22,30 @@ export interface StarThresholds {
   threeStarMinStreak: number; // e.g. 25
 }
 
-/** Where a Stage comes from: a Sector of the curriculum, or the player's own Free Flight. */
-export type StageOrigin = 'sector' | 'free-flight';
-
-export interface Stage {
-  id: string; // e.g. "s1-l1"; a Free Flight's is `custom-<launch time>`
-  origin: StageOrigin;
-  sectorId: string; // e.g. "sector-1"
-  stageNumber: number; // 1 to 4
+/** What every Stage has, wherever it comes from: the text to type and how to show it. */
+interface StageBase {
+  id: string;
   title: string;
   subtitle: string;
-  description: string;
   targetKeys: string[];
   sampleText: string;
-  difficulty: 'Beginner' | 'Intermediate' | 'Advanced' | 'Expert';
   targetWpm: number;
+  techniqueTip?: string; // e.g. "Rest index fingers on F and J bumps. Keep palms level."
+  focusFingers?: string; // e.g. "Left Index (F) & Right Index (J)"
+}
+
+/**
+ * A Stage of a Sector: it has a goal, Star thresholds and a place in the
+ * Galaxy Map, and its Stars count (Free Flight earns none).
+ */
+export interface SectorStage extends StageBase {
+  origin: 'sector';
+  sectorId: string; // e.g. "sector-1"
+  stageNumber: number; // 1 to 4
+  description: string;
+  difficulty: 'Beginner' | 'Intermediate' | 'Advanced' | 'Expert';
   starThresholds: StarThresholds;
   timeLimitSeconds?: number;
-  focusFingers?: string; // e.g. "Left Index (F) & Right Index (J)"
-  techniqueTip?: string; // e.g. "Rest index fingers on F and J bumps. Keep palms level."
   patternType?:
     | 'ANCHOR_CALIBRATION'
     | 'FINGER_EXPANSION'
@@ -51,6 +56,14 @@ export interface Stage {
     | 'SHIFT_DISCIPLINE';
 }
 
+/** The Stage of a Free Flight Run: the player's own text, with no goal to reach. */
+export interface FreeFlightStage extends StageBase {
+  origin: 'free-flight';
+}
+
+/** Where a Stage comes from: a Sector of the curriculum, or the player's own Free Flight. */
+export type Stage = SectorStage | FreeFlightStage;
+
 export interface Sector {
   id: string;
   name: string;
@@ -58,7 +71,7 @@ export interface Sector {
   curriculumCategory: string; // e.g. "Home Row Foundations"
   description: string;
   requiredStarsToUnlock: number; // Star-gate sector unlock milestone
-  stages: Stage[];
+  stages: SectorStage[];
   accentColor: string;
   themeSymbol: string;
 }
@@ -233,8 +246,10 @@ export function getKeyLaneAndFinger(char: string): KeyFinger {
 }
 
 /** A Stage as the Sectors below write it: every one of them is a Sector Stage. */
-type SectorStage = Omit<Stage, 'origin'>;
-type SectorDefinition = Omit<Sector, 'stages'> & { stages: SectorStage[] };
+type SectorStageDefinition = Omit<SectorStage, 'origin'>;
+type SectorDefinition = Omit<Sector, 'stages'> & {
+  stages: SectorStageDefinition[];
+};
 
 const SECTOR_DEFINITIONS: SectorDefinition[] = [
   {
@@ -1515,7 +1530,7 @@ export const CURRICULUM_TOTALS = (() => {
   };
 })();
 
-export function getStageById(stageId: string): Stage | undefined {
+export function getStageById(stageId: string): SectorStage | undefined {
   for (const sector of CURRICULUM_SECTORS) {
     const stage = sector.stages.find((s) => s.id === stageId);
     if (stage) return stage;
@@ -1551,7 +1566,7 @@ export function unlocksSector(
   );
 }
 
-function getNextStage(currentStageId: string): Stage | undefined {
+function getNextStage(currentStageId: string): SectorStage | undefined {
   let found = false;
   for (const sector of CURRICULUM_SECTORS) {
     for (const stage of sector.stages) {
@@ -1572,7 +1587,7 @@ export type StageAhead = 'next-stage' | 'last-stage' | 'free-flight';
  * Flight is no Stage of a Sector, so it never has one, and the last Stage has
  * none either.
  */
-export function nextStageOf(stage: Stage): Stage | undefined {
+export function nextStageOf(stage: Stage): SectorStage | undefined {
   return stage.origin === 'sector' ? getNextStage(stage.id) : undefined;
 }
 
@@ -1669,35 +1684,22 @@ export const FREE_FLIGHT_SUBTITLE = 'Your own text, at your own speed.';
 
 /**
  * The Stage a Free Flight Run flies: the player's own `text` (already checked
- * as typeable) and Target Cadence, with Star thresholds worked out from the
- * cadence. Its id is a new `custom-` one for each launch, which is how a Free
- * Flight's result has always been keyed in the Save.
+ * as typeable) and Target Cadence. It has no goal: a Free Flight earns no
+ * Stars and leaves no Stage entry in the Save, so every one is the same Stage.
  */
-export function freeFlightStage(text: string, targetWpm: number): Stage {
+export function freeFlightStage(
+  text: string,
+  targetWpm: number,
+): FreeFlightStage {
   return {
-    id: `custom-${Date.now()}`,
+    id: 'free-flight',
     origin: 'free-flight',
-    sectorId: 'sector-custom',
-    stageNumber: 0,
     title: FREE_FLIGHT_TITLE,
     subtitle: FREE_FLIGHT_SUBTITLE,
-    description: 'Player tailored free-form typing session.',
     targetKeys: Array.from(new Set(text.toLowerCase().split(''))),
     sampleText: text,
-    difficulty:
-      targetWpm > 50 ? 'Expert' : targetWpm > 35 ? 'Advanced' : 'Intermediate',
     targetWpm,
-    focusFingers: 'Free Flight Custom Selection',
     techniqueTip:
       'Maintain relaxed posture and steady keystroke cadence across your custom text.',
-    patternType: 'CADENCE_FLOW',
-    starThresholds: {
-      oneStarAccuracy: 75,
-      twoStarWpm: targetWpm,
-      twoStarAccuracy: 90,
-      threeStarWpm: Math.round(targetWpm * 1.3),
-      threeStarAccuracy: 96,
-      threeStarMinStreak: 20,
-    },
   };
 }

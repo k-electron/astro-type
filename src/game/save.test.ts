@@ -85,49 +85,30 @@ describe('a Save that is readable', () => {
     expect(storage.saved?.version).toBe(1);
   });
 
-  it('keeps a Stage-progress entry whose id is not in the curriculum, as a Free Flight entry is', () => {
-    const save = completeSave();
-    const { game } = load({
-      ...save,
-      stagesProgress: {
-        ...save.stagesProgress,
-        'custom-1792904921385': stageProgress('custom-1792904921385', 1),
-      },
-    });
-
-    expect(game.getState().loadNotice).toBeNull();
-    expect(
-      game.getState().profile.stagesProgress['custom-1792904921385']
-        .starsEarned,
-    ).toBe(1);
-    expect(game.getState().profile.totalStars).toBe(6);
-  });
-
-  it('loads a production Save with Free Flight results, each `custom-` entry as it was written', () => {
+  it('drops the Free Flight entries of a production Save, and the Stars they counted', () => {
+    // FREE_FLIGHT_SAVE: 5 Stars from the curriculum and 5 from Free Flight, so
+    // it claims 10 and opened Sector 02 (6) on Free Flight Stars alone.
     const { game } = load(FREE_FLIGHT_SAVE);
+    const kept = completeSave();
 
     expect(game.getState().loadNotice).toBeNull();
-    expect(game.getState().profile.stagesProgress).toEqual(
-      FREE_FLIGHT_SAVE.stagesProgress,
-    );
-    expect(game.getState().profile.totalStars).toBe(
-      FREE_FLIGHT_SAVE.totalStars,
-    );
+    expect(game.getState().profile.stagesProgress).toEqual(kept.stagesProgress);
+    expect(game.getState().profile.totalStars).toBe(5);
+    // Credits and Analytics are untouched.
+    expect(game.getState().profile.totalCredits).toBe(kept.totalCredits);
+    expect(game.getState().profile.keyAnalytics).toEqual(kept.keyAnalytics);
+    expect(game.getState().profile.totalKeystrokes).toBe(kept.totalKeystrokes);
   });
 
-  it('keeps the Free Flight results when the next write goes out', () => {
+  it('writes the Save without the Free Flight entries on the next write', () => {
     const { game, storage } = load(FREE_FLIGHT_SAVE);
     startStage(game, STAGE_ID);
     clearStage(game, { seconds: 60 });
 
     expect(game.getState().screen).toBe('debrief');
-    const customEntries = Object.fromEntries(
-      Object.entries(FREE_FLIGHT_SAVE.stagesProgress).filter(([id]) =>
-        id.startsWith('custom-'),
-      ),
+    expect(Object.keys(storage.saved?.stagesProgress ?? {})).toEqual(
+      Object.keys(completeSave().stagesProgress),
     );
-    expect(Object.keys(customEntries)).toHaveLength(2);
-    expect(storage.saved?.stagesProgress).toMatchObject(customEntries);
   });
 
   it('accepts Upgrades at level 3', () => {

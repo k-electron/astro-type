@@ -104,10 +104,12 @@ export function completeSave() {
 }
 
 /**
- * A returning player's Save with Free Flight results in it, as production
- * writes them: Stage progress keyed `custom-<launch time>`, beside the
- * curriculum Stages and every other field of `completeSave()`. Free Flight Stars
- * count toward the fleet's total, so the Save's Stars are 5 + 2 + 3.
+ * A returning player's Save from before Free Flight became practice (#86), with
+ * its results in it as production wrote them: Stage progress keyed
+ * `custom-<launch time>`, beside the curriculum Stages and every other field of
+ * `completeSave()`. It claims 10 Stars, 5 from the curriculum and 5 from Free
+ * Flight, which is enough to open Sector 02 (6); once the `custom-` entries are
+ * dropped on reading, 5 are left and Sector 02 is locked again.
  */
 export const FREE_FLIGHT_SAVE = (() => {
   const save = completeSave();
