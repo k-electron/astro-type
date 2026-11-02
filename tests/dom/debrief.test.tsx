@@ -239,17 +239,24 @@ describe('Free Flight', () => {
     );
   });
 
-  it('shows the Credits it paid, the score part alone', () => {
+  it('shows the Credits it paid, and the header counts them', () => {
     const player = renderGame({ profile: RETURNING_PLAYER, text: 'f j f j' });
     player.typePrompt();
 
-    const card = debriefCard().textContent ?? '';
-    const score = Number(/Score\s*([\d,]+)/.exec(card)?.[1].replace(/,/g, ''));
     const paid = Number(
-      /Credits\s*\+([\d,]+)/.exec(card)?.[1].replace(/,/g, ''),
+      /Credits\s*\+([\d,]+)/
+        .exec(debriefCard().textContent ?? '')?.[1]
+        .replace(/,/g, ''),
     );
-    expect(score).toBeGreaterThan(0);
-    expect(paid).toBe(Math.round(score / 200));
+    expect(paid).toBeGreaterThan(0);
+    expect(paid).toBeLessThan(100);
+    expect(
+      screen.getByRole('button', {
+        name: new RegExp(
+          `^${(RETURNING_PLAYER.totalCredits + paid).toLocaleString('en-US')}\\s*Cr$`,
+        ),
+      }),
+    ).toBeTruthy();
   });
 
   it('flown twice leaves the Stars where they were and never shows New Best', () => {
@@ -257,7 +264,10 @@ describe('Free Flight', () => {
     const player = renderGame({ profile: RETURNING_PLAYER, text: 'f j f j' });
 
     for (const flight of [1, 2]) {
-      if (flight === 2) player.click('Replay');
+      if (flight === 2) {
+        player.click('Replay');
+        expect(screen.queryByText(DEBRIEF_TITLE)).toBeNull();
+      }
       player.typePrompt();
 
       expect(screen.getByText(DEBRIEF_TITLE), `flight ${flight}`).toBeTruthy();

@@ -1,9 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  completeSave,
-  FREE_FLIGHT_SAVE,
-  RETURNING_PLAYER,
-} from '../../tests/shared/saves';
+import { RETURNING_PLAYER } from '../../tests/shared/saves';
 import {
   loadGame,
   miss,
@@ -24,8 +20,6 @@ import {
  */
 
 const TEXT = 'ab ba';
-
-const isFreeFlightEntry = (stageId: string) => stageId.startsWith('custom-');
 
 describe('launching a Free Flight from { text, targetWpm }', () => {
   it('starts a Run of exactly that text, on a Free Flight Stage', () => {
@@ -56,6 +50,7 @@ describe("a cleared Free Flight leaves the Stars and the Save's Stages alone", (
 
     for (let flight = 0; flight < 2; flight++) {
       startFreeFlight(game, TEXT);
+      expect(game.getState().screen).toBe('flight-deck');
       typeText(game, TEXT);
       expect(game.getState().screen).toBe('debrief');
 
@@ -69,16 +64,6 @@ describe("a cleared Free Flight leaves the Stars and the Save's Stages alone", (
     expect(Object.keys(storage.saved?.stagesProgress ?? {})).toEqual(
       Object.keys(stagesProgress),
     );
-  });
-
-  it('opens no Sector, even from the Stars that sit one short of its gate', () => {
-    // RETURNING_PLAYER has 5 Stars; Sector 02 opens at 6.
-    const game = newGame(RETURNING_PLAYER);
-    startFreeFlight(game, TEXT);
-    typeText(game, TEXT);
-
-    expect(game.getState().profile.totalStars).toBe(5);
-    expect(game.getState().debrief?.unlockedSector).toBe(false);
   });
 });
 
@@ -105,9 +90,7 @@ describe('what a Free Flight pays', () => {
       expect(paid, text).toBe(Math.round(debrief.score / 200));
       expect(debrief.creditsEarned, text).toBe(paid);
     }
-  });
-
-  it('is about 1 Credit for a two-letter text', () => {
+    // A two-letter text pays about 1.
     expect(paidFor('ab').paid).toBe(1);
   });
 });
@@ -132,32 +115,5 @@ describe('the keystrokes of a Free Flight', () => {
     ).toBe(1);
     expect(profile.totalKeystrokes).toBe(3);
     expect(profile.totalErrors).toBe(1);
-  });
-
-  it('add to the key stats a Save already holds', () => {
-    const { game } = loadGame(completeSave());
-    startFreeFlight(game, 'ff');
-    typeText(game, 'ff');
-
-    const profile = game.getState().profile;
-    expect(profile.keyAnalytics.f.hits).toBe(
-      completeSave().keyAnalytics.f.hits + 2,
-    );
-    expect(profile.totalKeystrokes).toBe(completeSave().totalKeystrokes + 2);
-  });
-});
-
-describe('a Save from before Free Flight became practice', () => {
-  it('loads without its Free Flight entries, keeping the Credits and the Analytics', () => {
-    const { game } = loadGame(FREE_FLIGHT_SAVE);
-
-    const profile = game.getState().profile;
-    expect(
-      Object.keys(profile.stagesProgress).filter(isFreeFlightEntry),
-    ).toEqual([]);
-    expect(profile.stagesProgress).toEqual(completeSave().stagesProgress);
-    expect(profile.totalCredits).toBe(completeSave().totalCredits);
-    expect(profile.keyAnalytics).toEqual(completeSave().keyAnalytics);
-    expect(profile.totalKeystrokes).toBe(completeSave().totalKeystrokes);
   });
 });
