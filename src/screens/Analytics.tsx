@@ -474,7 +474,7 @@ export const Analytics: React.FC = () => {
           <p className="text-xs text-slate-300 leading-relaxed mb-4">
             {confirmMode === 'WIPE_ACHIEVEMENTS'
               ? `This will wipe all ${profile.totalStars} ★ stars earned and reset stage completions to 0 so you can experience the classical touch-typing curriculum from the beginning. Your credits and upgrades are preserved.`
-              : 'This will irreversibly wipe ALL starship progress: stars, credits, ship upgrades, accuracy key analytics, and custom themes.'}
+              : 'This will irreversibly wipe ALL starship progress: stars, credits, ship upgrades, accuracy key analytics, Trails and Sound Kits.'}
           </p>
 
           <div className="flex items-center gap-3">

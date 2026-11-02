@@ -36,4 +36,4 @@
  * split "hyper space", "main menu" and "custom practice".
  */
 export const BANNED_NAME =
-  /\b(?:combos?|trail[\s-]?themes?|hyper[\s-]?space|warp(?:s|ed|ing)?|missions?|highways?|notes?|debriefings?|main[\s-]?menus?|cockpits?|drills?|custom[\s-]?practices?|ratings?|tactile[\s-]rhythm|audio[\s-]flight[\s-]deck|custom[\s-]flights?|(?:hide|show)[\s-]+(?:the[\s-]+)?(?:action[\s-]+)?deck|audio[\s-]cores?|audio[\s-]synths?|synthesizers?|deep[\s-]space[\s-]drone|cadences?)\b|^reports?$/i;
+  /\b(?:combos?|trail[\s-]?themes?|hyper[\s-]?space|warp(?:s|ed|ing)?|missions?|highways?|notes?|debriefings?|main[\s-]?menus?|cockpits?|drills?|custom[\s-]?practices?|custom[\s-]?themes?|ratings?|tactile[\s-]rhythm|audio[\s-]flight[\s-]deck|custom[\s-]flights?|(?:hide|show)[\s-]+(?:the[\s-]+)?(?:action[\s-]+)?deck|audio[\s-]cores?|audio[\s-]synths?|synthesizers?|deep[\s-]space[\s-]drone|cadences?)\b|^reports?$/i;
