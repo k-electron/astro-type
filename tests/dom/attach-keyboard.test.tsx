@@ -9,7 +9,9 @@ import { type Game, startedGame } from '../../src/game/testHelpers';
  * and unwinding menus, a held key, Ctrl and Cmd shortcuts, blur and a hidden
  * tab) is proven through the App in session, flight-deck and navigation. This
  * file has what those can't see: that the keys reach whatever game they were
- * attached to, that the detach function lets go, and the Esc contract.
+ * attached to, and that the detach function lets go. The Esc stack (the audio
+ * panel, then a confirm, then the screen) is proven through the App in
+ * navigation and wipe.
  */
 
 const detachers: Array<() => void> = [];
@@ -69,19 +71,5 @@ describe('Esc', () => {
     fireEvent.keyDown(addButton(), { key: 'Escape' });
 
     expect(game.getState().phase).toBe('paused');
-  });
-
-  it('is swallowed by an element that calls preventDefault first, and the game does not act on it', () => {
-    const game = startedGame();
-    attach(game);
-    const button = addButton();
-    button.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape') event.preventDefault();
-    });
-
-    fireEvent.keyDown(button, { key: 'Escape' });
-
-    expect(game.getState().phase).toBe('running');
-    expect(game.getState().screen).toBe('flight-deck');
   });
 });

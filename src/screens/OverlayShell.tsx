@@ -5,6 +5,7 @@ import { ArrowLeft, Play } from 'lucide-react';
 import { useGame } from './useGame';
 import { useGameState } from './useGameState';
 import { closeLabel, flightDeckLabel } from './closeLabel';
+import { useEscLayer } from './escLayers';
 
 /**
  * How a screen's frame and panel look. Every class is written out whole (a
@@ -59,12 +60,13 @@ export interface OverlayShellProps {
 }
 
 /**
- * The frame every overlay screen shares: fixed below the header, so the
- * header's buttons stay clickable, and a modal dialog over the Flight Deck.
+ * The frame every overlay screen shares: fixed below the header, and a dialog
+ * over the Flight Deck. The header sits above it (see `HeaderNav`), so its
+ * buttons and its audio panel stay usable; the dialog is not `aria-modal`,
+ * because the header is meant to stay reachable. The Flight Deck behind is
+ * `inert` (see `App`), so Tab cycles through the header and the overlay only.
  * A screen renders its content as `children`; the Close and Flight Deck
  * buttons below are the shell's too, for the screen to place in its header.
- * The dialog is one element (the frame), so a focus trap and an Esc contract
- * can be added here for every overlay at once.
  */
 export const OverlayShell: React.FC<OverlayShellProps> = ({
   variant,
@@ -83,7 +85,6 @@ export const OverlayShell: React.FC<OverlayShellProps> = ({
   return (
     <div
       role="dialog"
-      aria-modal="true"
       aria-labelledby={labelledBy}
       className={`fixed inset-x-0 bottom-0 top-[var(--header-height,0px)] z-50 flex items-center justify-center ${look.frame}`}
     >
@@ -101,11 +102,11 @@ export const OverlayShell: React.FC<OverlayShellProps> = ({
 
 /**
  * A confirm over a screen (Wipe, Factory Reset): the backdrop and the card,
- * which `children` fill. While it is open, Esc cancels the confirm and nothing
- * more, wherever focus is (on the card, dropped to the page by a click on the
- * backdrop, or tabbed out): a listener on the window, ahead of the game's keys,
- * swallows it (the Esc contract in attachKeyboard.ts). With the confirm gone,
- * the next Esc goes back from the screen as it always did. The card takes focus
+ * which `children` fill. While it is open it is a layer on the Esc stack (see
+ * `escLayers.ts`): Esc cancels the confirm and nothing more, wherever focus is
+ * (on the card, dropped to the page by a click on the backdrop, or tabbed out),
+ * unless the header's audio panel is open above it. With the confirm gone, the
+ * next Esc goes back from the screen as it always did. The card takes focus
  * when it opens, and focus goes back to where it was when it closes.
  */
 export const OverlayConfirm: React.FC<{
@@ -122,17 +123,7 @@ export const OverlayConfirm: React.FC<{
     };
   }, []);
 
-  useEffect(() => {
-    // The capture phase runs before the game's listener on the window, which
-    // then sees the Esc was taken. A held key's repeats are swallowed too.
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') return;
-      event.preventDefault();
-      if (!event.repeat) onCancel();
-    };
-    window.addEventListener('keydown', onKeyDown, true);
-    return () => window.removeEventListener('keydown', onKeyDown, true);
-  }, [onCancel]);
+  useEscLayer('confirm', onCancel);
 
   return (
     <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md">

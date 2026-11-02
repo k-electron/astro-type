@@ -1,4 +1,5 @@
 import type { Game } from '../game/game';
+import { closeTopEscLayer } from '../screens/escLayers';
 
 /**
  * The keyboard, attached to a game from outside: the composition root calls
@@ -9,16 +10,21 @@ import type { Game } from '../game/game';
  *   Which keys count (one character, no auto-repeat, no Cmd or Ctrl shortcut)
  *   is the game's call, so every keydown is passed on with its modifiers.
  *   Space is kept from scrolling the page while a Run is running.
- * - Esc: `PRESS_ESC` on every screen, never a keystroke. The machine decides
- *   what it means there.
+ * - Esc: the top open layer closes, or else `PRESS_ESC` on every screen, never
+ *   a keystroke. The machine decides what it means there (the Esc contract,
+ *   below).
  * - the window loses focus (blur) or the tab is hidden: the held key lets go,
  *   and `LOST_FOCUS` pauses a running Run.
  *
- * **The Esc contract.** The listener is on `window`, so an element on the page
- * sees an Esc first. An element that uses Esc for itself (a dropdown closing)
- * swallows it by calling `preventDefault()` on the keydown before it reaches
- * the window; this adapter then ignores it. An Esc nobody swallowed is the
- * game's.
+ * **The Esc contract.** Esc is a stack, and this listener is its one owner.
+ * It is on `window`, so it sees an Esc whether it was sent to the window or
+ * bubbled up from the focused element. The layers a screen holds open over
+ * itself (`screens/escLayers.ts`) are the top of the stack: the header's audio
+ * panel, then a confirm. One Esc closes the top layer and nothing more. With
+ * no layer open, the Esc is the game's: the machine closes the screen, or
+ * pauses and resumes the Run, or opens the Galaxy Map from the Debrief. A held
+ * key's repeats do nothing, so they can't close a second layer. No element
+ * listens for Esc itself.
  *
  * Returns the function that detaches every listener it added.
  */
@@ -27,9 +33,8 @@ export function attachKeyboard(game: Game, win: Window): () => void {
 
   const onKeyDown = (event: KeyboardEvent) => {
     if (event.key === 'Escape') {
-      if (!event.repeat && !event.defaultPrevented) {
-        game.send({ type: 'PRESS_ESC' });
-      }
+      if (event.repeat) return;
+      if (!closeTopEscLayer()) game.send({ type: 'PRESS_ESC' });
       return;
     }
 
