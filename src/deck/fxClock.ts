@@ -15,8 +15,8 @@ export interface FxClockInput {
 export interface FxClockReading {
   /**
    * How long the effects advance this frame, in steps of 1/60 s. This is the
-   * unit the DOM deck's per-frame constants were written in, so an effect at
-   * 60 Hz plays exactly as it always has.
+   * unit the effects' per-frame constants are written in, so an effect at
+   * 60 Hz advances by one each frame.
    */
   d: number;
 }

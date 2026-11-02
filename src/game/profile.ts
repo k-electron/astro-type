@@ -33,8 +33,6 @@ import {
   type SaveStorage,
 } from './save';
 
-export { DEFAULT_PROFILE };
-
 /** What a Run takes from the Profile: its Upgrades, as the rules read them. */
 export interface Loadout {
   /** Deflector Shields: Misses a Run absorbs, counted when the Run begins. */

@@ -294,7 +294,7 @@ export class DroneView {
 
   /**
    * The flagship's command bridge: "HOSTILE FLAGSHIP", "␣ SPACE" and "LOCK" in
-   * a row, laid out the way the DOM deck's flex row does. When the hull is too
+   * a row, laid out like a flex row. When the hull is too
    * narrow for all three, they shrink in proportion to their size: the tags
    * can't go narrower than their longest word (so "HOSTILE FLAGSHIP" wraps to
    * two lines), "LOCK" can't shrink, and the name is cut short with "…".

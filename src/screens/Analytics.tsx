@@ -92,7 +92,7 @@ export const Analytics: React.FC = () => {
       ? Math.round((rightHits / (rightHits + rightMisses)) * 100)
       : 100;
 
-  // Identify trouble keys (misses > 2 and accuracy < 85%)
+  // Trouble keys: struck at least 3 times, with more than 12% of them missed
   const troubleKeys = Object.entries(keyAnalytics)
     .filter(([_, stats]) => {
       const total = stats.hits + stats.misses;

@@ -5,8 +5,8 @@ import type { Drone } from '../game/rules';
  * fixed steps of 1/60 s; a 120 Hz display draws two frames per step. Drawing
  * a point between the last two steps makes the Drones glide instead.
  *
- * Only a Drone's `yPercent` is smoothed, then mapped to pixels the way the
- * DOM deck does, so a Drone at rest sits exactly where the DOM deck puts it.
+ * Only a Drone's `yPercent` is smoothed, then mapped to pixels (see
+ * `droneTop`), so a Drone at rest sits exactly where that puts it.
  * The deck is drawn one step behind the game at most, which a player can't see
  * and the rules never read: Judgement uses the real `yPercent`.
  */

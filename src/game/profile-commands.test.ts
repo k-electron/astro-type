@@ -6,7 +6,7 @@ import {
 } from '../../tests/shared/saves';
 import type { UpgradesSchema } from './schemas';
 import type { Game } from './game';
-import { DEFAULT_PROFILE } from './profile';
+import { DEFAULT_PROFILE } from './schemas';
 import {
   hitPerfect,
   loadGame,

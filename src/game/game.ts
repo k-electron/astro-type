@@ -39,14 +39,11 @@ import type { BackupImport, SaveStorage } from './save';
 import { type PlayerProfile, type Settings, totalStarsOf } from './schemas';
 
 export { createMemoryStorage } from './save';
-export type { MemorySaveStorage, SaveStorage } from './save';
-export type { Clock } from './clock';
-export type { Cue, Sound, SoundState } from './sound';
-export type { Judgement, KeyOptions } from './rules';
+export type { MemorySaveStorage } from './save';
+export type { Sound } from './sound';
+export type { Judgement } from './rules';
 export type { Moment } from './moments';
-export type { DebriefResult } from './run';
-export type { PlayerEvent } from './machine';
-export type { RunPhase, Screen } from './machine';
+export type { PlayerEvent, Screen } from './machine';
 
 /** The machine refused a move: the event doesn't apply on this screen. A bug in whoever sent it. */
 export class RefusedMoveError extends Error {

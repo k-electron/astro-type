@@ -8,10 +8,10 @@ import {
 export const FONT = '"JetBrains Mono", ui-monospace, monospace';
 
 /**
- * The weight to ask PixiJS for when the DOM deck asked for `weight`. Canvas
+ * The weight to ask PixiJS for when the deck's design says `weight`. Canvas
  * text comes out heavier than the same weight in the page, so the deck's bold
- * (the DOM's 700, which is all of "extrabold" and "black" too, as only 400 to
- * 700 are loaded) is drawn at 500 and matches it side by side.
+ * (700, which is all of "extrabold" and "black" too, as only 400 to 700 are
+ * loaded) is drawn at 500 and matches the page's text side by side.
  */
 export function deckWeight(
   weight: string,

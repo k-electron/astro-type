@@ -1,9 +1,8 @@
 /**
- * The DOM deck's looping decoration is Tailwind's `animate-pulse`,
- * `animate-ping` and `animate-bounce`, which run on the wall clock. On the
- * PixiJS deck they run on effect time instead, so a paused deck holds them
- * where they were. These are those three animations, keyframe for keyframe,
- * as functions of time in milliseconds.
+ * The deck's looping decoration is Tailwind's `animate-pulse`,
+ * `animate-ping` and `animate-bounce`, keyframe for keyframe, as functions of
+ * time in milliseconds. They run on effect time, not the wall clock, so a
+ * paused deck holds them where they were.
  */
 
 /** A CSS `cubic-bezier(x1, y1, x2, y2)` timing function. */

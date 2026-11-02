@@ -10,7 +10,7 @@ import {
   softDotTexture,
 } from './textures';
 
-/** The ship and the beam are 100 ms away from where they are going, as with the DOM deck's `transition-all duration-100`. */
+/** The ship and the beam are 100 ms away from where they are going. */
 const FOLLOW_MS = 45;
 /** The recoil and the muzzle flares come and go in 75 ms. */
 const SNAP_MS = 30;
