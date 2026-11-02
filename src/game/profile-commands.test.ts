@@ -498,7 +498,7 @@ describe.each([
     game.send({ type: 'PRESS_HOME' });
 
     command(game);
-    game.send({ type: 'PRESS_PLAY' });
+    game.send({ type: 'PRESS_FLIGHT_DECK' });
 
     expect(game.getState().run.currentStage?.id).toBe(STAGE_ID);
   });

@@ -1,6 +1,11 @@
 import type React from 'react';
 import { Play } from 'lucide-react';
-import { CURRICULUM_TOTALS, FIRST_STAGE } from '../curriculum/curriculum';
+import {
+  CURRICULUM_TOTALS,
+  FINGER_LANES,
+  FIRST_STAGE,
+  MAX_STARS_PER_STAGE,
+} from '../curriculum/curriculum';
 import { useGame } from './useGame';
 import { useGameState } from './useGameState';
 
@@ -60,15 +65,6 @@ export const AcademyHome: React.FC = () => {
           <span className="text-amber-400 font-bold">
             ★ {profile.totalStars} Stars Earned
           </span>
-          <span>·</span>
-          <span className="text-slate-400">Curriculum updated?</span>
-          <button
-            type="button"
-            onClick={() => send({ type: 'OPEN_GALAXY_MAP' })}
-            className="text-rose-400 hover:text-rose-300 font-bold underline cursor-pointer ml-1"
-          >
-            Wipe Achievements & Replay
-          </button>
         </div>
       )}
 
@@ -95,8 +91,7 @@ export const AcademyHome: React.FC = () => {
             Action Deck
           </span>
           <p className="text-xs text-slate-400">
-            9 lanes of falling Drones, Perfect timing at the Strike Line,
-            Multipliers and Overdrive.
+            {`${FINGER_LANES.length} lanes of falling Drones, Perfect timing at the Strike Line, Multipliers and Overdrive.`}
           </p>
         </div>
 
@@ -105,8 +100,7 @@ export const AcademyHome: React.FC = () => {
             Sector Fleet Progression
           </span>
           <p className="text-xs text-slate-400">
-            Earn 3 Stars per Stage, unlock gated Sectors, install Deflector
-            Shields, and equip custom audio synths.
+            {`Earn ${MAX_STARS_PER_STAGE} Stars per Stage, unlock gated Sectors, install Deflector Shields, and equip custom audio synths.`}
           </p>
         </div>
       </div>
