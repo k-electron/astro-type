@@ -14,7 +14,7 @@ The capitalised terms are defined in [`GLOSSARY.md`](GLOSSARY.md).
 - **Judgement:** each keystroke is a Perfect, Great or Good hit by how close the Drone was to the Strike Line, or a Miss for a wrong key.
 - **Streak, Multiplier and Overdrive:** correct keystrokes in a row build the Streak, which raises the Multiplier from x1 to x4. Correct keystrokes also fill the Overdrive meter, and a full meter starts Overdrive, which doubles the score of each hit. A Miss resets the Streak and ends Overdrive unless a shield absorbs it.
 - **Debrief:** when a Run is cleared, it shows the result, the Stars earned and the Credits paid.
-- **Hangar:** spend Credits on Upgrades (shields, reactor, sensors) and Cosmetics (a trail theme or an audio core).
+- **Hangar:** spend Credits on Upgrades (shields, reactor, sensors) and Cosmetics (a Trail or an audio core).
 - **Analytics:** lifetime totals (highest speed, accuracy, words typed, practice time), hand balance and a per-key accuracy heatmap, with exporting and importing a Backup.
 - **Free Flight:** set up a Stage from your own text and a target WPM.
 - **Sound:** sound effects and the beat are synthesized with the Web Audio API. There are no audio files.
