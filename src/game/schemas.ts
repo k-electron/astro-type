@@ -2,6 +2,9 @@ import { z } from 'zod';
 import { MAX_STARS_PER_STAGE } from '../curriculum/curriculum';
 import { MAX_UPGRADE_LEVEL } from './catalog';
 
+// The Save's level limit is the catalog's: one definition, passed on here.
+export { MAX_UPGRADE_LEVEL };
+
 export const TrailColorThemeSchema = z.enum([
   'CYAN',
   'AMBER',

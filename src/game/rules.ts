@@ -96,7 +96,7 @@ export function countsAsKeystroke(
 // ---- The Run's state ----------------------------------------------------
 
 /** What the rules read of the Run's key stats: how often a character was hit or missed. */
-export type KeyStats = Record<string, { hits: number; misses: number }>;
+export type KeyStats = StageResult['keyStats'];
 
 /**
  * Everything a Run is, as one value: the live numbers, the Drones, the Stage,
