@@ -120,7 +120,7 @@ const { createMachine } = setup({
     isPaused: ({ context }) => context.phase === 'paused',
     knownStage: ({ event }) =>
       event.type === 'PICK_STAGE' && getStageById(event.stageId) !== undefined,
-    /** The one named crossing: reads the Stage the Run is of (see the curriculum's `nextStageOf`). */
+    /** The one named crossing: reads the Stage the Run is of and the fleet's Stars (see the curriculum's `nextStageOf`). */
     hasNextStage: unprovidedGuard('hasNextStage'),
     openerIs: ({ context }, params: { screen: Screen }) =>
       context.openers[context.openers.length - 1]?.screen === params.screen,
@@ -363,17 +363,12 @@ const runCleared: Move[] = [
   { target: 'debrief', actions: ['recordResult', 'markCleared'] },
 ];
 
+/** Only where the Game offers a Next Stage (see the curriculum's `stageAheadOf`); anywhere else the move is refused. */
 const nextStage: Move[] = [
   {
     target: 'flight-deck',
     guard: 'hasNextStage',
     actions: ['beginNextStage', 'markRunning'],
-  },
-  // No next Stage (the last Stage, or a Free Flight, which has none): Next
-  // Stage opens the Galaxy Map from the Debrief.
-  {
-    target: 'galaxy-map',
-    actions: [{ type: 'pushOpener', params: { screen: 'debrief' } }],
   },
 ];
 

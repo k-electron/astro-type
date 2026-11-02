@@ -1579,22 +1579,40 @@ function getNextStage(currentStageId: string): SectorStage | undefined {
   return undefined;
 }
 
-/** What follows a cleared Stage: the Debrief offers Next Stage, or not. */
-export type StageAhead = 'next-stage' | 'last-stage' | 'free-flight';
+/**
+ * What follows a cleared Stage: the Debrief offers Next Stage, or it offers the
+ * Galaxy Map instead (the last Stage, or a Sector still locked), or it is a
+ * Free Flight, which has no Stage to go on to.
+ */
+export type StageAhead =
+  | 'next-stage'
+  | 'sector-locked'
+  | 'last-stage'
+  | 'free-flight';
 
 /**
- * The Stage after `stage` that Next Stage starts, if there is one. A Free
- * Flight is no Stage of a Sector, so it never has one, and the last Stage has
- * none either.
+ * The Stage after `stage` that Next Stage starts, for a fleet with
+ * `totalStars`, if there is one. A Free Flight is no Stage of a Sector, so it
+ * never has one; the last Stage has none; and a Stage in a Sector the fleet has
+ * not unlocked yet is not offered.
  */
-export function nextStageOf(stage: Stage): SectorStage | undefined {
-  return stage.origin === 'sector' ? getNextStage(stage.id) : undefined;
+export function nextStageOf(
+  stage: Stage,
+  totalStars: number,
+): SectorStage | undefined {
+  if (stage.origin !== 'sector') return undefined;
+  const next = getNextStage(stage.id);
+  if (next && !isSectorUnlocked(next.sectorId, totalStars).unlocked) {
+    return undefined;
+  }
+  return next;
 }
 
-/** Which of the three the Debrief of a cleared `stage` is. */
-export function stageAheadOf(stage: Stage): StageAhead {
+/** Which of the four the Debrief of a cleared `stage` is, for a fleet with `totalStars`. */
+export function stageAheadOf(stage: Stage, totalStars: number): StageAhead {
   if (stage.origin === 'free-flight') return 'free-flight';
-  return getNextStage(stage.id) ? 'next-stage' : 'last-stage';
+  if (nextStageOf(stage, totalStars)) return 'next-stage';
+  return getNextStage(stage.id) ? 'sector-locked' : 'last-stage';
 }
 
 // ---------------------------------------------------------------------------
