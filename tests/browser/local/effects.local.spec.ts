@@ -154,7 +154,7 @@ test.skip(
 // screen at once. (The local project sets the same viewport and a timeout of
 // 240 s, since every frame stepped under a stopped clock is drawn.)
 test.use({ viewport: { width: 1280, height: 1100 } });
-// The four tests are independent, so they can run on separate workers.
+// The tests are independent, so they can run on separate workers.
 test.describe.configure({ mode: 'parallel' });
 
 async function box(element: Locator): Promise<Rect> {
@@ -264,6 +264,50 @@ test('a hit explodes the Drone in its own lane, and the explosion plays out and 
   expect(await pixels.changed(over, settled, lane)).toBeLessThan(150);
   // While it played, the lane was full of it: lasers and brackets at 0.1 s,
   // the flash, debris, sparks and shockwaves at 0.2 s.
+  expect(await pixels.changed(early, settled, lane)).toBeGreaterThan(800);
+  expect(await pixels.changed(peak, settled, lane)).toBeGreaterThan(3000);
+});
+
+test('a symbol that needs Shift is a target like any other: the ship and the guidance beam wait under its base key, and a hit explodes its Drone in that lane', async ({
+  page,
+  pixels,
+}) => {
+  // "!" is typed on the "1" key. "p" and "m" are far from it, so the lane
+  // around "!" is empty once its Drone is gone.
+  await launchWithLeadDroneSettled(page, '!pm');
+  const deck = await deckArea(page);
+  const base = await box(keycap(page, '1'));
+  const centre = base.x + base.width / 2;
+  const keyboardTop = base.y;
+  const lane = await laneOf(page, '!', deck);
+
+  // The target is lit: the beam runs up from under the "1" key to the Drone...
+  const waiting = await look(page, deck, pixels);
+  const beamRegion = inDeck(deck, {
+    x: centre - 7,
+    y: keyboardTop - 410,
+    width: 14,
+    height: 300,
+  });
+  expect(await pixels.beam(waiting, beamRegion)).toBeGreaterThan(100);
+  // ...and the ship waits under that key.
+  const shipRegion = inDeck(deck, {
+    x: centre - 60,
+    y: keyboardTop + 221,
+    width: 120,
+    height: 40,
+  });
+  expect(await pixels.bright(waiting, shipRegion)).toBeGreaterThan(50);
+
+  // The hit fires the lasers, then the explosion, in the Drone's own lane.
+  await page.keyboard.press('!');
+  await page.clock.runFor(100);
+  const early = await look(page, deck, pixels);
+  await page.clock.runFor(100);
+  const peak = await look(page, deck, pixels);
+  await page.clock.runFor(3800);
+  const settled = await look(page, deck, pixels);
+
   expect(await pixels.changed(early, settled, lane)).toBeGreaterThan(800);
   expect(await pixels.changed(peak, settled, lane)).toBeGreaterThan(3000);
 });

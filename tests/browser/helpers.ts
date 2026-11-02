@@ -62,13 +62,24 @@ export const debrief = (page: Page): Locator =>
 export const labelled = (page: Page, name: RegExp): Locator =>
   page.getByLabel(name).or(page.getByTitle(name));
 
-/** The Drone carrying this character. Use texts with no repeats. */
-export const drone = (page: Page, character: string): Locator =>
-  labelled(page, new RegExp(`^Drone ${character}$`, 'i'));
+/** The character as itself in a pattern: "(" and "?" are symbols a Drone can carry. */
+const literally = (character: string): string =>
+  character.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
 
-/** The keycap for this character on the Action Deck's keyboard. */
+/**
+ * The Drone carrying this character, a capital or a symbol like "!" too. Use
+ * texts with no repeats.
+ */
+export const drone = (page: Page, character: string): Locator =>
+  labelled(page, new RegExp(`^Drone ${literally(character)}$`, 'i'));
+
+/**
+ * The keycap on the Action Deck's keyboard, named by what is printed on its
+ * face: "1" for the key that types "1" and, with Shift, "!". Pass the base key,
+ * never the shifted character.
+ */
 export const keycap = (page: Page, character: string): Locator =>
-  labelled(page, new RegExp(`^${character} key$`, 'i'));
+  labelled(page, new RegExp(`^${literally(character)} key$`, 'i'));
 
 /** A real mouse click in the middle of an element, wherever it is drawn. */
 export async function clickWhereDrawn(page: Page, element: Locator) {
