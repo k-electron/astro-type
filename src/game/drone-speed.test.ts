@@ -7,7 +7,7 @@ import {
   startFreeFlight,
   startStage,
   targetKey,
-} from './testHelpers';
+} from '../../tests/shared/testHelpers';
 
 /**
  * One Drone speed. Every Run, in a Sector Stage or in Free Flight, moves at

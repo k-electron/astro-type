@@ -15,7 +15,7 @@ import {
   startStage,
   STAGE_ID,
   targetKey,
-} from './testHelpers';
+} from '../../tests/shared/testHelpers';
 
 // The Profile changes through five commands on the Game: changeSettings, buy,
 // importBackup, wipeAchievements and resetProgress. The outcomes of importing

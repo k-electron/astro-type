@@ -7,7 +7,7 @@ import {
   startFreeFlight,
   startStage,
   typeText,
-} from './testHelpers';
+} from '../../tests/shared/testHelpers';
 
 /**
  * The Debrief says "New Sector Unlocked!" only when the Run just cleared is

@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { completeSave, OLD_LIVE_EXPORT } from '../../tests/shared/saves';
 import { exportBackup } from './save';
-import { clearStage, loadGame, startStage, STAGE_ID } from './testHelpers';
+import {
+  clearStage,
+  loadGame,
+  startStage,
+  STAGE_ID,
+} from '../../tests/shared/testHelpers';
 
 // The total of Stars is worked out from the Stages' Stars whenever it is
 // needed, so neither the Save the game writes nor the Backup it exports

@@ -6,7 +6,7 @@ import {
   loadGame,
   STAGE_ID,
   startStage,
-} from '../game/testHelpers';
+} from '../../tests/shared/testHelpers';
 
 /**
  * Clearing a Stage plays the Stage clear fanfare and then one chime per Star, one

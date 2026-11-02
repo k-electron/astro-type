@@ -9,7 +9,7 @@ import {
   startFreeFlight,
   startStage,
   typeText,
-} from './testHelpers';
+} from '../../tests/shared/testHelpers';
 
 /**
  * Free Flight is a curriculum concept (#73): the Game builds the Stage from

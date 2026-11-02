@@ -9,7 +9,7 @@ import {
   startedGame,
   startStage,
   typeText,
-} from './testHelpers';
+} from '../../tests/shared/testHelpers';
 
 /**
  * Stars, Credits and the Profile after clearing Stage 1 (s1-l1), read from the Debrief.

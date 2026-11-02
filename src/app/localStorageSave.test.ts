@@ -5,7 +5,11 @@ import {
   UNREADABLE_SAVE_KEY,
   UNREADABLE_SAVE_NOTICE,
 } from '../game/save';
-import { clearStage, STAGE_ID, startStage } from '../game/testHelpers';
+import {
+  clearStage,
+  STAGE_ID,
+  startStage,
+} from '../../tests/shared/testHelpers';
 import { createLocalStorageSave } from './localStorageSave';
 
 /**

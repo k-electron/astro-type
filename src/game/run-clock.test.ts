@@ -8,7 +8,7 @@ import {
   STAGE_ID,
   startedGame,
   targetKey,
-} from './testHelpers';
+} from '../../tests/shared/testHelpers';
 
 /**
  * The Run clock: Run Time is the time a Run has spent running, pauses left
