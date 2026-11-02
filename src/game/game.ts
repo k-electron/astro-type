@@ -20,7 +20,6 @@ import {
   type PlayerEvent,
   type RunPhase,
   type Screen,
-  type ScreenParams,
 } from './machine';
 import type { Stage } from '../curriculum/curriculum';
 import { type Clock, createRunClock, createSteppedClock } from './clock';
@@ -39,15 +38,10 @@ import type { CatalogItemId } from './catalog';
 import type { BackupImport, SaveStorage } from './save';
 import { type PlayerProfile, type Settings, totalStarsOf } from './schemas';
 
-export { createMemoryStorage } from './save';
-export type { MemorySaveStorage, SaveStorage } from './save';
-export type { Clock } from './clock';
-export type { Cue, Sound, SoundState } from './sound';
-export type { Judgement, KeyOptions } from './rules';
+export type { Sound } from './sound';
+export type { Judgement } from './rules';
 export type { Moment } from './moments';
-export type { DebriefResult } from './run';
-export type { PlayerEvent } from './machine';
-export type { RunPhase, Screen } from './machine';
+export type { PlayerEvent, Screen } from './machine';
 
 /** The machine refused a move: the event doesn't apply on this screen. A bug in whoever sent it. */
 export class RefusedMoveError extends Error {
@@ -110,8 +104,6 @@ export interface GameState {
   phase: RunPhase;
   /** The screen that opened this one (what Close returns to), or null when nothing did. */
   opener: Screen | null;
-  /** The parameter the screen was opened with, or null when it takes none (none does yet). */
-  screenParams: ScreenParams;
   /**
    * What follows the Run's Stage: another Stage for Next Stage to start, a
    * Stage in a Sector still locked or none at all (the last Stage), where the
@@ -279,7 +271,7 @@ export function createGame(options: GameOptions): Game {
 
   const getOpener = (): Screen | null => {
     const { openers } = actor.getSnapshot().context;
-    return openers[openers.length - 1]?.screen ?? null;
+    return openers[openers.length - 1] ?? null;
   };
 
   // The public Run is made of five things in the store's Run; it is rebuilt
@@ -346,7 +338,6 @@ export function createGame(options: GameOptions): Game {
       screen: getScreen(),
       phase: getPhase(),
       opener: getOpener(),
-      screenParams: actor.getSnapshot().context.screenParams,
       stageAhead: stageAheadOf(state.run.stage, profile.totalStars),
       run: buildRun(state.run),
       debrief: state.debrief,

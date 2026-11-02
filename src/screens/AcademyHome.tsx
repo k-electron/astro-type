@@ -6,8 +6,8 @@ import {
   FIRST_STAGE,
   MAX_STARS_PER_STAGE,
 } from '../curriculum/curriculum';
-import { useGame } from './useGame';
-import { useGameState } from './useGameState';
+import { useGame } from '../app/useGame';
+import { useGameState } from '../app/useGameState';
 
 /** The title screen: the Academy briefing, with a way into the curriculum. */
 export const AcademyHome: React.FC = () => {

@@ -1,13 +1,13 @@
 import type React from 'react';
 import { Shield, Zap, Pause } from 'lucide-react';
-import { useGame } from './useGame';
+import { useGame } from '../app/useGame';
 import {
   MULTIPLIER_STEPS,
   overdriveScoreFactor,
   type RhythmBand,
   rhythmBand,
 } from '../game/rules';
-import { useGameState } from './useGameState';
+import { useGameState } from '../app/useGameState';
 
 /** The Rhythm gauge's dot and name, by band. */
 const RHYTHM_LOOK: Record<RhythmBand, { dot: string; text: string }> = {

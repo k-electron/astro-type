@@ -7,16 +7,11 @@
 import {
   DEFAULT_FREE_FLIGHT_WPM,
   getStageById,
-} from '../curriculum/curriculum';
-import {
-  createGame,
-  createMemoryStorage,
-  type Game,
-  type Sound,
-  type MemorySaveStorage,
-} from './game';
+} from '../../src/curriculum/curriculum';
+import { createGame, type Game, type Sound } from '../../src/game/game';
+import { createMemoryStorage, type MemorySaveStorage } from './memoryStorage';
 
-export type { Game } from './game';
+export type { Game } from '../../src/game/game';
 
 /** Stage 1 of Sector 1. Its Stars thresholds: 85% / 10 WPM + 92% / 14 WPM + 97% + Streak 14. */
 export const STAGE_ID = 's1-l1';

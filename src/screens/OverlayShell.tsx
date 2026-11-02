@@ -2,8 +2,8 @@ import type React from 'react';
 import type { ReactNode } from 'react';
 import { useEffect, useRef } from 'react';
 import { ArrowLeft, Play } from 'lucide-react';
-import { useGame } from './useGame';
-import { useGameState } from './useGameState';
+import { useGame } from '../app/useGame';
+import { useGameState } from '../app/useGameState';
 import { closeLabel, flightDeckLabel } from './closeLabel';
 import { useEscLayer } from '../app/escLayers';
 
@@ -123,7 +123,7 @@ export const OverlayConfirm: React.FC<{
       <div
         ref={cardRef}
         tabIndex={-1}
-        className="w-full max-w-md rounded-2xl border border-rose-900/80 bg-slate-900 shadow-2xl p-6 text-center outline-none animate-in fade-in zoom-in-95 duration-150"
+        className="w-full max-w-md rounded-2xl border border-rose-900/80 bg-slate-900 shadow-2xl p-6 text-center outline-none duration-150"
       >
         {children}
       </div>

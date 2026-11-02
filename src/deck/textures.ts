@@ -55,7 +55,7 @@ export function dotTexture(): Texture {
 }
 
 /**
- * The hull shard that debris is made of: the DOM deck's four-point polygon at
+ * The hull shard that debris is made of: a four-point polygon at
  * size 1, drawn here at `SHARD_SIZE` pixels so a sprite scales by size / SHARD_SIZE.
  */
 export const SHARD_SIZE = 16;
@@ -265,7 +265,7 @@ function letGo(key: string): void {
 /**
  * The glow a CSS `box-shadow: 0 0 <blur>px <colour>` casts, white and ready to
  * tint. Painted by the canvas's own shadow blur, the same Gaussian the browser
- * uses for the DOM deck, so the glow around keycaps and Drones matches. This is
+ * uses for a page's glow, so the glow around keycaps and Drones matches the page's. This is
  * for a size that never changes (the hands, a Drone's thruster plumes and eye):
  * it is made once and kept. A size that follows the layout goes through a
  * `GlowSprite`.
@@ -283,7 +283,7 @@ export function boxGlow(
 
 /**
  * The guidance beam's soft aura: a 24 px column blurred by 4 px sideways, with
- * the DOM deck's lengthwise ramp (clear at the ends, strongest at the middle).
+ * a lengthwise ramp (clear at the ends, strongest at the middle).
  */
 export const BEAM_AURA_WIDTH = 40;
 export const BEAM_AURA_HEIGHT = 256;

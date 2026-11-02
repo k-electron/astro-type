@@ -1,6 +1,6 @@
 import type React from 'react';
 import { RotateCcw } from 'lucide-react';
-import { useGame } from './useGame';
+import { useGame } from '../app/useGame';
 import { flightDeckLabel } from './closeLabel';
 import { OverlayShell } from './OverlayShell';
 

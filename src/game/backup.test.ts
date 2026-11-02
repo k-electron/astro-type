@@ -9,7 +9,7 @@ import {
   withOldDroneSpeed,
 } from '../../tests/shared/saves';
 import { exportBackup, REFUSED_BACKUP_MESSAGE } from './save';
-import { type Game, loadGame } from './testHelpers';
+import { type Game, loadGame } from '../../tests/shared/testHelpers';
 
 // A Backup is the Profile exported to a file (ticket #25). The browser journeys
 // check what the player sees; these check the Profile and the Save directly.

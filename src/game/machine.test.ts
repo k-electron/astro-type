@@ -14,7 +14,7 @@ import {
   startedGame,
   startStage,
   targetKey,
-} from './testHelpers';
+} from '../../tests/shared/testHelpers';
 
 /**
  * The machine's promises from #10 and ticket #19, tested through the headless

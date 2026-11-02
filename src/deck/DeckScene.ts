@@ -44,7 +44,7 @@ export interface DeckSceneOptions {
  * given. It reads the game's snapshot each time it is drawn and keeps no copy
  * of the game.
  *
- * Layers, bottom to top, as the DOM deck stacks them: the guidance beam,
+ * Layers, bottom to top: the guidance beam,
  * chassis, hands, keycaps, trench, Drones, the ship, and the effects (lasers,
  * explosions, popups) over everything.
  *

@@ -10,7 +10,7 @@ import {
   startStage,
   targetKey,
   WRONG_KEY,
-} from './testHelpers';
+} from '../../tests/shared/testHelpers';
 
 /**
  * The one settled snapshot, through the headless game. A screen reads

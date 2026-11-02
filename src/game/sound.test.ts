@@ -8,7 +8,7 @@ import {
   SAMPLE_TEXT,
   STAGE_ID,
   startStage,
-} from './testHelpers';
+} from '../../tests/shared/testHelpers';
 
 /**
  * What the player hears, moment by moment through one scripted Run: whether

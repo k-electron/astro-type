@@ -15,7 +15,7 @@ export interface HitKind {
   overdrive: boolean;
 }
 
-/** The words of the popups a hit can show, per grade, as the DOM deck worded them. */
+/** The words of the popups a hit can show, per grade. */
 const STEMS = {
   perfectSpace: ['💥 FLAGSHIP OBLITERATED!'],
   overdriveStrike: ['⚡ OVERDRIVE STRIKE!'],

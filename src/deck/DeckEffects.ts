@@ -18,14 +18,13 @@ import {
 
 /**
  * What the Action Deck does when a Judgement lands: the laser, the lock on the
- * Drone, the explosion, the popup. Ported from the DOM deck's canvas effects
- * with the same numbers, with three differences in how they run:
+ * Drone, the explosion, the popup. Three things set how they run:
  *
  * - They answer a Judgement event, handed in by `fireHit` and `fireMiss`.
  * - They advance by `d`, a length of time in steps of 1/60 s taken from the Run
- *   clock, not by one per drawn frame. At 60 Hz that is exactly the DOM deck's
- *   per-frame constants; at 120 Hz an effect still lasts the same real time,
- *   and with `d` at zero (a pause) nothing moves.
+ *   clock, not by one per drawn frame. At 60 Hz that is one per frame; at
+ *   120 Hz an effect still lasts the same real time, and with `d` at zero (a
+ *   pause) nothing moves.
  * - Sparks, debris, crystals, flashes, shockwaves and bolts live in pools made
  *   once, and the particles are batched sprites, so a hit allocates nothing.
  *
@@ -771,7 +770,7 @@ export class DeckEffects {
     bolt.cy2 = bolt.sy2 + (bolt.ty2 - bolt.sy2) * t;
     this.placeBoltSprites(bolt);
 
-    // The DOM deck leaves a trail of ion sparks every frame; here, every step.
+    // The bolt leaves a trail of ion sparks every step.
     bolt.trail += d;
     while (bolt.trail >= 1) {
       bolt.trail -= 1;

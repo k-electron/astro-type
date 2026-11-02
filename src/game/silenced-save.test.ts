@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createRecordingSound } from '../../tests/shared/recordingSound';
 import { RETURNING_PLAYER } from '../../tests/shared/saves';
-import { loadGame, STAGE_ID, startStage } from './testHelpers';
+import { loadGame, STAGE_ID, startStage } from '../../tests/shared/testHelpers';
 
 /**
  * What `sound.test.ts` leaves open: a Save whose sound settings are already

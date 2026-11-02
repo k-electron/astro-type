@@ -1,6 +1,6 @@
 import { fireEvent } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { STAGE_ID } from '../../src/game/testHelpers';
+import { STAGE_ID } from '../shared/testHelpers';
 import { createRecordingSound } from '../shared/recordingSound';
 import { RETURNING_PLAYER } from '../shared/saves';
 import { renderGame, screen } from './harness';

@@ -9,8 +9,8 @@ import {
   VolumeX,
   SlidersHorizontal,
 } from 'lucide-react';
-import { useGame } from './useGame';
-import { useGameState } from './useGameState';
+import { useGame } from '../app/useGame';
+import { useGameState } from '../app/useGameState';
 import { AudioPanel } from './AudioPanel';
 import { muteAllLabel, OPEN_AUDIO_PANEL } from './audioLabels';
 import { flightDeckLabel } from './closeLabel';
@@ -215,7 +215,7 @@ export const HeaderNav: React.FC<{ ref?: React.Ref<HTMLElement> }> = ({
 
           {/* Audio Settings Popover Panel */}
           {isAudioMenuOpen && (
-            <div className="absolute right-0 mt-2 w-84 sm:w-92 rounded-2xl border border-slate-700 bg-slate-900/95 backdrop-blur-xl shadow-2xl p-4 text-slate-200 z-50 flex flex-col gap-4 animate-in fade-in zoom-in-95 duration-100">
+            <div className="absolute right-0 mt-2 w-84 sm:w-92 rounded-2xl border border-slate-700 bg-slate-900/95 backdrop-blur-xl shadow-2xl p-4 text-slate-200 z-50 flex flex-col gap-4 duration-100">
               <AudioPanel />
             </div>
           )}

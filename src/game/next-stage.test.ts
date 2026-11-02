@@ -12,7 +12,7 @@ import {
   startFreeFlight,
   startStage,
   typeText,
-} from './testHelpers';
+} from '../../tests/shared/testHelpers';
 
 const NEXT_STAGE: PlayerEvent = { type: 'PRESS_NEXT_STAGE' };
 const OPEN_GALAXY_MAP: PlayerEvent = { type: 'OPEN_GALAXY_MAP' };

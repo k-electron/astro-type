@@ -5,7 +5,7 @@ import {
   startFreeFlight,
   typeText,
   WRONG_KEY,
-} from './testHelpers';
+} from '../../tests/shared/testHelpers';
 
 /**
  * Spec story 7: Accuracy is the share of the Run's keystrokes that were

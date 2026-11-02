@@ -5,7 +5,7 @@ import {
   startFreeFlight,
   typeText,
   WRONG_KEY,
-} from './testHelpers';
+} from '../../tests/shared/testHelpers';
 
 /**
  * Spec story 30: a wrong character key marks the character in the text prompt

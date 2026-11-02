@@ -1,6 +1,6 @@
 import { fireEvent } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_PROFILE } from '../../src/game/profile';
+import { DEFAULT_PROFILE } from '../../src/game/schemas';
 import { OWNS_EVERY_SOUND_KIT, RETURNING_PLAYER } from '../shared/saves';
 import { START_STAGE, soundKitName } from '../shared/screens';
 import { type Player, renderGame, screen } from './harness';

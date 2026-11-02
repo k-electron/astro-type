@@ -6,7 +6,7 @@ import { dashedCubic, dashedRoundRect, deckWeight, makeText } from './draw';
 import { boxGlow } from './textures';
 import { HAND_H, HAND_W } from './layout';
 
-// The hand panel beside the keyboard, a port of the DOM deck's SVG hand visualizer.
+// The hand panel beside the keyboard.
 // Everything in it is built once; a change of state only redraws shapes and
 // edits the few labels whose text or colour changed.
 

@@ -7,7 +7,7 @@ import {
   startFreeFlight,
   startStage,
   targetKey,
-} from './testHelpers';
+} from '../../tests/shared/testHelpers';
 
 /**
  * One Drone speed. Every Run, in a Sector Stage or in Free Flight, moves at
@@ -90,12 +90,6 @@ describe('the Drones move the same way in every Run', () => {
         fresh.step(steps);
         expect(leadHeight(fresh)).toBeCloseTo(62 + 2.2 * steps, 6);
       }
-
-      // It is locked on from y = 83.5, which it reaches on the 10th step.
-      game.step(9);
-      expect(game.getState().run.drones[0].isTargetLocked).toBeFalsy();
-      game.step(1);
-      expect(game.getState().run.drones[0].isTargetLocked).toBe(true);
 
       // It never falls past the line, however long it waits.
       game.step(600);

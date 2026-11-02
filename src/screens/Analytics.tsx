@@ -1,7 +1,7 @@
 import type React from 'react';
 import { useState } from 'react';
-import { useGame } from './useGame';
-import { useGameState } from './useGameState';
+import { useGame } from '../app/useGame';
+import { useGameState } from '../app/useGameState';
 import {
   OverlayCloseButton,
   OverlayConfirm,
@@ -92,7 +92,7 @@ export const Analytics: React.FC = () => {
       ? Math.round((rightHits / (rightHits + rightMisses)) * 100)
       : 100;
 
-  // Identify trouble keys (misses > 2 and accuracy < 85%)
+  // Trouble keys: struck at least 3 times, with more than 12% of them missed
   const troubleKeys = Object.entries(keyAnalytics)
     .filter(([_, stats]) => {
       const total = stats.hits + stats.misses;

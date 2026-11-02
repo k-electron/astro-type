@@ -13,7 +13,7 @@ import {
   startFreeFlight,
   startStage,
   targetKey,
-} from './testHelpers';
+} from '../../tests/shared/testHelpers';
 
 /**
  * Moments (#70): one stream says what just happened. A keystroke that counts

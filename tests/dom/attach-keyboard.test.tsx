@@ -1,7 +1,7 @@
 import { fireEvent } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { attachKeyboard } from '../../src/app/attachKeyboard';
-import { type Game, startedGame } from '../../src/game/testHelpers';
+import { type Game, startedGame } from '../shared/testHelpers';
 
 /**
  * `attachKeyboard(game, window)` is the composition root's keys: keydowns,

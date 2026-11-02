@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { type FrameEnvironment, startFrameLoop } from './frameLoop';
-import { newGame, STAGE_ID, startedGame, startStage } from './testHelpers';
+import {
+  newGame,
+  STAGE_ID,
+  startedGame,
+  startStage,
+} from '../../tests/shared/testHelpers';
 
 /**
  * The frame loop turns the browser's frames into Run clock steps. These tests

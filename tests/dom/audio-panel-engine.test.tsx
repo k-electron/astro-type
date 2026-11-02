@@ -1,7 +1,7 @@
 import { fireEvent } from '@testing-library/react';
 import { expect, it, vi } from 'vitest';
 import { engineSound } from '../../src/audio/engineSound';
-import { STAGE_ID } from '../../src/game/testHelpers';
+import { STAGE_ID } from '../shared/testHelpers';
 import { OWNS_RETRO_SOUND_KIT } from '../shared/saves';
 import { soundKitName } from '../shared/screens';
 import { renderGame, screen } from './harness';

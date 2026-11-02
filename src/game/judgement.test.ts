@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { multiplierAt } from '../../tests/shared/multiplier';
-import { hitPerfect, miss, startedGame } from './testHelpers';
+import { hitPerfect, miss, startedGame } from '../../tests/shared/testHelpers';
 
 /**
  * The rules of scoring, Streak, Multiplier, Overdrive and shields, read from

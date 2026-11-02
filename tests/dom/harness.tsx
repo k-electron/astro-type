@@ -31,15 +31,17 @@ import App from '../../src/screens/App';
 import { attachKeyboard } from '../../src/app/attachKeyboard';
 import {
   createGame,
-  createMemoryStorage,
   type Game,
-  type MemorySaveStorage,
   type RefusedMoveError,
   type Sound,
 } from '../../src/game/game';
+import {
+  createMemoryStorage,
+  type MemorySaveStorage,
+} from '../shared/memoryStorage';
 import { FIRST_STAGE } from '../../src/curriculum/curriculum';
-import { startStage as sendStartStage } from '../../src/game/testHelpers';
-import { GameProvider } from '../../src/screens/useGame';
+import { startStage as sendStartStage } from '../shared/testHelpers';
+import { GameProvider } from '../../src/app/useGame';
 import { DEBRIEF_TITLE, START_FREE_FLIGHT } from '../shared/screens';
 
 export { screen, within };

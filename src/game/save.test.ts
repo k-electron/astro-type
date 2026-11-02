@@ -10,9 +10,14 @@ import {
 } from '../../tests/shared/saves';
 import type { Game } from './game';
 import { totalStarsOf } from './schemas';
-import { DEFAULT_PROFILE } from './profile';
+import { DEFAULT_PROFILE } from './schemas';
 import { UNREADABLE_SAVE_NOTICE } from './save';
-import { clearStage, loadGame, startStage, STAGE_ID } from './testHelpers';
+import {
+  clearStage,
+  loadGame,
+  startStage,
+  STAGE_ID,
+} from '../../tests/shared/testHelpers';
 
 // The Save is the Profile as stored in the player's browser (ticket #24).
 // These tests load Saves through the headless game, the way the app does.

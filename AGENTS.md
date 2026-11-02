@@ -13,11 +13,11 @@ A browser typing game; `README.md` says what it is and what it's built with. Use
 
 - `src/game/`: the headless game, with no browser, React, PixiJS or sound. `game.ts` is `createGame` and the `Game` interface, the only way in (ADR-0003); the machine owns the screen and the Run phase, the store owns the data (ADR-0001).
 - `src/curriculum/`: the Sectors and Stages, the key and finger table, Free Flight's Stage factory and text check. It imports nothing from `src/game/`.
-- `src/app/`: the composition root and the browser adapters (keys and focus, localStorage, frames).
+- `src/app/`: the composition root and the browser adapters (keys and focus, localStorage, frames), and the two React hooks the screens and the deck read the game through: `useGameState(selector)` and `useGame()`.
 - `src/audio/`: the sound engine; outside tests, only the composition root imports it.
-- `src/screens/`: the React screens, overlay shell, HUD and header. They read `useGameState(selector)` and act through `useGame()`.
+- `src/screens/`: the React screens, overlay shell, HUD and header. They read `useGameState(selector)` and act through `useGame()`, both from `src/app/`.
 - `src/deck/`: the PixiJS Action Deck and its accessibility layer.
-- `tests/`: DOM tests, browser journeys and the data they share.
+- `tests/`: DOM tests, browser journeys, and the data and helpers they share (`tests/shared/`, including the `Game` set-up helpers).
 - `scripts/`: `verify`, the screenshot runner and the smoke test.
 
 ## Ground rules

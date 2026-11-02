@@ -7,10 +7,9 @@ import { STRIKE_LINE_Y } from '../game/rules';
  * size, never measured from the page, so a keycap that grows when it is the
  * target can't nudge its neighbours.
  *
- * The numbers are the desktop (Tailwind `sm:`) values of the DOM deck this
- * one replaced (the sizes its Tailwind classes gave). Phone and tablet layouts are out of scope for
- * v1. The stage is 700 px tall from 640 px wide up, which is how the DOM deck
- * sizes it.
+ * The numbers are the desktop (Tailwind `sm:`) sizes. Phone and tablet
+ * layouts are out of scope for v1. The stage is 700 px tall from 640 px wide
+ * up.
  */
 export const STAGE_HEIGHT = 700;
 
@@ -98,8 +97,8 @@ export function computeLayout(
   KEYBOARD_ROWS.forEach((row, r) => {
     const y = deckY + DECK_BORDER + DECK_PAD + r * (KEY_H + KEY_GAP);
     const units = row.reduce((sum, k) => sum + k.units, 0);
-    // The DOM keys are `flex: u u 0%` with a border box, so each keeps its two
-    // pixels of border as a base size and the rest of the row is shared by units.
+    // Each key keeps its two pixels of border as a base size and the rest of
+    // the row is shared by units.
     const free = innerW - KEY_GAP * (row.length - 1) - 2 * row.length;
     let x = innerX;
     for (const spec of row) {
@@ -136,7 +135,7 @@ export function computeLayout(
 
 /**
  * The top edge of a Drone, in stage pixels, from the Drone's `yPercent` and its
- * place in the queue. This is the DOM deck's mapping: the lead Drone falls from
+ * place in the queue: the lead Drone falls from
  * the sky to the Strike Line; the queued ones hold echelon slots behind it.
  */
 export function droneTop(

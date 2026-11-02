@@ -7,7 +7,7 @@ import {
   SAMPLE_TEXT,
   startedGame,
   targetKey,
-} from './testHelpers';
+} from '../../tests/shared/testHelpers';
 
 /**
  * Judgement events (#22): every keystroke that counts produces exactly one

@@ -8,13 +8,13 @@ import {
   FREE_FLIGHT_PRESETS,
   FreeFlightTextSchema,
 } from '../curriculum/curriculum';
-import { useGame } from './useGame';
+import { useGame } from '../app/useGame';
 import {
   OverlayCloseButton,
   OverlayFlightDeckButton,
   OverlayShell,
 } from './OverlayShell';
-import { useGameState } from './useGameState';
+import { useGameState } from '../app/useGameState';
 
 export const FreeFlight: React.FC = () => {
   const { send } = useGame();
