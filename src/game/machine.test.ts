@@ -3,6 +3,7 @@ import {
   CURRICULUM_SECTORS,
   DEFAULT_FREE_FLIGHT_WPM,
 } from '../curriculum/curriculum';
+import { EVERY_STAGE_CLEARED } from '../../tests/shared/saves';
 import { type PlayerEvent, RefusedMoveError, type Screen } from './game';
 import {
   clearStage,
@@ -381,27 +382,23 @@ describe('pressing a header button for the screen already open changes nothing, 
 });
 
 // ---------------------------------------------------------------------------
-// Next Stage on the last Stage
+// Next Stage on the Debrief
 // ---------------------------------------------------------------------------
 
 describe('Next Stage on the Debrief', () => {
   const curriculum = CURRICULUM_SECTORS.flatMap((sector) => sector.stages);
 
-  /** A game that has just cleared this Stage, so its Debrief is showing. */
+  /**
+   * A game that has just cleared this Stage, so its Debrief is showing. Every
+   * Stage is cleared already, so no Sector is locked in front of the next Stage.
+   */
   function clearedStage(stageId: string): Game {
-    const game = newGame();
+    const game = newGame(EVERY_STAGE_CLEARED);
     startStage(game, stageId);
     finishRun(game);
     expect(game.getState().screen, stageId).toBe('debrief');
     return game;
   }
-
-  it('on the last Stage takes the player to the Galaxy Map', () => {
-    const last = curriculum[curriculum.length - 1];
-    const game = clearedStage(last.id);
-    play(game, NEXT_STAGE);
-    expect(game.getState().screen).toBe('galaxy-map');
-  });
 
   it('on every other Stage starts the next Stage in curriculum order, across Sectors too', () => {
     // The first Stage, the last Stage of a Sector, and the one before the last.
