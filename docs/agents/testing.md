@@ -26,7 +26,7 @@ Vitest, in `src/**/*.test.ts`, on `createGame` with the Run clock stepped by han
 - WPM, accuracy and cadence measured in Run Time
 - the machine's promises from [#10](https://github.com/k-electron/astro-type/issues/10): every chain of opened screens unwinds back to its start, every header button works on every screen, only Academy Home and starting a Stage abandon a Run, and Close onto a paused Run lands on the Pause Menu. Test the promises, never a copy of the transition table.
 - the curriculum's integrity check from [#11](https://github.com/k-electron/astro-type/issues/11): unique Stage ids, every character typeable, the values a type can't say (text to type, percentages, positive thresholds), star thresholds stricter at each level, Sector unlocks only going up. The shape of a Sector and a Stage is the `Sector` and `Stage` types, which the typecheck holds.
-- moments (`moments.test.ts`): what the `Game` announces through `onMoment`: a hit with its Drone, lane and finger, a Miss, a shield, Overdrive's ignition, the Stage clear (heard with the Debrief already on show), an Upgrade or a trail bought
+- moments (`moments.test.ts`): what the `Game` announces through `onMoment`: a Run launching (start, Replay, Next Stage), a hit with its Drone, lane and finger, a Miss, a shield, Overdrive's ignition, the Stage clear (heard with the Debrief already on show), an Upgrade or a trail bought
 - the Run's frame loop: catch-up after a stall is capped, and no Run Time passes while paused (`frameLoop.ts`, driven with a fake frame environment)
 - a Sector unlocked by a clear, which is what the Debrief banner shows
 - which characters the text prompt marks as missed
