@@ -5,7 +5,7 @@ import { ArrowLeft, Play } from 'lucide-react';
 import { useGame } from './useGame';
 import { useGameState } from './useGameState';
 import { closeLabel, flightDeckLabel } from './closeLabel';
-import { useEscLayer } from './escLayers';
+import { useEscLayer } from '../app/escLayers';
 
 /**
  * How a screen's frame and panel look. Every class is written out whole (a

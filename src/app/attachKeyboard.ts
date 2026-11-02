@@ -1,5 +1,5 @@
 import type { Game } from '../game/game';
-import { closeTopEscLayer } from '../screens/escLayers';
+import { closeTopEscLayer } from './escLayers';
 
 /**
  * The keyboard, attached to a game from outside: the composition root calls
@@ -19,7 +19,7 @@ import { closeTopEscLayer } from '../screens/escLayers';
  * **The Esc contract.** Esc is a stack, and this listener is its one owner.
  * It is on `window`, so it sees an Esc whether it was sent to the window or
  * bubbled up from the focused element. The layers a screen holds open over
- * itself (`screens/escLayers.ts`) are the top of the stack: the header's audio
+ * itself (`app/escLayers.ts`) are the top of the stack: the header's audio
  * panel, then a confirm. One Esc closes the top layer and nothing more. With
  * no layer open, the Esc is the game's: the machine closes the screen, or
  * pauses and resumes the Run, or opens the Galaxy Map from the Debrief. A held

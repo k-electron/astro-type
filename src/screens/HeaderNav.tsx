@@ -14,7 +14,7 @@ import { useGameState } from './useGameState';
 import { AudioPanel } from './AudioPanel';
 import { muteAllLabel, OPEN_AUDIO_PANEL } from './audioLabels';
 import { flightDeckLabel } from './closeLabel';
-import { useEscLayer } from './escLayers';
+import { useEscLayer } from '../app/escLayers';
 
 /**
  * `ref` is the header element itself. The layout that owns the header and the
