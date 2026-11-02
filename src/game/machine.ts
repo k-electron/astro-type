@@ -4,7 +4,7 @@
  * current one, so Close always goes back to the opener.
  *
  * It holds what its guards and transitions read, and nothing else: the screen,
- * the Run phase, the openers and the current screen's parameters. Everything a
+ * the Run phase and the openers. Everything a
  * move does to the Run's data is an effect action it declares here by name
  * (see `effects`) and the Game fills in with `provide`, so a move it refuses
  * changes nothing.
@@ -26,22 +26,6 @@ export type Screen =
 /** Where the Run is: none yet since load, or running, paused, cleared or abandoned. */
 export type RunPhase = 'none' | 'running' | 'paused' | 'cleared' | 'abandoned';
 
-/**
- * The parameter a screen is opened with, by screen. A screen that takes none
- * is not listed, and none does yet: the first one is an entry here, sent as
- * `params` on its `OPEN_*` event, and the screen reads it from the snapshot's
- * `screenParams`.
- */
-export type ScreenParamMap = Record<never, never>;
-
-/** What the current screen was opened with: null when it takes no parameter. */
-export type ScreenParams = ScreenParamMap[keyof ScreenParamMap] | null;
-
-/** The `params` field an `OPEN_*` event carries, for a screen that takes one. */
-type ParamsField<S extends Screen> = S extends keyof ScreenParamMap
-  ? { params: ScreenParamMap[S] }
-  : unknown;
-
 /** The header screens: each one opens from any screen, over the one showing. */
 const OPEN_EVENTS = {
   OPEN_GALAXY_MAP: 'galaxy-map',
@@ -51,9 +35,7 @@ const OPEN_EVENTS = {
 } as const;
 
 type OpenEvent = {
-  [E in keyof typeof OPEN_EVENTS]: { type: E } & ParamsField<
-    (typeof OPEN_EVENTS)[E]
-  >;
+  [E in keyof typeof OPEN_EVENTS]: { type: E };
 }[keyof typeof OPEN_EVENTS];
 
 /** What the player did. Never where to go. */
@@ -79,18 +61,10 @@ export type PlayerEvent =
 /** The one event the store reports itself: the last character was typed. */
 export type GameMachineEvent = PlayerEvent | { type: 'RUN_CLEARED' };
 
-/** A screen the player can return to with Close, and the parameter it had. */
-export interface Opener {
-  screen: Screen;
-  params: ScreenParams;
-}
-
 export interface GameMachineContext {
   /** The screens that opened the current one, oldest first. Close pops the last. */
-  openers: Opener[];
+  openers: Screen[];
   phase: RunPhase;
-  /** What the current screen was opened with. */
-  screenParams: ScreenParams;
 }
 
 /**
@@ -109,9 +83,6 @@ const unprovidedGuard = (name: string) => (): boolean => {
 
 const isLive = (phase: RunPhase) => phase === 'running' || phase === 'paused';
 
-const paramsOf = (event: GameMachineEvent): ScreenParams =>
-  'params' in event ? (event.params as ScreenParams) : null;
-
 const { createMachine } = setup({
   types: {
     context: {} as GameMachineContext,
@@ -125,7 +96,7 @@ const { createMachine } = setup({
     /** The one named crossing: reads the Stage the Run is of and the fleet's Stars (see the curriculum's `nextStageOf`). */
     hasNextStage: unprovidedGuard('hasNextStage'),
     openerIs: ({ context }, params: { screen: Screen }) =>
-      context.openers[context.openers.length - 1]?.screen === params.screen,
+      context.openers[context.openers.length - 1] === params.screen,
   },
   actions: {
     // Accepted, and there is nothing to do.
@@ -154,35 +125,24 @@ const { createMachine } = setup({
     markRunning: assign({
       phase: 'running' as RunPhase,
       openers: [],
-      screenParams: null,
     }),
     markPaused: assign({ phase: 'paused' as RunPhase }),
     markAbandoned: assign({
       phase: 'abandoned' as RunPhase,
       openers: [],
-      screenParams: null,
     }),
     markCleared: assign({
       phase: 'cleared' as RunPhase,
       openers: [],
-      screenParams: null,
     }),
-    clearOpeners: assign({ openers: [], screenParams: null }),
-    /** Close: back to the opener, with the parameter it had. */
+    clearOpeners: assign({ openers: [] }),
+    /** Close: back to the opener. */
     popOpener: assign(({ context }) => ({
       openers: context.openers.slice(0, -1),
-      screenParams: context.openers[context.openers.length - 1]?.params ?? null,
     })),
-    /**
-     * Open a screen over `screen`, which Close returns to. The screen being
-     * opened takes the parameter the `OPEN_*` event carries.
-     */
-    pushOpener: assign(({ context, event }, params: { screen: Screen }) => ({
-      openers: [
-        ...context.openers,
-        { screen: params.screen, params: context.screenParams },
-      ],
-      screenParams: paramsOf(event),
+    /** Open a screen over `screen`, which Close returns to. */
+    pushOpener: assign(({ context }, params: { screen: Screen }) => ({
+      openers: [...context.openers, params.screen],
     })),
   },
 });
@@ -423,8 +383,6 @@ const states = {
 export const gameMachine = createMachine({
   id: 'astrotypeGame',
   initial: 'academy-home',
-  context: { openers: [], phase: 'none' as RunPhase, screenParams: null },
+  context: { openers: [], phase: 'none' as RunPhase },
   states,
 });
-
-export type GameMachine = typeof gameMachine;
