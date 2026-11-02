@@ -5,6 +5,10 @@ import {
   type Page,
   test as base,
 } from '@playwright/test';
+import {
+  FINGER_LANES,
+  keyForCharacter,
+} from '../../../src/curriculum/curriculum';
 import { entriesOf } from '../../../src/game/catalog';
 import { trailEquipped } from '../../shared/saves';
 import { drone, keycap, pauseMenu, seedSave } from '../helpers';
@@ -37,6 +41,14 @@ import { launchOnStoppedClock, resumeButton } from '../journey-helpers';
 // Drones behind it fall nowhere near that lane.
 const TEXT = 'qpolkm';
 
+/** The colour of the finger that types a character: the colour of its beam. */
+function fingerColour(character: string): string {
+  const lane = keyForCharacter(character)?.lane;
+  const colour = lane === undefined ? undefined : FINGER_LANES[lane]?.color;
+  if (!colour) throw new Error(`No finger types "${character}"`);
+  return colour;
+}
+
 type Rect = { x: number; y: number; width: number; height: number };
 
 /**
@@ -50,8 +62,11 @@ type Pixels = {
   changed(a: number, b: number, region?: Rect): Promise<number>;
   /** How many pixels are strongly red: the colour of a Miss. */
   red(a: number, region?: Rect): Promise<number>;
-  /** How many pixels are the bright cyan of the guidance beam. */
-  beam(a: number, region?: Rect): Promise<number>;
+  /**
+   * How many pixels are lit in a finger's colour (`#rrggbb`): the guidance
+   * beam, which takes the colour of the finger that types the target.
+   */
+  beam(a: number, colour: string, region?: Rect): Promise<number>;
   /** How many pixels are bright (something lit, on the dark deck). */
   bright(a: number, region?: Rect): Promise<number>;
   /** How many pixels are amber or orange: the colour of the Solar Flare Trail. */
@@ -85,7 +100,12 @@ const test = base.extend<{ pixels: Pixels }>({
             const y1 = Math.min(img.height, Math.round(r.y + r.height));
             return { img, x0, y0, x1, y1 };
           };
-          const [a, b, region] = rest as [number, number | undefined, Rect?];
+          const [a, b, region, colour] = rest as [
+            number,
+            number | undefined,
+            Rect?,
+            string?,
+          ];
           if (name === 'changed') {
             const A = at(a, region);
             const B = w.imgs[b as number];
@@ -120,7 +140,24 @@ const test = base.extend<{ pixels: Pixels }>({
                 r - g > 100
               )
                 n++;
-              if (name === 'beam' && bl > 140 && g > 80 && r < 90) n++;
+              if (name === 'beam' && colour) {
+                // Lit (the aura blends the colour into the dark deck, so only
+                // the bright part counts), and the same mix of red, green and
+                // blue as the finger's colour.
+                const want = [1, 3, 5].map((k) =>
+                  Number.parseInt(colour.slice(k, k + 2), 16),
+                );
+                const top = Math.max(...want);
+                const px = [r, g, bl];
+                if (
+                  Math.max(r, g, bl) > 140 &&
+                  px.every(
+                    (v, c) =>
+                      Math.abs(v / Math.max(r, g, bl) - want[c] / top) < 0.2,
+                  )
+                )
+                  n++;
+              }
               if (name === 'bright' && Math.max(r, g, bl) > 160) n++;
               // Amber (#f59e0b), also as it blends into the dark deck. Cyan
               // (r low), pink (blue high), red (green low) and white (blue
@@ -156,7 +193,8 @@ const test = base.extend<{ pixels: Pixels }>({
         }, png.toString('base64')),
       changed: (a, b, region) => call<number>('changed', a, b, region),
       red: (a, region) => call<number>('red', a, undefined, region),
-      beam: (a, region) => call<number>('beam', a, undefined, region),
+      beam: (a, colour, region) =>
+        call<number>('beam', a, undefined, region, colour),
       bright: (a, region) => call<number>('bright', a, undefined, region),
       amber: (a, region) => call<number>('amber', a, undefined, region),
     });
@@ -307,7 +345,16 @@ test('a symbol that needs Shift is a target like any other: the ship and the gui
     width: 14,
     height: 300,
   });
-  expect(await pixels.beam(waiting, beamRegion)).toBeGreaterThan(100);
+  const finger = fingerColour('!');
+  expect(await pixels.beam(waiting, finger, beamRegion)).toBeGreaterThan(100);
+  // ...and only there: the same strip, a key's width to the side, has none.
+  const beside = inDeck(deck, {
+    x: centre + base.width - 7,
+    y: keyboardTop - 410,
+    width: 14,
+    height: 300,
+  });
+  expect(await pixels.beam(waiting, finger, beside)).toBeLessThan(20);
   // ...and the ship waits under that key.
   const shipRegion = inDeck(deck, {
     x: centre - 60,
@@ -463,7 +510,9 @@ test('the ship, the guidance beam and the Drone lights are drawn, and the deck k
     width: 14,
     height: 300,
   });
-  expect(await pixels.beam(first, beamRegion)).toBeGreaterThan(100);
+  expect(
+    await pixels.beam(first, fingerColour('b'), beamRegion),
+  ).toBeGreaterThan(100);
 
   // The ship: lit up in the strip below the keyboard, under that keycap.
   const shipRegion = inDeck(deck, {
@@ -521,7 +570,11 @@ async function hitOnLeftIndex(
     });
 
     const waiting = await look(page, deck, pixels);
-    const beamWaiting = await pixels.beam(waiting, beamRegion);
+    const beamWaiting = await pixels.beam(
+      waiting,
+      fingerColour('b'),
+      beamRegion,
+    );
     const amberWaiting = await pixels.amber(waiting, column);
 
     await page.keyboard.press('b');
