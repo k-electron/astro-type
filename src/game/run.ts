@@ -36,7 +36,7 @@ import {
 /** What the Debrief shows of a cleared Run: its result, what it did to the Profile, and its Rhythm. */
 export type DebriefResult = Pick<
   StageResult,
-  'score' | 'wpm' | 'accuracy' | 'maxStreak' | 'starsEarned' | 'creditsEarned'
+  'score' | 'wpm' | 'accuracy' | 'starsEarned' | 'creditsEarned'
 > &
   StageRecord & { rhythm: number };
 
@@ -181,7 +181,6 @@ export function createRunSlice(
         debrief: {
           ...outcome,
           score: result.score,
-          maxStreak: result.maxStreak,
           ...record,
           rhythm: performance.rhythm,
         },

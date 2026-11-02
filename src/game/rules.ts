@@ -27,7 +27,6 @@ export interface Drone {
   lane: number; // 0 to 8
   finger: FingerZone;
   yPercent: number; // 0 to 100 on canvas
-  isTargetLocked?: boolean;
 }
 
 /** The live numbers of a Run: score, Streak, Overdrive, keystroke counts, WPM, Accuracy. */
@@ -174,7 +173,6 @@ function makeDrone(
   index: number,
   now: number,
   yPercent: number,
-  isTargetLocked: boolean,
 ): Drone {
   // Every character of a Stage's text has a key: the curriculum's check and
   // Free Flight's text check see to that.
@@ -187,7 +185,6 @@ function makeDrone(
     lane,
     finger,
     yPercent,
-    isTargetLocked,
   };
 }
 
@@ -196,23 +193,14 @@ function seedDrones(stage: Stage, now: number): Drone[] {
   const text = stage.sampleText.slice(0, 7);
   const drones: Drone[] = [];
   for (let i = 0; i < text.length; i++) {
-    const isTarget = i === 0;
-    drones.push(
-      makeDrone(
-        text[i],
-        i,
-        now,
-        isTarget ? 62 : Math.max(6, 62 - i * 14),
-        isTarget,
-      ),
-    );
+    drones.push(makeDrone(text[i], i, now, Math.max(6, 62 - i * 14)));
   }
   return drones;
 }
 
 /**
  * The Drones after the lead one is hit: the hit Drone leaves, a new one
- * enters at the top for the character six ahead, and the new lead is locked.
+ * enters at the top for the character six ahead.
  */
 function advanceDroneQueue(
   drones: Drone[],
@@ -224,11 +212,9 @@ function advanceDroneQueue(
   const remaining = drones.filter((n) => n.id !== hit?.id);
   const upcomingIdx = nextCharIndex + 6;
   if (upcomingIdx < text.length) {
-    remaining.push(makeDrone(text[upcomingIdx], upcomingIdx, now, 0, false));
+    remaining.push(makeDrone(text[upcomingIdx], upcomingIdx, now, 0));
   }
-  return remaining.map((n, idx) =>
-    idx === 0 ? { ...n, isTargetLocked: true } : n,
-  );
+  return remaining;
 }
 
 /**
@@ -245,23 +231,17 @@ function moveDrones(drones: Drone[]): Drone[] {
   return drones.map((drone, idx) => {
     if (idx === 0) {
       if (drone.yPercent >= 83.5) {
-        return { ...drone, yPercent: STRIKE_LINE_Y, isTargetLocked: true };
+        return { ...drone, yPercent: STRIKE_LINE_Y };
       }
-      const nextY = Math.min(STRIKE_LINE_Y, drone.yPercent + leadStep);
       return {
         ...drone,
-        yPercent: nextY,
-        isTargetLocked: nextY >= 83.5,
+        yPercent: Math.min(STRIKE_LINE_Y, drone.yPercent + leadStep),
       };
     }
 
     const slotY = Math.max(6, STRIKE_LINE_Y - idx * 16);
     const nextY = drone.yPercent + (slotY - drone.yPercent) * followerEasing;
-    return {
-      ...drone,
-      yPercent: nextY,
-      isTargetLocked: false,
-    };
+    return { ...drone, yPercent: nextY };
   });
 }
 
@@ -398,8 +378,6 @@ function applyMiss(
 /** What striking a key did. */
 export interface StrikeResult {
   run: RunState;
-  /** What judging it produced, or null when there was nothing to judge (no character left to type). */
-  judgement: Judgement | null;
   /** What happened, in order: the Judgement with its Drone, then Overdrive catching fire. */
   moments: Moment[];
   /** The last character was typed. */
@@ -427,7 +405,6 @@ export function strike(
   if (!target) {
     return {
       run: { ...run, lastPressedKey: key },
-      judgement: null,
       moments: [],
       cleared: false,
     };
@@ -452,7 +429,6 @@ export function strike(
         },
         lastPressedKey: key,
       },
-      judgement,
       moments: [judgement],
       cleared: false,
     };
@@ -528,7 +504,6 @@ export function strike(
       recentKeystrokeTimes: keystrokeTimes,
       lastPressedKey: key,
     },
-    judgement,
     moments,
     cleared: nextIndex >= stage.sampleText.length,
   };

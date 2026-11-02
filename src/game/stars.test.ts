@@ -33,7 +33,6 @@ describe('Stars from WPM, accuracy and Streak', () => {
     const debrief = debriefOf(game);
     expect(debrief.wpm).toBe(15); // 77 correct keys / 5 per word / 1 minute = 15.4
     expect(debrief.accuracy).toBe(100);
-    expect(debrief.maxStreak).toBe(77);
     expect(debrief.score).toBe(44300);
     expect(debrief.starsEarned).toBe(3);
     // 100 + 75 per Star + score / 200 (221.5 rounds up)
@@ -108,7 +107,6 @@ describe('Stars from WPM, accuracy and Streak', () => {
     const game = startedGame();
     clearStage(game, { seconds: 60, missBeforeLast: true });
     const debrief = debriefOf(game);
-    expect(debrief.maxStreak).toBe(76);
     expect(debrief.starsEarned).toBe(3);
   });
 
@@ -131,21 +129,22 @@ describe('Stars from WPM, accuracy and Streak', () => {
         if (at < text.length) miss(game);
         from = at;
       }
-      return debriefOf(game);
+      return {
+        debrief: debriefOf(game),
+        bestStreak: game.getState().profile.stagesProgress[stage.id].bestStreak,
+      };
     };
 
     const clean = fly([]);
-    expect(clean.maxStreak).toBe(text.length);
-    expect(clean.starsEarned).toBe(3);
+    expect(clean.bestStreak).toBe(text.length);
+    expect(clean.debrief.starsEarned).toBe(3);
 
-    const short = fly([third, 2 * third]);
+    const { debrief: short, bestStreak } = fly([third, 2 * third]);
     expect(short.accuracy).toBeGreaterThanOrEqual(
       stage.starThresholds.threeStarAccuracy,
     );
     expect(short.wpm).toBeGreaterThanOrEqual(stage.starThresholds.threeStarWpm);
-    expect(short.maxStreak).toBeLessThan(
-      stage.starThresholds.threeStarMinStreak,
-    );
+    expect(bestStreak).toBeLessThan(stage.starThresholds.threeStarMinStreak);
     expect(short.starsEarned).toBe(2);
   });
 
