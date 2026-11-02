@@ -6,7 +6,11 @@ import {
   FREE_FLIGHT_TITLE,
 } from '../../src/curriculum/curriculum';
 import { closeLabel } from '../../src/screens/closeLabel';
-import { clearedStages, RETURNING_PLAYER } from '../shared/saves';
+import {
+  clearedStages,
+  EVERY_STAGE_CLEARED,
+  RETURNING_PLAYER,
+} from '../shared/saves';
 import {
   ACADEMY_HOME,
   ACADEMY_HOME_HEADING,
@@ -115,35 +119,69 @@ describe('Replay and Next Stage', () => {
 });
 
 describe('the Debrief buttons', () => {
-  /** A Save that has cleared every Stage in the game. */
-  const everyStageCleared = clearedStages(
-    Object.fromEntries(
-      CURRICULUM_SECTORS.flatMap((sector) =>
-        sector.stages.map((stage) => [stage.id, 3]),
-      ),
-    ),
+  const sectorOneEnd = CURRICULUM_SECTORS[0].stages.at(-1)?.id ?? '';
+  const lastStage =
+    CURRICULUM_SECTORS[CURRICULUM_SECTORS.length - 1].stages.at(-1)?.id ?? '';
+
+  it.each([
+    {
+      when: 'on the last Stage',
+      profile: EVERY_STAGE_CLEARED,
+      stageId: lastStage,
+    },
+    {
+      // A fresh Save has too few Stars for Sector 02, which follows.
+      when: 'on the last Stage before a locked Sector',
+      profile: undefined,
+      stageId: sectorOneEnd,
+    },
+  ])(
+    '$when, a Galaxy Map button takes the place of Next Stage and opens the Galaxy Map, and Close returns to the Debrief',
+    ({ profile, stageId }) => {
+      const player = renderGame({ profile });
+      // The whole Save loaded: a refused Save would leave a fresh Profile.
+      expect(screen.queryByRole('status')).toBeNull();
+      player.startStage(stageId);
+
+      player.typePrompt();
+
+      expect(screen.queryAllByRole('button', { name: NEXT_STAGE })).toEqual([]);
+      expect(
+        debriefButtons().filter((name) => name === GALAXY_MAP),
+      ).toHaveLength(1);
+      expect(
+        screen.queryByRole('button', { name: closeLabel('galaxy-map') }),
+      ).toBeNull();
+
+      player.click(GALAXY_MAP);
+
+      expect(
+        screen.getByRole('heading', { name: MENU_HEADINGS['Galaxy Map'] }),
+      ).toBeTruthy();
+
+      player.click(closeLabel('debrief'));
+
+      expect(
+        screen.queryByRole('heading', { name: MENU_HEADINGS['Galaxy Map'] }),
+      ).toBeNull();
+      expect(screen.getByText(DEBRIEF_TITLE)).toBeTruthy();
+    },
   );
 
-  it('on the last Stage, one Galaxy Map button takes the place of Next Stage, and opens the Galaxy Map', () => {
-    const player = renderGame({ profile: everyStageCleared });
-    // The whole Save loaded: a refused Save would leave a fresh Profile.
-    expect(screen.queryByRole('status')).toBeNull();
-    const lastSector = CURRICULUM_SECTORS[CURRICULUM_SECTORS.length - 1];
-    player.startStage(lastSector.stages[lastSector.stages.length - 1].id);
+  it('before a Sector the clear itself opens, Next Stage is offered and starts its first Stage', () => {
+    // 5 Stars so far: clearing the last Stage of Sector 01 takes the fleet to 6 or more.
+    const player = renderGame({ profile: RETURNING_PLAYER });
+    player.startStage(sectorOneEnd);
 
     player.typePrompt();
 
-    expect(debriefButtons()).toEqual(['Replay', ACADEMY_HOME, GALAXY_MAP]);
-    expect(screen.queryByRole('button', { name: NEXT_STAGE })).toBeNull();
-    expect(
-      screen.queryByRole('button', { name: closeLabel('galaxy-map') }),
-    ).toBeNull();
+    expect(screen.getByText(BANNER)).toBeTruthy();
+    player.click(NEXT_STAGE);
 
-    player.click(GALAXY_MAP);
-
-    expect(
-      screen.getByRole('heading', { name: MENU_HEADINGS['Galaxy Map'] }),
-    ).toBeTruthy();
+    expect(screen.queryByText(DEBRIEF_TITLE)).toBeNull();
+    expect(screen.getByRole('main').textContent).toContain(
+      CURRICULUM_SECTORS[1].stages[0].title,
+    );
   });
 
   it('on any other Stage, Next Stage comes last, after Galaxy Map and Academy Home', () => {

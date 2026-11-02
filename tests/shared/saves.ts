@@ -5,6 +5,7 @@
  * defaults, as they do for a real one. This imports from no test runner, so
  * every layer of tests can use it.
  */
+import { CURRICULUM_SECTORS } from '../../src/curriculum/curriculum';
 import {
   AudioSynthCoreSchema,
   type TrailColorTheme,
@@ -43,6 +44,15 @@ export function clearedStages(stars: Record<string, number>): {
     ),
   };
 }
+
+/** Every Stage in the game cleared with 3 Stars, so no Sector is locked. */
+export const EVERY_STAGE_CLEARED = clearedStages(
+  Object.fromEntries(
+    CURRICULUM_SECTORS.flatMap((sector) =>
+      sector.stages.map((stage) => [stage.id, 3]),
+    ),
+  ),
+);
 
 /** 5 Stars in all (Stage 1 with 3, Stage 2 with 2) and 1,234 Credits. */
 export const RETURNING_PLAYER = {

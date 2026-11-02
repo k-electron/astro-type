@@ -113,9 +113,10 @@ export interface GameState {
   /** The parameter the screen was opened with, or null when it takes none (none does yet). */
   screenParams: ScreenParams;
   /**
-   * What follows the Run's Stage: another Stage for Next Stage to start, the
-   * last Stage (Next Stage opens the Galaxy Map instead), or a Free Flight
-   * (there is no Next Stage).
+   * What follows the Run's Stage: another Stage for Next Stage to start, a
+   * Stage in a Sector still locked or none at all (the last Stage), where the
+   * Debrief offers the Galaxy Map instead and no event starts a Stage, or a
+   * Free Flight (there is no Next Stage).
    */
   stageAhead: StageAhead;
   run: Run;
@@ -140,11 +141,11 @@ export interface Game {
    */
   pressKey(key: string, options?: KeyOptions): void;
   /**
-   * Hear what just happened: each Judgement (a hit names its Drone, lane and
-   * finger), Overdrive catching fire, the Stage clear and a purchase. A moment
-   * is heard once the move that made it has settled, so `getState()` already
-   * shows its effects (on a clear, the Debrief). Returns the way to stop
-   * listening.
+   * Hear what just happened: a new Run launching, each Judgement (a hit names
+   * its Drone, lane and finger), Overdrive catching fire, the Stage clear and
+   * a purchase. A moment is heard once the move that made it has settled, so
+   * `getState()` already shows its effects (on a launch, the new Run; on a
+   * clear, the Debrief). Returns the way to stop listening.
    */
   onMoment(listener: (moment: Moment) => void): () => void;
   /**
@@ -199,6 +200,9 @@ export function createGame(options: GameOptions): Game {
   // The machine names its effects and the one guard that reads the Stage;
   // the Game fills them in from the store, which reads the phase and reports
   // "Run cleared". They meet here.
+  const totalStarsNow = () =>
+    totalStarsOf(store.getState().profile.stagesProgress);
+
   const machine = gameMachine.provide({
     actions: {
       beginRun: (_, { stage }) => store.getState().beginRun(stage),
@@ -207,7 +211,7 @@ export function createGame(options: GameOptions): Game {
       beginCurrentStage: () =>
         store.getState().beginRun(store.getState().run.stage),
       beginNextStage: () => {
-        const next = nextStageOf(store.getState().run.stage);
+        const next = nextStageOf(store.getState().run.stage, totalStarsNow());
         if (next) store.getState().beginRun(next);
       },
       abandonRun: () => store.getState().abandonRun(),
@@ -215,7 +219,8 @@ export function createGame(options: GameOptions): Game {
       releasePressedKey: () => store.getState().releaseKey(),
     },
     guards: {
-      hasNextStage: () => nextStageOf(store.getState().run.stage) !== undefined,
+      hasNextStage: () =>
+        nextStageOf(store.getState().run.stage, totalStarsNow()) !== undefined,
     },
   });
   const actor = createActor(machine);
@@ -336,15 +341,16 @@ export function createGame(options: GameOptions): Game {
 
   const snapshotNow = (previous: GameState | null): GameState => {
     const state = store.getState();
+    const profile = viewOf(state.profile);
     const next: GameState = {
       screen: getScreen(),
       phase: getPhase(),
       opener: getOpener(),
       screenParams: actor.getSnapshot().context.screenParams,
-      stageAhead: stageAheadOf(state.run.stage),
+      stageAhead: stageAheadOf(state.run.stage, profile.totalStars),
       run: buildRun(state.run),
       debrief: state.debrief,
-      profile: viewOf(state.profile),
+      profile,
       loadNotice: state.loadNotice,
       runTime: runClock.runTimeMs(),
     };

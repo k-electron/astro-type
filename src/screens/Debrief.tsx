@@ -10,9 +10,18 @@ import {
   Home,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import type { GameState } from '../game/game';
 import { useGame } from './useGame';
 import { useGameState } from './useGameState';
 import { OverlayShell } from './OverlayShell';
+
+/**
+ * The Debrief whose confetti has played. A cleared Run's result is one object
+ * until the next Run begins, and this screen unmounts when the Galaxy Map
+ * opens over it, so "Back to Debrief" mounts it again with the same result:
+ * the confetti is for the clear, not for each time the screen shows.
+ */
+let celebrated: GameState['debrief'] = null;
 
 export const Debrief: React.FC = () => {
   const { send } = useGame();
@@ -25,30 +34,29 @@ export const Debrief: React.FC = () => {
   const hasUnlockedNextSector = result?.unlockedSector ?? false;
   const onReplay = () => send({ type: 'PRESS_REPLAY' });
   const onNextStage = () => send({ type: 'PRESS_NEXT_STAGE' });
-  const onReturnToMap = () => send({ type: 'OPEN_GALAXY_MAP' });
+  const onOpenGalaxyMap = () => send({ type: 'OPEN_GALAXY_MAP' });
   const onReturnHome = () => send({ type: 'PRESS_HOME' });
-  const earned = result?.starsEarned;
   // A Free Flight is practice: it has no Stars to show.
   const thresholds = stage.origin === 'sector' ? stage.starThresholds : null;
 
   useEffect(() => {
-    if (earned === 3) {
-      try {
-        confetti({
-          particleCount: 80,
-          spread: 70,
-          origin: { y: 0.6 },
-          colors: ['#38bdf8', '#fbbf24', '#34d399', '#f43f5e'],
-        });
-      } catch {
-        // Confetti fallback
-      }
-      // It falls over whatever screen comes next unless it is stopped.
-      return () => {
-        confetti.reset();
-      };
+    if (!result || result === celebrated || result.starsEarned !== 3) return;
+    celebrated = result;
+    try {
+      confetti({
+        particleCount: 80,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#38bdf8', '#fbbf24', '#34d399', '#f43f5e'],
+      });
+    } catch {
+      // Confetti fallback
     }
-  }, [earned]);
+    // It falls over whatever screen comes next unless it is stopped.
+    return () => {
+      confetti.reset();
+    };
+  }, [result]);
 
   if (!result) return null;
   const {
@@ -330,11 +338,11 @@ export const Debrief: React.FC = () => {
           <span>Replay</span>
         </button>
 
-        {/* On the last Stage, the one Galaxy Map button is the last one, where Next Stage would be. */}
-        {stageAhead !== 'last-stage' && (
+        {/* With a Next Stage or a Free Flight, Galaxy Map is a side choice. Otherwise it is the one Galaxy Map button, last, where Next Stage would be. */}
+        {(stageAhead === 'next-stage' || stageAhead === 'free-flight') && (
           <button
             type="button"
-            onClick={onReturnToMap}
+            onClick={onOpenGalaxyMap}
             className="flex-1 min-w-[130px] px-3.5 py-2.5 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs sm:text-sm font-medium flex items-center justify-center gap-2 transition-colors cursor-pointer"
           >
             <MapIcon className="w-4 h-4 text-cyan-400" />
@@ -351,16 +359,23 @@ export const Debrief: React.FC = () => {
           <span>Academy Home</span>
         </button>
 
-        {/* On the last Stage, Next Stage opens the Galaxy Map instead, under its name. */}
-        {stageAhead !== 'free-flight' && (
+        {stageAhead === 'next-stage' && (
           <button
             type="button"
             onClick={onNextStage}
             className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-lg shadow-cyan-950/50 transition-all cursor-pointer"
           >
-            <span>
-              {stageAhead === 'next-stage' ? 'Next Stage' : 'Galaxy Map'}
-            </span>
+            <span>Next Stage</span>
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        )}
+        {(stageAhead === 'sector-locked' || stageAhead === 'last-stage') && (
+          <button
+            type="button"
+            onClick={onOpenGalaxyMap}
+            className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-lg shadow-cyan-950/50 transition-all cursor-pointer"
+          >
+            <span>Galaxy Map</span>
             <ArrowRight className="w-4 h-4" />
           </button>
         )}

@@ -20,6 +20,7 @@ import {
 } from './schemas';
 import {
   type CatalogItemId,
+  type CatalogKind,
   catalogEntry,
   type CoreEntry,
   type TrailEntry,
@@ -178,6 +179,17 @@ const COSMETIC_FIELDS = {
   core: { owned: 'unlockedAudioCores', equipped: 'equippedAudioCore' },
 } as const;
 
+/**
+ * What buying an item announces, by its kind: a new kind is a build error
+ * until it says what it sounds like.
+ */
+const PURCHASE_MOMENT: Record<CatalogKind, Moment | null> = {
+  upgrade: { type: 'upgrade' },
+  trail: { type: 'equip' },
+  // A Synthesizer Voice is sound state, not a moment: it just starts sounding.
+  core: null,
+};
+
 /** Where the player stands with a Cosmetic: whether they own it, wear it, and can pay for it. */
 export interface CosmeticStatus {
   owned: boolean;
@@ -325,10 +337,8 @@ export function createProfileSlice(
       const purchase = purchaseOf(get().profile, itemId);
       if (!purchase) return false;
       updateProfile(purchase);
-      // A Synthesizer Voice is sound state, not a moment: it just starts sounding.
-      const { kind } = catalogEntry(itemId);
-      if (kind === 'upgrade') emit({ type: 'upgrade' });
-      else if (kind === 'trail') emit({ type: 'equip' });
+      const moment = PURCHASE_MOMENT[catalogEntry(itemId).kind];
+      if (moment) emit(moment);
       return true;
     },
 
