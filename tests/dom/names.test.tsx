@@ -4,6 +4,7 @@ import { clearedStages, RETURNING_PLAYER } from '../shared/saves';
 import {
   BEGIN_HOME_ROW,
   DEBRIEF_TITLE,
+  HANGAR_TRAILS_HEADING,
   HUD_NAME,
   LAUNCH_STAGE,
   MENU_HEADINGS,
@@ -182,6 +183,14 @@ describe('the glossary names', () => {
     renderGame().openHeader('Hangar');
 
     expectNoBannedNames(MENU_HEADINGS.Hangar);
+  });
+
+  it('the Hangar calls the colours for the lasers Trails', () => {
+    renderGame().openHeader('Hangar');
+
+    expect(
+      screen.getByRole('heading', { name: HANGAR_TRAILS_HEADING }),
+    ).toBeTruthy();
   });
 
   it('Analytics uses them', () => {

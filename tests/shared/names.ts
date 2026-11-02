@@ -6,7 +6,9 @@
  * hyperspace, warp), Stage and Run (mission), the Action Deck (highway),
  * Drones (note), the Debrief (debriefing), Academy Home (main menu), the
  * Flight Deck (cockpit), Free Flight (drill, custom practice) and Stars
- * (rating). GLOSSARY.md lists each one as a word to avoid.
+ * (rating). GLOSSARY.md lists each one as a word to avoid. "Trail theme" is
+ * banned too, since #88 renamed the Cosmetic a Trail; it is banned as a phrase,
+ * because "trail" alone is the name.
  *
  * It also holds the old on-screen names that #89 retired, each as the whole
  * phrase so the words the Glossary keeps still pass:
@@ -34,4 +36,4 @@
  * split "hyper space", "main menu" and "custom practice".
  */
 export const BANNED_NAME =
-  /\b(?:combos?|hyper[\s-]?space|warp(?:s|ed|ing)?|missions?|highways?|notes?|debriefings?|main[\s-]?menus?|cockpits?|drills?|custom[\s-]?practices?|ratings?|tactile[\s-]rhythm|audio[\s-]flight[\s-]deck|custom[\s-]flights?|(?:hide|show)[\s-]+(?:the[\s-]+)?(?:action[\s-]+)?deck|audio[\s-]cores?|synthesizers?|deep[\s-]space[\s-]drone|cadences?)\b|^reports?$/i;
+  /\b(?:combos?|trail[\s-]?themes?|hyper[\s-]?space|warp(?:s|ed|ing)?|missions?|highways?|notes?|debriefings?|main[\s-]?menus?|cockpits?|drills?|custom[\s-]?practices?|ratings?|tactile[\s-]rhythm|audio[\s-]flight[\s-]deck|custom[\s-]flights?|(?:hide|show)[\s-]+(?:the[\s-]+)?(?:action[\s-]+)?deck|audio[\s-]cores?|synthesizers?|deep[\s-]space[\s-]drone|cadences?)\b|^reports?$/i;

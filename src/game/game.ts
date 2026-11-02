@@ -141,11 +141,11 @@ export interface Game {
    */
   pressKey(key: string, options?: KeyOptions): void;
   /**
-   * Hear what just happened: each Judgement (a hit names its Drone, lane and
-   * finger), Overdrive catching fire, the Stage clear and a purchase. A moment
-   * is heard once the move that made it has settled, so `getState()` already
-   * shows its effects (on a clear, the Debrief). Returns the way to stop
-   * listening.
+   * Hear what just happened: a new Run launching, each Judgement (a hit names
+   * its Drone, lane and finger), Overdrive catching fire, the Stage clear and
+   * a purchase. A moment is heard once the move that made it has settled, so
+   * `getState()` already shows its effects (on a launch, the new Run; on a
+   * clear, the Debrief). Returns the way to stop listening.
    */
   onMoment(listener: (moment: Moment) => void): () => void;
   /**

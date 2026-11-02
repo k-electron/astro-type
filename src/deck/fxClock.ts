@@ -19,8 +19,6 @@ export interface FxClockReading {
    * 60 Hz plays exactly as it always has.
    */
   d: number;
-  /** The Run clock went back to zero: a new Run has started. */
-  newRun: boolean;
 }
 
 /**
@@ -36,7 +34,6 @@ export interface FxClockReading {
  */
 export class FxClock {
   private lastRunPosition: number | null = null;
-  private lastRunSteps = 0;
   private lastWallMs: number | null = null;
 
   advance(input: FxClockInput): FxClockReading {
@@ -49,23 +46,22 @@ export class FxClock {
           );
     this.lastWallMs = input.wallMs;
 
-    const newRun = input.runSteps < this.lastRunSteps;
-    this.lastRunSteps = input.runSteps;
-
     if (input.phase === 'running') {
       const position = input.runSteps + input.fraction;
-      // The first frame after a pause or a start only sets the mark.
+      // The first frame after a pause or a start (see `restart`) only sets the mark.
       const d =
-        this.lastRunPosition === null || newRun
+        this.lastRunPosition === null
           ? 0
           : Math.max(0, position - this.lastRunPosition);
       this.lastRunPosition = position;
-      return { d, newRun };
+      return { d };
     }
     this.lastRunPosition = null;
-    return {
-      d: input.phase === 'cleared' ? wallDelta / STEP_MS : 0,
-      newRun,
-    };
+    return { d: input.phase === 'cleared' ? wallDelta / STEP_MS : 0 };
+  }
+
+  /** A new Run began, with a Run clock of its own: the next running frame only sets the mark. */
+  restart(): void {
+    this.lastRunPosition = null;
   }
 }

@@ -89,6 +89,15 @@ export function wipeStagesLine(stages: number): string {
 /** The Wipe confirmation's line about the Sectors. It stays. */
 export const WIPE_SECTORS_LINE = 'Interstellar Sectors relocked to Gate 0';
 
+// ---- Hangar ----------------------------------------------------------------
+
+/**
+ * The heading over the Hangar's Trail Cosmetics (GLOSSARY.md: a Trail). The
+ * Hangar writes it inline, so it is spelled out once here; `MENU_HEADINGS.Hangar`
+ * is the screen's own heading.
+ */
+export const HANGAR_TRAILS_HEADING = 'Trails';
+
 // ---- Free Flight -----------------------------------------------------------
 
 /** The label of the Free Flight screen's text box. */

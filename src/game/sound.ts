@@ -109,6 +109,9 @@ export function cueFor(moment: Moment): Cue[] {
     case 'shield':
     case 'ignition':
       return [{ type: moment.type }];
+    case 'launched':
+      // The beat starts from the state (a Run is running), not from a cue.
+      return [];
     case 'cleared':
       return [{ type: 'cleared' }, { type: 'stars', count: moment.stars }];
     case 'upgrade':

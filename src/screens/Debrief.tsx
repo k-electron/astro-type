@@ -10,9 +10,18 @@ import {
   Home,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import type { GameState } from '../game/game';
 import { useGame } from './useGame';
 import { useGameState } from './useGameState';
 import { OverlayShell } from './OverlayShell';
+
+/**
+ * The Debrief whose confetti has played. A cleared Run's result is one object
+ * until the next Run begins, and this screen unmounts when the Galaxy Map
+ * opens over it, so "Back to Debrief" mounts it again with the same result:
+ * the confetti is for the clear, not for each time the screen shows.
+ */
+let celebrated: GameState['debrief'] = null;
 
 export const Debrief: React.FC = () => {
   const { send } = useGame();
@@ -27,28 +36,27 @@ export const Debrief: React.FC = () => {
   const onNextStage = () => send({ type: 'PRESS_NEXT_STAGE' });
   const onOpenGalaxyMap = () => send({ type: 'OPEN_GALAXY_MAP' });
   const onReturnHome = () => send({ type: 'PRESS_HOME' });
-  const earned = result?.starsEarned;
   // A Free Flight is practice: it has no Stars to show.
   const thresholds = stage.origin === 'sector' ? stage.starThresholds : null;
 
   useEffect(() => {
-    if (earned === 3) {
-      try {
-        confetti({
-          particleCount: 80,
-          spread: 70,
-          origin: { y: 0.6 },
-          colors: ['#38bdf8', '#fbbf24', '#34d399', '#f43f5e'],
-        });
-      } catch {
-        // Confetti fallback
-      }
-      // It falls over whatever screen comes next unless it is stopped.
-      return () => {
-        confetti.reset();
-      };
+    if (!result || result === celebrated || result.starsEarned !== 3) return;
+    celebrated = result;
+    try {
+      confetti({
+        particleCount: 80,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#38bdf8', '#fbbf24', '#34d399', '#f43f5e'],
+      });
+    } catch {
+      // Confetti fallback
     }
-  }, [earned]);
+    // It falls over whatever screen comes next unless it is stopped.
+    return () => {
+      confetti.reset();
+    };
+  }, [result]);
 
   if (!result) return null;
   const {

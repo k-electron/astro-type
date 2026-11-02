@@ -80,7 +80,7 @@ export interface RunDeps {
   clock: Clock;
   /** Run Time: what WPM, Stars, cadence and keystroke intervals are measured in. */
   runClock: RunClock;
-  /** Told of each moment as it happens: the Judgement, Overdrive catching fire, a clear. */
+  /** Told of each moment as it happens: a launch, the Judgement, Overdrive catching fire, a clear. */
   emit: (moment: Moment) => void;
 }
 
@@ -108,6 +108,7 @@ export function createRunSlice(
         run: startRun(stage, currentLoadout(), clock.now()),
         debrief: null,
       });
+      emit({ type: 'launched' });
     },
 
     abandonRun: () => {

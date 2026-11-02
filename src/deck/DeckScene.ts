@@ -12,6 +12,7 @@ import { STRIKE_LINE_Y } from '../game/rules';
 import type { GameState } from '../game/game';
 import { pulseOpacity } from './animation';
 import { DeckEffects } from './DeckEffects';
+import { type DeckInputs, deckInputs, sameDeckInputs } from './deckInputs';
 import { DroneView } from './DroneView';
 import type { DroneMotion } from './droneMotion';
 import { makeText } from './draw';
@@ -70,8 +71,8 @@ export class DeckScene {
   private layout: Layout | null = null;
   /** Effect time, in milliseconds: what the looping decoration is a function of. */
   private timeMs = 0;
-  private stateKey = '';
-  private stage: GameState['run']['currentStage'] | null = null;
+  /** What the keycaps and hands were last drawn from. */
+  private drawnFrom: DeckInputs | null = null;
   private size = { width: 0, height: STAGE_HEIGHT };
 
   constructor(private readonly options: DeckSceneOptions) {
@@ -136,7 +137,7 @@ export class DeckScene {
     this.layout = layout;
     // The sizes of the last layout are gone: its glows go once nothing shows them.
     sweepBoxGlows();
-    this.stateKey = '';
+    this.drawnFrom = null;
     this.ship.snap();
 
     for (const [id, rect] of layout.keys) {
@@ -257,10 +258,8 @@ export class DeckScene {
     const lane = activeChar
       ? (keyForCharacter(activeChar)?.lane ?? null)
       : null;
-    // No lane for the next character: the beam takes the equipped trail's colour.
-    const color =
-      (lane !== null && FINGER_LANES[lane]?.color) ||
-      trailColor(state.profile.upgrades.equippedTrailTheme);
+    // The beam and the ship take the next character's finger colour.
+    const color = (lane !== null && FINGER_LANES[lane]?.color) || '#06b6d4';
     this.ship.update({
       targetX: rect ? rect.cx : null,
       color,
@@ -300,6 +299,8 @@ export class DeckScene {
         ? view.root.y - rect.h / 2
         : droneTop(0, STRIKE_LINE_Y, layout.deckY);
       const laneColor = FINGER_COLOR_MAP[judgement.finger];
+      // The lasers take the equipped Trail; the Drone keeps its finger colour.
+      const laserColor = trailColor(state.profile.upgrades.equippedTrailTheme);
       const grade = judgement.grade;
       const hitColor = hitPopupColor({
         grade,
@@ -319,6 +320,7 @@ export class DeckScene {
         overdrive: judgement.overdrive,
         display: rect.spec.display,
         laneColor,
+        laserColor,
         hitColor,
       });
       return;
@@ -363,10 +365,9 @@ export class DeckScene {
     const { currentStage, lastPressedKey } = run;
     const keyboardVisible = state.profile.keyboardVisible;
     const text = currentStage.sampleText;
-    const stateKey = `${currentStage.id}|${run.currentCharIndex}|${lastPressedKey}|${keyboardVisible}|${text.length}`;
-    if (stateKey === this.stateKey && currentStage === this.stage) return;
-    this.stateKey = stateKey;
-    this.stage = currentStage;
+    const inputs = deckInputs(state);
+    if (this.drawnFrom && sameDeckInputs(this.drawnFrom, inputs)) return;
+    this.drawnFrom = inputs;
 
     const index = run.currentCharIndex;
     const activeChar = text[index] || null;

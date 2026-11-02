@@ -8,8 +8,8 @@ import type { Judgement } from './rules';
  *
  * The Judgement cases are the Judgement itself (exactly one per keystroke that
  * counts); a hit adds the Drone it hit. Then come the other things with a
- * sound or an effect of their own: Overdrive catching fire, the Stage clear
- * (heard once the Debrief is on show), and a purchase.
+ * sound or an effect of their own: a Run launching, Overdrive catching fire,
+ * the Stage clear (heard once the Debrief is on show), and a purchase.
  */
 export type Moment =
   | (Extract<Judgement, { type: 'hit' }> & {
@@ -19,6 +19,8 @@ export type Moment =
       finger: FingerZone;
     })
   | Extract<Judgement, { type: 'miss' | 'shield' }>
+  /** A new Run began (a launch, a Replay, a Next Stage): whatever the last one left is stale. */
+  | { type: 'launched' }
   | { type: 'ignition' }
   | { type: 'cleared'; stars: number }
   | { type: 'upgrade' }
