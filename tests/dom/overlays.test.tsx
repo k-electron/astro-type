@@ -17,8 +17,8 @@ import {
 } from './harness';
 
 // The overlay screens (the Pause Menu, Galaxy Map, Hangar, Analytics, Free
-// Flight and the Debrief) are modal dialogs over the Flight Deck: the player,
-// and a screen reader, can reach only the screen on top while one shows.
+// Flight and the Debrief) are dialogs over the Flight Deck: the player can
+// reach the overlay and the header, never the Flight Deck, while one shows.
 
 type MenuButton = Exclude<HeaderButton, 'Home'>;
 const MENU_BUTTONS = Object.keys(MENU_HEADINGS) as MenuButton[];
@@ -45,9 +45,9 @@ function flightDeckInert(): boolean | null {
   return hud ? isInert(hud) : null;
 }
 
-/** An overlay is up: one modal dialog, over a Flight Deck that can't be reached. */
+/** An overlay is up: one dialog, over a Flight Deck that can't be reached. */
 function expectOverlay() {
-  expect(dialog().getAttribute('aria-modal')).toBe('true');
+  expect(dialog()).toBeTruthy();
   expect(isInert(dialog())).toBe(false);
   expect(flightDeckInert()).not.toBe(false);
 }
@@ -67,7 +67,7 @@ function halfwayThroughARun(): Player {
   return player;
 }
 
-describe('every overlay screen is a modal dialog over the Flight Deck', () => {
+describe('every overlay screen is a dialog over the Flight Deck', () => {
   it.each(MENU_BUTTONS)(
     '%s opens as a dialog with its heading and one Close button',
     (button) => {

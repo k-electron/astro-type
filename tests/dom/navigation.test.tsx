@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { CURRICULUM_SECTORS } from '../../src/curriculum/curriculum';
 import { RETURNING_PLAYER } from '../shared/saves';
+import { OPEN_AUDIO_PANEL } from '../../src/screens/audioLabels';
 import { closeLabel, flightDeckLabel } from '../../src/screens/closeLabel';
 import { fireEvent } from '@testing-library/react';
 import {
@@ -573,16 +574,86 @@ describe('Esc', () => {
     expect(pauseMenu()).toBeNull();
   });
 
-  it('does nothing on the Debrief, and Replay still starts the Stage afresh', () => {
+  it('on the Debrief opens the Galaxy Map, and its Close returns to the Debrief', () => {
     const player = toDebrief();
 
-    player.press('Escape');
+    player.pressWhereFocusIs('Escape');
 
-    expect(debriefHeading()).not.toBeNull();
+    expect(menuHeading('Galaxy Map')).not.toBeNull();
     expect(pauseMenu()).toBeNull();
+    player.click(closeLabel('debrief'));
+    expect(menuHeading('Galaxy Map')).toBeNull();
+    expect(debriefHeading()).not.toBeNull();
     player.click('Replay');
     expect(screen.getByRole('button', { name: 'Pause' })).toBeTruthy();
     expect(progress()).toBe('0%');
+  });
+
+  it('on the Galaxy Map that Esc opened from the Debrief goes back to the Debrief', () => {
+    const player = toDebrief();
+    player.pressWhereFocusIs('Escape');
+    expect(menuHeading('Galaxy Map')).not.toBeNull();
+
+    player.pressWhereFocusIs('Escape');
+
+    expect(menuHeading('Galaxy Map')).toBeNull();
+    expect(debriefHeading()).not.toBeNull();
+  });
+});
+
+// The header's audio panel opens over whatever is on show. Esc closes the top
+// layer only, so with the panel open the first Esc is for the panel and the
+// screen under it keeps its place until the next one.
+describe('Esc with the audio panel open', () => {
+  /** Open the panel from the header the way a mouse does: the button takes focus, then is pressed. */
+  function openAudioPanel() {
+    const opener = within(screen.getByRole('banner')).getByRole('button', {
+      name: OPEN_AUDIO_PANEL,
+    });
+    opener.focus();
+    fireEvent.click(opener);
+    expect(panelOpen()).toBe(true);
+  }
+  const panelOpen = () => screen.queryAllByRole('slider').length > 0;
+
+  it('over a running Run closes the panel and does not pause; the next Esc pauses', () => {
+    const player = halfwayThroughARun();
+    openAudioPanel();
+
+    player.pressWhereFocusIs('Escape');
+
+    expect(panelOpen()).toBe(false);
+    expect(pauseMenu()).toBeNull();
+    expect(screen.getByRole('button', { name: 'Pause' })).toBeTruthy();
+    player.pressWhereFocusIs('Escape');
+    expectPausedHalfway();
+  });
+
+  it('over the Pause Menu closes the panel and keeps the Run paused; the next Esc resumes', () => {
+    const player = halfwayThroughARun();
+    player.click('Pause');
+    openAudioPanel();
+
+    player.pressWhereFocusIs('Escape');
+
+    expect(panelOpen()).toBe(false);
+    expectPausedHalfway();
+    player.pressWhereFocusIs('Escape');
+    expect(pauseMenu()).toBeNull();
+    expect(progress()).toBe('50%');
+  });
+
+  it('over the Debrief closes the panel and opens no Galaxy Map; the next Esc does', () => {
+    const player = toDebrief();
+    openAudioPanel();
+
+    player.pressWhereFocusIs('Escape');
+
+    expect(panelOpen()).toBe(false);
+    expect(debriefHeading()).not.toBeNull();
+    expect(menuHeading('Galaxy Map')).toBeNull();
+    player.pressWhereFocusIs('Escape');
+    expect(menuHeading('Galaxy Map')).not.toBeNull();
   });
 });
 
