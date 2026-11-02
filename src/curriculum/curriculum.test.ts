@@ -170,7 +170,7 @@ describe('the key for a character', () => {
   ];
 
   it.each(EXPECTED)(
-    'puts "$character" on the $keycap key, under the $finger finger, with Shift on the $shiftHand',
+    'puts "$character" on the $keycap key, under the $finger finger (Shift hand: $shiftHand)',
     ({ character, keycap, finger, shiftHand }) => {
       const key = keyForCharacter(character);
 
