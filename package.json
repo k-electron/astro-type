@@ -1,7 +1,6 @@
 {
   "name": "astrotype",
   "version": "1.0.0",
-  "description": "AstroType: Cosmic Touch Typing Academy - Space-futuristic touch typing game with comprehensive pedagogical curriculum, Action Deck, and real-time analytics",
   "license": "MIT",
   "type": "module",
   "packageManager": "pnpm@12.15.0",
@@ -19,15 +18,11 @@
     "smoke": "node scripts/smoke.mjs"
   },
   "dependencies": {
-    "@tailwindcss/vite": "^4.3.3",
-    "@types/canvas-confetti": "^1.9.0",
-    "@vitejs/plugin-react": "^6.1.1",
     "canvas-confetti": "^1.9.4",
     "lucide-react": "^0.546.0",
     "pixi.js": "^8.22.0",
     "react": "^19.0.1",
     "react-dom": "^19.0.1",
-    "vite": "^8.3.0",
     "xstate": "^5.33.2",
     "zod": "^4.6.7",
     "zustand": "^5.0.15"
@@ -35,14 +30,18 @@
   "devDependencies": {
     "@biomejs/biome": "2.6.2",
     "@playwright/test": "1.64.1",
+    "@tailwindcss/vite": "^4.3.3",
     "@testing-library/dom": "10.4.2",
     "@testing-library/react": "16.3.3",
+    "@types/canvas-confetti": "^1.9.0",
     "@types/node": "^26.0.0",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.1",
     "happy-dom": "21.0.4",
     "tailwindcss": "^4.3.3",
     "typescript": "^7.0.2",
+    "vite": "^8.3.0",
     "vitest": "5.0.5",
     "wrangler": "4.152.0"
   }
