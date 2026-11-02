@@ -83,8 +83,12 @@ A Hangar purchase that changes play: shields, reactor or sensors.
 _Avoid_: Power-up, perk
 
 **Cosmetic**:
-A Hangar purchase that changes only the look or sound: a trail theme or an audio core.
+A Hangar purchase that changes only the look or sound: a Trail or an audio core.
 _Avoid_: Skin, theme, upgrade
+
+**Trail**:
+A Cosmetic colour for the lasers fired on each hit.
+_Avoid_: Trail theme
 
 ### Screens
 

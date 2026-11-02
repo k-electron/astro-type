@@ -49,8 +49,10 @@ export interface HitShot {
   overdrive: boolean;
   /** What is printed on the Drone. */
   display: string;
-  /** The lane's colour. */
+  /** The locked Drone's colour: its finger's. */
   laneColor: string;
+  /** The lasers' colour: the equipped Trail's. */
+  laserColor: string;
   /** The Judgement's colour. */
   hitColor: string;
 }
@@ -504,7 +506,7 @@ export class DeckEffects {
     bolt.h = shot.h;
     bolt.distance = Math.max(1, shot.originY - shot.y);
     bolt.speed = 46;
-    bolt.color = shot.isSpace ? '#10b981' : shot.laneColor;
+    bolt.color = shot.laserColor;
     bolt.hitColor = shot.hitColor;
     bolt.isSpace = shot.isSpace;
     bolt.grade = shot.grade;
@@ -896,7 +898,9 @@ export class DeckEffects {
   }
 
   private detonate(bolt: Bolt): void {
-    const { tx: x, ty: y, w, isSpace, hitColor, color } = bolt;
+    const { tx: x, ty: y, w, isSpace, hitColor } = bolt;
+    // The Drone's hull and debris keep its colour; the laser's is the Trail's.
+    const color = bolt.locked?.color ?? bolt.color;
     if (bolt.grade) {
       const perfect = bolt.grade === 'perfect';
       // The Drone's hull vaporises where it was held.

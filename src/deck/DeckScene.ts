@@ -257,10 +257,8 @@ export class DeckScene {
     const lane = activeChar
       ? (keyForCharacter(activeChar)?.lane ?? null)
       : null;
-    // No lane for the next character: the beam takes the equipped trail's colour.
-    const color =
-      (lane !== null && FINGER_LANES[lane]?.color) ||
-      trailColor(state.profile.upgrades.equippedTrailTheme);
+    // The beam and the ship take the next character's finger colour.
+    const color = (lane !== null && FINGER_LANES[lane]?.color) || '#06b6d4';
     this.ship.update({
       targetX: rect ? rect.cx : null,
       color,
@@ -300,6 +298,8 @@ export class DeckScene {
         ? view.root.y - rect.h / 2
         : droneTop(0, STRIKE_LINE_Y, layout.deckY);
       const laneColor = FINGER_COLOR_MAP[judgement.finger];
+      // The lasers take the equipped Trail; the Drone keeps its finger colour.
+      const laserColor = trailColor(state.profile.upgrades.equippedTrailTheme);
       const grade = judgement.grade;
       const hitColor = hitPopupColor({
         grade,
@@ -319,6 +319,7 @@ export class DeckScene {
         overdrive: judgement.overdrive,
         display: rect.spec.display,
         laneColor,
+        laserColor,
         hitColor,
       });
       return;

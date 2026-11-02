@@ -190,7 +190,7 @@ export function entriesOf<Kind extends CatalogKind>(
   );
 }
 
-/** The colour of a trail, for the Action Deck's beam. */
+/** The colour of a Trail, for the lasers the Action Deck fires on each hit. */
 export function trailColor(theme: TrailColorTheme): string {
   const entry = catalogEntry(theme);
   if (entry.kind !== 'trail') throw new Error(`${theme} is not a trail colour`);
