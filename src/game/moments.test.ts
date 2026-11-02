@@ -8,14 +8,18 @@ import {
   miss,
   newGame,
   SAMPLE_TEXT,
+  STAGE_ID,
   startedGame,
+  startFreeFlight,
+  startStage,
   targetKey,
 } from './testHelpers';
 
 /**
  * Moments (#70): one stream says what just happened. A keystroke that counts
  * is a hit, a Miss or a shield; Overdrive starting is an ignition; the last
- * hit of a Run is followed by the clear; a purchase is an upgrade or an equip.
+ * hit of a Run is followed by the clear; a purchase is an upgrade or an equip;
+ * and a new Run (a start, a Replay, a Next Stage) is announced as launched.
  * The sound and the deck both listen to it, so a moment carries everything
  * they need and neither looks up the key table: the hit names its Drone, lane
  * and finger itself.
@@ -39,6 +43,57 @@ function keyOnTheKeyboard(key: string) {
   if (!spec) throw new Error(`The keyboard has no key "${key}"`);
   return { lane: spec.lane, finger: spec.finger };
 }
+
+describe('a Run launching', () => {
+  it('is announced once when a Stage starts, with the new Run already on show', () => {
+    const game = newGame();
+    const heard: { phase: string; runTime: number }[] = [];
+    game.onMoment((moment) => {
+      if (moment.type === 'launched') {
+        const { phase, runTime } = game.getState();
+        heard.push({ phase, runTime });
+      }
+    });
+
+    startStage(game, STAGE_ID);
+
+    expect(heard).toEqual([{ phase: 'running', runTime: 0 }]);
+  });
+
+  it('is announced for a Free Flight, a Replay and a Next Stage, each a new Run', () => {
+    const game = startedGame();
+    const moments = listen(game);
+    hitPerfect(game, SAMPLE_TEXT.length);
+    expect(game.getState().phase).toBe('cleared');
+    moments.length = 0;
+
+    game.send({ type: 'PRESS_REPLAY' });
+    expect(typesOf(moments)).toEqual(['launched']);
+    expect(game.getState().runTime).toBe(0);
+
+    hitPerfect(game, SAMPLE_TEXT.length);
+    moments.length = 0;
+    game.send({ type: 'PRESS_NEXT_STAGE' });
+    expect(typesOf(moments)).toEqual(['launched']);
+
+    moments.length = 0;
+    startFreeFlight(game, 'ff jj');
+    expect(typesOf(moments)).toEqual(['launched']);
+  });
+
+  it('is not announced by pausing and resuming, or by the Galaxy Map and back', () => {
+    const game = startedGame();
+    const moments = listen(game);
+
+    game.send({ type: 'PRESS_PAUSE' });
+    game.send({ type: 'PRESS_RESUME' });
+    hitPerfect(game, SAMPLE_TEXT.length);
+    game.send({ type: 'OPEN_GALAXY_MAP' });
+    game.send({ type: 'PRESS_CLOSE' });
+
+    expect(typesOf(moments)).not.toContain('launched');
+  });
+});
 
 describe('a hit', () => {
   it('names the Drone that was hit, and the lane and finger of the key pressed', () => {

@@ -5,6 +5,7 @@ import type { Game } from '../game/game';
 import type { OnFrame } from '../game/frameLoop';
 import { isJudgement } from '../game/moments';
 import { DeckScene } from './DeckScene';
+import { deckInputs, sameDeckInputs } from './deckInputs';
 import { resetPlumeGradients } from './DroneView';
 import { DroneMotion } from './droneMotion';
 import { FxClock } from './fxClock';
@@ -73,6 +74,9 @@ class DeckSession {
   private readonly motion = new DroneMotion();
   private readonly fxClock = new FxClock();
   private readonly resizeObserver: ResizeObserver;
+  /** Ways to stop listening to the game and the frames, for `destroy`. */
+  private readonly stopListening: (() => void)[] = [];
+  private destroyed = false;
   private size: { width: number; height: number } | null = null;
   private visible = false;
   private dirty = true;
@@ -84,8 +88,8 @@ class DeckSession {
   private lastRunTime = 0;
 
   constructor(
-    private readonly game: Game,
-    onFrame: OnFrame,
+    readonly game: Game,
+    readonly onFrame: OnFrame,
   ) {
     this.wrapper.style.cssText = 'position:absolute;inset:0;overflow:hidden;';
     this.wrapper.appendChild(this.canvas);
@@ -100,7 +104,7 @@ class DeckSession {
     this.resizeObserver.observe(this.wrapper);
 
     let previous = game.getState();
-    game.subscribe(() => {
+    const stopSubscription = game.subscribe(() => {
       const state = game.getState();
       const { run } = state;
       if (run.drones !== previous.run.drones) {
@@ -113,27 +117,30 @@ class DeckSession {
       // While nothing is drawing on its own, redraw when what the deck shows changes.
       if (
         run.drones !== previous.run.drones ||
-        run.lastPressedKey !== previous.run.lastPressedKey ||
-        run.currentStage !== previous.run.currentStage ||
-        run.currentCharIndex !== previous.run.currentCharIndex ||
-        state.profile.handsVisible !== previous.profile.handsVisible ||
-        state.profile.keyboardVisible !== previous.profile.keyboardVisible
+        !sameDeckInputs(deckInputs(previous), deckInputs(state))
       ) {
         this.dirty = true;
       }
       previous = state;
     });
-    // Each Judgement fires the ship exactly once, in the lane it landed on.
-    game.onMoment((moment) => {
+    const stopMoments = game.onMoment((moment) => {
+      // Each Judgement fires the ship exactly once, in the lane it landed on.
       if (isJudgement(moment)) this.scene?.judge(moment);
+      // A new Run starts clean: nothing of the last one plays on.
+      if (moment.type === 'launched') {
+        this.scene?.clearEffects();
+        this.fxClock.restart();
+      }
     });
-    onFrame((fraction) => this.frame(fraction));
+    const stopFrames = onFrame((fraction) => this.frame(fraction));
+    this.stopListening.push(stopSubscription, stopMoments, stopFrames);
 
     void this.start();
   }
 
   private async start(): Promise<void> {
     await fontsReady();
+    if (this.destroyed) return;
     const app = new Application();
     await app.init({
       canvas: this.canvas,
@@ -154,6 +161,11 @@ class DeckSession {
         deactivateOnMouseMove: false,
       },
     });
+    // Destroyed while the Application was starting: it goes with the session.
+    if (this.destroyed) {
+      app.destroy(true, { children: true });
+      return;
+    }
     // Turned on here, not by `enabledByDefault`: PixiJS 8.22 switches its
     // per-frame update off again when it activates during `init` with the
     // canvas already in the page.
@@ -215,10 +227,8 @@ class DeckSession {
       fraction: stepFraction,
       wallMs: performance.now(),
     });
-    // Even with the deck off the page: a new Run's signal is only given once.
-    if (reading.newRun || phase === 'abandoned' || phase === 'none') {
-      this.scene?.clearEffects();
-    }
+    // Even with the deck off the page.
+    if (phase === 'abandoned' || phase === 'none') this.scene?.clearEffects();
     if (!app || !scene || !this.visible) return;
     // A cleared Run's last explosion plays out behind the Debrief.
     const playingOut = phase === 'cleared' && scene.effectsActive;
@@ -233,8 +243,12 @@ class DeckSession {
     app.render();
   }
 
-  /** For hot reload: drop what the renderer owns. */
+  /** For hot reload: stop listening and drop what the renderer owns. */
   destroy(): void {
+    this.destroyed = true;
+    for (const stop of this.stopListening) stop();
+    this.resizeObserver.disconnect();
+    this.wrapper.remove();
     resetKeyGradients();
     resetPlumeGradients();
     resetTextures();
@@ -247,6 +261,8 @@ let session: DeckSession | null = null;
 /**
  * The session's deck, made on first use from what the composition root hands
  * the Flight Deck: the game to draw and the Run clock's frames to draw on.
+ * Handed a different game (a hot reload built a new one), it drops the old
+ * deck and makes a new one that follows the current game.
  */
 export function getDeckSession({
   game,
@@ -255,6 +271,16 @@ export function getDeckSession({
   game: Game;
   onFrame: OnFrame;
 }): DeckSession {
+  if (session && (session.game !== game || session.onFrame !== onFrame)) {
+    session.destroy();
+    session = null;
+  }
   session ??= new DeckSession(game, onFrame);
   return session;
 }
+
+// A reloaded copy of this module starts with no session, so the old one goes.
+import.meta.hot?.dispose(() => {
+  session?.destroy();
+  session = null;
+});
