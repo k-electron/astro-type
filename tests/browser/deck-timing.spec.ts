@@ -62,7 +62,7 @@ test('the paused deck is frozen: Drones and the Speed stand still, and carry on 
     speedAtPause = await hudSpeed(page);
 
     // Half a second of frames after the jump: more than the 30 steps between
-    // two telemetry ticks, so a Speed that kept counting would have been
+    // two live WPM refreshes, so a Speed that kept counting would have been
     // refreshed by now.
     await page.clock.fastForward(5 * 60_000);
     await page.clock.runFor(500);

@@ -93,7 +93,7 @@ const { createMachine } = setup({
     isPaused: ({ context }) => context.phase === 'paused',
     knownStage: ({ event }) =>
       event.type === 'PICK_STAGE' && getStageById(event.stageId) !== undefined,
-    /** The one named crossing: reads the Stage the Run is of and the fleet's Stars (see the curriculum's `nextStageOf`). */
+    /** The one named crossing: reads the Stage the Run is of and total Stars (see the curriculum's `nextStageOf`). */
     hasNextStage: unprovidedGuard('hasNextStage'),
     openerIs: ({ context }, params: { screen: Screen }) =>
       context.openers[context.openers.length - 1] === params.screen,

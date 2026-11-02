@@ -1,6 +1,6 @@
 /**
  * The rules of a Run, as plain functions: Judgement, scoring, Streak,
- * Multiplier, Overdrive, shields, Drone movement, telemetry, Stars and
+ * Multiplier, Overdrive, shields, Drone movement, live WPM, Stars and
  * Credits. No React, PixiJS, DOM or sound in here.
  *
  * The whole keystroke is one function, `strike`, and the whole step is
@@ -509,8 +509,8 @@ export function strike(
   };
 }
 
-/** The telemetry tick: every 30 steps, which is 500 ms at 60 steps a second. */
-const TELEMETRY_EVERY_STEPS = 30;
+/** The live WPM refresh: every 30 steps, which is 500 ms at 60 steps a second. */
+const WPM_REFRESH_EVERY_STEPS = 30;
 
 /**
  * The whole step: the Drones move one step of 1/60 s, and every 30th step of
@@ -520,11 +520,11 @@ const TELEMETRY_EVERY_STEPS = 30;
  */
 export function tick(run: RunState, steps: number): RunState {
   const moved = { ...run, drones: moveDrones(run.drones) };
-  if (steps % TELEMETRY_EVERY_STEPS !== 0) return moved;
+  if (steps % WPM_REFRESH_EVERY_STEPS !== 0) return moved;
   const elapsedSeconds = Math.max(1, (steps * STEP_MS) / 1000);
   return {
     ...moved,
-    performance: telemetry(run.performance, elapsedSeconds),
+    performance: withLiveWpm(run.performance, elapsedSeconds),
   };
 }
 
@@ -539,7 +539,7 @@ export function clearedPerformance(perf: LivePerformance): LivePerformance {
   };
 }
 
-// ---- Telemetry, Stars and Credits ---------------------------------------
+// ---- Accuracy, WPM, Stars and Credits ---------------------------------------
 
 /** Accuracy follows every keystroke: it is worked out from the Run's counts each time. */
 function withAccuracy(perf: LivePerformance): LivePerformance {
@@ -575,7 +575,7 @@ function wpmOf(perf: LivePerformance, elapsedSeconds: number): number {
 }
 
 /** Live WPM for the HUD. Accuracy follows every keystroke instead (see `strike`). */
-function telemetry(
+function withLiveWpm(
   prev: LivePerformance,
   elapsedSeconds: number,
 ): LivePerformance {
