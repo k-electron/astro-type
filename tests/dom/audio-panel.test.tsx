@@ -1,8 +1,8 @@
 import { fireEvent } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_PROFILE } from '../../src/game/profile';
-import { OWNS_EVERY_AUDIO_CORE, RETURNING_PLAYER } from '../shared/saves';
-import { START_STAGE, voiceName } from '../shared/screens';
+import { OWNS_EVERY_SOUND_KIT, RETURNING_PLAYER } from '../shared/saves';
+import { START_STAGE, soundKitName } from '../shared/screens';
 import { type Player, renderGame, screen } from './harness';
 import {
   OPEN_AUDIO_PANEL,
@@ -13,7 +13,7 @@ import {
 
 // The header's audio controls: Mute All Audio, and the panel its settings
 // button opens (volume for the laser sounds and for the rhythm beats, each
-// with its own mute, and the Synthesizer core). A player reads the change on
+// with its own mute, and the Sound Kit). A player reads the change on
 // screen, and finds it still there after a reload. Which beat theme is chosen
 // shows only as the button's colour, so it has no test here.
 
@@ -156,7 +156,7 @@ describe('the audio panel', () => {
   });
 });
 
-describe('picking a Synthesizer core in the panel', () => {
+describe('picking a Sound Kit in the panel', () => {
   // The Hangar lists the cores in the panel's order and marks the equipped one
   // with an "Active" button; the others read "Equip". (The Laser Theme above
   // them has its own "Active" button, so take the last four.)
@@ -168,14 +168,14 @@ describe('picking a Synthesizer core in the panel', () => {
   };
 
   it('equips it, as the Hangar shows, and it is still equipped after a reload', () => {
-    const player = renderGame({ profile: OWNS_EVERY_AUDIO_CORE });
+    const player = renderGame({ profile: OWNS_EVERY_SOUND_KIT });
     player.openHeader('Hangar');
     expect(equippedCoreIndex()).toBe(0);
     player.click(/^Back to /);
 
     player.click(OPEN_AUDIO_PANEL);
-    // The panel's cores are buttons named for the voice and its sound.
-    player.click(voiceName('RETRO_8BIT'));
+    // The panel's Sound Kits are buttons named for the kit and its sound.
+    player.click(soundKitName('RETRO_8BIT'));
     player.click(OPEN_AUDIO_PANEL);
     player.openHeader('Hangar');
     expect(equippedCoreIndex()).toBe(1);

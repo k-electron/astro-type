@@ -21,8 +21,11 @@ import { OPEN_AUDIO_PANEL } from '../../src/screens/audioLabels';
 // combo, hyperspace or warp (Streak, Multiplier and Overdrive), mission,
 // highway, note, debriefing, main menu, cockpit, drill, custom practice or
 // rating (Stage and Run, Action Deck, Drone, Debrief, Academy Home, Flight
-// Deck, Free Flight, Stars): BANNED_NAME in tests/shared/names.ts has them
-// all. Each test walks one screen a player can reach and reads every piece of
+// Deck, Free Flight, Stars), and none of the names #89 retired (Tactile Rhythm
+// Flight Deck, Audio Flight Deck, Report, Launch Custom Flight, Hide Deck,
+// Synthesizer and audio core, Deep Space Drone, Cadence: they are Action Deck,
+// Analytics, Start Free Flight, Key Labels, Sound Kit, Deep Space Beats and
+// Rhythm): BANNED_NAME in tests/shared/names.ts has them all. Each test walks one screen a player can reach and reads every piece of
 // text on it.
 //
 // Not here, because a DOM has no head and no canvas: the page's <title> and

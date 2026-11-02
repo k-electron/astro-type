@@ -52,7 +52,7 @@ const COSMETICS = [
     ],
   },
   {
-    kind: 'Synthesizer Voice',
+    kind: 'Sound Kit',
     equipped: 'equippedAudioCore',
     owned: 'unlockedAudioCores',
     free: 'CYBER_SYNTH',

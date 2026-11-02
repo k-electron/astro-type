@@ -94,6 +94,9 @@ export const WIPE_SECTORS_LINE = 'Interstellar Sectors relocked to Gate 0';
 /** The label of the Free Flight screen's text box. */
 export const YOUR_TEXT = 'Your Text';
 
+/** The Free Flight screen's button that starts the Run. */
+export const START_FREE_FLIGHT = 'Start Free Flight';
+
 // ---- Names that stay -------------------------------------------------------
 
 /** Names the Glossary doesn't conflict with, so they stay on screen. */
@@ -101,11 +104,11 @@ export const STREAK_ALARMS = 'Streak alarms';
 export const PRACTICE_TIME = 'Practice Time';
 
 /**
- * How the header's audio panel names a Synthesizer Voice. A pattern, because
- * the voice's button also shows its price or a check.
+ * How the header's audio panel names a Sound Kit. A pattern, because the
+ * kit's button also shows its price or a check.
  */
-export function voiceName(id: AudioSynthCore): RegExp {
+export function soundKitName(id: AudioSynthCore): RegExp {
   const core = entriesOf('core').find((entry) => entry.id === id);
-  if (!core) throw new Error(`No Synthesizer Voice ${id}`);
+  if (!core) throw new Error(`No Sound Kit ${id}`);
   return new RegExp(core.shortName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
 }

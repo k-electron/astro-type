@@ -69,7 +69,7 @@ export function startStage(game: Game, stageId: string): void {
   game.send({ type: 'PICK_STAGE', stageId });
 }
 
-/** Begin a Free Flight Run of the player's own text, as Launch Custom Flight does. */
+/** Begin a Free Flight Run of the player's own text, as Start Free Flight does. */
 export function startFreeFlight(game: Game, text: string): void {
   game.send({
     type: 'LAUNCH_FREE_FLIGHT',

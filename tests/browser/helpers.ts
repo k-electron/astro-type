@@ -5,6 +5,7 @@ import {
   DEBRIEF_TITLE,
   HUD_NAME,
   PAUSE_MENU_NAME,
+  START_FREE_FLIGHT,
 } from '../shared/screens';
 
 // Shared by the browser journeys. Everything here finds things the way a
@@ -104,7 +105,7 @@ export async function launchFreeFlight(
   await page.goto('/');
   await page.getByRole('button', { name: 'Free Flight', exact: true }).click();
   await page.getByRole('textbox').fill(text);
-  await page.getByRole('button', { name: 'Launch Custom Flight' }).click();
+  await page.getByRole('button', { name: START_FREE_FLIGHT }).click();
   await expect(
     page.getByRole('button', { name: 'Pause', exact: true }),
   ).toBeVisible();

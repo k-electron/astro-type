@@ -40,7 +40,7 @@ import {
 import { FIRST_STAGE } from '../../src/curriculum/curriculum';
 import { startStage as sendStartStage } from '../../src/game/testHelpers';
 import { GameProvider } from '../../src/screens/useGame';
-import { DEBRIEF_TITLE } from '../shared/screens';
+import { DEBRIEF_TITLE, START_FREE_FLIGHT } from '../shared/screens';
 
 export { screen, within };
 
@@ -89,7 +89,7 @@ export interface Player {
   click(name: string | RegExp): void;
   /** Click a button in the header bar (its Flight Deck button, say), found by its accessible name. */
   clickHeader(name: string | RegExp): void;
-  /** Academy Home -> Free Flight -> type the text in -> Launch Custom Flight. */
+  /** Academy Home -> Free Flight -> type the text in -> Start Free Flight. */
   launchFreeFlight(text: string): void;
   /**
    * Press one key through the keys the harness attaches to the game
@@ -245,7 +245,7 @@ export function renderGame(options: RenderGameOptions = {}): Player {
       fireEvent.change(screen.getByRole('textbox'), {
         target: { value: text },
       });
-      player.click('Launch Custom Flight');
+      player.click(START_FREE_FLIGHT);
     },
     press(key, pressOptions = {}) {
       fireEvent.keyDown(window, { key, ...pressOptions });

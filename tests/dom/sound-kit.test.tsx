@@ -1,23 +1,23 @@
 import { describe, expect, it } from 'vitest';
-import { OWNS_RETRO_AUDIO_CORE, RETURNING_PLAYER } from '../shared/saves';
-import { voiceName } from '../shared/screens';
+import { OWNS_RETRO_SOUND_KIT, RETURNING_PLAYER } from '../shared/saves';
+import { soundKitName } from '../shared/screens';
 import { renderGame, screen } from './harness';
 import { OPEN_AUDIO_PANEL } from '../../src/screens/audioLabels';
 
-// A Synthesizer Voice is a paid Cosmetic: the Hangar sells it, and the header's
+// A Sound Kit is a paid Cosmetic: the Hangar sells it, and the header's
 // audio panel only equips the ones the player owns. The panel still lists all
 // four, and shows the ones not owned locked with their Hangar price. (Once, a
-// click in the panel equipped any voice for free.)
+// click in the panel equipped any Sound Kit for free.)
 //
 // RETURNING_PLAYER has 1,234 Credits and owns only Cyber Synth, so it could
-// afford every other voice: a click that spent Credits would show.
+// afford every other Sound Kit: a click that spent Credits would show.
 
-/** The panel's voices, as the player reads them, with the Hangar price of each. */
+/** The panel's Sound Kits, as the player reads them, with the Hangar price of each. */
 const VOICES = {
-  cyber: { name: voiceName('CYBER_SYNTH'), price: null },
-  retro: { name: voiceName('RETRO_8BIT'), price: 300 },
-  deep: { name: voiceName('DEEP_SPACE'), price: 450 },
-  neo: { name: voiceName('NEO_ACOUSTIC'), price: 600 },
+  cyber: { name: soundKitName('CYBER_SYNTH'), price: null },
+  retro: { name: soundKitName('RETRO_8BIT'), price: 300 },
+  deep: { name: soundKitName('DEEP_SPACE'), price: 450 },
+  neo: { name: soundKitName('NEO_ACOUSTIC'), price: 600 },
 } as const;
 const UNOWNED_BY_RETURNING_PLAYER = ['retro', 'deep', 'neo'] as const;
 
@@ -32,16 +32,16 @@ const showsAPrice = (which: keyof typeof VOICES) =>
 // The Hangar lists the voices in the panel's order and marks the equipped one
 // with an "Active" button; the others read "Equip" or their price. (The Laser
 // Theme above them has its own "Active" button, so take the last four.)
-const hangarVoiceButtons = () =>
+const hangarKitButtons = () =>
   screen
     .getAllByRole('button', { name: /^(Active|Equip|[\d,]+ Cr)$/ })
     .slice(-4);
-const equippedVoiceIndex = () =>
-  hangarVoiceButtons().findIndex((core) => core.textContent === 'Active');
+const equippedKitIndex = () =>
+  hangarKitButtons().findIndex((core) => core.textContent === 'Active');
 const credits = (text: string) =>
   screen.getByRole('button', { name: new RegExp(`^${text}\\s*Cr$`) });
 
-describe('the header lists every Synthesizer Voice', () => {
+describe('the header lists every Sound Kit', () => {
   it('shows the ones the player does not own locked, with their Hangar price', () => {
     const player = renderGame({ profile: RETURNING_PLAYER });
     player.click(OPEN_AUDIO_PANEL);
@@ -55,7 +55,7 @@ describe('the header lists every Synthesizer Voice', () => {
   });
 
   it('shows a voice without a price once it is owned, and keeps the others priced', () => {
-    const player = renderGame({ profile: OWNS_RETRO_AUDIO_CORE });
+    const player = renderGame({ profile: OWNS_RETRO_SOUND_KIT });
     player.click(OPEN_AUDIO_PANEL);
 
     expect(showsAPrice('retro')).toBe(false);
@@ -64,7 +64,7 @@ describe('the header lists every Synthesizer Voice', () => {
   });
 });
 
-describe('a Synthesizer Voice the player does not own', () => {
+describe('a Sound Kit the player does not own', () => {
   it.each(UNOWNED_BY_RETURNING_PLAYER)(
     'cannot be equipped from the header: the %s voice stays unequipped and no Credits are spent',
     (which) => {
@@ -76,11 +76,11 @@ describe('a Synthesizer Voice the player does not own', () => {
       expect(credits('1,234')).toBeTruthy();
       player.click(OPEN_AUDIO_PANEL);
       player.openHeader('Hangar');
-      expect(equippedVoiceIndex(), 'the equipped voice').toBe(0);
+      expect(equippedKitIndex(), 'the equipped voice').toBe(0);
       // The Hangar still sells it.
       // (Trail colours cost the same, so look only at the voices' four.)
       const index = Object.keys(VOICES).indexOf(which);
-      expect(hangarVoiceButtons()[index]?.textContent).toBe(
+      expect(hangarKitButtons()[index]?.textContent).toBe(
         `${VOICES[which].price} Cr`,
       );
     },
@@ -97,13 +97,13 @@ describe('a Synthesizer Voice the player does not own', () => {
     expect(hasPrice('deep', 450)).toBe(true);
     player.click(OPEN_AUDIO_PANEL);
     player.openHeader('Hangar');
-    expect(equippedVoiceIndex()).toBe(0);
+    expect(equippedKitIndex()).toBe(0);
   });
 });
 
-describe('a Synthesizer Voice the player owns', () => {
+describe('a Sound Kit the player owns', () => {
   it('is equipped from the header at no cost, and the Hangar shows it Active', () => {
-    const player = renderGame({ profile: OWNS_RETRO_AUDIO_CORE });
+    const player = renderGame({ profile: OWNS_RETRO_SOUND_KIT });
     player.click(OPEN_AUDIO_PANEL);
 
     player.click(VOICES.retro.name);
@@ -111,18 +111,18 @@ describe('a Synthesizer Voice the player owns', () => {
     expect(credits('1,234')).toBeTruthy();
     player.click(OPEN_AUDIO_PANEL);
     player.openHeader('Hangar');
-    expect(equippedVoiceIndex()).toBe(1);
+    expect(equippedKitIndex()).toBe(1);
   });
 });
 
-describe('buying a Synthesizer Voice in the Hangar', () => {
+describe('buying a Sound Kit in the Hangar', () => {
   it('lets the player switch to it and back from the header, with the price paid once', () => {
     const player = renderGame({ profile: RETURNING_PLAYER });
     player.openHeader('Hangar');
 
     player.click('300 Cr');
     expect(credits('934')).toBeTruthy();
-    expect(equippedVoiceIndex()).toBe(1);
+    expect(equippedKitIndex()).toBe(1);
     player.click(/^Back to /);
 
     player.click(OPEN_AUDIO_PANEL);
@@ -130,7 +130,7 @@ describe('buying a Synthesizer Voice in the Hangar', () => {
     player.click(VOICES.cyber.name);
     player.click(OPEN_AUDIO_PANEL);
     player.openHeader('Hangar');
-    expect(equippedVoiceIndex()).toBe(0);
+    expect(equippedKitIndex()).toBe(0);
     player.click(/^Back to /);
 
     player.click(OPEN_AUDIO_PANEL);
@@ -138,6 +138,6 @@ describe('buying a Synthesizer Voice in the Hangar', () => {
     expect(credits('934')).toBeTruthy();
     player.click(OPEN_AUDIO_PANEL);
     player.openHeader('Hangar');
-    expect(equippedVoiceIndex()).toBe(1);
+    expect(equippedKitIndex()).toBe(1);
   });
 });
