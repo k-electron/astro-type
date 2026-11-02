@@ -1,10 +1,13 @@
 import {
+  type Browser,
   expect,
   type Locator,
   type Page,
   test as base,
 } from '@playwright/test';
-import { drone, keycap, pauseMenu } from '../helpers';
+import { entriesOf } from '../../../src/game/catalog';
+import { trailEquipped } from '../../shared/saves';
+import { drone, keycap, pauseMenu, seedSave } from '../helpers';
 import { launchOnStoppedClock, resumeButton } from '../journey-helpers';
 
 // LOCAL ONLY (run by `pnpm verify`, not in CI; docs/agents/testing.md): hundreds of drawn
@@ -51,6 +54,8 @@ type Pixels = {
   beam(a: number, region?: Rect): Promise<number>;
   /** How many pixels are bright (something lit, on the dark deck). */
   bright(a: number, region?: Rect): Promise<number>;
+  /** How many pixels are amber or orange: the colour of the Solar Flare Trail. */
+  amber(a: number, region?: Rect): Promise<number>;
 };
 
 const test = base.extend<{ pixels: Pixels }>({
@@ -117,6 +122,18 @@ const test = base.extend<{ pixels: Pixels }>({
                 n++;
               if (name === 'beam' && bl > 140 && g > 80 && r < 90) n++;
               if (name === 'bright' && Math.max(r, g, bl) > 160) n++;
+              // Amber (#f59e0b), also as it blends into the dark deck. Cyan
+              // (r low), pink (blue high), red (green low) and white (blue
+              // high) are all outside it.
+              if (
+                name === 'amber' &&
+                r > 110 &&
+                g > 60 &&
+                bl < 90 &&
+                r > g &&
+                g > 1.5 * bl
+              )
+                n++;
             }
           }
           return n;
@@ -141,6 +158,7 @@ const test = base.extend<{ pixels: Pixels }>({
       red: (a, region) => call<number>('red', a, undefined, region),
       beam: (a, region) => call<number>('beam', a, undefined, region),
       bright: (a, region) => call<number>('bright', a, undefined, region),
+      amber: (a, region) => call<number>('amber', a, undefined, region),
     });
     await context.close();
   },
@@ -458,4 +476,90 @@ test('the ship, the guidance beam and the Drone lights are drawn, and the deck k
 
   // Thrusters and lights flicker while the Run goes on.
   expect(await pixels.changed(first, second)).toBeGreaterThan(300);
+});
+
+const SOLAR_FLARE = 'AMBER';
+const solarFlareName =
+  entriesOf('trail').find((entry) => entry.id === SOLAR_FLARE)?.name ??
+  SOLAR_FLARE;
+
+/**
+ * One Run on its own page, from the given Save: the lead Drone "b" (the left
+ * index finger, cyan) settles, and the player hits it with another Drone
+ * behind. Says how the aiming beam looked while it waited, and how much amber
+ * the hit added to the lead's column (the lane above the keyboard, the
+ * keyboard and the ship's strip) in the first frames after it.
+ */
+async function hitOnLeftIndex(
+  browser: Browser,
+  save: unknown,
+  pixels: Pixels,
+): Promise<{ beamWaiting: number; amberWaiting: number; amberRise: number }> {
+  const context = await browser.newContext({
+    baseURL: test.info().project.use.baseURL,
+    viewport: { width: 1280, height: 1100 },
+  });
+  try {
+    const page = await context.newPage();
+    if (save) await seedSave(page, save);
+    await launchWithLeadDroneSettled(page, 'bqp');
+    const deck = await deckArea(page);
+    const lead = await box(keycap(page, 'b'));
+    const centre = lead.x + lead.width / 2;
+    const keyboardTop = (await box(keycap(page, '1'))).y;
+    const column = inDeck(deck, {
+      x: centre - 140,
+      y: keyboardTop - 420,
+      width: 280,
+      height: 690,
+    });
+    const beamRegion = inDeck(deck, {
+      x: centre - 7,
+      y: keyboardTop - 410,
+      width: 14,
+      height: 300,
+    });
+
+    const waiting = await look(page, deck, pixels);
+    const beamWaiting = await pixels.beam(waiting, beamRegion);
+    const amberWaiting = await pixels.amber(waiting, column);
+
+    await page.keyboard.press('b');
+    let peak = 0;
+    // Only the first 100 ms: the lasers are on screen, and the explosion (whose
+    // sparks are random) has not built up yet.
+    for (let frame = 0; frame < 2; frame++) {
+      await page.clock.runFor(50);
+      const now = await look(page, deck, pixels);
+      peak = Math.max(peak, await pixels.amber(now, column));
+    }
+    return { beamWaiting, amberWaiting, amberRise: peak - amberWaiting };
+  } finally {
+    await context.close();
+  }
+}
+
+test(`a Trail colours the lasers a hit fires (${solarFlareName}), and the aiming beam keeps the finger colour`, async ({
+  browser,
+  pixels,
+}) => {
+  // The same Run twice, on the default Trail and with Solar Flare equipped.
+  // Whatever else is amber or orange on the deck (the explosion, the sparks)
+  // is the same in both, so only what the Trail changes shows in the
+  // difference. The lasers' own colour is the finger's cyan in the first.
+  const plain = await hitOnLeftIndex(browser, undefined, pixels);
+  const flare = await hitOnLeftIndex(
+    browser,
+    trailEquipped(SOLAR_FLARE),
+    pixels,
+  );
+
+  // The beam waiting on the lead Drone is the finger's cyan with either Trail,
+  // and nothing in its column is amber yet.
+  expect(plain.beamWaiting).toBeGreaterThan(100);
+  expect(flare.beamWaiting).toBeGreaterThan(100);
+  expect(flare.amberWaiting).toBeLessThan(plain.amberWaiting + 60);
+  // The hit's lasers are amber with Solar Flare equipped, with a Drone still
+  // to come (so it is not the Trail showing after the last key).
+  expect(flare.amberRise - plain.amberRise).toBeGreaterThan(150);
 });

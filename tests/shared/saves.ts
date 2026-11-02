@@ -5,7 +5,10 @@
  * defaults, as they do for a real one. This imports from no test runner, so
  * every layer of tests can use it.
  */
-import { AudioSynthCoreSchema } from '../../src/game/schemas';
+import {
+  AudioSynthCoreSchema,
+  type TrailColorTheme,
+} from '../../src/game/schemas';
 
 /** One Stage's progress, cleared with `stars` Stars. `overrides` change any field. */
 export function stageProgress(
@@ -62,6 +65,13 @@ export const OWNS_RETRO_AUDIO_CORE = {
   ...RETURNING_PLAYER,
   upgrades: { unlockedAudioCores: ['CYBER_SYNTH', 'RETRO_8BIT'] },
 };
+
+/** A Save that owns the Trail and has it equipped (Cyan Nebula is always owned). */
+export function trailEquipped(id: TrailColorTheme) {
+  return {
+    upgrades: { equippedTrailTheme: id, unlockedThemes: ['CYAN', id] },
+  };
+}
 
 /**
  * A complete Save in today's format (no `version`): RETURNING_PLAYER's 5 Stars
