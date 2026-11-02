@@ -39,7 +39,7 @@ import {
 } from '../../src/game/game';
 import { FIRST_STAGE } from '../../src/curriculum/curriculum';
 import { startStage as sendStartStage } from '../../src/game/testHelpers';
-import { GameProvider } from '../../src/screens/useGame';
+import { GameProvider } from '../../src/app/useGame';
 import { DEBRIEF_TITLE, START_FREE_FLIGHT } from '../shared/screens';
 
 export { screen, within };

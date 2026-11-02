@@ -13,8 +13,8 @@ import confetti from 'canvas-confetti';
 import { MAX_STARS_PER_STAGE, STAR_NUMBERS } from '../curriculum/curriculum';
 import type { GameState } from '../game/game';
 import { type RhythmBand, rhythmBand } from '../game/rules';
-import { useGame } from './useGame';
-import { useGameState } from './useGameState';
+import { useGame } from '../app/useGame';
+import { useGameState } from '../app/useGameState';
 import { OverlayShell } from './OverlayShell';
 
 /** The Rhythm pill's colours, by band. */

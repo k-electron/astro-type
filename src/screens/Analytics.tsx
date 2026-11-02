@@ -1,7 +1,7 @@
 import type React from 'react';
 import { useState } from 'react';
-import { useGame } from './useGame';
-import { useGameState } from './useGameState';
+import { useGame } from '../app/useGame';
+import { useGameState } from '../app/useGameState';
 import {
   OverlayCloseButton,
   OverlayConfirm,

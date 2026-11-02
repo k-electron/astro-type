@@ -12,7 +12,7 @@ import { PixiActionDeck } from '../deck/PixiActionDeck';
 import { FreeFlight } from './FreeFlight';
 import { Debrief } from './Debrief';
 import { GlobalCosmicBackground } from './GlobalCosmicBackground';
-import { useGameState } from './useGameState';
+import { useGameState } from '../app/useGameState';
 import type { Screen } from '../game/machine';
 
 /**

@@ -5,7 +5,7 @@ import {
   FINGER_LANES,
   FINGER_DISPLAY_NAMES,
 } from '../curriculum/curriculum';
-import { useGameState } from './useGameState';
+import { useGameState } from '../app/useGameState';
 
 /**
  * The text cut into words, each with the spaces after it, so the prompt can

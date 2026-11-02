@@ -4,8 +4,8 @@ import { entriesOf } from '../game/catalog';
 import { BEAT_THEMES } from '../game/sound';
 import { BeatThemeSchema } from '../game/schemas';
 import { laserSfxLabel, rhythmBeatsLabel } from './audioLabels';
-import { useGame } from './useGame';
-import { useGameState } from './useGameState';
+import { useGame } from '../app/useGame';
+import { useGameState } from '../app/useGameState';
 
 const BEAT_OPTIONS = BeatThemeSchema.options.map((id) => ({
   id,

@@ -9,8 +9,8 @@ import {
   VolumeX,
   SlidersHorizontal,
 } from 'lucide-react';
-import { useGame } from './useGame';
-import { useGameState } from './useGameState';
+import { useGame } from '../app/useGame';
+import { useGameState } from '../app/useGameState';
 import { AudioPanel } from './AudioPanel';
 import { muteAllLabel, OPEN_AUDIO_PANEL } from './audioLabels';
 import { flightDeckLabel } from './closeLabel';

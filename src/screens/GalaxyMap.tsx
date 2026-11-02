@@ -10,8 +10,8 @@ import {
   CheckCircle2,
   Home,
 } from 'lucide-react';
-import { useGame } from './useGame';
-import { useGameState } from './useGameState';
+import { useGame } from '../app/useGame';
+import { useGameState } from '../app/useGameState';
 import {
   OverlayCloseButton,
   OverlayFlightDeckButton,

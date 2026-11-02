@@ -23,8 +23,8 @@ import {
   type UpgradeTone,
 } from '../game/catalog';
 import { type CosmeticStatus, cosmeticStatus } from '../game/profile';
-import { useGame } from './useGame';
-import { useGameState } from './useGameState';
+import { useGame } from '../app/useGame';
+import { useGameState } from '../app/useGameState';
 
 const UPGRADE_ICONS: Record<UpgradeIcon, LucideIcon> = {
   shield: Shield,
