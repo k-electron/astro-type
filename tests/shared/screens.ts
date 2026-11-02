@@ -21,7 +21,7 @@ export const MENU_HEADINGS = {
  * The names a player (or a screen reader) finds the other screens by. The app
  * writes each one inline in its component, so they are spelled out once here
  * and every test imports them. A name the source already exports is imported
- * from there instead: `flightDeckLabel` (Resume Flight, Enter Flight Deck) and
+ * from there instead: `flightDeckLabel` (Resume Flight) and
  * `closeLabel` (the Back buttons) in `src/screens/closeLabel.ts`, the audio
  * labels in `src/screens/audioLabels.ts`, and Free Flight's title and subtitle
  * in `src/curriculum/curriculum.ts`.
@@ -44,7 +44,12 @@ export const HUD_NAME = 'HUD';
 
 // ---- Buttons that start, pause and leave a Run ----------------------------
 
-/** The header's Flight Deck button while no Run is paused ("Resume Flight" while one is). */
+/**
+ * The Flight Deck button's name while no Run is waiting, in the header and on
+ * every overlay that offers it ("Resume Flight" while one is, "Pause Flight"
+ * on a running Run). Spelled here, not taken from `flightDeckLabel`, so a test
+ * of it can't follow the source to a different word.
+ */
 export const START_STAGE = 'Start Stage';
 
 /** The header's Flight Deck button on a running Run, and its tooltip. */
@@ -80,14 +85,6 @@ export function viewGalaxyMap(sectors: number): string {
 
 /** The Galaxy Map's subheading over the list of Sectors. */
 export const GALAXY_MAP_SUBHEADING = 'Sectors';
-
-/** The Wipe confirmation's line about what it resets, for a curriculum of `stages` Stages. */
-export function wipeStagesLine(stages: number): string {
-  return `All ${stages} Stages reset to 0 ★`;
-}
-
-/** The Wipe confirmation's line about the Sectors. It stays. */
-export const WIPE_SECTORS_LINE = 'Interstellar Sectors relocked to Gate 0';
 
 // ---- Hangar ----------------------------------------------------------------
 

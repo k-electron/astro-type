@@ -12,7 +12,6 @@ import {
   PRACTICE_TIME,
   START_STAGE,
   STREAK_ALARMS,
-  WIPE_SECTORS_LINE,
   YOUR_TEXT,
 } from '../shared/screens';
 import { type Player, renderGame, screen, within } from './harness';
@@ -165,10 +164,10 @@ describe('the glossary names', () => {
 
   it('the Wipe confirmation uses them', () => {
     const player = renderGame({ profile: RETURNING_PLAYER });
-    player.openHeader('Galaxy Map');
-    player.click(/^Wipe Achievements/);
+    player.openHeader('Analytics');
+    player.click('Wipe Stars');
 
-    expectNoBannedNames(WIPE_SECTORS_LINE);
+    expectNoBannedNames('Confirm Wipe');
   });
 
   it('the Factory Reset confirmation uses them', () => {

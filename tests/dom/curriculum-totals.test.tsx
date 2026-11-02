@@ -1,14 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { CURRICULUM_SECTORS } from '../../src/curriculum/curriculum';
 import { RETURNING_PLAYER } from '../shared/saves';
-import {
-  viewGalaxyMap,
-  WIPE_SECTORS_LINE,
-  wipeStagesLine,
-} from '../shared/screens';
+import { viewGalaxyMap } from '../shared/screens';
 import { renderGame, screen } from './harness';
 
-// The totals the screens quote ("N Sectors", "of N Stars", "all N Stages")
+// The totals the screens quote ("N Sectors", "of N Stars")
 // are what the curriculum adds up to, so a Sector or Stage added to the
 // curriculum shows up in them without anyone editing a screen.
 
@@ -38,14 +34,5 @@ describe('the totals the screens quote', () => {
     player.openHeader('Galaxy Map');
 
     expect(onShow()).toMatch(new RegExp(`5\\s*/\\s*${mostStars} Stars`));
-  });
-
-  it('the Wipe warning says how many Stages reset, and that the Sectors lock again', () => {
-    const player = renderGame({ profile: RETURNING_PLAYER });
-    player.openHeader('Galaxy Map');
-    player.click(/^Wipe Achievements/);
-
-    expect(onShow()).toContain(wipeStagesLine(stages));
-    expect(onShow()).toContain(WIPE_SECTORS_LINE);
   });
 });

@@ -1,11 +1,13 @@
 import { fireEvent } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { flightDeckLabel } from '../../src/screens/closeLabel';
+import { RETURNING_PLAYER } from '../shared/saves';
 import {
   DEBRIEF_TITLE,
   HUD_NAME,
   MENU_HEADINGS,
   PAUSE_MENU_NAME,
+  START_STAGE,
 } from '../shared/screens';
 import {
   type HeaderButton,
@@ -84,17 +86,38 @@ describe('every overlay screen is a dialog over the Flight Deck', () => {
     },
   );
 
-  const FLIGHT_DECK_BUTTONS = ['Galaxy Map', 'Hangar', 'Analytics'].flatMap(
-    (button) => [
-      { button, from: 'Academy Home', label: flightDeckLabel(false) },
+  // The overlay's play button is the header's: "Resume Flight" while a Run is
+  // waiting, "Start Stage" when none is (Academy Home, or a finished Run's
+  // Debrief). The no-Run name is spelled in tests/shared/screens.ts rather than
+  // taken from `flightDeckLabel`, which would follow the source wherever it went.
+  const WAITING = {
+    'Academy Home': () => renderGame(),
+    'a Run': halfwayThroughARun,
+    'the Debrief': toDebrief,
+  } as const;
+  const FLIGHT_DECK_BUTTONS = (['Galaxy Map', 'Hangar', 'Analytics'] as const)
+    .flatMap((button) => [
+      { button, from: 'Academy Home', label: START_STAGE },
       { button, from: 'a Run', label: flightDeckLabel(true) },
-    ],
-  ) as { button: MenuButton; from: string; label: string }[];
+    ])
+    // The Galaxy Map over a Debrief offers no play button today; whether it
+    // should is open on the ticket, so it is not asserted either way.
+    .concat(
+      (['Hangar', 'Analytics'] as const).map((button) => ({
+        button,
+        from: 'the Debrief',
+        label: START_STAGE,
+      })),
+    ) as {
+    button: MenuButton;
+    from: keyof typeof WAITING;
+    label: string;
+  }[];
 
   it.each(FLIGHT_DECK_BUTTONS)(
     '$button opened from $from keeps its "$label" button inside the dialog',
     ({ button, from, label }) => {
-      const player = from === 'a Run' ? halfwayThroughARun() : renderGame();
+      const player = WAITING[from]();
       player.openHeader(button);
 
       expect(
@@ -102,6 +125,14 @@ describe('every overlay screen is a dialog over the Flight Deck', () => {
       ).toBeTruthy();
     },
   );
+
+  it('the Galaxy Map of a player with Stars, opened from Academy Home, keeps its "Start Stage" button inside the dialog', () => {
+    renderGame({ profile: RETURNING_PLAYER }).openHeader('Galaxy Map');
+
+    expect(
+      within(dialog()).getByRole('button', { name: START_STAGE }),
+    ).toBeTruthy();
+  });
 
   it('the Pause Menu is a dialog named for it, and Resume Flight takes it away', () => {
     const player = halfwayThroughARun();
@@ -228,12 +259,30 @@ describe('the Flight Deck is inert exactly while an overlay shows', () => {
 
 describe('the Flight Deck button on an overlay', () => {
   it.each(['Galaxy Map', 'Hangar', 'Analytics'] as const)(
-    '%s opened from Academy Home offers Enter Flight Deck, which starts the Stage with the Flight Deck live',
+    '%s opened from Academy Home offers Start Stage, which starts the Stage with the Flight Deck live',
     (button) => {
       const player = renderGame();
       player.openHeader(button);
 
-      player.click(flightDeckLabel(false));
+      // The dialog's own button, not the header's (which has the same name).
+      fireEvent.click(
+        within(dialog()).getByRole('button', { name: START_STAGE }),
+      );
+
+      expectFlightDeckLive();
+      expect(screen.getByRole('button', { name: 'Pause' })).toBeTruthy();
+    },
+  );
+
+  it.each(['Hangar', 'Analytics'] as const)(
+    '%s opened over the Debrief offers Start Stage, which starts a fresh Run with the Flight Deck live',
+    (button) => {
+      const player = toDebrief();
+      player.openHeader(button);
+
+      fireEvent.click(
+        within(dialog()).getByRole('button', { name: START_STAGE }),
+      );
 
       expectFlightDeckLive();
       expect(screen.getByRole('button', { name: 'Pause' })).toBeTruthy();
