@@ -25,7 +25,7 @@ export const Debrief: React.FC = () => {
   const hasUnlockedNextSector = result?.unlockedSector ?? false;
   const onReplay = () => send({ type: 'PRESS_REPLAY' });
   const onNextStage = () => send({ type: 'PRESS_NEXT_STAGE' });
-  const onReturnToMap = () => send({ type: 'OPEN_GALAXY_MAP' });
+  const onOpenGalaxyMap = () => send({ type: 'OPEN_GALAXY_MAP' });
   const onReturnHome = () => send({ type: 'PRESS_HOME' });
   const earned = result?.starsEarned;
   // A Free Flight is practice: it has no Stars to show.
@@ -330,11 +330,11 @@ export const Debrief: React.FC = () => {
           <span>Replay</span>
         </button>
 
-        {/* On the last Stage, the one Galaxy Map button is the last one, where Next Stage would be. */}
-        {stageAhead !== 'last-stage' && (
+        {/* With a Next Stage or a Free Flight, Galaxy Map is a side choice. Otherwise it is the one Galaxy Map button, last, where Next Stage would be. */}
+        {(stageAhead === 'next-stage' || stageAhead === 'free-flight') && (
           <button
             type="button"
-            onClick={onReturnToMap}
+            onClick={onOpenGalaxyMap}
             className="flex-1 min-w-[130px] px-3.5 py-2.5 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs sm:text-sm font-medium flex items-center justify-center gap-2 transition-colors cursor-pointer"
           >
             <MapIcon className="w-4 h-4 text-cyan-400" />
@@ -351,16 +351,23 @@ export const Debrief: React.FC = () => {
           <span>Academy Home</span>
         </button>
 
-        {/* On the last Stage, Next Stage opens the Galaxy Map instead, under its name. */}
-        {stageAhead !== 'free-flight' && (
+        {stageAhead === 'next-stage' && (
           <button
             type="button"
             onClick={onNextStage}
             className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-lg shadow-cyan-950/50 transition-all cursor-pointer"
           >
-            <span>
-              {stageAhead === 'next-stage' ? 'Next Stage' : 'Galaxy Map'}
-            </span>
+            <span>Next Stage</span>
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        )}
+        {(stageAhead === 'sector-locked' || stageAhead === 'last-stage') && (
+          <button
+            type="button"
+            onClick={onOpenGalaxyMap}
+            className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-lg shadow-cyan-950/50 transition-all cursor-pointer"
+          >
+            <span>Galaxy Map</span>
             <ArrowRight className="w-4 h-4" />
           </button>
         )}
