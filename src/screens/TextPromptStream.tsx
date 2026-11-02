@@ -1,7 +1,7 @@
 import type React from 'react';
 import { useRef, useEffect } from 'react';
 import {
-  KEY_FINGER_MAP,
+  keyForCharacter,
   FINGER_LANES,
   FINGER_DISPLAY_NAMES,
 } from '../curriculum/curriculum';
@@ -53,9 +53,7 @@ export const TextPromptStream: React.FC = () => {
     Math.round((currentIndex / fullText.length) * 100),
   );
   const currentChar = fullText[currentIndex] || '';
-  const charInfo = currentChar
-    ? KEY_FINGER_MAP[currentChar] || KEY_FINGER_MAP[currentChar.toLowerCase()]
-    : null;
+  const charInfo = keyForCharacter(currentChar);
   const laneInfo = charInfo ? FINGER_LANES[charInfo.lane] : null;
 
   /** One character of the text, as the player sees it. */

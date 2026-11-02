@@ -2,8 +2,7 @@ import { Container, Graphics } from 'pixi.js';
 import {
   FINGER_COLOR_MAP,
   FINGER_LANES,
-  getKeyLaneAndFinger,
-  KEY_FINGER_MAP,
+  keyForCharacter,
 } from '../curriculum/curriculum';
 import type { KeySpec } from '../curriculum/keyboardLayout';
 import { trailColor } from '../game/catalog';
@@ -25,8 +24,8 @@ import { GlowSprite, sweepBoxGlows } from './textures';
 import {
   computeLayout,
   droneTop,
-  keyId,
   type Layout,
+  keyRectOf,
   STAGE_HEIGHT,
   TRENCH_H,
 } from './layout';
@@ -255,8 +254,10 @@ export class DeckScene {
   private updateShip(state: GameState, layout: Layout, d: number): void {
     const text = state.run.currentStage.sampleText;
     const activeChar = text[state.run.currentCharIndex] || null;
-    const rect = activeChar ? layout.keys.get(keyId(activeChar)) : undefined;
-    const lane = activeChar ? getKeyLaneAndFinger(activeChar).lane : null;
+    const rect = activeChar ? keyRectOf(layout, activeChar) : undefined;
+    const lane = activeChar
+      ? (keyForCharacter(activeChar)?.lane ?? null)
+      : null;
     // No lane for the next character: the beam takes the equipped trail's colour.
     const color =
       (lane !== null && FINGER_LANES[lane]?.color) ||
@@ -283,7 +284,7 @@ export class DeckScene {
 
     if (judgement.type === 'hit') {
       const char = judgement.key;
-      const rect = layout.keys.get(keyId(char));
+      const rect = keyRectOf(layout, char);
       if (!rect) return;
       const isSpace = char === ' ';
       let view = this.drones.get(judgement.droneId);
@@ -326,12 +327,10 @@ export class DeckScene {
 
     // A Miss, or a shield that took it: the ship fires at the key that was struck.
     const pressed = judgement.key;
-    const pressedRect = layout.keys.get(keyId(pressed));
+    const pressedRect = keyRectOf(layout, pressed);
     const text = state.run.currentStage.sampleText;
     const activeChar = text[state.run.currentCharIndex] || null;
-    const expected = activeChar
-      ? layout.keys.get(keyId(activeChar))
-      : undefined;
+    const expected = activeChar ? keyRectOf(layout, activeChar) : undefined;
     const shipX = expected ? expected.cx : this.ship.x;
     const x = pressedRect
       ? pressedRect.cx
@@ -373,26 +372,24 @@ export class DeckScene {
     const activeChar = text[index] || null;
     const previousChar = index > 0 ? text[index - 1] : null;
     const nextChar = index + 1 < text.length ? text[index + 1] : null;
-    const info = activeChar
-      ? KEY_FINGER_MAP[activeChar] ||
-        KEY_FINGER_MAP[activeChar.toLowerCase()] ||
-        null
-      : null;
+    const info = activeChar ? (keyForCharacter(activeChar) ?? null) : null;
     const smartThumb = smartThumbHand(previousChar, lastPressedKey, nextChar);
-    const targetId = activeChar ? keyId(activeChar) : null;
+    const targetKey = info?.keycap.key ?? null;
     const shiftNeeded = info?.shiftRequired ?? false;
     const shiftHand = info?.recommendedShiftHand ?? null;
-    const pressedId = lastPressedKey ? keyId(lastPressedKey) : null;
+    const pressedKey = lastPressedKey
+      ? (keyForCharacter(lastPressedKey)?.keycap.key ?? null)
+      : null;
 
-    for (const [id, view] of this.keys) {
+    for (const view of this.keys.values()) {
       const key = view.rect.spec.key;
       view.draw({
-        target: targetId === id,
+        target: targetKey === key,
         modifier:
           shiftNeeded &&
           ((shiftHand === 'left' && key === 'ShiftLeft') ||
             (shiftHand === 'right' && key === 'ShiftRight')),
-        pressed: pressedId === id,
+        pressed: pressedKey === key,
         blind: !keyboardVisible,
         keyboardVisible,
         smartThumb,
@@ -440,9 +437,9 @@ export class DeckScene {
     const { resolution } = this.options;
     const seen = new Set<string>();
     state.run.drones.forEach((drone, index) => {
-      const rect = layout.keys.get(keyId(drone.char));
-      // A character with no keycap of its own (a shifted symbol) has no Drone,
-      // as in the DOM deck.
+      const rect = keyRectOf(layout, drone.char);
+      // Every character of a Run has a keycap (a capital or a symbol that needs
+      // Shift is on its base key); one the keyboard can't type has no Drone.
       if (!rect) return;
       let view = this.drones.get(drone.id);
       if (!view) {
@@ -483,7 +480,7 @@ function smartThumbHand(
 ): 'left' | 'right' {
   const opposite = (char: string | null) => {
     if (!char || char === ' ') return null;
-    const info = KEY_FINGER_MAP[char] || KEY_FINGER_MAP[char.toLowerCase()];
+    const info = keyForCharacter(char);
     if (!info) return null;
     return info.hand === 'left'
       ? 'right'
