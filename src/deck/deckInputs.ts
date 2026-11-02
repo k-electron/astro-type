@@ -3,11 +3,11 @@ import type { GameState } from '../game/game';
 /**
  * Everything the keycaps and the hands draw from, out of the game's snapshot:
  * the Stage and the typed index (which key is the target, which hand, which
- * thumb), the last key pressed, the Hands and keyboard switches, and the
- * equipped trail, the one Cosmetic the deck wears. The scene redraws them
- * when any of these changes, and the session redraws a still deck on the
- * same test, so the two can't disagree about what counts. A new input that
- * the keys draw from goes here, once.
+ * thumb), the last key pressed, and the Hands and keyboard switches. The scene
+ * redraws them when any of these changes, and the session redraws a still deck
+ * on the same test, so the two can't disagree about what counts. A new input
+ * that the keys draw from goes here, once. (The equipped Trail is not one: it
+ * colours the lasers, which `judge` reads fresh from the game.)
  */
 export interface DeckInputs {
   stage: GameState['run']['currentStage'];
@@ -15,7 +15,6 @@ export interface DeckInputs {
   lastPressedKey: string | null;
   keyboardVisible: boolean;
   handsVisible: boolean;
-  trail: GameState['profile']['upgrades']['equippedTrailTheme'];
 }
 
 export function deckInputs({ run, profile }: GameState): DeckInputs {
@@ -25,7 +24,6 @@ export function deckInputs({ run, profile }: GameState): DeckInputs {
     lastPressedKey: run.lastPressedKey,
     keyboardVisible: profile.keyboardVisible,
     handsVisible: profile.handsVisible,
-    trail: profile.upgrades.equippedTrailTheme,
   };
 }
 

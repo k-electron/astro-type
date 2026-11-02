@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { MAX_STARS_PER_STAGE } from '../curriculum/curriculum';
-import { MAX_UPGRADE_LEVEL } from './catalog';
+import { DEFAULT_TRAIL, MAX_UPGRADE_LEVEL } from './catalog';
 
 export const TrailIdSchema = z.enum([
   'CYAN',
@@ -36,9 +36,9 @@ export const UpgradesSchema = z.object({
   deflectorShields: UpgradeLevelSchema,
   overdriveReactor: UpgradeLevelSchema,
   precisionSensors: UpgradeLevelSchema,
-  equippedTrailTheme: TrailIdSchema.default('CYAN'),
+  equippedTrailTheme: TrailIdSchema.default(DEFAULT_TRAIL),
   equippedAudioCore: SoundKitSchema.default('CYBER_SYNTH'),
-  unlockedThemes: z.array(TrailIdSchema).default(['CYAN']),
+  unlockedThemes: z.array(TrailIdSchema).default([DEFAULT_TRAIL]),
   unlockedAudioCores: z.array(SoundKitSchema).default(['CYBER_SYNTH']),
 });
 
