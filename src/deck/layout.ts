@@ -1,3 +1,4 @@
+import { keyForCharacter } from '../curriculum/curriculum';
 import { KEYBOARD_ROWS, type KeySpec } from '../curriculum/keyboardLayout';
 import { STRIKE_LINE_Y } from '../game/rules';
 
@@ -56,11 +57,22 @@ export interface Layout {
   trench: { x: number; y: number; w: number };
   /** The top of the player's ship's row: 6 px under the keyboard's wrapper, never above 34 px from the bottom. */
   shipY: number;
+  /** The keycaps, by `KeySpec.key`. */
   keys: Map<string, KeyRect>;
 }
 
-/** How the deck finds a keycap from a typed character. */
-export const keyId = (key: string) => (key === ' ' ? ' ' : key.toLowerCase());
+/**
+ * The keycap a character is typed on, wherever the player's eyes should go for
+ * it: a capital or a symbol that needs Shift is on its base key. `undefined`
+ * for a character the keyboard doesn't type.
+ */
+export function keyRectOf(
+  layout: Layout,
+  character: string,
+): KeyRect | undefined {
+  const typed = keyForCharacter(character);
+  return typed ? layout.keys.get(typed.keycap.key) : undefined;
+}
 
 export function computeLayout(
   width: number,
@@ -92,7 +104,7 @@ export function computeLayout(
     let x = innerX;
     for (const spec of row) {
       const w = 2 + (free * spec.units) / units;
-      keys.set(keyId(spec.key), {
+      keys.set(spec.key, {
         spec,
         x,
         y,

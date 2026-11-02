@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { type FingerZone, KEYBOARD_ROWS } from './keyboardLayout';
+import { type FingerZone, KEYBOARD_ROWS, type KeySpec } from './keyboardLayout';
 
 /** The most Stars one Stage gives. The Save and the curriculum's totals stop here. */
 export const MAX_STARS_PER_STAGE = 3;
@@ -164,12 +164,19 @@ export const FINGER_DISPLAY_NAMES: Record<FingerZone, string> = {
 
 type Hand = 'left' | 'right' | 'thumb';
 
-/** What the finger map says about a typed character. */
-export interface KeyFinger {
+/**
+ * Where a character is typed: the keycap to press and what it takes to type
+ * this character on it.
+ */
+export interface CharacterKey {
+  /** The keycap to press. A capital or a Shift symbol is typed on its base key (`!` on `1`, `A` on `a`). */
+  keycap: KeySpec;
   lane: number;
   finger: FingerZone;
   hand: Hand;
+  /** Does the player hold Shift to type this character? */
   shiftRequired: boolean;
+  /** The hand to hold Shift with: the one that is not typing the keycap. */
   recommendedShiftHand: 'left' | 'right' | null;
 }
 
@@ -181,55 +188,44 @@ const handOf = (finger: FingerZone): Hand =>
       : 'thumb';
 
 /**
- * Which lane, finger and hand types each character. It is the keyboard's one
+ * Every character the keyboard types, by character. It is the keyboard's one
  * key table (`KEYBOARD_ROWS`) read by character: a key types itself, its
  * Shift symbol and, for a letter, its capital (each of those with Shift).
  */
-export const KEY_FINGER_MAP: Record<string, KeyFinger> = {};
-for (const { key, subDisplay, finger, lane } of KEYBOARD_ROWS.flat()) {
+const CHARACTER_KEYS = new Map<string, CharacterKey>();
+for (const keycap of KEYBOARD_ROWS.flat()) {
+  const { key, subDisplay, finger, lane } = keycap;
   if (key.length !== 1) continue; // Tab, Enter, Shift and the like type nothing
   const hand = handOf(finger);
-  KEY_FINGER_MAP[key] = {
+  CHARACTER_KEYS.set(key, {
+    keycap,
     lane,
     finger,
     hand,
     shiftRequired: false,
     recommendedShiftHand: null,
-  };
+  });
   const shifted = subDisplay ?? (/[a-z]/.test(key) ? key.toUpperCase() : null);
   if (shifted) {
-    KEY_FINGER_MAP[shifted] = {
+    CHARACTER_KEYS.set(shifted, {
+      keycap,
       lane,
       finger,
       hand,
       shiftRequired: true,
       recommendedShiftHand:
         hand === 'left' ? 'right' : hand === 'right' ? 'left' : null,
-    };
+    });
   }
 }
 
-export function getKeyLaneAndFinger(char: string): KeyFinger {
-  if (KEY_FINGER_MAP[char]) {
-    return KEY_FINGER_MAP[char];
-  }
-  const lower = char.toLowerCase();
-  if (KEY_FINGER_MAP[lower]) {
-    const base = KEY_FINGER_MAP[lower];
-    return {
-      ...base,
-      shiftRequired: char !== lower,
-      recommendedShiftHand: base.hand === 'left' ? 'right' : 'left',
-    };
-  }
-  // Default fallback to middle lane
-  return {
-    lane: 4,
-    finger: 'THUMB',
-    hand: 'thumb',
-    shiftRequired: false,
-    recommendedShiftHand: null,
-  };
+/**
+ * The one answer to "which keycap, lane, finger and Shift for this
+ * character": the Action Deck, the text prompt, Analytics and the Drones all
+ * ask it. `undefined` when the keyboard can't type the character.
+ */
+export function keyForCharacter(character: string): CharacterKey | undefined {
+  return CHARACTER_KEYS.get(character);
 }
 
 /** A Stage as the Sectors below write it: every one of them is a Sector Stage. */
@@ -1623,8 +1619,9 @@ const LOOK_ALIKES: [RegExp, string][] = [
   [/\r\n|[\r\n\t\u2028\u2029]/g, ' '], // line breaks and tabs
 ];
 
-/** A character has a key on the shown keyboard when the finger map has it. */
-const isTypeable = (character: string): boolean => character in KEY_FINGER_MAP;
+/** A character has a key on the shown keyboard when the key table has it. */
+const isTypeable = (character: string): boolean =>
+  keyForCharacter(character) !== undefined;
 
 /** A character as itself, or as its code when it would be invisible. */
 const describeCharacter = (character: string): string =>

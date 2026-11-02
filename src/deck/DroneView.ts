@@ -187,8 +187,10 @@ export class DroneView {
     }
 
     // Accessibility layer: "Drone F". A Drone is something to read, not press:
-    // not a tab stop and never in the way of a click.
-    const label = this.isSpace ? 'Drone Space' : `Drone ${keycap.display}`;
+    // not a tab stop and never in the way of a click. A symbol that needs Shift
+    // sits on its base key, and is read out as the symbol ("Drone !").
+    const legend = char === keycap.subDisplay ? char : keycap.display;
+    const label = this.isSpace ? 'Drone Space' : `Drone ${legend}`;
     this.root.accessible = true;
     this.root.accessibleType = 'div';
     this.root.accessibleHint = label;

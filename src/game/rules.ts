@@ -11,7 +11,7 @@
  * The numbers and windows are the original game's, except that every Run now
  * falls at one Drone speed (`DRONE_SPEED`).
  */
-import { getKeyLaneAndFinger, type Stage } from '../curriculum/curriculum';
+import { keyForCharacter, type Stage } from '../curriculum/curriculum';
 import type { FingerZone } from '../curriculum/keyboardLayout';
 import { STEP_MS } from './clock';
 import type { Moment } from './moments';
@@ -176,7 +176,11 @@ function makeDrone(
   yPercent: number,
   isTargetLocked: boolean,
 ): Drone {
-  const { lane, finger } = getKeyLaneAndFinger(char);
+  // Every character of a Stage's text has a key: the curriculum's check and
+  // Free Flight's text check see to that.
+  const typed = keyForCharacter(char);
+  if (!typed) throw new Error(`The keyboard can't type "${char}"`);
+  const { lane, finger } = typed;
   return {
     id: `drone-${index}-${char}-${now}`,
     char,

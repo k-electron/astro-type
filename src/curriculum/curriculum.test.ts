@@ -6,8 +6,9 @@ import {
   FREE_FLIGHT_PRESETS,
   FreeFlightTextSchema,
   freeFlightStage,
-  KEY_FINGER_MAP,
+  keyForCharacter,
 } from './curriculum';
+import type { FingerZone } from './keyboardLayout';
 
 // The curriculum is checked here, not at load (#11, #27). Every rule below
 // fails only when a Stage would break for the player. The shape of a Sector
@@ -17,17 +18,6 @@ import {
 
 const sectors = CURRICULUM_SECTORS;
 const stages = sectors.flatMap((sector) => sector.stages);
-
-// A key the player can press: the character itself, or a capital letter
-// typed with Shift on its lowercase key.
-function keyFor(char: string) {
-  return (
-    KEY_FINGER_MAP[char] ??
-    (char !== char.toLowerCase()
-      ? KEY_FINGER_MAP[char.toLowerCase()]
-      : undefined)
-  );
-}
 
 /**
  * Every piece of copy a screen shows from a Sector or a Stage: all its text
@@ -114,7 +104,7 @@ describe('curriculum', () => {
     for (const stage of stages) {
       const chars = new Set([...stage.sampleText, ...stage.targetKeys]);
       for (const char of chars) {
-        const key = keyFor(char);
+        const key = keyForCharacter(char);
         if (!key) {
           problems.push(`${stage.id}: ${JSON.stringify(char)} has no key`);
         } else if (fingerOfLane.get(key.lane) !== key.finger) {
@@ -156,6 +146,55 @@ describe('curriculum', () => {
   });
 });
 
+// Where a character is typed. The expected keys are the US layout, held here
+// as the oracle: a symbol is typed on its number or punctuation key, a capital
+// on its letter's key, each with Shift held by the hand that is not typing it.
+describe('the key for a character', () => {
+  const EXPECTED: Array<{
+    character: string;
+    keycap: string;
+    finger: FingerZone;
+    shiftHand: 'left' | 'right' | null;
+  }> = [
+    { character: '!', keycap: '1', finger: 'LEFT_PINKY', shiftHand: 'right' },
+    { character: '?', keycap: '/', finger: 'RIGHT_PINKY', shiftHand: 'left' },
+    { character: '(', keycap: '9', finger: 'RIGHT_RING', shiftHand: 'left' },
+    { character: '{', keycap: '[', finger: 'RIGHT_PINKY', shiftHand: 'left' },
+    { character: '"', keycap: "'", finger: 'RIGHT_PINKY', shiftHand: 'left' },
+    { character: ':', keycap: ';', finger: 'RIGHT_PINKY', shiftHand: 'left' },
+    { character: 'A', keycap: 'a', finger: 'LEFT_PINKY', shiftHand: 'right' },
+    { character: 'P', keycap: 'p', finger: 'RIGHT_PINKY', shiftHand: 'left' },
+    { character: 'a', keycap: 'a', finger: 'LEFT_PINKY', shiftHand: null },
+    { character: '1', keycap: '1', finger: 'LEFT_PINKY', shiftHand: null },
+    { character: ' ', keycap: ' ', finger: 'THUMB', shiftHand: null },
+  ];
+
+  it.each(EXPECTED)(
+    'puts "$character" on the $keycap key, under the $finger finger, with Shift on the $shiftHand',
+    ({ character, keycap, finger, shiftHand }) => {
+      const key = keyForCharacter(character);
+
+      expect(key?.keycap.key).toBe(keycap);
+      expect(key?.finger).toBe(finger);
+      // The lane is the finger's lane.
+      expect(FINGER_LANES[key?.lane ?? -1]?.finger).toBe(finger);
+      expect(key?.shiftRequired).toBe(shiftHand !== null);
+      expect(key?.recommendedShiftHand).toBe(shiftHand);
+    },
+  );
+
+  it('names the hand that types the key', () => {
+    expect(keyForCharacter('!')?.hand).toBe('left');
+    expect(keyForCharacter('P')?.hand).toBe('right');
+    expect(keyForCharacter(' ')?.hand).toBe('thumb');
+  });
+
+  it('has no key for a character the keyboard cannot type', () => {
+    expect(keyForCharacter('\u00E9')).toBeUndefined();
+    expect(keyForCharacter('Enter')).toBeUndefined();
+  });
+});
+
 // Free Flight is part of the curriculum (#73): the Stage it flies is built
 // here, from the player's text and Target Cadence, and judged by the same
 // rules as a Sector's.
@@ -182,7 +221,7 @@ describe('a Free Flight Stage', () => {
   it('has a lane and a finger for every character of the text, as a Sector Stage does', () => {
     const stage = freeFlightStage(text, 30);
     const chars = new Set([...stage.sampleText, ...stage.targetKeys]);
-    const problems = [...chars].filter((char) => !keyFor(char));
+    const problems = [...chars].filter((char) => !keyForCharacter(char));
     expect(problems).toEqual([]);
   });
 
