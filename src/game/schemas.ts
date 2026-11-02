@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { MAX_STARS_PER_STAGE } from '../curriculum/curriculum';
+import { MAX_UPGRADE_LEVEL } from './catalog';
 
 export const TrailColorThemeSchema = z.enum([
   'CYAN',
@@ -21,9 +22,6 @@ export const BeatThemeSchema = z.enum([
   'CYBER_PULSE',
   'COSMIC_LOFI',
 ]);
-
-/** The most levels any Upgrade has: the Save accepts no level above it. */
-export const MAX_UPGRADE_LEVEL = 3;
 
 const UpgradeLevelSchema = z
   .number()

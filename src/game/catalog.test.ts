@@ -1,11 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { entriesOf } from './catalog';
-import { MAX_UPGRADE_LEVEL } from './schemas';
+import { entriesOf, MAX_UPGRADE_LEVEL } from './catalog';
 
-// The number of levels is written twice: as a price for each level in the
-// catalog, and as the highest level the Save accepts. A level that can be
-// bought but that the Save refuses would make the whole Save unreadable on the
-// next load.
+// The highest level the Save accepts is the first Upgrade's price list. An
+// Upgrade with more levels than that could be bought past what the Save
+// accepts, which would make the whole Save unreadable on the next load.
 describe('the catalog', () => {
   it('prices every level of an Upgrade that the Save accepts, and no other', () => {
     for (const upgrade of entriesOf('upgrade')) {

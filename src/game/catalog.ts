@@ -196,3 +196,10 @@ export function trailColor(theme: TrailColorTheme): string {
   if (entry.kind !== 'trail') throw new Error(`${theme} is not a trail colour`);
   return entry.color;
 }
+
+/**
+ * The most levels any Upgrade has: the length of its price list. Every
+ * Upgrade has as many levels as the first (the catalog's test checks), and
+ * the Save accepts no level above it.
+ */
+export const MAX_UPGRADE_LEVEL = entriesOf('upgrade')[0].prices.length;

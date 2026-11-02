@@ -15,7 +15,7 @@ import { keyForCharacter, type Stage } from '../curriculum/curriculum';
 import type { FingerZone } from '../curriculum/keyboardLayout';
 import { STEP_MS } from './clock';
 import type { Moment } from './moments';
-import type { Loadout } from './profile';
+import type { Loadout, StageResult } from './profile';
 
 /** How close to the Strike Line a hit landed: Perfect, Great or Good. */
 export type Grade = 'perfect' | 'great' | 'good';
@@ -280,11 +280,23 @@ function judge(droneY: number | undefined, precisionSensors: number): Grade {
   return 'good';
 }
 
+/**
+ * The Multiplier at each Streak: x1 to start, then x2, x3 and x4 from the
+ * Streak that is listed. The one place these steps are written.
+ */
+export const MULTIPLIER_STEPS = [
+  { streak: 0, multiplier: 1 },
+  { streak: 10, multiplier: 2 },
+  { streak: 20, multiplier: 3 },
+  { streak: 30, multiplier: 4 },
+] as const;
+
 function multiplierForStreak(streak: number): number {
-  if (streak >= 30) return 4;
-  if (streak >= 20) return 3;
-  if (streak >= 10) return 2;
-  return 1;
+  let multiplier = 1;
+  for (const step of MULTIPLIER_STEPS) {
+    if (streak >= step.streak) multiplier = step.multiplier;
+  }
+  return multiplier;
 }
 
 /** What Overdrive multiplies each hit's base points by. */
@@ -336,6 +348,16 @@ function rhythmAfterHit(times: number[], previous: number): number {
 
 function rhythmAfterMiss(previous: number): number {
   return Math.max(25, previous - 15);
+}
+
+/** How even a Rhythm is, as the HUD and the Debrief name it. */
+export type RhythmBand = 'Steady' | 'Paced' | 'Uneven';
+
+/** Steady from 85%, Paced from 70%, Uneven below. */
+export function rhythmBand(rhythm: number): RhythmBand {
+  if (rhythm >= 85) return 'Steady';
+  if (rhythm >= 70) return 'Paced';
+  return 'Uneven';
 }
 
 /** The Run's numbers after a Miss: shields absorb it, otherwise the Streak breaks. */
@@ -561,28 +583,35 @@ function accuracyOf(perf: LivePerformance): number {
     : 100;
 }
 
+/**
+ * Net WPM over `elapsedSeconds` of Run Time: the right keystrokes less the
+ * wrong ones, five to a word. The one place the formula is written.
+ */
+function wpmOf(perf: LivePerformance, elapsedSeconds: number): number {
+  const minutes = elapsedSeconds / 60;
+  return (
+    Math.max(
+      0,
+      Math.round(
+        (perf.correctKeystrokes - perf.incorrectKeystrokes) / 5 / minutes,
+      ),
+    ) || 0
+  );
+}
+
 /** Live WPM for the HUD. Accuracy follows every keystroke instead (see `strike`). */
 function telemetry(
   prev: LivePerformance,
   elapsedSeconds: number,
 ): LivePerformance {
-  const minutes = elapsedSeconds / 60;
-  const netWpm =
-    Math.max(
-      0,
-      Math.round(
-        (prev.correctKeystrokes - prev.incorrectKeystrokes) / 5 / minutes,
-      ),
-    ) || 0;
-  return { ...prev, netWpm };
+  return { ...prev, netWpm: wpmOf(prev, elapsedSeconds) };
 }
 
-export interface RunOutcome {
-  wpm: number;
-  accuracy: number;
-  starsEarned: number;
-  creditsEarned: number;
-}
+/** What scoring a cleared Run gives: the part of a Stage's result the rules work out. */
+export type RunOutcome = Pick<
+  StageResult,
+  'wpm' | 'accuracy' | 'starsEarned' | 'creditsEarned'
+>;
 
 /**
  * WPM, accuracy, Stars and Credits for a cleared Run of `stage`. A Free Flight
@@ -593,13 +622,7 @@ export function scoreRun(
   elapsedSeconds: number,
   stage: Stage,
 ): RunOutcome {
-  const minutes = elapsedSeconds / 60;
-  const wpm = Math.max(
-    0,
-    Math.round(
-      (perf.correctKeystrokes - perf.incorrectKeystrokes) / 5 / minutes,
-    ),
-  );
+  const wpm = wpmOf(perf, elapsedSeconds);
   const accuracy = accuracyOf(perf);
   const scoreCredits = Math.round(perf.score / 200);
 
