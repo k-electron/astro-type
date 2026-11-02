@@ -8,13 +8,8 @@ import {
   DEFAULT_FREE_FLIGHT_WPM,
   getStageById,
 } from '../../src/curriculum/curriculum';
-import {
-  createGame,
-  createMemoryStorage,
-  type Game,
-  type Sound,
-  type MemorySaveStorage,
-} from '../../src/game/game';
+import { createGame, type Game, type Sound } from '../../src/game/game';
+import { createMemoryStorage, type MemorySaveStorage } from './memoryStorage';
 
 export type { Game } from '../../src/game/game';
 

@@ -38,8 +38,6 @@ import type { CatalogItemId } from './catalog';
 import type { BackupImport, SaveStorage } from './save';
 import { type PlayerProfile, type Settings, totalStarsOf } from './schemas';
 
-export { createMemoryStorage } from './save';
-export type { MemorySaveStorage } from './save';
 export type { Sound } from './sound';
 export type { Judgement } from './rules';
 export type { Moment } from './moments';
