@@ -1,7 +1,7 @@
 import type { Grade } from '../game/rules';
 import { BEAT_THEMES } from '../game/sound';
 import {
-  type AudioSynthCore,
+  type SoundKit,
   type BeatTheme,
   DEFAULT_PROFILE,
 } from '../game/schemas';
@@ -16,7 +16,7 @@ class SoundEngine {
   private musicVolume: number = DEFAULT_PROFILE.musicVolume;
   private soundEnabled: boolean = DEFAULT_PROFILE.soundEnabled;
   private musicEnabled: boolean = DEFAULT_PROFILE.musicEnabled;
-  private currentCore: AudioSynthCore =
+  private currentSoundKit: SoundKit =
     DEFAULT_PROFILE.upgrades.equippedAudioCore;
   private beatTheme: BeatTheme = DEFAULT_PROFILE.beatTheme;
   private globalMuted: boolean = DEFAULT_PROFILE.globalMuted;
@@ -80,8 +80,8 @@ class SoundEngine {
     }
   }
 
-  public setCore(core: AudioSynthCore) {
-    this.currentCore = core;
+  public setSoundKit(soundKit: SoundKit) {
+    this.currentSoundKit = soundKit;
   }
 
   public setBeatTheme(theme: BeatTheme) {
@@ -608,7 +608,7 @@ class SoundEngine {
         grade === 'perfect' ? 0.14 : grade === 'great' ? 0.11 : 0.085;
       const decayDuration = grade === 'perfect' ? 0.22 : 0.16;
 
-      if (this.currentCore === 'RETRO_8BIT') {
+      if (this.currentSoundKit === 'RETRO_8BIT') {
         const osc = this.ctx.createOscillator();
         const filter = this.ctx.createBiquadFilter();
         const gain = this.ctx.createGain();
@@ -629,7 +629,7 @@ class SoundEngine {
         gain.connect(this.sfxGain);
         osc.start(now);
         osc.stop(now + 0.14);
-      } else if (this.currentCore === 'DEEP_SPACE') {
+      } else if (this.currentSoundKit === 'DEEP_SPACE') {
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
 
@@ -644,7 +644,7 @@ class SoundEngine {
         gain.connect(this.sfxGain);
         osc.start(now);
         osc.stop(now + 0.28);
-      } else if (this.currentCore === 'NEO_ACOUSTIC') {
+      } else if (this.currentSoundKit === 'NEO_ACOUSTIC') {
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
 

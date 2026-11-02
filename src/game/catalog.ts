@@ -1,15 +1,15 @@
 /**
  * What the Hangar sells: Upgrades (levels, each with a price) and Cosmetics
- * (trail colours and Synthesizer Voices, bought once and equipped for free).
+ * (trail colours and Sound Kits, bought once and equipped for free).
  * One entry has everything about an item: its kind, its prices and how it is
- * presented. The Hangar, the header's voice picker and the Action Deck's trail
+ * presented. The Hangar, the header's Sound Kit picker and the Action Deck's trail
  * colour all read it, and `buy` looks prices up here, so no caller passes one.
  *
  * Where an item lives in the Save is the Profile's business (`./profile`).
  * Nothing in this module's imports touches React: an icon or a tone is a name
  * that the screen draws.
  */
-import type { AudioSynthCore, ShipUpgrades, TrailColorTheme } from './schemas';
+import type { SoundKit, ShipUpgrades, TrailColorTheme } from './schemas';
 
 /** The Upgrades' ids, as `buy` takes them. */
 export type UpgradeId = 'shields' | 'reactor' | 'sensors';
@@ -49,21 +49,21 @@ export interface TrailEntry {
   color: string;
 }
 
-export interface CoreEntry {
-  kind: 'core';
-  id: AudioSynthCore;
+export interface SoundKitEntry {
+  kind: 'soundKit';
+  id: SoundKit;
   /** As the Hangar names it. */
   name: string;
   /** As the Hangar describes it. */
   description: string;
-  /** As the header's voice picker names it. */
+  /** As the header's Sound Kit picker names it. */
   shortName: string;
-  /** What it sounds like, as the header's voice picker says. */
+  /** What it sounds like, as the header's Sound Kit picker says. */
   character: string;
   price: number;
 }
 
-export type CatalogEntry = UpgradeEntry | TrailEntry | CoreEntry;
+export type CatalogEntry = UpgradeEntry | TrailEntry | SoundKitEntry;
 export type CatalogKind = CatalogEntry['kind'];
 export type CatalogItemId = CatalogEntry['id'];
 
@@ -136,7 +136,7 @@ export const CATALOG: readonly CatalogEntry[] = [
     color: '#f43f5e',
   },
   {
-    kind: 'core',
+    kind: 'soundKit',
     id: 'CYBER_SYNTH',
     name: 'Cyber Synth (Default)',
     description: 'Harmonic dual-oscillator space synth',
@@ -145,7 +145,7 @@ export const CATALOG: readonly CatalogEntry[] = [
     price: 0,
   },
   {
-    kind: 'core',
+    kind: 'soundKit',
     id: 'RETRO_8BIT',
     name: '8-Bit Retro Arcade',
     description: 'Classic chiptune square wave blasters',
@@ -154,16 +154,16 @@ export const CATALOG: readonly CatalogEntry[] = [
     price: 300,
   },
   {
-    kind: 'core',
+    kind: 'soundKit',
     id: 'DEEP_SPACE',
-    name: 'Deep Space Drone',
+    name: 'Deep Space Beats',
     description: 'Smooth sine-wave bass resonant chimes',
     shortName: 'Deep Space',
     character: 'Warm Sub',
     price: 450,
   },
   {
-    kind: 'core',
+    kind: 'soundKit',
     id: 'NEO_ACOUSTIC',
     name: 'Neo Acoustic Harp',
     description: 'Warm triangular bells and melodic tones',

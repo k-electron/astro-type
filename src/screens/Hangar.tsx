@@ -15,7 +15,7 @@ import {
   OverlayShell,
 } from './OverlayShell';
 import {
-  type CoreEntry,
+  type SoundKitEntry,
   entriesOf,
   type TrailEntry,
   type UpgradeEntry,
@@ -130,7 +130,7 @@ const UpgradeCard: React.FC<{
  * buys it, equips it or says it is Active.
  */
 const CosmeticCard: React.FC<{
-  entry: TrailEntry | CoreEntry;
+  entry: TrailEntry | SoundKitEntry;
   status: CosmeticStatus;
   onBuy: () => void;
   children: ReactNode;
@@ -268,29 +268,29 @@ export const Hangar: React.FC = () => {
           </div>
         </div>
 
-        {/* Soundscapes: Audio Synthesizer Cores */}
+        {/* Soundscapes: Sound Kits */}
         <div>
           <div className="flex items-center gap-2 mb-3">
             <Volume2 className="w-4 h-4 text-cyan-400" />
             <h3 className="text-sm font-semibold uppercase font-mono tracking-wider text-slate-400">
-              Audio Synthesizer Engine Cores
+              Sound Kits
             </h3>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            {entriesOf('core').map((core) => {
-              const status = cosmeticStatus(profile, core);
+            {entriesOf('soundKit').map((kit) => {
+              const status = cosmeticStatus(profile, kit);
 
               return (
                 <CosmeticCard
-                  key={core.id}
-                  entry={core}
+                  key={kit.id}
+                  entry={kit}
                   status={status}
-                  onBuy={() => buy(core.id)}
+                  onBuy={() => buy(kit.id)}
                 >
                   <div className="flex items-center justify-between mb-1">
                     <span className="font-semibold text-xs text-white">
-                      {core.name}
+                      {kit.name}
                     </span>
                     {status.equipped && (
                       <span className="text-[10px] font-mono font-bold text-cyan-400">
@@ -299,7 +299,7 @@ export const Hangar: React.FC = () => {
                     )}
                   </div>
                   <p className="text-[11px] text-slate-400 mb-3">
-                    {core.description}
+                    {kit.description}
                   </p>
                 </CosmeticCard>
               );

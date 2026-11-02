@@ -1,5 +1,5 @@
 import type { RunPhase } from './machine';
-import type { AudioSynthCore, BeatTheme, PlayerProfile } from './schemas';
+import type { SoundKit, BeatTheme, PlayerProfile } from './schemas';
 import type { Grade, LivePerformance } from './rules';
 import type { Moment } from './moments';
 
@@ -21,8 +21,8 @@ export interface SoundState {
   musicOn: boolean;
   musicVolume: number;
   theme: BeatTheme;
-  /** The Synthesizer Voice. */
-  core: AudioSynthCore;
+  /** The Sound Kit. */
+  soundKit: SoundKit;
   /** The beat plays only while a Run is running, and only when music can be heard. */
   beat: boolean;
   /** The beat's Overdrive layer. It follows Overdrive in a running Run, heard or not. */
@@ -83,7 +83,7 @@ export function soundStateOf(
     musicOn: profile.musicEnabled,
     musicVolume: profile.musicVolume,
     theme: profile.beatTheme,
-    core: profile.upgrades.equippedAudioCore,
+    soundKit: profile.upgrades.equippedAudioCore,
     beat: running && musicHeard,
     overdrive: running && run.overdriveActive,
   };

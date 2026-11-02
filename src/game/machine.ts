@@ -68,7 +68,7 @@ export type PlayerEvent =
   | { type: 'PRESS_FLIGHT_DECK' }
   | { type: 'PRESS_HOME' }
   | { type: 'PICK_STAGE'; stageId: string }
-  /** The player's own text (already checked as typeable) at a Target Cadence. */
+  /** The player's own text (already checked as typeable) at a Target WPM. */
   | { type: 'LAUNCH_FREE_FLIGHT'; text: string; targetWpm: number }
   | { type: 'PRESS_REPLAY' }
   | { type: 'PRESS_NEXT_STAGE' }

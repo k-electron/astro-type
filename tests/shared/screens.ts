@@ -7,7 +7,7 @@
  */
 
 import { entriesOf } from '../../src/game/catalog';
-import type { AudioSynthCore } from '../../src/game/schemas';
+import type { SoundKit } from '../../src/game/schemas';
 
 /** Each header button that opens a screen, and the heading of that screen. */
 export const MENU_HEADINGS = {
@@ -116,8 +116,8 @@ export const PRACTICE_TIME = 'Practice Time';
  * How the header's audio panel names a Sound Kit. A pattern, because the
  * kit's button also shows its price or a check.
  */
-export function soundKitName(id: AudioSynthCore): RegExp {
-  const core = entriesOf('core').find((entry) => entry.id === id);
-  if (!core) throw new Error(`No Sound Kit ${id}`);
-  return new RegExp(core.shortName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+export function soundKitName(id: SoundKit): RegExp {
+  const kit = entriesOf('soundKit').find((entry) => entry.id === id);
+  if (!kit) throw new Error(`No Sound Kit ${id}`);
+  return new RegExp(kit.shortName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
 }

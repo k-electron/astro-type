@@ -191,8 +191,8 @@ export const Debrief: React.FC = () => {
                   ★ 2
                 </span>
                 <span>
-                  Steady Cadence & Flow (Speed &ge; {thresholds.twoStarWpm} WPM
-                  & Acc &ge; {thresholds.twoStarAccuracy}%)
+                  Speed &ge; {thresholds.twoStarWpm} WPM &amp; Accuracy &ge;{' '}
+                  {thresholds.twoStarAccuracy}%
                 </span>
               </span>
               <span
@@ -286,7 +286,7 @@ export const Debrief: React.FC = () => {
         </div>
       </div>
 
-      {/* Form & Cadence Pedagogical Assessment Card */}
+      {/* Form & Rhythm Pedagogical Assessment Card */}
       <div className="w-full bg-slate-950/70 border border-slate-800 rounded-xl p-3.5 mb-5 text-left">
         <div className="flex items-center justify-between gap-2 mb-1.5">
           <span className="text-[11px] font-mono uppercase font-bold text-cyan-400">
@@ -294,17 +294,17 @@ export const Debrief: React.FC = () => {
           </span>
           <span
             className={`text-[10px] font-mono px-2 py-0.5 rounded border ${
-              result.cadenceConsistency >= 85
+              result.rhythm >= 85
                 ? 'bg-emerald-950/60 border-emerald-500/40 text-emerald-300'
-                : result.cadenceConsistency >= 70
+                : result.rhythm >= 70
                   ? 'bg-cyan-950/60 border-cyan-500/40 text-cyan-300'
                   : 'bg-amber-950/60 border-amber-500/40 text-amber-300'
             }`}
           >
-            Cadence Rhythm: {result.cadenceConsistency}% (
-            {result.cadenceConsistency >= 85
+            Rhythm: {result.rhythm}% (
+            {result.rhythm >= 85
               ? 'Steady'
-              : result.cadenceConsistency >= 70
+              : result.rhythm >= 70
                 ? 'Paced'
                 : 'Uneven'}
             )

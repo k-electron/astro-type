@@ -201,7 +201,7 @@ export const HeaderNav: React.FC<{ ref?: React.Ref<HTMLElement> }> = ({
             <button
               type="button"
               onClick={() => setIsAudioMenuOpen(!isAudioMenuOpen)}
-              title="Open Audio Flight Deck (Volume sliders, Music beats, Synthesizer core)"
+              title={OPEN_AUDIO_PANEL}
               className={`p-1.5 border-l border-slate-800/80 transition-colors cursor-pointer ${
                 isAudioMenuOpen
                   ? 'bg-cyan-500/20 text-cyan-300'
@@ -213,7 +213,7 @@ export const HeaderNav: React.FC<{ ref?: React.Ref<HTMLElement> }> = ({
             </button>
           </div>
 
-          {/* Audio Flight Deck Popover Panel */}
+          {/* Audio Settings Popover Panel */}
           {isAudioMenuOpen && (
             <div className="absolute right-0 mt-2 w-84 sm:w-92 rounded-2xl border border-slate-700 bg-slate-900/95 backdrop-blur-xl shadow-2xl p-4 text-slate-200 z-50 flex flex-col gap-4 animate-in fade-in zoom-in-95 duration-100">
               <AudioPanel />

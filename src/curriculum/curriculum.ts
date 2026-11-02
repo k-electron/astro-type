@@ -52,7 +52,7 @@ export interface SectorStage extends StageBase {
     | 'ANCHOR_REACH_RETURN'
     | 'HAND_ALTERNATION'
     | 'VOWEL_REACH'
-    | 'CADENCE_FLOW'
+    | 'RHYTHM_FLOW'
     | 'SHIFT_DISCIPLINE';
 }
 
@@ -266,7 +266,7 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         title: 'The Tactile Anchors',
         subtitle: 'F & J Bumps + Space Rhythm',
         description:
-          'Rest index fingers on the physical F and J ridges. Both thumbs hover over Space. Lock in alternating left/right cadence.',
+          'Rest index fingers on the physical F and J ridges. Both thumbs hover over Space. Lock in an alternating left/right rhythm.',
         targetKeys: ['f', 'j', ' '],
         sampleText:
           'f j f j ff jj fff jjj fj jf f j f j ff jj fj jf f f j j f j fj jf ff jj fj jf',
@@ -666,7 +666,7 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         focusFingers: 'Full 10-Finger Matrix Coordination',
         techniqueTip:
           'Do not look down at the keyboard. Trust the small hand visualizer on screen and let muscle memory guide your strokes.',
-        patternType: 'CADENCE_FLOW',
+        patternType: 'RHYTHM_FLOW',
         starThresholds: {
           oneStarAccuracy: 87,
           twoStarWpm: 28,
@@ -684,7 +684,7 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
     name: 'Cygnus Corridor',
     curriculumCategory: 'Word Flow & Hand Alternation (Ergonomic Phase 4)',
     description:
-      'Build instinctual muscle memory through alternating-hand words, high frequency function words, and cadence stability.',
+      'Build instinctual muscle memory through alternating-hand words, high frequency function words, and rhythm stability.',
     requiredStarsToUnlock: 24,
     accentColor: '#f59e0b',
     themeSymbol: '⚡',
@@ -693,7 +693,7 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         id: 's4-l1',
         sectorId: 'sector-4',
         stageNumber: 1,
-        title: 'Alternating Hand Cadence',
+        title: 'Alternating Hand Rhythm',
         subtitle: 'Balanced Brain Hemispheres',
         description:
           'Words engineered specifically to alternate between left and right hands. Hand alternation prevents finger collisions and enforces rhythm.',
@@ -787,7 +787,7 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         focusFingers: 'Word Level Chunking',
         techniqueTip:
           'Read one word ahead. Think of words as single finger sequences rather than individual separate letters.',
-        patternType: 'CADENCE_FLOW',
+        patternType: 'RHYTHM_FLOW',
         starThresholds: {
           oneStarAccuracy: 88,
           twoStarWpm: 30,
@@ -841,7 +841,7 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         focusFingers: 'Multi-Finger Rolling Transitions',
         techniqueTip:
           'Let your fingers roll smoothly through syllables like playing a piano chord progression.',
-        patternType: 'CADENCE_FLOW',
+        patternType: 'RHYTHM_FLOW',
         starThresholds: {
           oneStarAccuracy: 88,
           twoStarWpm: 32,
@@ -855,7 +855,7 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         id: 's4-l4',
         sectorId: 'sector-4',
         stageNumber: 4,
-        title: 'Steady Cadence Paragraph',
+        title: 'Steady Rhythm Paragraph',
         subtitle: 'Metronome Rhythm Endurance',
         description:
           'Maintain steady keystroke tempo through sustained, reflective prose without slowing down on transitions.',
@@ -896,8 +896,8 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         targetWpm: 36,
         focusFingers: 'Unbroken Rhythm Flow',
         techniqueTip:
-          'Avoid sprinting and pausing. A steady, unhurried cadence achieves higher final WPM and near-perfect accuracy.',
-        patternType: 'CADENCE_FLOW',
+          'Avoid sprinting and pausing. A steady, unhurried rhythm achieves higher final WPM and near-perfect accuracy.',
+        patternType: 'RHYTHM_FLOW',
         starThresholds: {
           oneStarAccuracy: 88,
           twoStarWpm: 34,
@@ -1049,7 +1049,7 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         focusFingers: 'Seamless Letter-to-Number Transitions',
         techniqueTip:
           'Transition smoothly between the home row and top number row without looking down.',
-        patternType: 'CADENCE_FLOW',
+        patternType: 'RHYTHM_FLOW',
         starThresholds: {
           oneStarAccuracy: 84,
           twoStarWpm: 28,
@@ -1231,8 +1231,8 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         targetWpm: 34,
         focusFingers: 'Total Keyboard Matrix Mastery',
         techniqueTip:
-          'Stay calm. Maintain an even breathing cadence and trust the hand visualizers.',
-        patternType: 'CADENCE_FLOW',
+          'Stay calm. Breathe evenly and trust the hand visualizers.',
+        patternType: 'RHYTHM_FLOW',
         starThresholds: {
           oneStarAccuracy: 86,
           twoStarWpm: 30,
@@ -1250,7 +1250,7 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
     name: 'Event Horizon',
     curriculumCategory: 'Grandmaster Prose & Fluidity (Ergonomic Phase 7)',
     description:
-      'The pinnacle of touch typing mastery. Flawless finger selection, unwavering cadence, and inspiring astronomical literature.',
+      'The pinnacle of touch typing mastery. Flawless finger selection, unwavering rhythm, and inspiring astronomical literature.',
     requiredStarsToUnlock: 60,
     accentColor: '#ec4899',
     themeSymbol: '★',
@@ -1301,7 +1301,7 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         focusFingers: 'Continuous Expressive Prose Flow',
         techniqueTip:
           'Read ahead by full clauses. Allow your subconscious muscle memory to handle the physical key strikes.',
-        patternType: 'CADENCE_FLOW',
+        patternType: 'RHYTHM_FLOW',
         starThresholds: {
           oneStarAccuracy: 88,
           twoStarWpm: 34,
@@ -1359,7 +1359,7 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         focusFingers: 'Complex Scientific Polysyllables',
         techniqueTip:
           'Keep your palms floating lightly. Do not press hard on the keys—touch typing is a light, swift tap.',
-        patternType: 'CADENCE_FLOW',
+        patternType: 'RHYTHM_FLOW',
         starThresholds: {
           oneStarAccuracy: 89,
           twoStarWpm: 38,
@@ -1414,8 +1414,8 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         targetWpm: 45,
         focusFingers: 'Sustained Flow & Rhythm Endurance',
         techniqueTip:
-          'Notice how steady cadence creates speed naturally. Never rush—let the words flow effortlessly.',
-        patternType: 'CADENCE_FLOW',
+          'Notice how a steady rhythm creates speed naturally. Never rush—let the words flow effortlessly.',
+        patternType: 'RHYTHM_FLOW',
         starThresholds: {
           oneStarAccuracy: 90,
           twoStarWpm: 42,
@@ -1483,7 +1483,7 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         focusFingers: 'Supreme 10-Finger Touch Typing Fluency',
         techniqueTip:
           'You have mastered the complete keyboard. Flawless finger selection, perfect posture, and cosmic speed.',
-        patternType: 'CADENCE_FLOW',
+        patternType: 'RHYTHM_FLOW',
         starThresholds: {
           oneStarAccuracy: 92,
           twoStarWpm: 46,
@@ -1612,13 +1612,13 @@ export function stageAheadOf(stage: Stage, totalStars: number): StageAhead {
 }
 
 // ---------------------------------------------------------------------------
-// Free Flight: the player's own text, at the Target Cadence they choose
+// Free Flight: the player's own text, at the Target WPM they choose
 // ---------------------------------------------------------------------------
 
-/** The Target Cadence the Free Flight screen opens on. */
+/** The Target WPM the Free Flight screen opens on. */
 export const DEFAULT_FREE_FLIGHT_WPM = 40;
 
-/** Text the Free Flight screen offers to load, with the cadence that suits it. */
+/** Text the Free Flight screen offers to load, with the Target WPM that suits it. */
 export const FREE_FLIGHT_PRESETS = [
   {
     name: 'Cosmic Exploration Quotes',
@@ -1699,7 +1699,7 @@ export const FREE_FLIGHT_SUBTITLE = 'Your own text, at your own speed.';
 
 /**
  * The Stage a Free Flight Run flies: the player's own `text` (already checked
- * as typeable) and Target Cadence. It has no goal: a Free Flight earns no
+ * as typeable) and Target WPM. It has no goal: a Free Flight earns no
  * Stars and leaves no Stage entry in the Save, so every one is the same Stage.
  */
 export function freeFlightStage(
@@ -1715,6 +1715,6 @@ export function freeFlightStage(
     sampleText: text,
     targetWpm,
     techniqueTip:
-      'Maintain relaxed posture and steady keystroke cadence across your custom text.',
+      'Maintain relaxed posture and a steady keystroke rhythm across your text.',
   };
 }

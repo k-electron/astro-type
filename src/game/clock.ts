@@ -5,7 +5,7 @@
  * - The Run clock (`RunClock`) measures **Run Time**: the time a Run has spent
  *   running, pauses left out. It moves in fixed steps of 1/60 s, only when
  *   something steps it, and the rules read it for WPM, accuracy, Stars,
- *   cadence and keystroke intervals. Tests step it by hand.
+ *   Rhythm and keystroke intervals. Tests step it by hand.
  * - `Clock` is the date on the wall, used only for timestamps (when a Stage was
  *   last played, a Drone's id). It never measures how long anything took.
  */

@@ -43,7 +43,7 @@ const engineSettings = () => ({
   beats: engine.last.get('setMusicEnabled'),
   beatsVolume: engine.last.get('setMusicVolume'),
   beatTheme: engine.last.get('setBeatTheme'),
-  voice: engine.last.get('setCore'),
+  voice: engine.last.get('setSoundKit'),
 });
 
 const slider = (which: 'laser' | 'beats', value: number) =>

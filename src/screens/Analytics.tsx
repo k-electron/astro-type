@@ -385,7 +385,7 @@ export const Analytics: React.FC = () => {
                 your right pinky, and vice versa.
               </li>
               <li>
-                <strong className="text-slate-200">Smooth Cadence:</strong>{' '}
+                <strong className="text-slate-200">Smooth Rhythm:</strong>{' '}
                 Consistency is faster than erratic speed bursts. Strive for a
                 steady metronome rhythm.
               </li>

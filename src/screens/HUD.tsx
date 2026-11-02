@@ -16,7 +16,7 @@ export const HUD: React.FC = () => {
     shieldsRemaining,
     netWpm,
     accuracy,
-    cadence,
+    rhythm,
     keyboardVisible,
   } = useGameState((state) => ({
     score: state.run.score,
@@ -27,7 +27,7 @@ export const HUD: React.FC = () => {
     shieldsRemaining: state.run.shieldsRemaining,
     netWpm: state.run.netWpm,
     accuracy: state.run.accuracy,
-    cadence: state.run.cadenceConsistency,
+    rhythm: state.run.rhythm,
     keyboardVisible: state.profile.keyboardVisible,
   }));
   const onToggleKeyboard = () =>
@@ -130,7 +130,7 @@ export const HUD: React.FC = () => {
           </div>
         </div>
 
-        {/* Steady Cadence & Rhythm Gauge */}
+        {/* Rhythm Gauge */}
         <div className="hidden md:flex flex-col items-center min-w-[68px]">
           <span className="block text-[9px] uppercase font-mono tracking-wider text-slate-500 leading-none mb-0.5">
             Rhythm
@@ -138,23 +138,23 @@ export const HUD: React.FC = () => {
           <div className="flex items-center gap-1.5 mt-0.5">
             <span
               className={`w-2 h-2 rounded-full ${
-                cadence >= 85
+                rhythm >= 85
                   ? 'bg-emerald-400 shadow-[0_0_8px_#34d399] animate-pulse'
-                  : cadence >= 70
+                  : rhythm >= 70
                     ? 'bg-cyan-400 shadow-[0_0_8px_#38bdf8]'
                     : 'bg-amber-400'
               }`}
             />
             <span
               className={`text-xs font-mono font-bold leading-none ${
-                cadence >= 85
+                rhythm >= 85
                   ? 'text-emerald-300'
-                  : cadence >= 70
+                  : rhythm >= 70
                     ? 'text-cyan-300'
                     : 'text-amber-300'
               }`}
             >
-              {cadence >= 85 ? 'Steady' : cadence >= 70 ? 'Paced' : 'Uneven'}
+              {rhythm >= 85 ? 'Steady' : rhythm >= 70 ? 'Paced' : 'Uneven'}
             </span>
           </div>
         </div>
@@ -182,9 +182,9 @@ export const HUD: React.FC = () => {
               ? 'border-cyan-500/50 bg-cyan-950/40 text-cyan-300'
               : 'border-slate-800 bg-slate-950 text-slate-400 hover:text-slate-200'
           }`}
-          title="Show or hide the Action Deck"
+          title="Show or hide the letters on the keys"
         >
-          {keyboardVisible ? 'Hide Deck' : 'Show Deck'}
+          {keyboardVisible ? 'Hide Key Labels' : 'Show Key Labels'}
         </button>
 
         <button

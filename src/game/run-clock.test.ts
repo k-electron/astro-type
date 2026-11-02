@@ -33,7 +33,7 @@ function readings(game: Game) {
   return {
     netWpm: run.netWpm,
     accuracy: run.accuracy,
-    cadenceConsistency: run.cadenceConsistency,
+    rhythm: run.rhythm,
   };
 }
 
@@ -223,7 +223,7 @@ describe('a pause in the middle of a Run leaves WPM, accuracy and Rhythm unchang
     expect(readings(straight)).toEqual({
       netWpm: 12,
       accuracy: 75,
-      cadenceConsistency: 70,
+      rhythm: 70,
     });
     expect(readings(paused)).toEqual(readings(straight));
     expect(paused.getState().runTime).toBeCloseTo(
@@ -282,7 +282,7 @@ describe('a pause in the middle of a Run leaves WPM, accuracy and Rhythm unchang
     hitPerfect(game, 5);
 
     // Ten keystrokes 30 steps apart: perfectly even typing.
-    expect(game.getState().run.cadenceConsistency).toBe(100);
+    expect(game.getState().run.rhythm).toBe(100);
   });
 
   it('measures the same Rhythm for uneven typing with or without a pause between keystrokes', () => {
@@ -297,12 +297,12 @@ describe('a pause in the middle of a Run leaves WPM, accuracy and Rhythm unchang
       return game;
     }
 
-    const straight = unevenTyping(null).getState().run.cadenceConsistency;
+    const straight = unevenTyping(null).getState().run.rhythm;
     // Steady typing is 100; this alternates 4:1, so it reads well under.
     expect(straight).toBeLessThan(100);
     expect(straight).toBeGreaterThanOrEqual(30);
 
-    expect(unevenTyping(5).getState().run.cadenceConsistency).toBe(straight);
-    expect(unevenTyping(6).getState().run.cadenceConsistency).toBe(straight);
+    expect(unevenTyping(5).getState().run.rhythm).toBe(straight);
+    expect(unevenTyping(6).getState().run.rhythm).toBe(straight);
   });
 });

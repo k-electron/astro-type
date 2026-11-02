@@ -130,8 +130,8 @@ export const TextPromptStream: React.FC = () => {
             ·
           </span>
           <span className="text-slate-400 hidden sm:inline whitespace-nowrap">
-            Cadence:{' '}
-            <strong className="text-cyan-400 font-mono">{targetWpm} WPM</strong>
+            Target WPM:{' '}
+            <strong className="text-cyan-400 font-mono">{targetWpm}</strong>
           </span>
         </div>
 
