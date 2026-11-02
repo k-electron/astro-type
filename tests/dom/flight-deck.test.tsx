@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { FINGER_DISPLAY_NAMES } from '../../src/curriculum/curriculum';
 import { multiplierAt } from '../shared/multiplier';
 import { HUD_NAME } from '../shared/screens';
 import { type Player, renderGame, screen, within } from './harness';
@@ -298,4 +299,39 @@ describe('Overdrive', () => {
       expectOverdrive(run.streak); // x1, x2 at 10, x3 at 20, x4 at 30
     }
   });
+});
+
+describe('the text prompt names the reach for the character to type next', () => {
+  // The finger of the key each character is typed on (the US layout: the
+  // oracle), and which hand's Shift to hold, if any.
+  const REACHES = [
+    { character: '!', finger: 'LEFT_PINKY', shift: 'right' },
+    { character: '?', finger: 'RIGHT_PINKY', shift: 'left' },
+    { character: '(', finger: 'RIGHT_RING', shift: 'left' },
+    { character: '{', finger: 'RIGHT_PINKY', shift: 'left' },
+    { character: '"', finger: 'RIGHT_PINKY', shift: 'left' },
+    { character: ':', finger: 'RIGHT_PINKY', shift: 'left' },
+    { character: 'B', finger: 'LEFT_INDEX', shift: 'right' },
+    { character: 'P', finger: 'RIGHT_PINKY', shift: 'left' },
+    { character: '1', finger: 'LEFT_PINKY', shift: null },
+    { character: 'b', finger: 'LEFT_INDEX', shift: null },
+  ] as const;
+
+  it.each(REACHES)(
+    'for "$character": the $finger finger, and Shift on the $shift',
+    ({ character, finger, shift }) => {
+      renderGame({ text: `${character}a` });
+      const prompt = within(screen.getByLabelText('Text prompt'));
+
+      expect(prompt.getByText(FINGER_DISPLAY_NAMES[finger])).toBeTruthy();
+      if (shift === null) {
+        expect(prompt.queryByText(/shift/i)).toBeNull();
+      } else {
+        // The Shift copy is not exported yet, so it is matched loosely.
+        expect(prompt.getByText(/shift/i).textContent?.toLowerCase()).toContain(
+          shift,
+        );
+      }
+    },
+  );
 });
