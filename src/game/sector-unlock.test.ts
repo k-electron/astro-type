@@ -12,7 +12,8 @@ import {
 /**
  * The Debrief says "New Sector Unlocked!" only when the Run just cleared is
  * what opened a Sector (decided in #35). Sectors open on the fleet's total
- * Stars: Sector 02 needs 6. Free Flight Stars count toward the fleet too.
+ * Stars: Sector 02 needs 6. Only a Sector Stage's Stars count; a Free Flight
+ * earns none (#86), so it can never open one.
  */
 
 /** Clear Stage 1 in a minute, no Misses: 3 Stars. */
@@ -39,15 +40,6 @@ describe('the Sector unlock notice in the Debrief', () => {
     expect(game.getState().debrief?.unlockedSector).toBe(true);
   });
 
-  it('shows when a Free Flight clear is what took the fleet to 6 Stars', () => {
-    // 5 Stars so far: any Star from a Free Flight reaches 6.
-    const game = clearFreeFlight(clearedStages({ 's1-l1': 3, 's1-l2': 2 }));
-
-    expect(game.getState().screen).toBe('debrief');
-    expect(game.getState().debrief?.starsEarned).toBeGreaterThan(0);
-    expect(game.getState().debrief?.unlockedSector).toBe(true);
-  });
-
   it('is absent after Stage 1 is cleared while Sector 02 is still locked', () => {
     // A fresh Profile: 3 Stars is short of the 6 that open Sector 02.
     const game = clearStage1();
@@ -66,10 +58,12 @@ describe('the Sector unlock notice in the Debrief', () => {
     expect(game.getState().debrief?.unlockedSector).toBe(false);
   });
 
-  it('is absent after a Free Flight clear that opens nothing', () => {
-    const game = clearFreeFlight();
+  it('is absent after a Free Flight clear, even one Star short of the gate', () => {
+    // 5 Stars so far: a Free Flight adds none, so the gate at 6 stays shut.
+    const game = clearFreeFlight(clearedStages({ 's1-l1': 3, 's1-l2': 2 }));
 
     expect(game.getState().screen).toBe('debrief');
+    expect(game.getState().profile.totalStars).toBe(5);
     expect(game.getState().debrief?.unlockedSector).toBe(false);
   });
 });

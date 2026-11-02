@@ -6,7 +6,7 @@ import {
   FREE_FLIGHT_TITLE,
 } from '../../src/curriculum/curriculum';
 import { closeLabel } from '../../src/screens/closeLabel';
-import { clearedStages } from '../shared/saves';
+import { clearedStages, RETURNING_PLAYER } from '../shared/saves';
 import {
   ACADEMY_HOME,
   ACADEMY_HOME_HEADING,
@@ -43,6 +43,11 @@ const hudText = () =>
 const FRESH_SCORE = /Score\s*0\s*x1/;
 const progress = () =>
   screen.getByRole('progressbar', { name: 'Progress' }).textContent;
+
+/** The most Stars the Galaxy Map can show: three on every Stage of every Sector. */
+const mostStars =
+  3 *
+  CURRICULUM_SECTORS.reduce((count, sector) => count + sector.stages.length, 0);
 
 const BANNER = 'New Sector Unlocked! Find it on the Galaxy Map.';
 
@@ -215,6 +220,55 @@ describe('Free Flight', () => {
     );
     expect(card.textContent).toMatch(/Speed\s*[1-9]\d*\s*WPM/);
     expect(card.textContent).toMatch(/Accuracy\s*100%/);
+  });
+
+  it('is headed Free Flight, not by an id of its own', () => {
+    renderGame({ text: 'f j f j' }).typePrompt();
+
+    const title = screen.getByText(DEBRIEF_TITLE).textContent ?? '';
+    expect(title).toMatch(new RegExp(`·\\s*${FREE_FLIGHT_TITLE}`, 'i'));
+    expect(title).not.toMatch(/custom/i);
+  });
+
+  it('shows no Star rating and no new-Stars line, as a Sector Stage does', () => {
+    renderGame({ text: 'f j f j' }).typePrompt();
+
+    // The rating's stars, the fleet's total, its "(+N new)" and its New Best.
+    expect(debriefCard().textContent).not.toMatch(
+      /★|Total Fleet Stars|\+\d+\s*new|New Best/,
+    );
+  });
+
+  it('shows the Credits it paid, the score part alone', () => {
+    const player = renderGame({ profile: RETURNING_PLAYER, text: 'f j f j' });
+    player.typePrompt();
+
+    const card = debriefCard().textContent ?? '';
+    const score = Number(/Score\s*([\d,]+)/.exec(card)?.[1].replace(/,/g, ''));
+    const paid = Number(
+      /Credits\s*\+([\d,]+)/.exec(card)?.[1].replace(/,/g, ''),
+    );
+    expect(score).toBeGreaterThan(0);
+    expect(paid).toBe(Math.round(score / 200));
+  });
+
+  it('flown twice leaves the Stars where they were and never shows New Best', () => {
+    // 5 Stars so far, and the same text typed twice (Replay is the second).
+    const player = renderGame({ profile: RETURNING_PLAYER, text: 'f j f j' });
+
+    for (const flight of [1, 2]) {
+      if (flight === 2) player.click('Replay');
+      player.typePrompt();
+
+      expect(screen.getByText(DEBRIEF_TITLE), `flight ${flight}`).toBeTruthy();
+      expect(debriefCard().textContent).not.toMatch(/New Best|\+\d+\s*new/);
+      expect(stars(5), `flight ${flight}`).toBeTruthy();
+    }
+
+    player.openHeader('Galaxy Map');
+    expect(document.body.textContent).toMatch(
+      new RegExp(`5\\s*/\\s*${mostStars} Stars`),
+    );
   });
 
   it('turns pasted curly quotes, a long dash and line breaks into plain keys, and plays through on them', () => {

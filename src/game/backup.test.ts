@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   clearedStages,
+  completeSave,
+  FREE_FLIGHT_SAVE,
   OLD_DRONE_SPEEDS,
   OLD_LIVE_EXPORT,
   withLegacyReactorKey,
@@ -194,6 +196,25 @@ describe('importing a Backup', () => {
     expect(game.getState().profile.totalStars).toBe(5);
     expect(game.getState().profile.totalCredits).toBe(900);
     expect(storage.saved).not.toHaveProperty('highwaySpeed');
+  });
+
+  it('drops the Free Flight entries of a Backup made before Free Flight became practice, and the Stars they counted', () => {
+    // FREE_FLIGHT_SAVE claims 10 Stars: 5 from the curriculum, 5 from Free Flight.
+    const { game, storage } = gameWith();
+
+    const outcome = game.importBackup(JSON.stringify(FREE_FLIGHT_SAVE));
+
+    expect(outcome.ok).toBe(true);
+    const profile = game.getState().profile;
+    const kept = completeSave();
+    expect(profile.stagesProgress).toEqual(kept.stagesProgress);
+    expect(profile.totalStars).toBe(5);
+    expect(profile.totalCredits).toBe(kept.totalCredits);
+    expect(profile.keyAnalytics).toEqual(kept.keyAnalytics);
+    expect(storage.saved?.stagesProgress).toEqual(kept.stagesProgress);
+    expect(JSON.parse(exportBackup(profile)).stagesProgress).toEqual(
+      kept.stagesProgress,
+    );
   });
 
   it("reads this game's own Backup with the version taken off, as an old export", () => {

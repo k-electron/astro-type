@@ -37,7 +37,7 @@ async function headerCredits(page: Page): Promise<string> {
   return (await button.textContent()) ?? '';
 }
 
-test('the Save outlives a reload: Stars, a Backup round trip, a new clear, and an unreadable Save', async ({
+test('the Save outlives a reload: Stars, a Backup round trip, a Free Flight, and an unreadable Save', async ({
   page,
   browser,
 }) => {
@@ -82,16 +82,15 @@ test('the Save outlives a reload: Stars, a Backup round trip, a new clear, and a
     await expect.soft(credits(page, '1,234')).toBeVisible();
   });
 
-  await test.step('clearing a Free Flight earns Stars, and they are kept after a reload', async () => {
+  await test.step('clearing a Free Flight earns no Stars, and what it paid is kept after a reload', async () => {
     await launchFreeFlight(page, 'ab');
     await typeText(page, 'ab');
     await expect(page.getByText(DEBRIEF_TITLE)).toBeVisible();
-    const after = await headerStars(page);
-    expect(after, 'the clear added Stars to the fleet').toBeGreaterThan(5);
+    expect(await headerStars(page), 'a Free Flight adds no Stars').toBe(5);
     const creditsAfter = await headerCredits(page);
 
     await page.reload();
-    await expect(stars(page, after)).toBeVisible();
+    await expect(stars(page, 5)).toBeVisible();
     expect.soft(await headerCredits(page)).toBe(creditsAfter);
   });
 
