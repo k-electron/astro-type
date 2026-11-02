@@ -14,6 +14,7 @@ import { useGameState } from './useGameState';
 import { AudioPanel } from './AudioPanel';
 import { muteAllLabel, OPEN_AUDIO_PANEL } from './audioLabels';
 import { flightDeckLabel } from './closeLabel';
+import { useEscLayer } from '../app/escLayers';
 
 /**
  * `ref` is the header element itself. The layout that owns the header and the
@@ -47,7 +48,13 @@ export const HeaderNav: React.FC<{ ref?: React.Ref<HTMLElement> }> = ({
   const [isAudioMenuOpen, setIsAudioMenuOpen] = useState(false);
   const audioMenuRef = useRef<HTMLDivElement>(null);
 
-  // Close audio menu on outside click or escape
+  // Esc closes the audio panel before anything under it (see `escLayers.ts`).
+  useEscLayer(
+    'audio-panel',
+    isAudioMenuOpen ? () => setIsAudioMenuOpen(false) : null,
+  );
+
+  // Close audio menu on an outside click
   useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
       if (
@@ -58,28 +65,18 @@ export const HeaderNav: React.FC<{ ref?: React.Ref<HTMLElement> }> = ({
       }
     };
 
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        // The dropdown takes this Esc; the game doesn't also see it.
-        e.preventDefault();
-        setIsAudioMenuOpen(false);
-      }
-    };
-
     if (isAudioMenuOpen) {
       document.addEventListener('mousedown', handleOutsideClick);
-      document.addEventListener('keydown', handleKeyDown);
     }
     return () => {
       document.removeEventListener('mousedown', handleOutsideClick);
-      document.removeEventListener('keydown', handleKeyDown);
     };
   }, [isAudioMenuOpen]);
 
   return (
     <header
       ref={ref}
-      className="w-full flex items-center justify-between gap-3 sm:gap-6 px-3 sm:px-6 py-3 border-b border-slate-800 bg-slate-950/85 backdrop-blur-md sticky top-0 z-40"
+      className="w-full flex items-center justify-between gap-3 sm:gap-6 px-3 sm:px-6 py-3 border-b border-slate-800 bg-slate-950/85 backdrop-blur-md sticky top-0 z-60"
     >
       {/* Zone 1: Brand Wordmark (Go Home) & Gamification Telemetry */}
       <div className="flex items-center gap-3 shrink-0">

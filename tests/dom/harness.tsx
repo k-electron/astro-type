@@ -98,6 +98,14 @@ export interface Player {
    */
   press(key: string, options?: PressOptions): void;
   /**
+   * Press one key the way the keyboard sends it: to the element that has
+   * focus (the body when none has), bubbling up through the document to the
+   * window. Use it where it matters who sees the key first, such as Esc over
+   * layers that each hold a listener. `press` sends to `window` alone, which
+   * no listener on the document or below can see.
+   */
+  pressWhereFocusIs(key: string, options?: PressOptions): void;
+  /**
    * Type each character of `text`, stepping the Run clock `stepsPerKey`
    * (default 30, half a second: the Drone is at the Strike Line) before each.
    * The last character of a Run's text clears it.
@@ -242,6 +250,11 @@ export function renderGame(options: RenderGameOptions = {}): Player {
     press(key, pressOptions = {}) {
       fireEvent.keyDown(window, { key, ...pressOptions });
       fireEvent.keyUp(window, { key, ...pressOptions });
+    },
+    pressWhereFocusIs(key, pressOptions = {}) {
+      const target = document.activeElement ?? document.body;
+      fireEvent.keyDown(target, { key, ...pressOptions });
+      fireEvent.keyUp(target, { key, ...pressOptions });
     },
     type(text, typeOptions = {}) {
       const steps = typeOptions.stepsPerKey ?? STEPS_BEFORE_A_KEY;

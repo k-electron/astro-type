@@ -5,6 +5,7 @@ import { RETURNING_PLAYER } from '../shared/saves';
 import { DEBRIEF_TITLE, MENU_HEADINGS, START_STAGE } from '../shared/screens';
 import { type Player, renderGame, screen, within } from './harness';
 import { flightDeckLabel } from '../../src/screens/closeLabel';
+import { OPEN_AUDIO_PANEL } from '../../src/screens/audioLabels';
 
 // Wiping the Stars asks first. profile.test.tsx guards Factory Reset
 // (confirming); this guards the two Wipe buttons, which clear the Stars and
@@ -242,6 +243,45 @@ describe.each(CONFIRMS)(
         screen.queryByRole('heading', { name: MENU_HEADINGS[menu] }),
       ).toBeNull();
       expect(stars(5)).toBeTruthy();
+    });
+  },
+);
+
+// The header stays usable over an overlay, so its audio panel can be open
+// above a confirm. One Esc closes one layer, the top one: the audio panel,
+// then the confirm, then the screen.
+describe.each(CONFIRMS)(
+  'Esc over the $where confirm and the audio panel',
+  ({ menu, ask, confirm }) => {
+    it('closes the audio panel, then the confirm, then the screen, one layer each', () => {
+      const player = renderGame({ profile: RETURNING_PLAYER });
+      player.openHeader(menu);
+      clickLikeAMouse(ask);
+      // The audio panel opens last, from the header, with a mouse click.
+      const opener = within(screen.getByRole('banner')).getByRole('button', {
+        name: OPEN_AUDIO_PANEL,
+      });
+      opener.focus();
+      fireEvent.click(opener);
+      const panelOpen = () => screen.queryAllByRole('slider').length > 0;
+      const screenOpen = () =>
+        screen.queryByRole('heading', { name: MENU_HEADINGS[menu] }) !== null;
+      expect(panelOpen()).toBe(true);
+      expect(confirmButton(confirm)).not.toBeNull();
+
+      player.pressWhereFocusIs('Escape');
+      expect(panelOpen()).toBe(false);
+      expect(confirmButton(confirm)).not.toBeNull();
+      expect(screenOpen()).toBe(true);
+
+      player.pressWhereFocusIs('Escape');
+      expect(confirmButton(confirm)).toBeNull();
+      expect(screenOpen()).toBe(true);
+
+      player.pressWhereFocusIs('Escape');
+      expect(screenOpen()).toBe(false);
+      expect(stars(5)).toBeTruthy();
+      expect(credits('1,234')).toBeTruthy();
     });
   },
 );

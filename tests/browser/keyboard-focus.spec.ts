@@ -9,6 +9,8 @@ import {
   textPrompt,
   typeText,
 } from './helpers';
+import { OPEN_AUDIO_PANEL, laserSfxLabel } from '../../src/screens/audioLabels';
+import { MENU_HEADINGS, PAUSE_MENU_NAME } from '../shared/screens';
 import { pauseButton, resumeButton } from './journey-helpers';
 
 // J2: native keyboard and focus, in a real browser. These are the things a DOM
@@ -43,6 +45,24 @@ async function expectPausedHalfway(page: Page) {
   await expect(pauseMenu(page)).toBeVisible();
   await expect.soft(promptProgress(page)).toHaveText('50%');
   await expect.soft(flightDeck(page)).toContainText(/Streak\s*3(?!\d)/i);
+}
+
+/**
+ * Where keyboard focus is: in the header, in the Pause Menu, or somewhere else
+ * (the Flight Deck behind them). The page body, where focus rests between
+ * stops, counts as neither.
+ */
+async function whereFocusIs(
+  page: Page,
+): Promise<'header' | 'pause-menu' | 'elsewhere' | 'body'> {
+  const inside = (landmark: Locator) =>
+    landmark.evaluate((element) => element.contains(document.activeElement));
+  if (await page.evaluate(() => document.activeElement === document.body))
+    return 'body';
+  if (await inside(page.getByRole('banner'))) return 'header';
+  if (await inside(page.getByRole('dialog', { name: PAUSE_MENU_NAME })))
+    return 'pause-menu';
+  return 'elsewhere';
 }
 
 /** Enter and Space on the Pause Menu leave the Run paused, and are no Miss. */
@@ -260,6 +280,56 @@ test('native keys and focus: Space, Esc, Enter and the window losing focus', asy
     await expectPausedHalfway(page);
 
     await enterAndSpaceLeaveItPaused(page);
+  });
+
+  await test.step('part B: Tab on the Pause Menu cycles through the Pause Menu and the header, never the Flight Deck', async () => {
+    // Focus goes into the header, then comes back into the Pause Menu: it
+    // never lands on the Flight Deck. Capped, so a trap fails fast.
+    let reachedHeader = false;
+    let backInPauseMenu = false;
+    for (let press = 0; press < 30 && !backInPauseMenu; press++) {
+      await page.keyboard.press('Tab');
+      const where = await whereFocusIs(page);
+      expect.soft(where, `Tab press ${press + 1}`).not.toBe('elsewhere');
+      if (where === 'header') reachedHeader = true;
+      if (where === 'pause-menu' && reachedHeader) backInPauseMenu = true;
+    }
+
+    expect.soft(reachedHeader, 'Tab reaches the header').toBe(true);
+    expect
+      .soft(backInPauseMenu, 'and comes back into the Pause Menu')
+      .toBe(true);
+  });
+
+  await test.step('part B: the audio panel opens above the Hangar, and each Esc closes only the top layer', async () => {
+    await page
+      .getByRole('navigation')
+      .getByRole('button', { name: 'Hangar', exact: true })
+      .click();
+    await expect(
+      page.getByRole('heading', { name: MENU_HEADINGS.Hangar }),
+    ).toBeVisible();
+    await page.getByRole('button', { name: OPEN_AUDIO_PANEL }).click();
+    // Playwright refuses to click what another element covers, so this click
+    // lands only if the panel is on top of the Hangar.
+    await page
+      .getByRole('button', { name: laserSfxLabel(true) })
+      .click({ timeout: 5_000 });
+    await expect(
+      page.getByRole('button', { name: laserSfxLabel(false) }),
+    ).toBeVisible();
+
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('slider')).toHaveCount(0);
+    await expect(
+      page.getByRole('heading', { name: MENU_HEADINGS.Hangar }),
+    ).toBeVisible();
+
+    await page.keyboard.press('Escape');
+    await expect(
+      page.getByRole('heading', { name: MENU_HEADINGS.Hangar }),
+    ).toBeHidden();
+    await expectPausedHalfway(page);
   });
 
   await test.step('part B: Resume carries on from the same character', async () => {
