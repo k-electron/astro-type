@@ -19,7 +19,7 @@
  *   flight".
  * - Key Labels, not "Hide Deck", "Show Deck" or "Show or hide the Action
  *   Deck" (the button hides the letters on the keys, not the deck).
- * - Sound Kit, not "audio core" or "Synthesizer" (Voice, core, Engine Cores).
+ * - Sound Kit, not "audio core", "audio synth" or "Synthesizer" (Voice, core, Engine Cores).
  *   "Synth" stays: Cyber Synth is a Sound Kit's name.
  * - Deep Space Beats, not "Deep Space Drone". "Drone" stays (a falling target).
  * - Rhythm and Target WPM, not "Cadence" anywhere (Stage titles, tips,
@@ -36,4 +36,4 @@
  * split "hyper space", "main menu" and "custom practice".
  */
 export const BANNED_NAME =
-  /\b(?:combos?|trail[\s-]?themes?|hyper[\s-]?space|warp(?:s|ed|ing)?|missions?|highways?|notes?|debriefings?|main[\s-]?menus?|cockpits?|drills?|custom[\s-]?practices?|ratings?|tactile[\s-]rhythm|audio[\s-]flight[\s-]deck|custom[\s-]flights?|(?:hide|show)[\s-]+(?:the[\s-]+)?(?:action[\s-]+)?deck|audio[\s-]cores?|synthesizers?|deep[\s-]space[\s-]drone|cadences?)\b|^reports?$/i;
+  /\b(?:combos?|trail[\s-]?themes?|hyper[\s-]?space|warp(?:s|ed|ing)?|missions?|highways?|notes?|debriefings?|main[\s-]?menus?|cockpits?|drills?|custom[\s-]?practices?|ratings?|tactile[\s-]rhythm|audio[\s-]flight[\s-]deck|custom[\s-]flights?|(?:hide|show)[\s-]+(?:the[\s-]+)?(?:action[\s-]+)?deck|audio[\s-]cores?|audio[\s-]synths?|synthesizers?|deep[\s-]space[\s-]drone|cadences?)\b|^reports?$/i;

@@ -38,7 +38,7 @@ export const HeaderNav: React.FC<{ ref?: React.Ref<HTMLElement> }> = ({
     ? { label: 'Pause Flight', title: 'Pause Flight' }
     : runPaused
       ? { label: flightDeckLabel(true), title: flightDeckLabel(true) }
-      : { label: flightDeckLabel(false), title: 'Open the Flight Deck' };
+      : { label: flightDeckLabel(false), title: flightDeckLabel(false) };
   const onGoHome = () => send({ type: 'PRESS_HOME' });
   const onOpenStages = () => send({ type: 'OPEN_GALAXY_MAP' });
   const onOpenHangar = () => send({ type: 'OPEN_HANGAR' });
