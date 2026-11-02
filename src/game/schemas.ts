@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { MAX_STARS_PER_STAGE } from '../curriculum/curriculum';
 import { MAX_UPGRADE_LEVEL } from './catalog';
 
-export const TrailColorThemeSchema = z.enum([
+export const TrailIdSchema = z.enum([
   'CYAN',
   'AMBER',
   'EMERALD',
@@ -30,13 +30,15 @@ const UpgradeLevelSchema = z
   .max(MAX_UPGRADE_LEVEL)
   .default(0);
 
+// The fields keep the names a Save was first written with (a Trail was a
+// "theme", a Sound Kit an "audio core"), so every Save in the wild still loads.
 export const UpgradesSchema = z.object({
   deflectorShields: UpgradeLevelSchema,
   overdriveReactor: UpgradeLevelSchema,
   precisionSensors: UpgradeLevelSchema,
-  equippedTrailTheme: TrailColorThemeSchema.default('CYAN'),
+  equippedTrailTheme: TrailIdSchema.default('CYAN'),
   equippedAudioCore: SoundKitSchema.default('CYBER_SYNTH'),
-  unlockedThemes: z.array(TrailColorThemeSchema).default(['CYAN']),
+  unlockedThemes: z.array(TrailIdSchema).default(['CYAN']),
   unlockedAudioCores: z.array(SoundKitSchema).default(['CYBER_SYNTH']),
 });
 
@@ -146,7 +148,7 @@ export type PlayerProfile = z.output<typeof PlayerProfileSchema>;
 export type ShipUpgrades = z.output<typeof UpgradesSchema>;
 export type StageProgress = z.output<typeof StageProgressSchema>;
 export type KeyAnalytics = z.output<typeof KeyAnalyticsSchema>;
-export type TrailColorTheme = z.output<typeof TrailColorThemeSchema>;
+export type TrailId = z.output<typeof TrailIdSchema>;
 export type SoundKit = z.output<typeof SoundKitSchema>;
 export type BeatTheme = z.output<typeof BeatThemeSchema>;
 export type Settings = z.output<typeof SettingsSchema>;

@@ -6,7 +6,7 @@
  * every layer of tests can use it.
  */
 import { CURRICULUM_SECTORS } from '../../src/curriculum/curriculum';
-import { SoundKitSchema, type TrailColorTheme } from '../../src/game/schemas';
+import { SoundKitSchema, type TrailId } from '../../src/game/schemas';
 
 /** One Stage's progress, cleared with `stars` Stars. `overrides` change any field. */
 export function stageProgress(
@@ -74,7 +74,7 @@ export const OWNS_RETRO_SOUND_KIT = {
 };
 
 /** A Save that owns the Trail and has it equipped (Cyan Nebula is always owned). */
-export function trailEquipped(id: TrailColorTheme) {
+export function trailEquipped(id: TrailId) {
   return {
     upgrades: { equippedTrailTheme: id, unlockedThemes: ['CYAN', id] },
   };
