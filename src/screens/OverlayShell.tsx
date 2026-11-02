@@ -123,7 +123,7 @@ export const OverlayConfirm: React.FC<{
       <div
         ref={cardRef}
         tabIndex={-1}
-        className="w-full max-w-md rounded-2xl border border-rose-900/80 bg-slate-900 shadow-2xl p-6 text-center outline-none"
+        className="w-full max-w-md rounded-2xl border border-rose-900/80 bg-slate-900 shadow-2xl p-6 text-center outline-none duration-150"
       >
         {children}
       </div>
