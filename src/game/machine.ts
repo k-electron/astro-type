@@ -421,7 +421,8 @@ const states = {
       PRESS_FLIGHT_DECK: play,
       PRESS_REPLAY: replay,
       PRESS_NEXT_STAGE: nextStage,
-      PRESS_ESC: [ignore],
+      // The same move as the Debrief's Galaxy Map button.
+      PRESS_ESC: [open('debrief', 'galaxy-map')],
       LOST_FOCUS: [ignore],
     },
   },

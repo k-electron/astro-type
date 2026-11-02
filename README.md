@@ -29,6 +29,8 @@ The capitalised terms are defined in [`GLOSSARY.md`](GLOSSARY.md).
 | Pause a running Run                                       | `Esc`, or the Pause button in the HUD        |
 | Resume from the Pause Menu                                | `Esc`, or the Resume Flight button           |
 | Close a menu (Galaxy Map, Hangar, Analytics, Free Flight) | `Esc`, or its own Back to ... button         |
+| Close the header's audio panel, or a confirm              | `Esc` (one layer per press, top one first)   |
+| Open the Galaxy Map from the Debrief                      | `Esc`, or the Galaxy Map button              |
 | Hide or show the key legends on the on-screen keyboard    | Hide Deck / Show Deck in the HUD             |
 | Show or hide the hands                                    | The Hands button in the Action Deck header   |
 
