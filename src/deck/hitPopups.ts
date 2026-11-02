@@ -1,4 +1,4 @@
-import { type Grade, scoreForHit } from '../game/rules';
+import { type Grade, MULTIPLIER_STEPS, scoreForHit } from '../game/rules';
 
 /**
  * What the deck's popup for a hit says: a few words, then "+" and the points
@@ -55,7 +55,7 @@ export function hitPopupColor({ grade, isSpace }: HitKind): string {
 }
 
 /** The Multipliers a hit can score at: x1, then x2, x3 and x4 as the Streak grows. */
-const MULTIPLIERS = [1, 2, 3, 4];
+const MULTIPLIERS = MULTIPLIER_STEPS.map((step) => step.multiplier);
 
 /**
  * Every popup a hit can show, each with the one colour it is drawn in: the

@@ -1,8 +1,29 @@
 import type React from 'react';
 import { Shield, Zap, Pause } from 'lucide-react';
 import { useGame } from './useGame';
-import { overdriveScoreFactor } from '../game/rules';
+import {
+  MULTIPLIER_STEPS,
+  overdriveScoreFactor,
+  type RhythmBand,
+  rhythmBand,
+} from '../game/rules';
 import { useGameState } from './useGameState';
+
+/** The Rhythm gauge's dot and name, by band. */
+const RHYTHM_LOOK: Record<RhythmBand, { dot: string; text: string }> = {
+  Steady: {
+    dot: 'bg-emerald-400 shadow-[0_0_8px_#34d399] animate-pulse',
+    text: 'text-emerald-300',
+  },
+  Paced: {
+    dot: 'bg-cyan-400 shadow-[0_0_8px_#38bdf8]',
+    text: 'text-cyan-300',
+  },
+  Uneven: { dot: 'bg-amber-400', text: 'text-amber-300' },
+};
+
+/** The Streak's bolt lights at the x3 step. */
+const BOLT_LIT_FROM = MULTIPLIER_STEPS[2].streak;
 
 /** The readouts above the deck. It selects only the fields it shows, so it re-renders when one of them changes. */
 export const HUD: React.FC = () => {
@@ -33,6 +54,7 @@ export const HUD: React.FC = () => {
   const onToggleKeyboard = () =>
     game.changeSettings({ keyboardVisible: !keyboardVisible });
   const onPause = () => game.send({ type: 'PRESS_PAUSE' });
+  const band = rhythmBand(rhythm);
 
   return (
     <section
@@ -122,7 +144,7 @@ export const HUD: React.FC = () => {
           </span>
           <div className="flex items-center justify-center gap-1 text-slate-200">
             <Zap
-              className={`w-3 h-3 ${currentStreak >= 20 ? 'text-amber-400 fill-amber-400' : 'text-slate-500'}`}
+              className={`w-3 h-3 ${currentStreak >= BOLT_LIT_FROM ? 'text-amber-400 fill-amber-400' : 'text-slate-500'}`}
             />
             <span className="text-lg sm:text-xl font-bold font-mono tabular-nums leading-none">
               {currentStreak}
@@ -136,25 +158,11 @@ export const HUD: React.FC = () => {
             Rhythm
           </span>
           <div className="flex items-center gap-1.5 mt-0.5">
+            <span className={`w-2 h-2 rounded-full ${RHYTHM_LOOK[band].dot}`} />
             <span
-              className={`w-2 h-2 rounded-full ${
-                rhythm >= 85
-                  ? 'bg-emerald-400 shadow-[0_0_8px_#34d399] animate-pulse'
-                  : rhythm >= 70
-                    ? 'bg-cyan-400 shadow-[0_0_8px_#38bdf8]'
-                    : 'bg-amber-400'
-              }`}
-            />
-            <span
-              className={`text-xs font-mono font-bold leading-none ${
-                rhythm >= 85
-                  ? 'text-emerald-300'
-                  : rhythm >= 70
-                    ? 'text-cyan-300'
-                    : 'text-amber-300'
-              }`}
+              className={`text-xs font-mono font-bold leading-none ${RHYTHM_LOOK[band].text}`}
             >
-              {rhythm >= 85 ? 'Steady' : rhythm >= 70 ? 'Paced' : 'Uneven'}
+              {band}
             </span>
           </div>
         </div>

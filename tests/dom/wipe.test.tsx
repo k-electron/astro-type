@@ -3,13 +3,21 @@ import { describe, expect, it } from 'vitest';
 import { CURRICULUM_SECTORS } from '../../src/curriculum/curriculum';
 import { RETURNING_PLAYER } from '../shared/saves';
 import { DEBRIEF_TITLE, MENU_HEADINGS, START_STAGE } from '../shared/screens';
-import { type Player, renderGame, screen, within } from './harness';
+import { type Player, renderGame, screen, toDebrief, within } from './harness';
 import { flightDeckLabel } from '../../src/screens/closeLabel';
 import { OPEN_AUDIO_PANEL } from '../../src/screens/audioLabels';
 
 // Wiping the Stars asks first. profile.test.tsx guards Factory Reset
-// (confirming); this guards the two Wipe buttons, which clear the Stars and
-// Stage records and keep the Credits, and Cancel on Factory Reset.
+// (confirming); this guards the Wipe button, which clears the Stars and Stage
+// records and keeps the Credits, and Cancel on Factory Reset.
+//
+// Wipe lives only in Analytics (#90; it used to be on the Galaxy Map too, with
+// a confirm of its own). The Galaxy Map's copies of the tests below went with
+// its button: the behaviour they checked (asks first, Cancel, Confirm, the
+// Start Stage reset, the Debrief, the paused Run, Esc and the audio panel) is
+// the Analytics button's too, and the Analytics cases of the same tests guard
+// it. What only the Galaxy Map had is guarded by "Wipe lives only in
+// Analytics" at the bottom of this file.
 
 const stars = (count: number) =>
   screen.getByRole('button', { name: new RegExp(`^${count}\\s*★$`) });
@@ -27,11 +35,6 @@ const [FIRST_STAGE, SECOND_STAGE] = CURRICULUM_SECTORS[0].stages;
 const onShow = () => screen.getByRole('main').textContent ?? '';
 
 const WIPES = [
-  {
-    where: 'the Galaxy Map',
-    menu: 'Galaxy Map',
-    button: /^Wipe Achievements/,
-  },
   { where: 'Analytics', menu: 'Analytics', button: 'Wipe Stars' },
 ] as const;
 
@@ -153,12 +156,6 @@ describe('Cancel on Factory Reset', () => {
 // there, not straight to the window: an element in the way can then swallow it
 // (the Esc contract in attach-keyboard.test.tsx).
 const CONFIRMS = [
-  {
-    where: 'Wipe on the Galaxy Map',
-    menu: 'Galaxy Map',
-    ask: /^Wipe Achievements/,
-    confirm: 'Confirm Wipe',
-  },
   {
     where: 'Wipe Stars on Analytics',
     menu: 'Analytics',
@@ -285,3 +282,43 @@ describe.each(CONFIRMS)(
     });
   },
 );
+
+// The ticket calls it Wipe Achievements; Analytics' button is still named Wipe
+// Stars. Any button with "wipe" in its name counts, so this holds for either.
+describe('Wipe lives only in Analytics', () => {
+  const wipeButtons = () => screen.queryAllByRole('button', { name: /wipe/i });
+
+  it('the Galaxy Map of a player with Stars has no Wipe button, and so no Wipe confirm to open', () => {
+    const player = renderGame({ profile: RETURNING_PLAYER });
+    player.openHeader('Galaxy Map');
+
+    expect(wipeButtons()).toEqual([]);
+    expect(confirmButton('Confirm Wipe')).toBeNull();
+  });
+
+  it('the Galaxy Map opened over a Debrief has none either', () => {
+    const player = toDebrief();
+    player.openHeader('Galaxy Map');
+
+    expect(wipeButtons()).toEqual([]);
+  });
+
+  // Academy Home used to offer "Wipe Achievements & Replay" to a player with
+  // Stars, a shortcut to the Galaxy Map's wipe.
+  it('Academy Home of a player with Stars has none', () => {
+    renderGame({ profile: RETURNING_PLAYER });
+
+    expect(wipeButtons()).toEqual([]);
+  });
+
+  it('Analytics has it, beside Factory Reset and Backup', () => {
+    const player = renderGame({ profile: RETURNING_PLAYER });
+    player.openHeader('Analytics');
+
+    expect(wipeButtons()).toHaveLength(1);
+    expect(screen.getByRole('button', { name: 'Factory Reset' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Export Backup' })).toBeTruthy();
+    // Import Backup is a file chooser, not a button.
+    expect(screen.getByText('Import Backup')).toBeTruthy();
+  });
+});

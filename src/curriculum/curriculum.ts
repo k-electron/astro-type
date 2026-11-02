@@ -4,6 +4,12 @@ import { type FingerZone, KEYBOARD_ROWS, type KeySpec } from './keyboardLayout';
 /** The most Stars one Stage gives. The Save and the curriculum's totals stop here. */
 export const MAX_STARS_PER_STAGE = 3;
 
+/** The Star numbers a Stage can show, 1 to `MAX_STARS_PER_STAGE`: one slot for each Star. */
+export const STAR_NUMBERS: readonly number[] = Array.from(
+  { length: MAX_STARS_PER_STAGE },
+  (_, index) => index + 1,
+);
+
 export interface FingerLaneInfo {
   laneIndex: number;
   finger: FingerZone;
@@ -1510,21 +1516,25 @@ export const CURRICULUM_SECTORS: Sector[] = SECTOR_DEFINITIONS.map(
 /** The first Stage of the first Sector: where a new player starts, and the Stage of the Run the game opens on. */
 export const FIRST_STAGE = CURRICULUM_SECTORS[0].stages[0];
 
+/** The most Stars a Sector's Stages can give. */
+export const maxStarsOf = (sector: Sector): number =>
+  sector.stages.length * MAX_STARS_PER_STAGE;
+
 /**
  * What the curriculum adds up to, for the screens that quote it: its Sectors,
  * its Stages, and the most Stars all of them can give.
  */
-export const CURRICULUM_TOTALS = (() => {
-  const stages = CURRICULUM_SECTORS.reduce(
+export const CURRICULUM_TOTALS = {
+  sectors: CURRICULUM_SECTORS.length,
+  stages: CURRICULUM_SECTORS.reduce(
     (count, sector) => count + sector.stages.length,
     0,
-  );
-  return {
-    sectors: CURRICULUM_SECTORS.length,
-    stages,
-    stars: stages * MAX_STARS_PER_STAGE,
-  };
-})();
+  ),
+  stars: CURRICULUM_SECTORS.reduce(
+    (count, sector) => count + maxStarsOf(sector),
+    0,
+  ),
+};
 
 export function getStageById(stageId: string): SectorStage | undefined {
   for (const sector of CURRICULUM_SECTORS) {

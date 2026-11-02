@@ -51,11 +51,6 @@ export interface OverlayShellProps {
   labelledBy: string;
   /** The panel takes focus when the screen opens, so no button has it. */
   focusOnOpen?: boolean;
-  /**
-   * What sits over the panel but belongs to the screen, such as a confirm. It
-   * stays inside the frame, so it is part of the dialog.
-   */
-  over?: ReactNode;
   children: ReactNode;
 }
 
@@ -73,7 +68,6 @@ export const OverlayShell: React.FC<OverlayShellProps> = ({
   width,
   labelledBy,
   focusOnOpen = false,
-  over,
   children,
 }) => {
   const panelRef = useRef<HTMLDivElement>(null);
@@ -95,7 +89,6 @@ export const OverlayShell: React.FC<OverlayShellProps> = ({
       >
         {children}
       </div>
-      {over}
     </div>
   );
 };
@@ -197,7 +190,7 @@ export const OverlayFlightDeckButton: React.FC<{
   return (
     <button
       type="button"
-      onClick={() => send({ type: 'PRESS_PLAY' })}
+      onClick={() => send({ type: 'PRESS_FLIGHT_DECK' })}
       className={
         compact
           ? 'px-3 py-1.5 text-xs font-bold rounded-lg bg-cyan-400 hover:bg-cyan-300 text-slate-950 transition-all flex items-center gap-1 cursor-pointer shadow-sm shadow-cyan-950 whitespace-nowrap'

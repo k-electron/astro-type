@@ -32,7 +32,11 @@ export function closeLabel(opener: Screen | null): string {
   }
 }
 
-/** The Flight Deck button's label: Resume Flight when a paused Run is waiting (the Pause Menu's resume button is named the same). */
+/**
+ * The Flight Deck button's label when it is not pausing a running Run, in the
+ * header and on the overlays: Resume Flight when a paused Run is waiting (the
+ * Pause Menu's resume button is named the same), otherwise Start Stage.
+ */
 export function flightDeckLabel(runPaused: boolean): string {
-  return runPaused ? 'Resume Flight' : 'Enter Flight Deck';
+  return runPaused ? 'Resume Flight' : 'Start Stage';
 }

@@ -14,7 +14,13 @@ import type { Stage } from '../curriculum/curriculum';
 import type { RunPhase } from './machine';
 import type { Clock, RunClock } from './clock';
 import type { Moment } from './moments';
-import { type Loadout, loadoutOf, type ProfileSlice } from './profile';
+import {
+  type Loadout,
+  loadoutOf,
+  type ProfileSlice,
+  type StageRecord,
+  type StageResult,
+} from './profile';
 import {
   clearedPerformance,
   countsAsKeystroke,
@@ -27,19 +33,12 @@ import {
   tick,
 } from './rules';
 
-export interface DebriefResult {
-  score: number;
-  wpm: number;
-  accuracy: number;
-  maxStreak: number;
-  starsEarned: number;
-  creditsEarned: number;
-  isNewHighScore: boolean;
-  newStarsAwarded: number;
-  /** This Run's Stars took the fleet past a Sector's gate. */
-  unlockedSector: boolean;
-  rhythm: number;
-}
+/** What the Debrief shows of a cleared Run: its result, what it did to the Profile, and its Rhythm. */
+export type DebriefResult = Pick<
+  StageResult,
+  'score' | 'wpm' | 'accuracy' | 'maxStreak' | 'starsEarned' | 'creditsEarned'
+> &
+  StageRecord & { rhythm: number };
 
 /** The Run's state in the store. */
 export interface RunSliceState {
@@ -158,45 +157,32 @@ export function createRunSlice(
       const now = clock.now();
       const elapsedSeconds = Math.max(1, runClock.runTimeMs() / 1000);
 
-      const {
-        wpm: finalNetWpm,
-        accuracy: finalAccuracy,
-        starsEarned,
-        creditsEarned,
-      } = scoreRun(performance, elapsedSeconds, stage);
+      const outcome = scoreRun(performance, elapsedSeconds, stage);
 
-      emit({ type: 'cleared', stars: starsEarned });
+      emit({ type: 'cleared', stars: outcome.starsEarned });
 
-      const { newStarsAwarded, isNewHighScore, unlockedSector } =
-        get().recordStageResult(
-          stage.origin === 'sector' ? stage.id : null,
-          {
-            score: performance.score,
-            wpm: finalNetWpm,
-            accuracy: finalAccuracy,
-            maxStreak: performance.maxStreak,
-            starsEarned,
-            creditsEarned,
-            keystrokesCount: performance.totalKeystrokes,
-            errorsCount: performance.incorrectKeystrokes,
-            practiceSeconds: Math.round(elapsedSeconds),
-            keyStats: run.keyStats,
-          },
-          now,
-        );
+      const result: StageResult = {
+        ...outcome,
+        score: performance.score,
+        maxStreak: performance.maxStreak,
+        keystrokesCount: performance.totalKeystrokes,
+        errorsCount: performance.incorrectKeystrokes,
+        practiceSeconds: Math.round(elapsedSeconds),
+        keyStats: run.keyStats,
+      };
+      const record = get().recordStageResult(
+        stage.origin === 'sector' ? stage.id : null,
+        result,
+        now,
+      );
 
       set({
         run: { ...run, performance: clearedPerformance(performance) },
         debrief: {
-          score: performance.score,
-          wpm: finalNetWpm,
-          accuracy: finalAccuracy,
-          maxStreak: performance.maxStreak,
-          starsEarned,
-          creditsEarned,
-          isNewHighScore,
-          newStarsAwarded,
-          unlockedSector,
+          ...outcome,
+          score: result.score,
+          maxStreak: result.maxStreak,
+          ...record,
           rhythm: performance.rhythm,
         },
       });

@@ -10,10 +10,19 @@ import {
   Home,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { MAX_STARS_PER_STAGE, STAR_NUMBERS } from '../curriculum/curriculum';
 import type { GameState } from '../game/game';
+import { type RhythmBand, rhythmBand } from '../game/rules';
 import { useGame } from './useGame';
 import { useGameState } from './useGameState';
 import { OverlayShell } from './OverlayShell';
+
+/** The Rhythm pill's colours, by band. */
+const RHYTHM_PILL: Record<RhythmBand, string> = {
+  Steady: 'bg-emerald-950/60 border-emerald-500/40 text-emerald-300',
+  Paced: 'bg-cyan-950/60 border-cyan-500/40 text-cyan-300',
+  Uneven: 'bg-amber-950/60 border-amber-500/40 text-amber-300',
+};
 
 /**
  * The Debrief whose confetti has played. A cleared Run's result is one object
@@ -40,7 +49,12 @@ export const Debrief: React.FC = () => {
   const thresholds = stage.origin === 'sector' ? stage.starThresholds : null;
 
   useEffect(() => {
-    if (!result || result === celebrated || result.starsEarned !== 3) return;
+    if (
+      !result ||
+      result === celebrated ||
+      result.starsEarned !== MAX_STARS_PER_STAGE
+    )
+      return;
     celebrated = result;
     try {
       confetti({
@@ -68,6 +82,7 @@ export const Debrief: React.FC = () => {
     isNewHighScore,
     newStarsAwarded,
   } = result;
+  const band = rhythmBand(result.rhythm);
 
   return (
     <OverlayShell variant="debrief" width="xl" labelledBy="debrief-title">
@@ -88,7 +103,7 @@ export const Debrief: React.FC = () => {
         <>
           {/* Stars earned animation */}
           <div className="flex items-center justify-center gap-3 mb-5">
-            {[1, 2, 3].map((starNum) => {
+            {STAR_NUMBERS.map((starNum) => {
               const isEarned = starNum <= starsEarned;
               return (
                 <div
@@ -170,12 +185,12 @@ export const Debrief: React.FC = () => {
               </span>
               <span
                 className={
-                  accuracy >= thresholds.oneStarAccuracy
+                  starsEarned >= 1
                     ? 'text-emerald-400 font-bold'
                     : 'text-rose-400'
                 }
               >
-                {accuracy >= thresholds.oneStarAccuracy ? 'ACHIEVED' : 'MISSED'}
+                {starsEarned >= 1 ? 'ACHIEVED' : 'MISSED'}
               </span>
             </div>
 
@@ -197,16 +212,12 @@ export const Debrief: React.FC = () => {
               </span>
               <span
                 className={
-                  wpm >= thresholds.twoStarWpm &&
-                  accuracy >= thresholds.twoStarAccuracy
+                  starsEarned >= 2
                     ? 'text-emerald-400 font-bold'
                     : 'text-slate-500'
                 }
               >
-                {wpm >= thresholds.twoStarWpm &&
-                accuracy >= thresholds.twoStarAccuracy
-                  ? 'ACHIEVED'
-                  : 'INCOMPLETE'}
+                {starsEarned >= 2 ? 'ACHIEVED' : 'INCOMPLETE'}
               </span>
             </div>
 
@@ -293,21 +304,9 @@ export const Debrief: React.FC = () => {
             Touch-Typing Technique Assessment
           </span>
           <span
-            className={`text-[10px] font-mono px-2 py-0.5 rounded border ${
-              result.rhythm >= 85
-                ? 'bg-emerald-950/60 border-emerald-500/40 text-emerald-300'
-                : result.rhythm >= 70
-                  ? 'bg-cyan-950/60 border-cyan-500/40 text-cyan-300'
-                  : 'bg-amber-950/60 border-amber-500/40 text-amber-300'
-            }`}
+            className={`text-[10px] font-mono px-2 py-0.5 rounded border ${RHYTHM_PILL[band]}`}
           >
-            Rhythm: {result.rhythm}% (
-            {result.rhythm >= 85
-              ? 'Steady'
-              : result.rhythm >= 70
-                ? 'Paced'
-                : 'Uneven'}
-            )
+            Rhythm: {result.rhythm}% ({band})
           </span>
         </div>
         <p className="text-xs text-slate-300 leading-relaxed">

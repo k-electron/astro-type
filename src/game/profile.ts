@@ -66,7 +66,7 @@ export interface StageResult {
   keystrokesCount: number;
   errorsCount: number;
   practiceSeconds: number;
-  keyStats: Record<string, { hits: number; misses: number }>;
+  keyStats: Record<string, KeyAnalytics>;
 }
 
 /**
@@ -80,11 +80,7 @@ export function recordStageResult(
   stageId: string | null,
   result: StageResult,
   now: number,
-): {
-  updatedProfile: PlayerProfile;
-  newStarsAwarded: number;
-  isNewHighScore: boolean;
-} {
+): { updatedProfile: PlayerProfile } & Omit<StageRecord, 'unlockedSector'> {
   // Merge key analytics
   const mergedKeyAnalytics: Record<string, KeyAnalytics> = {
     ...currentProfile.keyAnalytics,

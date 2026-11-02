@@ -2,9 +2,12 @@ import { Award, Flame, Hand, Sparkles } from 'lucide-react';
 import { memo, useLayoutEffect, useRef } from 'react';
 import { useGame, useOnFrame } from '../screens/useGame';
 import { FINGER_COLOR_MAP } from '../curriculum/curriculum';
-import { overdriveScoreFactor } from '../game/rules';
+import { MULTIPLIER_STEPS, overdriveScoreFactor } from '../game/rules';
 import { useGameState } from '../screens/useGameState';
 import { getDeckSession } from './deckSession';
+
+/** The header bar badges the Streak from the x2 step. */
+const STREAK_BADGE_FROM = MULTIPLIER_STEPS[1].streak;
 
 /**
  * The Action Deck: a card with a header bar around a stage that the session's
@@ -50,7 +53,7 @@ export const PixiActionDeck = memo(function PixiActionDeck() {
               OVERDRIVE x{overdriveScoreFactor(multiplier)}
             </span>
           )}
-          {currentStreak >= 10 && (
+          {currentStreak >= STREAK_BADGE_FROM && (
             <span className="hidden sm:flex items-center gap-1 text-[11px] font-mono font-bold text-emerald-300 bg-emerald-950/70 px-2 py-0.5 rounded border border-emerald-500/40">
               <Award className="w-3.5 h-3.5 text-emerald-400" />
               {currentStreak} STREAK

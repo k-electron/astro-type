@@ -63,8 +63,10 @@ export type PlayerEvent =
   | { type: 'PRESS_PAUSE' }
   | { type: 'PRESS_RESUME' }
   | { type: 'PRESS_ESC' }
-  | { type: 'PRESS_PLAY' }
-  /** The header's Flight Deck button: pauses a running Run, otherwise plays. */
+  /**
+   * The Flight Deck button, in the header and on the overlays: pauses a
+   * running Run, resumes a paused one, and otherwise starts the current Stage.
+   */
   | { type: 'PRESS_FLIGHT_DECK' }
   | { type: 'PRESS_HOME' }
   | { type: 'PICK_STAGE'; stageId: string }
@@ -351,7 +353,6 @@ const menuState = (from: (typeof MENUS)[number]) => ({
     ...everywhere(from),
     PRESS_CLOSE: close,
     PRESS_ESC: close,
-    PRESS_PLAY: play,
     PRESS_FLIGHT_DECK: play,
     PRESS_RESUME: resumeWhenPaused,
     LOST_FOCUS: [ignore],
@@ -380,7 +381,6 @@ const states = {
   'academy-home': {
     on: {
       ...everywhere('academy-home'),
-      PRESS_PLAY: play,
       PRESS_FLIGHT_DECK: play,
       PRESS_ESC: [ignore],
       LOST_FOCUS: [ignore],
@@ -393,7 +393,6 @@ const states = {
       PRESS_FLIGHT_DECK: [pause],
       PRESS_ESC: [pause],
       LOST_FOCUS: [pause],
-      PRESS_PLAY: [ignore],
       RUN_CLEARED: runCleared,
     },
   },
@@ -402,7 +401,6 @@ const states = {
       ...everywhere('pause-menu'),
       PRESS_RESUME: [resume],
       PRESS_ESC: [resume],
-      PRESS_PLAY: play,
       PRESS_FLIGHT_DECK: play,
       PRESS_REPLAY: replay,
       LOST_FOCUS: [ignore],
@@ -412,7 +410,6 @@ const states = {
   debrief: {
     on: {
       ...everywhere('debrief'),
-      PRESS_PLAY: play,
       PRESS_FLIGHT_DECK: play,
       PRESS_REPLAY: replay,
       PRESS_NEXT_STAGE: nextStage,

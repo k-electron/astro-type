@@ -9,13 +9,11 @@ import {
   ChevronRight,
   CheckCircle2,
   Home,
-  RotateCcw,
 } from 'lucide-react';
 import { useGame } from './useGame';
 import { useGameState } from './useGameState';
 import {
   OverlayCloseButton,
-  OverlayConfirm,
   OverlayFlightDeckButton,
   OverlayShell,
 } from './OverlayShell';
@@ -23,12 +21,13 @@ import {
   CURRICULUM_SECTORS,
   CURRICULUM_TOTALS,
   isSectorUnlocked,
+  maxStarsOf,
+  STAR_NUMBERS,
   type Stage,
 } from '../curriculum/curriculum';
 
 export const GalaxyMap: React.FC = () => {
-  const game = useGame();
-  const { send } = game;
+  const { send } = useGame();
   const { stagesProgress, totalStars, totalCredits, opener } = useGameState(
     (state) => ({
       stagesProgress: state.profile.stagesProgress,
@@ -42,9 +41,7 @@ export const GalaxyMap: React.FC = () => {
   const onOpenHangar = () => send({ type: 'OPEN_HANGAR' });
   const onOpenAnalytics = () => send({ type: 'OPEN_ANALYTICS' });
   const onReturnHome = () => send({ type: 'PRESS_HOME' });
-  const onWipeAchievements = game.wipeAchievements;
   const [selectedSectorId, setSelectedSectorId] = useState<string>('sector-1');
-  const [showWipeConfirm, setShowWipeConfirm] = useState<boolean>(false);
 
   const activeSector =
     CURRICULUM_SECTORS.find((s) => s.id === selectedSectorId) ||
@@ -54,71 +51,8 @@ export const GalaxyMap: React.FC = () => {
     totalStars,
   );
 
-  // The wipe confirm sits over the panel, inside the shell's frame.
-  const wipeConfirm = showWipeConfirm ? (
-    <OverlayConfirm onCancel={() => setShowWipeConfirm(false)}>
-      <div className="w-12 h-12 rounded-xl bg-rose-950/60 border border-rose-500/50 flex items-center justify-center mx-auto mb-4 text-rose-400 shadow-[0_0_20px_rgba(244,63,94,0.3)]">
-        <RotateCcw className="w-6 h-6" />
-      </div>
-
-      <h3 className="text-xl font-bold font-display text-white mb-2">
-        Wipe Curriculum Achievements?
-      </h3>
-
-      <p className="text-xs text-slate-300 leading-relaxed mb-4">
-        The touch-typing curriculum has been upgraded with structured classical
-        finger-building methodology. Wiping achievements will clear all{' '}
-        <span className="text-amber-400 font-bold font-mono">
-          {totalStars} ★ stars earned
-        </span>{' '}
-        and stage records, relocking sectors so you can master the progressive
-        inside-out curriculum from Sector 1.
-      </p>
-
-      <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800 text-[11px] font-mono text-left mb-6 space-y-1.5">
-        <div className="text-rose-400 font-bold flex items-center gap-1.5">
-          <span>•</span> {`All ${CURRICULUM_TOTALS.stages} Stages reset to 0 ★`}
-        </div>
-        <div className="text-rose-400 font-bold flex items-center gap-1.5">
-          <span>•</span> Interstellar Sectors relocked to Gate 0
-        </div>
-        <div className="text-emerald-400 flex items-center gap-1.5">
-          <span>•</span> Starship Credits ({totalCredits.toLocaleString()} Cr) &
-          Upgrades are preserved
-        </div>
-      </div>
-
-      <div className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={() => setShowWipeConfirm(false)}
-          className="flex-1 py-2.5 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition-colors cursor-pointer"
-        >
-          Cancel
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            onWipeAchievements();
-            setSelectedSectorId('sector-1');
-            setShowWipeConfirm(false);
-          }}
-          className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold font-mono transition-colors shadow-lg shadow-rose-950/50 cursor-pointer flex items-center justify-center gap-1.5"
-        >
-          <RotateCcw className="w-3.5 h-3.5" />
-          <span>Confirm Wipe</span>
-        </button>
-      </div>
-    </OverlayConfirm>
-  ) : null;
-
   return (
-    <OverlayShell
-      variant="window"
-      width="5xl"
-      labelledBy="galaxy-map-title"
-      over={wipeConfirm}
-    >
+    <OverlayShell variant="window" width="5xl" labelledBy="galaxy-map-title">
       {/* Top Header Bar */}
       <div className="flex flex-wrap items-center justify-between gap-4 p-4 sm:p-6 border-b border-slate-800 bg-slate-950/70">
         <div>
@@ -153,19 +87,6 @@ export const GalaxyMap: React.FC = () => {
                 </span>
               </div>
             </div>
-
-            {(totalStars > 0 || Object.keys(stagesProgress).length > 0) && (
-              <button
-                type="button"
-                onClick={() => setShowWipeConfirm(true)}
-                title="Wipe curriculum achievements and reset stars to 0 for the classical touch-typing curriculum"
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-rose-900/60 bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 hover:text-white text-xs font-mono transition-all cursor-pointer shadow-sm"
-              >
-                <RotateCcw className="w-3.5 h-3.5 text-rose-400" />
-                <span className="hidden sm:inline">Wipe Achievements</span>
-                <span className="sm:hidden">Wipe</span>
-              </button>
-            )}
           </div>
 
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-cyan-500/30 bg-cyan-950/30">
@@ -293,7 +214,9 @@ export const GalaxyMap: React.FC = () => {
                 <div className="flex flex-col items-end gap-1 shrink-0 ml-2">
                   <div className="flex items-center gap-1 text-xs font-mono text-amber-400">
                     <Star className="w-3 h-3 fill-amber-400" />
-                    <span>{sectorStars}/12</span>
+                    <span>
+                      {sectorStars}/{maxStarsOf(sector)}
+                    </span>
                   </div>
                   <ChevronRight
                     className={`w-3.5 h-3.5 ${isSelected ? 'text-cyan-400' : 'text-slate-600'}`}
@@ -364,7 +287,7 @@ export const GalaxyMap: React.FC = () => {
 
                       {/* 3-Star display */}
                       <div className="flex items-center gap-1">
-                        {[1, 2, 3].map((starNum) => (
+                        {STAR_NUMBERS.map((starNum) => (
                           <Star
                             key={starNum}
                             className={`w-4 h-4 ${

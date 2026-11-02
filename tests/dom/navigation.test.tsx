@@ -242,7 +242,9 @@ describe('the Galaxy Map', () => {
     // There is no Run waiting to be resumed.
     player.openHeader('Galaxy Map');
     expect(
-      screen.getByRole('button', { name: flightDeckLabel(false) }),
+      within(screen.getByRole('dialog')).getByRole('button', {
+        name: START_STAGE,
+      }),
     ).toBeTruthy();
     expect(
       screen.queryByRole('button', { name: flightDeckLabel(true) }),
@@ -460,7 +462,9 @@ describe('the Pause Menu', () => {
     // There is no Run waiting to be resumed.
     player.openHeader('Galaxy Map');
     expect(
-      screen.getByRole('button', { name: flightDeckLabel(false) }),
+      within(screen.getByRole('dialog')).getByRole('button', {
+        name: START_STAGE,
+      }),
     ).toBeTruthy();
     expect(
       screen.queryByRole('button', { name: flightDeckLabel(true) }),
