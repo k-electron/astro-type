@@ -40,7 +40,7 @@ export interface UpgradeEntry {
   prices: readonly number[];
 }
 
-/** The Trail a new Save equips, and every Save owns. */
+/** The Trail a new Save equips and owns. */
 export const DEFAULT_TRAIL: TrailId = 'CYAN';
 
 export interface TrailEntry {

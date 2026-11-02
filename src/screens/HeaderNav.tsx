@@ -33,12 +33,8 @@ export const HeaderNav: React.FC<{ ref?: React.Ref<HTMLElement> }> = ({
       isPlaying: state.screen === 'flight-deck',
       runPaused: state.phase === 'paused',
     }));
-  // The Flight Deck button: what it says, and what its tooltip says.
-  const flightButton = isPlaying
-    ? { label: 'Pause Flight', title: 'Pause Flight' }
-    : runPaused
-      ? { label: flightDeckLabel(true), title: flightDeckLabel(true) }
-      : { label: flightDeckLabel(false), title: flightDeckLabel(false) };
+  // The Flight Deck button: what it says, which is also its tooltip.
+  const flightLabel = isPlaying ? 'Pause Flight' : flightDeckLabel(runPaused);
   const onGoHome = () => send({ type: 'PRESS_HOME' });
   const onOpenStages = () => send({ type: 'OPEN_GALAXY_MAP' });
   const onOpenHangar = () => send({ type: 'OPEN_HANGAR' });
@@ -226,17 +222,17 @@ export const HeaderNav: React.FC<{ ref?: React.Ref<HTMLElement> }> = ({
           type="button"
           onClick={onQuickPlay}
           className="px-3.5 sm:px-4 py-2 text-xs font-bold text-slate-950 bg-cyan-400 rounded-lg hover:bg-cyan-300 shadow-md shadow-cyan-950 transition-all whitespace-nowrap shrink-0 cursor-pointer flex items-center gap-1.5"
-          title={flightButton.title}
+          title={flightLabel}
         >
           {isPlaying ? (
             <>
               <Pause className="w-3.5 h-3.5 fill-current" />
-              <span>{flightButton.label}</span>
+              <span>{flightLabel}</span>
             </>
           ) : (
             <>
               <Play className="w-3.5 h-3.5 fill-current" />
-              <span>{flightButton.label}</span>
+              <span>{flightLabel}</span>
             </>
           )}
         </button>

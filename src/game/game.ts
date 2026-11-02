@@ -223,7 +223,7 @@ export function createGame(options: GameOptions): Game {
   // Moments are queued as the store makes them and heard when the move has
   // settled (see `heardAfter`): sound plays their cues first, then everyone
   // else hears them. The continuous sound (the beat, its Overdrive layer,
-  // mute, volumes, Sound Kit) is not played from moments: it is derived
+  // mute, volumes, beat theme, Sound Kit) is not played from moments: it is derived
   // from the snapshot and synced when that changes.
   const momentListeners = new Set<(moment: Moment) => void>();
   const happened: Moment[] = [];
