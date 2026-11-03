@@ -213,8 +213,9 @@ test('native keys and focus: Space, Esc, Enter and the window losing focus', asy
   page,
   browser,
 }) => {
-  // The most real-clock keys of any journey: a busy machine can double its time.
-  test.setTimeout(120_000);
+  // The most real-clock keys of any journey, and the header measured in four
+  // profiles: a busy machine can double its time.
+  test.setTimeout(180_000);
   await test.step('the header fits from 768px up, with no Run, a running Run and a paused Run', async () => {
     await expectHeaderFitsInEveryState(page, 'a new player');
   });
