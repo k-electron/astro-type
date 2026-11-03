@@ -87,7 +87,7 @@ export const Debrief: React.FC = () => {
   return (
     <OverlayShell variant="debrief" width="xl" labelledBy="debrief-title">
       {/* Everything above the action buttons scrolls here when the window is too short */}
-      <div className="flex-1 min-h-0 overflow-y-auto px-6 pt-6 sm:px-8 sm:pt-8 flex flex-col items-center">
+      <div className="flex-1 min-h-0 overflow-y-auto px-6 pt-6 pb-2.5 sm:px-8 sm:pt-8 flex flex-col items-center [&>*:last-child]:mb-0">
         {/* Stage Badge & Title */}
         <span
           id="debrief-title"
@@ -332,7 +332,7 @@ export const Debrief: React.FC = () => {
       </div>
 
       {/* Action Buttons: a footer that stays on screen */}
-      <div className="shrink-0 border-t border-slate-800 px-6 pb-6 pt-4 sm:px-8 sm:pb-8 flex flex-wrap items-center justify-center gap-2.5">
+      <div className="shrink-0 border-t border-slate-800 px-6 pb-6 pt-2.5 sm:px-8 sm:pb-8 flex flex-wrap items-center justify-center gap-2.5">
         <button
           type="button"
           onClick={onReplay}
