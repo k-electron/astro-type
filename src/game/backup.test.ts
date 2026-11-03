@@ -10,7 +10,11 @@ import {
 } from '../../tests/shared/saves';
 import { DEFAULT_TRAIL, MAX_UPGRADE_LEVEL } from './catalog';
 import { DEFAULT_PROFILE } from './schemas';
-import { exportBackup, REFUSED_BACKUP_MESSAGE } from './save';
+import {
+  exportBackup,
+  NEWER_BACKUP_MESSAGE,
+  NOT_A_BACKUP_MESSAGE,
+} from './save';
 import { type Game, loadGame } from '../../tests/shared/testHelpers';
 
 // A Backup is the Profile exported to a file (ticket #25). The browser journeys
@@ -378,9 +382,7 @@ describe('importing a Backup', () => {
     const outcome = game.importBackup(text);
 
     expect(outcome.ok).toBe(false);
-    expect(outcome.ok === false && outcome.message).toBe(
-      REFUSED_BACKUP_MESSAGE,
-    );
+    expect(outcome.ok === false && outcome.message).toBe(NOT_A_BACKUP_MESSAGE);
     expect(game.getState().profile).toEqual(before);
     expect(game.getState().profile.totalCredits).toBe(321);
     expect(storage.saved).toBeNull();
@@ -388,21 +390,50 @@ describe('importing a Backup', () => {
 
   it.each([
     ['not JSON', '{"totalCredits": 5'],
-    ['an unknown version', JSON.stringify({ version: 2, totalCredits: 5 })],
+    ['a version that is not a number', '{"version":"abc"}'],
+    ['a version below the one this game writes', '{"version":0}'],
     ['not an object', 'null'],
     ['an empty file', ''],
-  ])('refuses %s, leaving the Profile and the Save untouched', (_, text) => {
-    const { game, storage } = gameWith({
-      totalCredits: 321,
-      ...clearedStages({ 's1-l1': 3 }),
-    });
-    const before = game.getState().profile;
+  ])(
+    'refuses %s as not a Backup, leaving the Profile and the Save untouched',
+    (_, text) => {
+      const { game, storage } = gameWith({
+        totalCredits: 321,
+        ...clearedStages({ 's1-l1': 3 }),
+      });
+      const before = game.getState().profile;
 
-    const outcome = game.importBackup(text);
+      const outcome = game.importBackup(text);
 
-    expect(outcome.ok).toBe(false);
-    expect(outcome.ok === false && outcome.message).toBeTruthy();
-    expect(game.getState().profile).toEqual(before);
-    expect(storage.saved).toBeNull();
-  });
+      expect(outcome.ok).toBe(false);
+      expect(outcome.ok === false && outcome.message).toBe(
+        NOT_A_BACKUP_MESSAGE,
+      );
+      expect(game.getState().profile).toEqual(before);
+      expect(storage.saved).toBeNull();
+    },
+  );
+
+  it.each([
+    ['version 2', { version: 2, totalCredits: 5 }],
+    ['a far newer version', { ...completeSave(), version: 99 }],
+  ])(
+    'refuses %s as made by a newer version, leaving the Profile and the Save untouched',
+    (_, backup) => {
+      const { game, storage } = gameWith({
+        totalCredits: 321,
+        ...clearedStages({ 's1-l1': 3 }),
+      });
+      const before = game.getState().profile;
+
+      const outcome = game.importBackup(JSON.stringify(backup));
+
+      expect(outcome.ok).toBe(false);
+      expect(outcome.ok === false && outcome.message).toBe(
+        NEWER_BACKUP_MESSAGE,
+      );
+      expect(game.getState().profile).toEqual(before);
+      expect(storage.saved).toBeNull();
+    },
+  );
 });

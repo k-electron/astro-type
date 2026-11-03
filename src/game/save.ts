@@ -62,8 +62,13 @@ export const UNREADABLE_NOTICE_KEY = 'astrotype_profile_v1_unreadable_notice';
 export const UNREADABLE_SAVE_NOTICE =
   "Your saved progress couldn't be read, so you're starting fresh.";
 
-export const REFUSED_BACKUP_MESSAGE =
-  "That file isn't a Backup this game can read, so your progress was left as it was.";
+/** Why a Backup was refused: the file isn't one this game can read at all. */
+export const NOT_A_BACKUP_MESSAGE =
+  "That file isn't a Backup, so your progress was left as it was.";
+
+/** Why a Backup was refused: its `version` is a number above the one this game writes. */
+export const NEWER_BACKUP_MESSAGE =
+  'That Backup was made by a newer version of the game, so your progress was left as it was.';
 
 /** What importing a Backup comes to: the new Profile, or a refusal. */
 export type BackupImport =
@@ -101,8 +106,9 @@ const hasProfileContent = (value: unknown): boolean =>
   Object.keys(value).some((field) => PROFILE_FIELDS.has(field));
 
 /**
- * Checks a Backup file's text with the Save's schema. Text that isn't JSON or an
- * unknown version is refused; a wrong field is read the way a Save's is, so
+ * Checks a Backup file's text with the Save's schema. Text that isn't JSON or a
+ * `version` that isn't 1 is refused (with the "newer version" message when the
+ * `version` is a number above 1, the "isn't a Backup" one otherwise); a wrong field is read the way a Save's is, so
  * that field is defaulted or clamped and the rest imported. A Backup exported before
  * versions existed is read as version 1, but only when it holds real Profile
  * content: `{}` or unrelated JSON is refused instead of becoming a fresh
@@ -115,17 +121,23 @@ export function parseBackup(text: string): BackupImport {
   try {
     value = JSON.parse(text);
   } catch {
-    return { ok: false, message: REFUSED_BACKUP_MESSAGE };
+    return { ok: false, message: NOT_A_BACKUP_MESSAGE };
   }
-  const versioned =
-    typeof value === 'object' && value !== null && 'version' in value;
+  const version =
+    typeof value === 'object' && value !== null && 'version' in value
+      ? value.version
+      : undefined;
+  if (typeof version === 'number' && version > 1) {
+    return { ok: false, message: NEWER_BACKUP_MESSAGE };
+  }
+  const versioned = version !== undefined;
   if (!versioned && !hasProfileContent(value)) {
-    return { ok: false, message: REFUSED_BACKUP_MESSAGE };
+    return { ok: false, message: NOT_A_BACKUP_MESSAGE };
   }
   const result = PlayerProfileSchema.safeParse(value);
   return result.success
     ? { ok: true, profile: result.data }
-    : { ok: false, message: REFUSED_BACKUP_MESSAGE };
+    : { ok: false, message: NOT_A_BACKUP_MESSAGE };
 }
 
 export interface LoadedSave {

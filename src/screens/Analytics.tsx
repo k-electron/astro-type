@@ -1,5 +1,5 @@
 import type React from 'react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useGame } from '../app/useGame';
 import { useGameState } from '../app/useGameState';
 import {
@@ -14,7 +14,7 @@ import {
   FINGER_DISPLAY_NAMES,
 } from '../curriculum/curriculum';
 import { KEYBOARD_ROWS } from '../curriculum/keyboardLayout';
-import { exportBackup, REFUSED_BACKUP_MESSAGE } from '../game/save';
+import { exportBackup, NOT_A_BACKUP_MESSAGE } from '../game/save';
 import { clearedStagesOf } from '../game/schemas';
 import {
   FACTORY_RESET_MESSAGE,
@@ -23,6 +23,7 @@ import {
   wipeStarsMessage,
 } from './confirmLabels';
 import { Download, Upload, RotateCcw } from 'lucide-react';
+import { DISMISS_NOTICE_LABEL } from './dismissLabel';
 
 /**
  * The keyboard's keys for the heatmap, row by row: the letters, the digits and
@@ -43,6 +44,13 @@ export const Analytics: React.FC = () => {
   // Why the last import was refused, shown beside the import control. A good
   // import clears it: the header's Stars and Credits are the player's proof.
   const [refusal, setRefusal] = useState<string | null>(null);
+  // The Backup card is the last block of a scrolling panel, so a message that
+  // appears under the Import button can land below the fold: bring it into
+  // view (scrolling only as far as needed, and not at all if it is visible).
+  const refusalRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (refusal) refusalRef.current?.scrollIntoView?.({ block: 'nearest' });
+  }, [refusal]);
 
   const {
     totalPracticeSeconds,
@@ -138,7 +146,7 @@ export const Analytics: React.FC = () => {
       const outcome = importBackup(String(reader.result ?? ''));
       setRefusal(outcome.ok ? null : outcome.message);
     };
-    reader.onerror = () => setRefusal(REFUSED_BACKUP_MESSAGE);
+    reader.onerror = () => setRefusal(NOT_A_BACKUP_MESSAGE);
     reader.readAsText(file);
   };
 
@@ -464,12 +472,21 @@ export const Analytics: React.FC = () => {
             </div>
 
             {refusal && (
-              <p
-                role="alert"
-                className="basis-full text-xs font-medium text-rose-300"
+              <div
+                ref={refusalRef}
+                className="basis-full flex items-center gap-3"
               >
-                {refusal}
-              </p>
+                <p role="alert" className="text-xs font-medium text-rose-300">
+                  {refusal}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setRefusal(null)}
+                  className="px-2.5 py-1 rounded-md border border-slate-700 text-xs text-slate-300 hover:bg-slate-800 transition-colors cursor-pointer"
+                >
+                  {DISMISS_NOTICE_LABEL}
+                </button>
+              </div>
             )}
           </div>
         </div>

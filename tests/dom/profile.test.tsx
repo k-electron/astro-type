@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  REFUSED_BACKUP_MESSAGE,
+  NOT_A_BACKUP_MESSAGE,
   UNREADABLE_SAVE_NOTICE,
 } from '../../src/game/save';
 import { BEGIN_HOME_ROW, PAUSE_FLIGHT, START_STAGE } from '../shared/screens';
@@ -194,7 +194,7 @@ describe('Import Backup and Factory Reset', () => {
     player.importBackup('{}');
 
     expect((await screen.findByRole('alert')).textContent).toBe(
-      REFUSED_BACKUP_MESSAGE,
+      NOT_A_BACKUP_MESSAGE,
     );
     expect(stars(5)).toBeTruthy();
     expect(credits('1,234')).toBeTruthy();

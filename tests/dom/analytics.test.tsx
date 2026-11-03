@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { FINGER_DISPLAY_NAMES } from '../../src/curriculum/curriculum';
+import {
+  NEWER_BACKUP_MESSAGE,
+  NOT_A_BACKUP_MESSAGE,
+} from '../../src/game/save';
+import { closeLabel } from '../../src/screens/closeLabel';
+import { DISMISS_NOTICE_LABEL } from '../../src/screens/dismissLabel';
+import { RETURNING_PLAYER } from '../shared/saves';
 import { renderGame, screen } from './harness';
 
 // What Analytics tells the player about their keys: the hand balance, the
@@ -73,6 +80,62 @@ describe('Analytics and the characters that need Shift', () => {
     player.openHeader('Analytics');
 
     expect(screen.getByTitle(/^F: 98%/)).toBeTruthy();
+  });
+});
+
+describe('Analytics refusing a Backup', () => {
+  it('says a newer Backup was made by a newer version, until the player dismisses it', async () => {
+    const player = renderGame({ profile: RETURNING_PLAYER });
+    player.openHeader('Analytics');
+    expect(
+      screen.queryByRole('button', { name: DISMISS_NOTICE_LABEL }),
+    ).toBeNull();
+
+    player.importBackup(JSON.stringify({ version: 2, totalCredits: 5 }));
+
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      NEWER_BACKUP_MESSAGE,
+    );
+    player.click(DISMISS_NOTICE_LABEL);
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.queryByText(NEWER_BACKUP_MESSAGE)).toBeNull();
+  });
+
+  it('says a file that is not JSON is not a Backup', async () => {
+    const player = renderGame({ profile: RETURNING_PLAYER });
+    player.openHeader('Analytics');
+
+    player.importBackup('this is not a Backup at all');
+
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      NOT_A_BACKUP_MESSAGE,
+    );
+  });
+
+  it('clears the message when a good Backup is imported after a refusal', async () => {
+    const player = renderGame();
+    player.openHeader('Analytics');
+    player.importBackup('this is not a Backup at all');
+    await screen.findByRole('alert');
+
+    player.importBackup(JSON.stringify({ version: 1, ...RETURNING_PLAYER }));
+
+    // The imported Profile is on show (5 Stars), so the import has finished.
+    await screen.findByRole('button', { name: /^5\s*★$/ });
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.queryByText(NOT_A_BACKUP_MESSAGE)).toBeNull();
+  });
+
+  it('forgets the message when the player leaves Analytics and comes back', async () => {
+    const player = renderGame({ profile: RETURNING_PLAYER });
+    player.openHeader('Analytics');
+    player.importBackup('this is not a Backup at all');
+    await screen.findByRole('alert');
+
+    player.click(closeLabel('academy-home'));
+    player.openHeader('Analytics');
+
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 });
 
