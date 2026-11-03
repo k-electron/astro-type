@@ -16,7 +16,9 @@ import { useEscLayer } from '../app/escLayers';
  * - `form`: a panel that pads and scrolls itself (Free Flight)
  * - `debrief`: a centred card on a darker backdrop, never taller than the
  *   window and not scrolling itself, so the Debrief can scroll its body inside
- *   it while its action buttons stay on screen
+ *   it while its action buttons stay on screen. The frame keeps only a thin
+ *   vertical margin, so a card that is a little taller than the window's
+ *   usual padding leaves (the Debrief of a Stage, at 900px) still fits whole
  * - `pause`: a small centred card (the Pause Menu)
  */
 const VARIANTS = {
@@ -29,7 +31,7 @@ const VARIANTS = {
     panel: 'p-6 flex flex-col max-h-[90vh] overflow-y-auto',
   },
   debrief: {
-    frame: 'p-3 sm:p-6 bg-slate-950/85 backdrop-blur-md',
+    frame: 'px-3 py-2 sm:px-6 bg-slate-950/85 backdrop-blur-md',
     panel: 'flex flex-col max-h-full text-center',
   },
   pause: {
