@@ -8,6 +8,11 @@ import {
   Volume2,
   VolumeX,
   SlidersHorizontal,
+  Home,
+  Map as MapIcon,
+  Rocket,
+  ChartColumn,
+  Type,
 } from 'lucide-react';
 import { useGame } from '../app/useGame';
 import { useGameState } from '../app/useGameState';
@@ -40,6 +45,13 @@ export const HeaderNav: React.FC<{ ref?: React.Ref<HTMLElement> }> = ({
   const onOpenHangar = () => send({ type: 'OPEN_HANGAR' });
   const onOpenAnalytics = () => send({ type: 'OPEN_ANALYTICS' });
   const onOpenCustom = () => send({ type: 'OPEN_FREE_FLIGHT' });
+  const navButtons = [
+    { name: 'Academy Home', Icon: Home, onPress: onGoHome },
+    { name: 'Galaxy Map', Icon: MapIcon, onPress: onOpenStages },
+    { name: 'Hangar', Icon: Rocket, onPress: onOpenHangar },
+    { name: 'Analytics', Icon: ChartColumn, onPress: onOpenAnalytics },
+    { name: 'Free Flight', Icon: Type, onPress: onOpenCustom },
+  ];
   const onQuickPlay = () => send({ type: 'PRESS_FLIGHT_DECK' });
   const [isAudioMenuOpen, setIsAudioMenuOpen] = useState(false);
   const audioMenuRef = useRef<HTMLDivElement>(null);
@@ -116,43 +128,22 @@ export const HeaderNav: React.FC<{ ref?: React.Ref<HTMLElement> }> = ({
         </div>
       </div>
 
-      {/* Zone 2: Navigation Links */}
-      <nav className="hidden md:flex items-center gap-5 text-xs sm:text-sm font-medium text-slate-400">
-        <button
-          type="button"
-          onClick={onGoHome}
-          className="hover:text-slate-100 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
-        >
-          Home
-        </button>
-        <button
-          type="button"
-          onClick={onOpenStages}
-          className="hover:text-slate-100 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
-        >
-          Galaxy Map
-        </button>
-        <button
-          type="button"
-          onClick={onOpenHangar}
-          className="hover:text-slate-100 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
-        >
-          Hangar
-        </button>
-        <button
-          type="button"
-          onClick={onOpenAnalytics}
-          className="hover:text-slate-100 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
-        >
-          Analytics
-        </button>
-        <button
-          type="button"
-          onClick={onOpenCustom}
-          className="hover:text-slate-100 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
-        >
-          Free Flight
-        </button>
+      {/* Zone 2: Navigation Links. An icon each below `lg`, text from `lg` up;
+          the name stays on the button (`aria-label`) and is its tooltip. */}
+      <nav className="hidden md:flex items-center gap-3 xl:gap-5 text-sm font-medium text-slate-400">
+        {navButtons.map(({ name, Icon, onPress }) => (
+          <button
+            key={name}
+            type="button"
+            onClick={onPress}
+            aria-label={name}
+            title={name}
+            className="hover:text-slate-100 transition-colors whitespace-nowrap shrink-0 cursor-pointer p-1.5 lg:p-0"
+          >
+            <Icon aria-hidden="true" className="w-4 h-4 shrink-0 lg:hidden" />
+            <span className="hidden lg:inline">{name}</span>
+          </button>
+        ))}
       </nav>
 
       {/* Zone 3: Holistic Single-Threaded Audio Control & Quick Action */}

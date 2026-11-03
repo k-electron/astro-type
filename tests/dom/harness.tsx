@@ -48,7 +48,7 @@ export { screen, within };
 
 /** The header's screen buttons, by the text the player reads on them. */
 export type HeaderButton =
-  | 'Home'
+  | 'Academy Home'
   | 'Galaxy Map'
   | 'Hangar'
   | 'Analytics'

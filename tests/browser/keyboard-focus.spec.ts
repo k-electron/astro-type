@@ -10,10 +10,13 @@ import {
   typeText,
 } from './helpers';
 import { OPEN_AUDIO_PANEL, laserSfxLabel } from '../../src/screens/audioLabels';
+import { flightDeckLabel } from '../../src/screens/closeLabel';
 import {
+  ACADEMY_HOME,
   MENU_HEADINGS,
   PAUSE_FLIGHT,
   PAUSE_MENU_NAME,
+  START_STAGE,
 } from '../shared/screens';
 import { pauseButton, resumeButton } from './journey-helpers';
 
@@ -93,11 +96,108 @@ const LONG_TOKEN = 'abcdefghijklmnopqrstuvwxyzabcdefghijklmn';
 /** How far apart (px) two characters can sit and still be on one line. */
 const SAME_LINE = 8;
 
+/** The narrowest window the game supports up to a wide one, either side of Tailwind's `lg` (1024px). */
+const WIDEST = 1280;
+const HEADER_WIDTHS = [WIDEST, 1024, 1023, 1000, 900, 800, 768];
+
+/** The five buttons of the header's navigation, by the names they keep at every width. */
+const NAV_BUTTONS = [ACADEMY_HOME, ...Object.keys(MENU_HEADINGS)];
+
+/**
+ * At each window width, every header button is named, fully inside the window
+ * and not covered by anything else. `flightName` is the Flight Deck button's
+ * name for the state the game is in, which also proves the state.
+ */
+async function expectHeaderFits(page: Page, flightName: string, state: string) {
+  const header = page.getByRole('banner');
+  let widest: string[] | undefined;
+  for (const width of HEADER_WIDTHS) {
+    await page.setViewportSize({ width, height: 800 });
+    const where = `${width}px, ${state}`;
+    const nav = page.getByRole('navigation');
+    for (const name of NAV_BUTTONS) {
+      await expect
+        .soft(
+          nav.getByRole('button', { name, exact: true }),
+          `${where}: nav button "${name}" is there`,
+        )
+        .toBeVisible();
+    }
+    await expect
+      .soft(
+        header.getByRole('button', { name: flightName, exact: true }),
+        `${where}: Flight Deck button "${flightName}" is there`,
+      )
+      .toBeVisible();
+
+    // Each drawn button: where it sits, and what is on top at its centre.
+    const buttons = await header.getByRole('button').evaluateAll((elements) =>
+      elements
+        .filter((element) => element.getClientRects().length > 0)
+        .map((element) => {
+          const box = element.getBoundingClientRect();
+          const hit = document.elementFromPoint(
+            box.left + box.width / 2,
+            box.top + box.height / 2,
+          );
+          return {
+            name: (
+              element.getAttribute('aria-label') ??
+              element.textContent ??
+              ''
+            ).trim(),
+            left: box.left,
+            right: box.right,
+            covered: !(hit && element.contains(hit)),
+            hit: hit
+              ? `${hit.tagName} "${hit.textContent?.trim()}"`
+              : 'nothing',
+          };
+        }),
+    );
+    expect
+      .soft(buttons.length, `${where}: the header has buttons`)
+      .toBeGreaterThan(0);
+    // A button that is hidden to make room is not measured above, so the
+    // buttons of every width must be those of the widest window.
+    const names = buttons.map(({ name }) => name).sort();
+    widest ??= names;
+    expect
+      .soft(names, `${where}: the same header buttons as at ${WIDEST}px`)
+      .toEqual(widest);
+    for (const { name, left, right, covered, hit } of buttons) {
+      expect
+        .soft(left, `${where}: "${name}" starts inside the window`)
+        .toBeGreaterThanOrEqual(0);
+      expect
+        .soft(right, `${where}: "${name}" ends inside the window (${width})`)
+        .toBeLessThanOrEqual(width);
+      expect
+        .soft(covered, `${where}: "${name}" is covered by ${hit}`)
+        .toBe(false);
+    }
+  }
+}
+
 test('native keys and focus: Space, Esc, Enter and the window losing focus', async ({
   page,
 }) => {
   // The most real-clock keys of any journey: a busy machine can double its time.
   test.setTimeout(120_000);
+  await test.step('the header fits from 768px up, with no Run, a running Run and a paused Run', async () => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto('/');
+    await expectHeaderFits(page, START_STAGE, 'no Run');
+
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await launchFreeFlight(page, 'abcdef');
+    await expectHeaderFits(page, PAUSE_FLIGHT, 'a running Run');
+
+    await page.keyboard.press('Escape');
+    await expect(pauseMenu(page)).toBeVisible();
+    await expectHeaderFits(page, flightDeckLabel(true), 'a paused Run');
+  });
+
   await test.step('the text prompt wraps between words, and inside a word only when it cannot fit a line', async () => {
     // Launch at a desktop width (the header's buttons are hidden on a phone),
     // then narrow to a phone's width, so the text takes several lines.

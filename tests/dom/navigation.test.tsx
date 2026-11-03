@@ -31,7 +31,7 @@ import {
 // the Pause Menu, Esc, and leaving the page. Every test drives the real App
 // the way a player does and reads only the screen.
 
-type MenuButton = Exclude<HeaderButton, 'Home'>;
+type MenuButton = Exclude<HeaderButton, 'Academy Home'>;
 
 const MENU_BUTTONS = Object.keys(MENU_HEADINGS) as MenuButton[];
 

@@ -22,7 +22,7 @@ import {
 // Flight and the Debrief) are dialogs over the Flight Deck: the player can
 // reach the overlay and the header, never the Flight Deck, while one shows.
 
-type MenuButton = Exclude<HeaderButton, 'Home'>;
+type MenuButton = Exclude<HeaderButton, 'Academy Home'>;
 const MENU_BUTTONS = Object.keys(MENU_HEADINGS) as MenuButton[];
 
 const dialog = () => screen.getByRole('dialog');
