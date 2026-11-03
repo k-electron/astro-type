@@ -71,14 +71,14 @@ export const TextPromptStream: React.FC = () => {
           aria-current={isCurrent ? 'true' : undefined}
           className={`inline-block select-none transition-all duration-75 ${
             isCurrent
-              ? `px-1.5 py-0.2 mx-0.5 rounded bg-cyan-500/25 ring-cyan-400 font-bold shadow-[0_0_10px_rgba(6,182,212,0.5)] scale-105 ${
+              ? `px-1.5 mx-0.5 rounded-sm ring-2 ring-cyan-400 font-bold shadow-[0_0_10px_rgba(6,182,212,0.5)] scale-105 ${
                   hasError
-                    ? 'text-rose-400 line-through decoration-rose-500'
-                    : 'text-cyan-200'
+                    ? 'bg-rose-950/30 text-rose-400'
+                    : 'bg-cyan-500/25 text-cyan-200'
                 }`
               : isTyped
                 ? hasError
-                  ? 'px-1 text-rose-400 line-through decoration-rose-500 font-bold'
+                  ? 'px-1 rounded-sm bg-rose-950/30 text-rose-400 font-bold'
                   : 'px-1 text-emerald-500/60 font-medium'
                 : 'px-1 text-slate-600/70 hover:text-slate-400 font-normal'
           }`}
@@ -150,7 +150,7 @@ export const TextPromptStream: React.FC = () => {
                 {FINGER_DISPLAY_NAMES[charInfo.finger] || charInfo.finger}
               </span>
               {charInfo.shiftRequired && charInfo.recommendedShiftHand && (
-                <span className="text-amber-400 font-mono text-[10px] bg-amber-950/60 px-1 py-0.2 rounded border border-amber-800/60 whitespace-nowrap">
+                <span className="text-amber-400 font-mono text-[10px] bg-amber-950/60 px-1 rounded border border-amber-800/60 whitespace-nowrap">
                   + {charInfo.recommendedShiftHand.toUpperCase()} SHIFT
                 </span>
               )}

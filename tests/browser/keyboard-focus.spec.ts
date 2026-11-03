@@ -329,7 +329,7 @@ test('native keys and focus: Space, Esc, Enter and the window losing focus', asy
       .toBe(true);
   });
 
-  await test.step('part A: a missed space is struck through at once, and looks like one that was passed', async () => {
+  await test.step('part A: a missed space is marked at once, without a strike, and looks like one that was passed', async () => {
     // A short window, so the Flight Deck is taller than the page and Space
     // would scroll it if the game let the key through.
     await page.setViewportSize({ width: 1280, height: 500 });
@@ -350,20 +350,20 @@ test('native keys and focus: Space, Esc, Enter and the window losing focus', asy
     // A wrong key on the space marks it at once, and the cursor stays on it.
     await page.keyboard.press('z');
     await expect.soft(currentCharacter(page)).toHaveText('␣');
-    const struckCurrent = await look(promptSpace(page, 0));
-    expect.soft(struckCurrent.textDecorationLine).toBe('line-through');
+    const markedCurrent = await look(promptSpace(page, 0));
+    expect.soft(markedCurrent.textDecorationLine).toBe('none');
     await expect(promptProgress(page)).toHaveText('14%');
 
     // The space key moves the cursor on. The space it passed still reads as
-    // missed: the same look as when it was struck while current.
+    // missed: the same look as when it was marked while current.
     await page.keyboard.press('Space');
     await expect(promptProgress(page)).toHaveText('29%');
     const missed = await look(promptSpace(page, 0));
-    expect.soft(missed.textDecorationLine).toBe('line-through');
+    expect.soft(missed.textDecorationLine).toBe('none');
     expect
       .soft(missed.color, 'a missed space is drawn in its own colour')
       .not.toBe(untouched.color);
-    expect.soft(missed).toEqual(struckCurrent);
+    expect.soft(missed).toEqual(markedCurrent);
   });
 
   await test.step('part A: Space does not scroll the page while typing', async () => {
