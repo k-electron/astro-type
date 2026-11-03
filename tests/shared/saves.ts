@@ -57,6 +57,18 @@ export const RETURNING_PLAYER = {
   ...clearedStages({ 's1-l1': 3, 's1-l2': 2 }),
 };
 
+/** RETURNING_PLAYER with Audio muted, so the header's Audio button says MUTED. */
+export const MUTED_PLAYER = { ...RETURNING_PLAYER, globalMuted: true };
+
+/**
+ * The widest numbers the header can show: every Stage cleared with 3 Stars
+ * (the most Stars there are) and six-digit Credits.
+ */
+export const MOST_STARS_AND_CREDITS = {
+  ...EVERY_STAGE_CLEARED,
+  totalCredits: 999_999,
+};
+
 /** RETURNING_PLAYER with every Sound Kit owned, so any can be equipped. */
 export const OWNS_EVERY_SOUND_KIT = {
   ...RETURNING_PLAYER,

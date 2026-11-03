@@ -6,6 +6,7 @@ import {
   launchFreeFlight,
   pauseMenu,
   promptProgress,
+  seedSave,
   textPrompt,
   typeText,
 } from './helpers';
@@ -19,6 +20,7 @@ import {
   START_STAGE,
 } from '../shared/screens';
 import { pauseButton, resumeButton } from './journey-helpers';
+import { MOST_STARS_AND_CREDITS, MUTED_PLAYER } from '../shared/saves';
 
 // J2: native keyboard and focus, in a real browser. These are the things a DOM
 // test cannot see: the default scroll action of the Space key, how a missed
@@ -98,7 +100,7 @@ const SAME_LINE = 8;
 
 /** The narrowest window the game supports up to a wide one, either side of Tailwind's `lg` (1024px). */
 const WIDEST = 1280;
-const HEADER_WIDTHS = [WIDEST, 1024, 1023, 1000, 900, 800, 768];
+const HEADER_WIDTHS = [WIDEST, 1100, 1024, 1023, 1000, 900, 800, 768];
 
 /** The five buttons of the header's navigation, by the names they keep at every width. */
 const NAV_BUTTONS = [ACADEMY_HOME, ...Object.keys(MENU_HEADINGS)];
@@ -113,6 +115,9 @@ async function expectHeaderFits(page: Page, flightName: string, state: string) {
   let widest: string[] | undefined;
   for (const width of HEADER_WIDTHS) {
     await page.setViewportSize({ width, height: 800 });
+    // The header's fonts are web fonts; measure with the real ones, not the
+    // fallback glyphs they replace.
+    await page.evaluate(() => document.fonts.ready);
     const where = `${width}px, ${state}`;
     const nav = page.getByRole('navigation');
     for (const name of NAV_BUTTONS) {
@@ -179,23 +184,55 @@ async function expectHeaderFits(page: Page, flightName: string, state: string) {
   }
 }
 
+/** No Run, a running Run and a paused Run, each at every header width. */
+async function expectHeaderFitsInEveryState(page: Page, who: string) {
+  await page.setViewportSize({ width: WIDEST, height: 800 });
+  await page.goto('/');
+  await expectHeaderFits(page, START_STAGE, `${who}, no Run`);
+
+  await page.setViewportSize({ width: WIDEST, height: 800 });
+  await launchFreeFlight(page, 'abcdef');
+  await expectHeaderFits(page, PAUSE_FLIGHT, `${who}, a running Run`);
+
+  await page.keyboard.press('Escape');
+  await expect(pauseMenu(page)).toBeVisible();
+  await expectHeaderFits(page, flightDeckLabel(true), `${who}, a paused Run`);
+}
+
+/** Saves that make the header's busiest contents, and both at once. */
+const HEADER_PROFILES = {
+  'a muted player': MUTED_PLAYER,
+  'a player with the most Stars and six-digit Credits': MOST_STARS_AND_CREDITS,
+  'a muted player with the most Stars and six-digit Credits': {
+    ...MOST_STARS_AND_CREDITS,
+    globalMuted: true,
+  },
+};
+
 test('native keys and focus: Space, Esc, Enter and the window losing focus', async ({
   page,
+  browser,
 }) => {
   // The most real-clock keys of any journey: a busy machine can double its time.
   test.setTimeout(120_000);
   await test.step('the header fits from 768px up, with no Run, a running Run and a paused Run', async () => {
-    await page.setViewportSize({ width: 1280, height: 800 });
-    await page.goto('/');
-    await expectHeaderFits(page, START_STAGE, 'no Run');
+    await expectHeaderFitsInEveryState(page, 'a new player');
+  });
 
-    await page.setViewportSize({ width: 1280, height: 800 });
-    await launchFreeFlight(page, 'abcdef');
-    await expectHeaderFits(page, PAUSE_FLIGHT, 'a running Run');
-
-    await page.keyboard.press('Escape');
-    await expect(pauseMenu(page)).toBeVisible();
-    await expectHeaderFits(page, flightDeckLabel(true), 'a paused Run');
+  await test.step('the header still fits when Audio is muted and the Stars and Credits are large', async () => {
+    for (const [who, save] of Object.entries(HEADER_PROFILES)) {
+      // A context of its own, so the Save does not reach the steps below.
+      const context = await browser.newContext({
+        baseURL: test.info().project.use.baseURL,
+      });
+      try {
+        const seeded = await context.newPage();
+        await seedSave(seeded, save);
+        await expectHeaderFitsInEveryState(seeded, who);
+      } finally {
+        await context.close();
+      }
+    }
   });
 
   await test.step('the text prompt wraps between words, and inside a word only when it cannot fit a line', async () => {

@@ -84,10 +84,10 @@ export const HeaderNav: React.FC<{ ref?: React.Ref<HTMLElement> }> = ({
   return (
     <header
       ref={ref}
-      className="w-full flex items-center justify-between gap-3 sm:gap-6 px-3 sm:px-6 py-3 border-b border-slate-800 bg-slate-950/85 backdrop-blur-md sticky top-0 z-60"
+      className="w-full flex items-center justify-between gap-3 xl:gap-6 px-3 xl:px-6 py-3 border-b border-slate-800 bg-slate-950/85 backdrop-blur-md sticky top-0 z-60"
     >
       {/* Zone 1: Brand Wordmark (Go Home) & Gamification Telemetry */}
-      <div className="flex items-center gap-3 shrink-0">
+      <div className="flex items-center gap-2 xl:gap-3 shrink-0">
         <button
           type="button"
           onClick={onGoHome}
@@ -99,25 +99,27 @@ export const HeaderNav: React.FC<{ ref?: React.Ref<HTMLElement> }> = ({
         </button>
 
         {/* Gamification Telemetry: Star Counter & Credits */}
-        <div className="flex items-center gap-1.5 sm:gap-2 text-xs font-mono ml-1 sm:ml-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 text-xs font-mono xl:ml-2">
           <button
             type="button"
             onClick={onOpenStages}
             title="Stars earned across all Sectors (opens the Galaxy Map)"
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-950/40 border border-amber-500/40 hover:border-amber-400 text-amber-300 transition-all cursor-pointer shadow-sm hover:shadow-[0_0_12px_rgba(245,158,11,0.25)]"
+            className="flex items-center gap-1.5 px-2 xl:px-2.5 py-1 rounded-lg bg-amber-950/40 border border-amber-500/40 hover:border-amber-400 text-amber-300 transition-all cursor-pointer shadow-sm hover:shadow-[0_0_12px_rgba(245,158,11,0.25)]"
           >
             <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400 shrink-0" />
             <span className="font-bold tabular-nums text-sm text-amber-200">
               {totalStars}
             </span>
-            <span className="text-[10px] text-amber-400/80 font-medium">★</span>
+            <span className="hidden xl:inline text-[10px] text-amber-400/80 font-medium">
+              ★
+            </span>
           </button>
 
           <button
             type="button"
             onClick={onOpenHangar}
             title="Starship Credits (Click to open Hangar)"
-            className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-cyan-950/40 border border-cyan-500/40 hover:border-cyan-400 text-cyan-300 transition-all cursor-pointer shadow-sm hover:shadow-[0_0_12px_rgba(6,182,212,0.25)]"
+            className="hidden sm:flex items-center gap-1.5 px-2 xl:px-2.5 py-1 rounded-lg bg-cyan-950/40 border border-cyan-500/40 hover:border-cyan-400 text-cyan-300 transition-all cursor-pointer shadow-sm hover:shadow-[0_0_12px_rgba(6,182,212,0.25)]"
           >
             <Sparkles className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
             <span className="font-bold tabular-nums text-sm text-cyan-200">
@@ -130,7 +132,7 @@ export const HeaderNav: React.FC<{ ref?: React.Ref<HTMLElement> }> = ({
 
       {/* Zone 2: Navigation Links. An icon each below `lg`, text from `lg` up;
           the name stays on the button (`aria-label`) and is its tooltip. */}
-      <nav className="hidden md:flex items-center gap-3 xl:gap-5 text-sm font-medium text-slate-400">
+      <nav className="hidden md:flex items-center gap-2 lg:gap-3 xl:gap-5 text-sm font-medium text-slate-400">
         {navButtons.map(({ name, Icon, onPress }) => (
           <button
             key={name}
@@ -160,7 +162,7 @@ export const HeaderNav: React.FC<{ ref?: React.Ref<HTMLElement> }> = ({
                   ? 'All Audio is MUTED (Click to unmute)'
                   : 'Click to mute all audio instantly'
               }
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-mono font-medium transition-colors cursor-pointer ${
+              className={`flex items-center gap-1.5 px-2 xl:px-2.5 py-1.5 text-xs font-mono font-medium transition-colors cursor-pointer ${
                 isMuted
                   ? 'bg-rose-950/70 text-rose-300 hover:bg-rose-900/70'
                   : 'text-slate-300 hover:text-white hover:bg-slate-800'
@@ -170,7 +172,7 @@ export const HeaderNav: React.FC<{ ref?: React.Ref<HTMLElement> }> = ({
               {isMuted ? (
                 <>
                   <VolumeX className="w-4 h-4 text-rose-400 shrink-0" />
-                  <span className="font-bold text-[11px] text-rose-300 tracking-wide">
+                  <span className="hidden lg:inline font-bold text-[11px] text-rose-300 tracking-wide">
                     MUTED
                   </span>
                 </>
@@ -212,7 +214,7 @@ export const HeaderNav: React.FC<{ ref?: React.Ref<HTMLElement> }> = ({
         <button
           type="button"
           onClick={onQuickPlay}
-          className="px-3.5 sm:px-4 py-2 text-xs font-bold text-slate-950 bg-cyan-400 rounded-lg hover:bg-cyan-300 shadow-md shadow-cyan-950 transition-all whitespace-nowrap shrink-0 cursor-pointer flex items-center gap-1.5"
+          className="px-3.5 xl:px-4 py-2 text-xs font-bold text-slate-950 bg-cyan-400 rounded-lg hover:bg-cyan-300 shadow-md shadow-cyan-950 transition-all whitespace-nowrap shrink-0 cursor-pointer flex items-center gap-1.5"
           title={flightLabel}
         >
           {isPlaying ? (
