@@ -114,7 +114,7 @@ export interface GameState {
   run: Run;
   debrief: DebriefResult | null;
   profile: GameProfile;
-  /** Why the Save was set aside and the player started fresh, or null. */
+  /** Why the Save was set aside and the player started fresh, or null. It shows until dismissed. */
   loadNotice: string | null;
   /** Run Time in milliseconds: how long the Run has been running, pauses left out. */
   runTime: number;
@@ -174,6 +174,8 @@ export interface Game {
   wipeAchievements(): void;
   /** Back to a fresh Profile. */
   resetProgress(): void;
+  /** Dismiss Academy Home's notice that the Save was moved aside; it stays gone after a reload. */
+  dismissLoadNotice(): void;
 }
 
 /** The game's one store: the Run's part and the Profile's, side by side. */
@@ -238,7 +240,7 @@ export function createGame(options: GameOptions): Game {
   // Profile the Save gave.
   const store = createStore<GameStoreState>()((set, get) => {
     const profile = createProfileSlice(
-      { storage: options.storage, emit },
+      { storage: options.storage, clock, emit },
       set,
       get,
     );
@@ -446,6 +448,7 @@ export function createGame(options: GameOptions): Game {
         actions().wipeCurriculumAchievements();
         backToFirstStageUnlessRun();
       }),
+    dismissLoadNotice: () => move(() => actions().dismissLoadNotice()),
     resetProgress: () =>
       move(() => {
         actions().resetProgress();

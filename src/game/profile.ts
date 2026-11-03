@@ -25,6 +25,7 @@ import {
   type SoundKitEntry,
   type TrailEntry,
 } from './catalog';
+import type { Clock } from './clock';
 import type { Moment } from './moments';
 import {
   type BackupImport,
@@ -280,6 +281,8 @@ export interface ProfileCommands {
   wipeCurriculumAchievements: () => void;
   /** Back to a fresh Profile. */
   resetProgress: () => void;
+  /** Clears the notice that a Save was moved aside, for good (it stays gone after a reload). */
+  dismissLoadNotice: () => void;
   /**
    * Takes in a cleared Run's result: Credits, key analytics and, for a Sector
    * Stage, its Stars and bests. `stageId` is null for a Free Flight, which
@@ -296,6 +299,8 @@ export type ProfileSlice = ProfileState & ProfileCommands;
 
 export interface ProfileDeps {
   storage: SaveStorage;
+  /** Names a moved-aside Save for the time it was moved. */
+  clock: Clock;
   /** Told of a purchase as it happens. */
   emit: (moment: Moment) => void;
 }
@@ -306,11 +311,11 @@ export interface ProfileDeps {
  * Profile's fields only.
  */
 export function createProfileSlice(
-  { storage, emit }: ProfileDeps,
+  { storage, clock, emit }: ProfileDeps,
   set: (partial: Partial<ProfileState>) => void,
   get: () => ProfileState,
 ): ProfileSlice {
-  const save = createSave(storage);
+  const save = createSave(storage, clock);
   const { profile: savedProfile, notice: loadNotice } = save.load();
 
   // The one way the Profile changes: the new Profile, and the Save with it.
@@ -349,6 +354,11 @@ export function createProfileSlice(
 
     resetProgress: () => {
       updateProfile(DEFAULT_PROFILE);
+    },
+
+    dismissLoadNotice: () => {
+      save.dismissNotice();
+      set({ loadNotice: null });
     },
 
     recordStageResult: (stageId, result, now) => {

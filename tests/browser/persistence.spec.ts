@@ -2,6 +2,7 @@
 import { readFile } from 'node:fs/promises';
 import { expect, type Page, test } from '@playwright/test';
 import { UNREADABLE_SAVE_NOTICE } from '../../src/game/save';
+import { DISMISS_NOTICE_LABEL } from '../../src/screens/dismissLabel';
 import { RETURNING_PLAYER } from '../shared/saves';
 import { DEBRIEF_TITLE } from '../shared/screens';
 import { launchFreeFlight, seedSave, typeText } from './helpers';
@@ -94,14 +95,15 @@ test('the Save outlives a reload: Stars, a Backup round trip, a Free Flight, and
     expect.soft(await headerCredits(page)).toBe(creditsAfter);
   });
 
-  await test.step('a Save the game cannot read starts fresh with a notice, even after a reload', async () => {
+  await test.step('a Save the game cannot read starts fresh with a notice, which stays through reloads until it is dismissed', async () => {
     // A second browser context has localStorage of its own.
     const context = await browser.newContext({
       baseURL: test.info().project.use.baseURL,
     });
     try {
       const second = await context.newPage();
-      await seedSave(second, { ...RETURNING_PLAYER, totalCredits: 'lots' });
+      // A version this game does not know: the whole Save is set aside.
+      await seedSave(second, { ...RETURNING_PLAYER, version: 2 });
       await second.goto('/');
 
       await expect(notice(second)).toBeVisible();
@@ -110,6 +112,16 @@ test('the Save outlives a reload: Stars, a Backup round trip, a Free Flight, and
 
       await second.reload();
       await expect(stars(second, 0)).toBeVisible();
+      await expect.soft(notice(second)).toBeVisible();
+
+      await second
+        .getByRole('button', { name: DISMISS_NOTICE_LABEL, exact: true })
+        .click();
+      await expect(notice(second)).toHaveCount(0);
+
+      await second.reload();
+      await expect(stars(second, 0)).toBeVisible();
+      await expect.soft(notice(second)).toHaveCount(0);
     } finally {
       await context.close();
     }

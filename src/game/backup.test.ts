@@ -8,6 +8,8 @@ import {
   withLegacyReactorKey,
   withOldDroneSpeed,
 } from '../../tests/shared/saves';
+import { DEFAULT_TRAIL, MAX_UPGRADE_LEVEL } from './catalog';
+import { DEFAULT_PROFILE } from './schemas';
 import { exportBackup, REFUSED_BACKUP_MESSAGE } from './save';
 import { type Game, loadGame } from '../../tests/shared/testHelpers';
 
@@ -237,6 +239,125 @@ describe('importing a Backup', () => {
     expect(storage.saved?.version).toBe(1);
   });
 
+  // A wrong field costs only that field (ticket #103), in a Backup as in the Save.
+  it('imports a Backup with a wrong field, taking the default for that field only', () => {
+    const { game, storage } = gameWith();
+    const backup = { ...completeSave(), version: 1, totalCredits: 'lots' };
+
+    const outcome = game.importBackup(JSON.stringify(backup));
+
+    expect(outcome.ok).toBe(true);
+    const profile = game.getState().profile;
+    expect(profile.totalCredits).toBe(DEFAULT_PROFILE.totalCredits);
+    expect(profile.totalStars).toBe(5);
+    expect(profile.upgrades.deflectorShields).toBe(
+      completeSave().upgrades.deflectorShields,
+    );
+    expect(storage.saved?.totalCredits).toBe(DEFAULT_PROFILE.totalCredits);
+    expect(storage.saved?.stagesProgress).toEqual(
+      completeSave().stagesProgress,
+    );
+    expect(game.getState().loadNotice).toBeNull();
+  });
+
+  it('imports an old Backup with a wrong field next to real content', () => {
+    const { game } = gameWith();
+
+    const outcome = game.importBackup(
+      JSON.stringify({ ...OLD_LIVE_EXPORT, soundVolume: 'loud' }),
+    );
+
+    expect(outcome.ok).toBe(true);
+    const profile = game.getState().profile;
+    expect(profile.soundVolume).toBe(DEFAULT_PROFILE.soundVolume);
+    expect(profile.totalCredits).toBe(OLD_LIVE_EXPORT.totalCredits);
+    expect(profile.totalStars).toBe(3);
+  });
+
+  it('imports a Backup with a number out of range, clamped into range', () => {
+    const { game } = gameWith();
+    const backup = {
+      ...completeSave(),
+      version: 1,
+      totalCredits: -50,
+      musicVolume: 4,
+      upgrades: {
+        ...completeSave().upgrades,
+        precisionSensors: MAX_UPGRADE_LEVEL + 5,
+        deflectorShields: -2,
+      },
+    };
+
+    const outcome = game.importBackup(JSON.stringify(backup));
+
+    expect(outcome.ok).toBe(true);
+    const profile = game.getState().profile;
+    expect(profile.totalCredits).toBe(0);
+    expect(profile.musicVolume).toBe(1);
+    expect(profile.upgrades.precisionSensors).toBe(MAX_UPGRADE_LEVEL);
+    expect(profile.upgrades.deflectorShields).toBe(0);
+  });
+
+  it('imports a Backup that equips a Trail the game does not have, with the default Trail', () => {
+    const { game } = gameWith();
+    const backup = {
+      ...completeSave(),
+      version: 1,
+      upgrades: {
+        ...completeSave().upgrades,
+        equippedTrailTheme: 'GONE_TRAIL',
+        unlockedThemes: [DEFAULT_TRAIL, 'GONE_TRAIL'],
+      },
+    };
+
+    const outcome = game.importBackup(JSON.stringify(backup));
+
+    expect(outcome.ok).toBe(true);
+    const upgrades = game.getState().profile.upgrades;
+    expect(upgrades.equippedTrailTheme).toBe(
+      DEFAULT_PROFILE.upgrades.equippedTrailTheme,
+    );
+    expect(upgrades.unlockedThemes).toEqual([
+      DEFAULT_PROFILE.upgrades.equippedTrailTheme,
+    ]);
+    expect(game.getState().profile.totalCredits).toBe(1234);
+  });
+
+  // The Reactor above its maximum, in a Backup, under either key.
+  it.each([
+    ['an export of the live game', OLD_LIVE_EXPORT],
+    ['a versioned Backup', { ...OLD_LIVE_EXPORT, version: 1 }],
+  ])(
+    'caps a Reactor level above the maximum at the maximum, under its old key, in %s',
+    (_what, backup) => {
+      const { game, storage } = gameWith();
+
+      const outcome = game.importBackup(
+        JSON.stringify(withLegacyReactorKey(backup, 9)),
+      );
+
+      expect(outcome.ok).toBe(true);
+      expect(game.getState().profile.upgrades.overdriveReactor).toBe(
+        MAX_UPGRADE_LEVEL,
+      );
+      expect(storage.saved?.upgrades.overdriveReactor).toBe(MAX_UPGRADE_LEVEL);
+    },
+  );
+
+  it('caps a Reactor level above the maximum at the maximum, under its new key', () => {
+    const { game } = gameWith();
+    const backup = {
+      ...completeSave(),
+      version: 1,
+      upgrades: { ...completeSave().upgrades, overdriveReactor: 9 },
+    };
+
+    expect(game.importBackup(JSON.stringify(backup)).ok).toBe(true);
+    expect(game.getState().profile.upgrades.overdriveReactor).toBe(
+      MAX_UPGRADE_LEVEL,
+    );
+  });
+
   // A file with no version has to hold real Profile content: a wrong file
   // must not quietly reset the Profile to its defaults.
   it.each([
@@ -268,7 +389,6 @@ describe('importing a Backup', () => {
   it.each([
     ['not JSON', '{"totalCredits": 5'],
     ['an unknown version', JSON.stringify({ version: 2, totalCredits: 5 })],
-    ['a wrong field', JSON.stringify({ totalCredits: 'lots' })],
     ['not an object', 'null'],
     ['an empty file', ''],
   ])('refuses %s, leaving the Profile and the Save untouched', (_, text) => {

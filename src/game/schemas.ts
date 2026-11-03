@@ -23,23 +23,76 @@ export const BeatThemeSchema = z.enum([
   'COSMIC_LOFI',
 ]);
 
-const UpgradeLevelSchema = z
-  .number()
-  .int()
-  .min(0)
-  .max(MAX_UPGRADE_LEVEL)
-  .default(0);
+/**
+ * The Save is read field by field: one wrong field loses only that field,
+ * never the whole Save. These helpers are the fallbacks. A value of the wrong
+ * type takes the field's default, a number out of range is clamped into it,
+ * and a number with a fraction where a whole number is required is rounded
+ * down. Only the Save's shape as a whole (not an object, an unknown `version`)
+ * fails the parse.
+ */
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+function numberField(options: {
+  min: number;
+  max?: number;
+  integer?: boolean;
+  fallback: number;
+}) {
+  const { min, max = Number.POSITIVE_INFINITY, integer, fallback } = options;
+  return z.preprocess((value) => {
+    if (typeof value !== 'number' || !Number.isFinite(value)) return fallback;
+    const whole = integer ? Math.floor(value) : value;
+    return Math.min(max, Math.max(min, whole));
+  }, z.number());
+}
+
+const booleanField = (fallback: boolean) =>
+  z.preprocess(
+    (value) => (typeof value === 'boolean' ? value : fallback),
+    z.boolean(),
+  );
+
+/** The ids a list holds that the enum knows, each once, and always the default. */
+function ownedList<T extends string>(schema: z.ZodType<T>, defaultId: T) {
+  return z.preprocess((value) => {
+    const known = Array.isArray(value)
+      ? value.flatMap((id) => {
+          const parsed = schema.safeParse(id);
+          return parsed.success ? [parsed.data] : [];
+        })
+      : [];
+    const owned = [...new Set(known)];
+    return owned.includes(defaultId) ? owned : [defaultId, ...owned];
+  }, z.array(schema));
+}
+
+/** A record's entries that are objects, each read by `entry`; the others are dropped. */
+function entriesOf<T>(entry: z.ZodType<T>) {
+  return z.preprocess((value) => {
+    if (!isRecord(value)) return {};
+    return Object.fromEntries(
+      Object.entries(value)
+        .filter(([, item]) => isRecord(item))
+        .map(([id, item]) => [id, entry.parse(item)]),
+    );
+  }, z.custom<Record<string, T>>());
+}
+
+const upgradeLevel = () =>
+  numberField({ min: 0, max: MAX_UPGRADE_LEVEL, integer: true, fallback: 0 });
 
 // The fields keep the names a Save was first written with (a Trail was a
 // "theme", a Sound Kit an "audio core"), so every Save in the wild still loads.
 export const UpgradesSchema = z.object({
-  deflectorShields: UpgradeLevelSchema,
-  overdriveReactor: UpgradeLevelSchema,
-  precisionSensors: UpgradeLevelSchema,
-  equippedTrailTheme: TrailIdSchema.default(DEFAULT_TRAIL),
-  equippedAudioCore: SoundKitSchema.default('CYBER_SYNTH'),
-  unlockedThemes: z.array(TrailIdSchema).default([DEFAULT_TRAIL]),
-  unlockedAudioCores: z.array(SoundKitSchema).default(['CYBER_SYNTH']),
+  deflectorShields: upgradeLevel(),
+  overdriveReactor: upgradeLevel(),
+  precisionSensors: upgradeLevel(),
+  equippedTrailTheme: TrailIdSchema.catch(DEFAULT_TRAIL),
+  equippedAudioCore: SoundKitSchema.catch('CYBER_SYNTH'),
+  unlockedThemes: ownedList(TrailIdSchema, DEFAULT_TRAIL),
+  unlockedAudioCores: ownedList(SoundKitSchema, 'CYBER_SYNTH'),
 });
 
 /**
@@ -48,20 +101,29 @@ export const UpgradesSchema = z.object({
  * Save schema below.
  */
 export const StageProgressSchema = z.object({
-  stageId: z.string().default(''),
-  completed: z.boolean().default(false),
-  starsEarned: z.number().int().min(0).max(MAX_STARS_PER_STAGE).default(0),
-  highScore: z.number().int().min(0).default(0),
-  bestWpm: z.number().min(0).default(0),
-  bestAccuracy: z.number().min(0).max(100).default(0),
-  bestStreak: z.number().int().min(0).default(0),
-  timesPlayed: z.number().int().min(0).default(0),
-  lastPlayedAt: z.number().optional(),
+  stageId: z.preprocess((id) => (typeof id === 'string' ? id : ''), z.string()),
+  completed: booleanField(false),
+  starsEarned: numberField({
+    min: 0,
+    max: MAX_STARS_PER_STAGE,
+    integer: true,
+    fallback: 0,
+  }),
+  highScore: numberField({ min: 0, integer: true, fallback: 0 }),
+  bestWpm: numberField({ min: 0, fallback: 0 }),
+  bestAccuracy: numberField({ min: 0, max: 100, fallback: 0 }),
+  bestStreak: numberField({ min: 0, integer: true, fallback: 0 }),
+  timesPlayed: numberField({ min: 0, integer: true, fallback: 0 }),
+  lastPlayedAt: z.preprocess(
+    (time) =>
+      typeof time === 'number' && Number.isFinite(time) ? time : undefined,
+    z.number().optional(),
+  ),
 });
 
 export const KeyAnalyticsSchema = z.object({
-  hits: z.number().int().min(0).default(0),
-  misses: z.number().int().min(0).default(0),
+  hits: numberField({ min: 0, integer: true, fallback: 0 }),
+  misses: numberField({ min: 0, integer: true, fallback: 0 }),
 });
 
 /**
@@ -70,32 +132,36 @@ export const KeyAnalyticsSchema = z.object({
  * setting is one line here and `Settings` follows from it.
  */
 export const SettingsSchema = z.object({
-  soundEnabled: z.boolean().default(true),
-  soundVolume: z.number().min(0).max(1).default(0.7),
-  keyboardVisible: z.boolean().default(true),
-  handsVisible: z.boolean().default(true),
-  musicEnabled: z.boolean().default(true),
-  musicVolume: z.number().min(0).max(1).default(0.4),
-  beatTheme: BeatThemeSchema.default('NEON_SYNTHWAVE'),
-  globalMuted: z.boolean().default(false),
+  soundEnabled: booleanField(true),
+  soundVolume: numberField({ min: 0, max: 1, fallback: 0.7 }),
+  keyboardVisible: booleanField(true),
+  handsVisible: booleanField(true),
+  musicEnabled: booleanField(true),
+  musicVolume: numberField({ min: 0, max: 1, fallback: 0.4 }),
+  beatTheme: BeatThemeSchema.catch('NEON_SYNTHWAVE'),
+  globalMuted: booleanField(false),
 });
 
 /**
- * Saves and Backups made before the Reactor was renamed hold its level as
- * `hyperdriveReactor`. It is read as `overdriveReactor` (the new key wins when
- * both are there), so no version bump is needed; the old key is never written.
+ * The Upgrades as stored: anything that is not an object reads as no Upgrades
+ * at all. Saves and Backups made before the Reactor was renamed hold its level
+ * as `hyperdriveReactor`. It is read as `overdriveReactor` (the new key wins
+ * when both are there), so no version bump is needed; the old key is never
+ * written.
  */
-function readLegacyReactorKey(upgrades: unknown): unknown {
-  if (typeof upgrades !== 'object' || upgrades === null) return upgrades;
-  const { hyperdriveReactor, ...rest } = upgrades as Record<string, unknown>;
+function readStoredUpgrades(upgrades: unknown): unknown {
+  if (!isRecord(upgrades)) return {};
+  const { hyperdriveReactor, ...rest } = upgrades;
   if (hyperdriveReactor === undefined) return upgrades;
   return { overdriveReactor: hyperdriveReactor, ...rest };
 }
 
 /**
  * The Save: the only definition of what a Profile is. Unknown fields are
- * dropped, a missing field takes its default, and a field that is present but
- * wrong fails the parse (the Save module then treats the Save as unreadable).
+ * dropped, and a missing or wrong field takes its default or is clamped into
+ * range (see the helpers above), so it loses only that field. The parse fails
+ * only for a Save that isn't an object or has an unknown `version`; the Save
+ * module then treats the Save as unreadable.
  * `totalStars` is deliberately not a field here: the total of Stars is worked
  * out from the Stages' Stars (`totalStarsOf`), never saved. A Save or Backup
  * from before that still says it, and the field is dropped on read.
@@ -103,15 +169,15 @@ function readLegacyReactorKey(upgrades: unknown): unknown {
  */
 export const SaveFieldsSchema = z.object({
   version: z.literal(1).default(1),
-  totalCredits: z.number().int().min(0).default(0),
-  totalKeystrokes: z.number().int().min(0).default(0),
-  totalErrors: z.number().int().min(0).default(0),
-  totalWordsTyped: z.number().int().min(0).default(0),
-  totalPracticeSeconds: z.number().min(0).default(0),
-  highestWpmAllTime: z.number().min(0).default(0),
-  stagesProgress: z.record(z.string(), StageProgressSchema).default({}),
-  keyAnalytics: z.record(z.string(), KeyAnalyticsSchema).default({}),
-  upgrades: z.preprocess(readLegacyReactorKey, UpgradesSchema.prefault({})),
+  totalCredits: numberField({ min: 0, integer: true, fallback: 0 }),
+  totalKeystrokes: numberField({ min: 0, integer: true, fallback: 0 }),
+  totalErrors: numberField({ min: 0, integer: true, fallback: 0 }),
+  totalWordsTyped: numberField({ min: 0, integer: true, fallback: 0 }),
+  totalPracticeSeconds: numberField({ min: 0, fallback: 0 }),
+  highestWpmAllTime: numberField({ min: 0, fallback: 0 }),
+  stagesProgress: entriesOf(StageProgressSchema),
+  keyAnalytics: entriesOf(KeyAnalyticsSchema),
+  upgrades: z.preprocess(readStoredUpgrades, UpgradesSchema),
   ...SettingsSchema.shape,
 });
 

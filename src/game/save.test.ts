@@ -8,9 +8,16 @@ import {
   withLegacyReactorKey,
   withOldDroneSpeed,
 } from '../../tests/shared/saves';
-import type { Game } from './game';
-import { clearedStagesOf, totalStarsOf } from './schemas';
-import { DEFAULT_PROFILE } from './schemas';
+import { createMemoryStorage } from '../../tests/shared/memoryStorage';
+import { DEFAULT_TRAIL, entriesOf, MAX_UPGRADE_LEVEL } from './catalog';
+import { createSteppedClock } from './clock';
+import { createGame, type Game } from './game';
+import {
+  clearedStagesOf,
+  DEFAULT_PROFILE,
+  SoundKitSchema,
+  totalStarsOf,
+} from './schemas';
 import { UNREADABLE_SAVE_NOTICE } from './save';
 import {
   clearStage,
@@ -62,7 +69,7 @@ describe('a Save that is readable', () => {
     expect(profile.upgrades.overdriveReactor).toBe(2);
     expect(profile.globalMuted).toBe(true);
     expect(game.getState().loadNotice).toBeNull();
-    expect(storage.movedAside).toBeUndefined();
+    expect(storage.movedAside).toEqual([]);
   });
 
   it('reads a Save that says version 1 the same way', () => {
@@ -78,7 +85,7 @@ describe('a Save that is readable', () => {
 
     expectFreshProfile(game);
     expect(game.getState().loadNotice).toBeNull();
-    expect(storage.movedAside).toBeUndefined();
+    expect(storage.movedAside).toEqual([]);
   });
 
   it('writes an unversioned Save back as version 1', () => {
@@ -169,7 +176,7 @@ describe('a Save made when the player could choose a Drone speed', () => {
 
       const profile = game.getState().profile;
       expect(game.getState().loadNotice).toBeNull();
-      expect(storage.movedAside).toBeUndefined();
+      expect(storage.movedAside).toEqual([]);
       expect(profile.totalStars).toBe(5);
       expect(profile.totalCredits).toBe(1234);
       expect(profile.stagesProgress['s1-l1'].starsEarned).toBe(3);
@@ -194,7 +201,7 @@ describe('a Save that keeps the Overdrive Reactor under its old key', () => {
 
     const profile = game.getState().profile;
     expect(game.getState().loadNotice).toBeNull();
-    expect(storage.movedAside).toBeUndefined();
+    expect(storage.movedAside).toEqual([]);
     expect(profile.upgrades.overdriveReactor).toBe(3);
     expect(profile.upgrades.deflectorShields).toBe(1);
     expect(profile.totalStars).toBe(5);
@@ -271,7 +278,7 @@ describe('a Save with every key the game has since retired', () => {
     };
 
     expect(game.getState().loadNotice).toBeNull();
-    expect(storage.movedAside).toBeUndefined();
+    expect(storage.movedAside).toEqual([]);
     expectIntact(game.getState().profile, save.totalCredits);
 
     game.buy('sensors'); // 200 Credits, and the game saves
@@ -331,54 +338,319 @@ describe('a Save with a field missing', () => {
   });
 });
 
-describe('a Save that cannot be read', () => {
-  const unreadable: Array<[string, unknown]> = [
-    ['Credits that are text', { ...completeSave(), totalCredits: '1234' }],
-    ['negative Credits', { ...completeSave(), totalCredits: -5 }],
+describe('a Save with a wrong field', () => {
+  // A wrong field costs only that field (ticket #103): it takes its default, or
+  // is clamped or floored into range, and everything else loads as it was
+  // stored. Each row is a bad Save and the Save that it should read as; the two
+  // must load to the same Profile, with no notice and nothing moved aside.
+  const save = completeSave();
+  const otherTrail = entriesOf('trail').find(
+    (trail) => trail.id !== DEFAULT_TRAIL,
+  )?.id;
+  const otherKit = SoundKitSchema.options.find(
+    (kit) => kit !== DEFAULT_PROFILE.upgrades.equippedAudioCore,
+  );
+  if (!otherTrail || !otherKit)
+    throw new Error('The catalog has no spare Cosmetic');
+  const owningCosmetics = withUpgrades(save, {
+    equippedTrailTheme: otherTrail,
+    unlockedThemes: [DEFAULT_TRAIL, otherTrail],
+    equippedAudioCore: otherKit,
+    unlockedAudioCores: [DEFAULT_PROFILE.upgrades.equippedAudioCore, otherKit],
+  });
+  const withStages = (stagesProgress: Record<string, unknown>) => ({
+    ...save,
+    stagesProgress,
+  });
+  const withKeys = (keyAnalytics: Record<string, unknown>) => ({
+    ...save,
+    keyAnalytics,
+  });
+  const clamped: Array<[string, unknown, unknown]> = [
+    // Wrong type: the field's default.
     [
-      'a Stage with more than 3 Stars',
-      {
-        ...completeSave(),
-        stagesProgress: { 's1-l1': stageProgress('s1-l1', 4) },
-      },
-    ],
-    [
-      'a Stage-progress entry that is not an entry',
-      { ...completeSave(), stagesProgress: { 's1-l1': 'done' } },
-    ],
-    [
-      'a shield Upgrade at level 4',
-      withUpgrades(completeSave(), { deflectorShields: 4 }),
-    ],
-    [
-      'a reactor Upgrade at level 7',
-      withUpgrades(completeSave(), { overdriveReactor: 7 }),
-    ],
-    [
-      'a reactor Upgrade at level 7 under its old key',
-      withLegacyReactorKey(completeSave(), 7),
-    ],
-    [
-      'a sensors Upgrade at level -1',
-      withUpgrades(completeSave(), { precisionSensors: -1 }),
-    ],
-    [
-      'an Upgrade level that is text',
-      withUpgrades(completeSave(), { deflectorShields: '2' as never }),
+      'Credits that are text',
+      { ...save, totalCredits: '1234' },
+      without(save, 'totalCredits'),
     ],
     [
       'a sound setting that is text',
-      { ...completeSave(), soundEnabled: 'yes' },
+      { ...save, soundEnabled: 'yes' },
+      without(save, 'soundEnabled'),
+    ],
+    [
+      'a volume that is text',
+      { ...save, musicVolume: 'loud' },
+      without(save, 'musicVolume'),
+    ],
+    [
+      'a count that is null',
+      { ...save, totalKeystrokes: null },
+      without(save, 'totalKeystrokes'),
     ],
     [
       'Stage progress that is a list',
-      { ...completeSave(), stagesProgress: [] },
+      { ...save, stagesProgress: [] },
+      without(save, 'stagesProgress'),
     ],
+    [
+      'Upgrades that are text',
+      { ...save, upgrades: 'maxed' },
+      without(save, 'upgrades'),
+    ],
+    [
+      'an Upgrade level that is text',
+      withUpgrades(save, { deflectorShields: '2' as never }),
+      withUpgrades(save, { deflectorShields: 0 }),
+    ],
+    // Out of range: clamped.
+    [
+      'negative Credits',
+      { ...save, totalCredits: -5 },
+      { ...save, totalCredits: 0 },
+    ],
+    [
+      'a negative count',
+      { ...save, totalErrors: -1 },
+      { ...save, totalErrors: 0 },
+    ],
+    [
+      'a shield Upgrade above the maximum',
+      withUpgrades(save, { deflectorShields: MAX_UPGRADE_LEVEL + 1 }),
+      withUpgrades(save, { deflectorShields: MAX_UPGRADE_LEVEL }),
+    ],
+    [
+      'a reactor Upgrade far above the maximum',
+      withUpgrades(save, { overdriveReactor: 7 }),
+      withUpgrades(save, { overdriveReactor: MAX_UPGRADE_LEVEL }),
+    ],
+    [
+      'a reactor Upgrade far above the maximum, under its old key',
+      withLegacyReactorKey(save, 7),
+      withUpgrades(save, { overdriveReactor: MAX_UPGRADE_LEVEL }),
+    ],
+    [
+      'a sensors Upgrade below 0',
+      withUpgrades(save, { precisionSensors: -1 }),
+      withUpgrades(save, { precisionSensors: 0 }),
+    ],
+    [
+      'a volume above 1',
+      { ...save, soundVolume: 1.5 },
+      { ...save, soundVolume: 1 },
+    ],
+    [
+      'a volume below 0',
+      { ...save, musicVolume: -0.2 },
+      { ...save, musicVolume: 0 },
+    ],
+    [
+      'a Stage with more than 3 Stars',
+      withStages({
+        ...save.stagesProgress,
+        's1-l1': stageProgress('s1-l1', 4),
+      }),
+      withStages({
+        ...save.stagesProgress,
+        's1-l1': stageProgress('s1-l1', 3),
+      }),
+    ],
+    [
+      'a Stage with fewer than 0 Stars',
+      withStages({
+        ...save.stagesProgress,
+        's1-l2': stageProgress('s1-l2', -1),
+      }),
+      withStages({
+        ...save.stagesProgress,
+        's1-l2': stageProgress('s1-l2', 0),
+      }),
+    ],
+    [
+      'an accuracy above 100',
+      withStages({
+        ...save.stagesProgress,
+        's1-l1': stageProgress('s1-l1', 3, { bestAccuracy: 150 }),
+      }),
+      withStages({
+        ...save.stagesProgress,
+        's1-l1': stageProgress('s1-l1', 3, { bestAccuracy: 100 }),
+      }),
+    ],
+    [
+      'negative hits for a key',
+      withKeys({ ...save.keyAnalytics, f: { hits: -3, misses: 1 } }),
+      withKeys({ ...save.keyAnalytics, f: { hits: 0, misses: 1 } }),
+    ],
+    // Not a whole number where one is needed: rounded down.
+    [
+      'Credits with a fraction',
+      { ...save, totalCredits: 12.7 },
+      { ...save, totalCredits: 12 },
+    ],
+    [
+      'an Upgrade level with a fraction',
+      withUpgrades(save, { deflectorShields: 1.9 }),
+      withUpgrades(save, { deflectorShields: 1 }),
+    ],
+    // An unknown name: the default.
+    [
+      'a beat theme the game does not have',
+      { ...save, beatTheme: 'POLKA' },
+      without(save, 'beatTheme'),
+    ],
+    [
+      'an equipped Trail the game does not have',
+      withUpgrades(owningCosmetics, {
+        equippedTrailTheme: 'GONE_TRAIL' as never,
+      }),
+      withUpgrades(owningCosmetics, { equippedTrailTheme: DEFAULT_TRAIL }),
+    ],
+    [
+      'an equipped Sound Kit the game does not have',
+      withUpgrades(owningCosmetics, { equippedAudioCore: 'GONE_KIT' as never }),
+      withUpgrades(owningCosmetics, {
+        equippedAudioCore: DEFAULT_PROFILE.upgrades.equippedAudioCore,
+      }),
+    ],
+    // An entry that is not an entry: dropped, and the rest kept.
+    [
+      'a Stage-progress entry that is text',
+      withStages({ ...save.stagesProgress, 's1-l3': 'done' }),
+      withStages(save.stagesProgress),
+    ],
+    [
+      'a Stage-progress entry that is a list',
+      withStages({ ...save.stagesProgress, 's1-l3': [3] }),
+      withStages(save.stagesProgress),
+    ],
+    [
+      'a key-stats entry that is a number',
+      withKeys({ ...save.keyAnalytics, x: 5 }),
+      withKeys(save.keyAnalytics),
+    ],
+    [
+      'a key-stats entry that is a list',
+      withKeys({ ...save.keyAnalytics, x: [1, 2] }),
+      withKeys(save.keyAnalytics),
+    ],
+  ];
+
+  it.each(clamped)(
+    'with %s: loads as if only that field were repaired, without a notice',
+    (_what, bad, repaired) => {
+      const { game, storage } = load(bad);
+
+      expect(game.getState().loadNotice).toBeNull();
+      expect(storage.movedAside).toEqual([]);
+      expect(storage.noticeFlagged).toBe(false);
+      expect(game.getState().profile).toEqual(
+        load(repaired).game.getState().profile,
+      );
+    },
+  );
+
+  it('keeps the progress and Credits around a wrong field', () => {
+    const { game } = load({ ...save, soundVolume: 'quiet' });
+
+    expect(game.getState().profile.totalStars).toBe(5);
+    expect(game.getState().profile.totalCredits).toBe(1234);
+    expect(game.getState().profile.soundVolume).toBe(
+      DEFAULT_PROFILE.soundVolume,
+    );
+  });
+
+  it('caps a reactor Upgrade above the maximum at the maximum, in the Save the game writes next', () => {
+    const { game, storage } = load(withLegacyReactorKey(save, 7));
+
+    expect(game.getState().profile.upgrades.overdriveReactor).toBe(
+      MAX_UPGRADE_LEVEL,
+    );
+    game.buy('sensors'); // 200 Credits, and the game saves
+    expect(storage.saved?.upgrades.overdriveReactor).toBe(MAX_UPGRADE_LEVEL);
+  });
+
+  describe('in the lists of owned Cosmetics', () => {
+    const sorted = (list: readonly string[]) => [...list].sort();
+
+    it('drops an owned Trail the game does not have, and keeps the others', () => {
+      const { game } = load(
+        withUpgrades(owningCosmetics, {
+          unlockedThemes: [DEFAULT_TRAIL, 'GONE_TRAIL', otherTrail] as never,
+        }),
+      );
+
+      expect(game.getState().loadNotice).toBeNull();
+      expect(sorted(game.getState().profile.upgrades.unlockedThemes)).toEqual(
+        sorted([DEFAULT_TRAIL, otherTrail]),
+      );
+    });
+
+    it('drops an owned Sound Kit the game does not have, and keeps the others', () => {
+      const { game } = load(
+        withUpgrades(owningCosmetics, {
+          unlockedAudioCores: [
+            DEFAULT_PROFILE.upgrades.equippedAudioCore,
+            'GONE_KIT',
+            otherKit,
+          ] as never,
+        }),
+      );
+
+      expect(game.getState().loadNotice).toBeNull();
+      expect(
+        sorted(game.getState().profile.upgrades.unlockedAudioCores),
+      ).toEqual(sorted([DEFAULT_PROFILE.upgrades.equippedAudioCore, otherKit]));
+    });
+
+    it('always owns the default Trail and Sound Kit, even when the lists leave them out', () => {
+      const { game } = load(
+        withUpgrades(save, {
+          equippedTrailTheme: DEFAULT_TRAIL,
+          unlockedThemes: [otherTrail] as never,
+          unlockedAudioCores: [otherKit] as never,
+        }),
+      );
+
+      const upgrades = game.getState().profile.upgrades;
+      expect(sorted(upgrades.unlockedThemes)).toEqual(
+        sorted([DEFAULT_TRAIL, otherTrail]),
+      );
+      expect(sorted(upgrades.unlockedAudioCores)).toEqual(
+        sorted([DEFAULT_PROFILE.upgrades.equippedAudioCore, otherKit]),
+      );
+    });
+
+    it('owns only the defaults when a list is not a list', () => {
+      const { game } = load(
+        withUpgrades(save, {
+          unlockedThemes: 'all' as never,
+          unlockedAudioCores: 7 as never,
+        }),
+      );
+
+      const upgrades = game.getState().profile.upgrades;
+      expect(game.getState().loadNotice).toBeNull();
+      expect(upgrades.unlockedThemes).toEqual([DEFAULT_TRAIL]);
+      expect(upgrades.unlockedAudioCores).toEqual([
+        DEFAULT_PROFILE.upgrades.equippedAudioCore,
+      ]);
+    });
+  });
+});
+
+describe('a Save that cannot be read at all', () => {
+  // Not an object, or from a version this game does not know: nothing in it
+  // can be trusted, so it is set aside whole and the player starts fresh. (Text
+  // that is not JSON is the localStorage adapter's case: the Save module is
+  // handed parsed values here. See localStorageSave.test.ts.)
+  const unreadable: Array<[string, unknown]> = [
     ['an unknown version', { ...completeSave(), version: 2 }],
     ['version 0', { ...completeSave(), version: 0 }],
     ['a version that is text', { ...completeSave(), version: '1' }],
     ['a list instead of a Save', []],
     ['text instead of a Save', 'my progress'],
+    ['a number instead of a Save', 42],
   ];
 
   it.each(unreadable)(
@@ -388,12 +660,12 @@ describe('a Save that cannot be read', () => {
 
       expect(game.getState().loadNotice).toBe(UNREADABLE_SAVE_NOTICE);
       expectFreshProfile(game);
-      expect(storage.movedAside).toEqual(bad);
+      expect(storage.movedAside).toEqual([bad]);
     },
   );
 
   it('still plays from the fresh start, and keeps the bad Save as it was found', () => {
-    const bad = { ...completeSave(), totalCredits: 'lots' };
+    const bad = { ...completeSave(), version: 2 };
     const { game, storage } = load(bad);
 
     startStage(game, STAGE_ID);
@@ -403,7 +675,63 @@ describe('a Save that cannot be read', () => {
       3,
     );
     expect(game.getState().profile.totalStars).toBe(3);
-    expect(storage.movedAside).toEqual(bad);
+    expect(storage.movedAside).toEqual([bad]);
+  });
+
+  it('is stamped with the time on the game’s own clock', () => {
+    // Not the stepped clock's default start, so a fixed stamp would not pass.
+    const clock = createSteppedClock(1_800_000_000_000);
+    clock.step(3600);
+    const storage = createMemoryStorage({ ...completeSave(), version: 2 });
+
+    createGame({ storage, clock });
+
+    expect(storage.movedAsideStamps).toEqual([
+      new Date(clock.now()).toISOString(),
+    ]);
+  });
+});
+
+describe('the notice for a Save that could not be read', () => {
+  const bad = { ...completeSave(), version: 2 };
+
+  it('shows again on the next load, when the player has not played on', () => {
+    const storage = createMemoryStorage(bad);
+    createGame({ storage });
+
+    const nextVisit = createGame({ storage });
+
+    expect(nextVisit.getState().loadNotice).toBe(UNREADABLE_SAVE_NOTICE);
+    expectFreshProfile(nextVisit);
+    expect(storage.movedAside).toEqual([bad]);
+  });
+
+  it('shows again on the next load, after a fresh Save was written, and does not move that Save aside', () => {
+    const storage = createMemoryStorage(bad);
+    const game = createGame({ storage });
+    startStage(game, STAGE_ID);
+    clearStage(game, { seconds: 60 });
+
+    const nextVisit = createGame({ storage });
+
+    expect(nextVisit.getState().loadNotice).toBe(UNREADABLE_SAVE_NOTICE);
+    expect(nextVisit.getState().profile.totalStars).toBe(3);
+    expect(storage.movedAside).toEqual([bad]);
+  });
+
+  it('is gone for good once the player dismisses it', () => {
+    const storage = createMemoryStorage(bad);
+    const game = createGame({ storage });
+    startStage(game, STAGE_ID);
+    clearStage(game, { seconds: 60 });
+
+    game.dismissLoadNotice();
+
+    expect(game.getState().loadNotice).toBeNull();
+    const nextVisit = createGame({ storage });
+    expect(nextVisit.getState().loadNotice).toBeNull();
+    expect(nextVisit.getState().profile.totalStars).toBe(3);
+    expect(storage.movedAside).toEqual([bad]);
   });
 });
 

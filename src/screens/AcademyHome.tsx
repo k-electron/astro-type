@@ -8,10 +8,11 @@ import {
 } from '../curriculum/curriculum';
 import { useGame } from '../app/useGame';
 import { useGameState } from '../app/useGameState';
+import { DISMISS_NOTICE_LABEL } from './dismissLabel';
 
 /** The title screen: the Academy briefing, with a way into the curriculum. */
 export const AcademyHome: React.FC = () => {
-  const { send } = useGame();
+  const { send, dismissLoadNotice } = useGame();
   const { profile, loadNotice } = useGameState((state) => ({
     profile: state.profile,
     loadNotice: state.loadNotice,
@@ -69,9 +70,16 @@ export const AcademyHome: React.FC = () => {
       )}
 
       {loadNotice && (
-        <p role="status" className="mb-8 text-xs text-slate-500">
-          {loadNotice}
-        </p>
+        <div className="mb-8 flex items-center gap-3 text-xs text-slate-500">
+          <p role="status">{loadNotice}</p>
+          <button
+            type="button"
+            onClick={dismissLoadNotice}
+            className="px-2.5 py-1 rounded-md border border-slate-700 text-slate-300 hover:bg-slate-800 transition-colors cursor-pointer"
+          >
+            {DISMISS_NOTICE_LABEL}
+          </button>
+        </div>
       )}
 
       {/* Feature Highlights Grid */}

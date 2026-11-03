@@ -11,6 +11,7 @@ import {
   RETURNING_PLAYER,
 } from '../shared/saves';
 import { muteAllLabel } from '../../src/screens/audioLabels';
+import { DISMISS_NOTICE_LABEL } from '../../src/screens/dismissLabel';
 import { closeLabel } from '../../src/screens/closeLabel';
 
 const stars = (count: number) =>
@@ -112,7 +113,7 @@ describe('a first visit and a Save that cannot be read', () => {
 
   it('starts fresh with a notice when the Save is not one the game can read', () => {
     const player = renderGame({
-      profile: { ...RETURNING_PLAYER, totalCredits: 'lots' },
+      profile: { ...RETURNING_PLAYER, version: 2 },
     });
 
     expect(screen.getByText(UNREADABLE_SAVE_NOTICE)).toBeTruthy();
@@ -124,6 +125,26 @@ describe('a first visit and a Save that cannot be read', () => {
     // The game still works from a fresh start.
     player.click(BEGIN_HOME_ROW);
     expect(screen.getByRole('button', { name: PAUSE_FLIGHT })).toBeTruthy();
+  });
+
+  it('keeps showing the notice after a reload, until the player dismisses it', () => {
+    const player = renderGame({ profile: { ...RETURNING_PLAYER, version: 2 } });
+    expect(screen.getByText(UNREADABLE_SAVE_NOTICE)).toBeTruthy();
+
+    player.reload();
+
+    expect(screen.getByText(UNREADABLE_SAVE_NOTICE)).toBeTruthy();
+    expect(stars(0)).toBeTruthy();
+  });
+
+  it('removes the notice for good when the player dismisses it', () => {
+    const player = renderGame({ profile: { ...RETURNING_PLAYER, version: 2 } });
+
+    player.click(DISMISS_NOTICE_LABEL);
+
+    expect(screen.queryByText(UNREADABLE_SAVE_NOTICE)).toBeNull();
+    player.reload();
+    expect(screen.queryByText(UNREADABLE_SAVE_NOTICE)).toBeNull();
   });
 });
 

@@ -1,3 +1,4 @@
+import type { Clock } from './clock';
 import {
   DEFAULT_PROFILE,
   PlayerProfileSchema,
@@ -29,17 +30,34 @@ export interface SaveStorage {
   read(): StoredSave;
   write(profile: PlayerProfile): void;
   /**
-   * Move the stored Save to its own "unreadable" place, untouched, and leave
-   * nothing under the Save's own key. Never deletes it.
+   * Copy the stored Save, untouched, to a place of its own named for `stamp`
+   * (an ISO-8601 time), never over an earlier copy; set the notice flag; and
+   * only once the copy is safe leave nothing under the Save's own key. Never
+   * deletes the Save before the copy exists.
    */
-  moveAside(): void;
+  moveAside(stamp: string): void;
+  /** Whether a Save was moved aside and the player has not dismissed the notice. */
+  noticePending(): boolean;
+  /** The player dismissed the notice: forget the flag. */
+  clearNotice(): void;
 }
 
 /** Where the Save lives in the browser's localStorage. */
 export const SAVE_KEY = 'astrotype_profile_v1';
 
-/** Where an unreadable Save is moved to, untouched. */
+/**
+ * The key an unreadable Save was moved to before each copy had its own. A copy
+ * made now is `UNREADABLE_SAVE_KEY_<ISO-8601 time>`, with `_2`, `_3` and so on
+ * when that key is taken. This legacy key is never written or touched.
+ */
 export const UNREADABLE_SAVE_KEY = 'astrotype_profile_v1_unreadable';
+
+/** The first key a copy made at `stamp` (an ISO-8601 time) is tried under. */
+export const unreadableSaveKey = (stamp: string): string =>
+  `${UNREADABLE_SAVE_KEY}_${stamp}`;
+
+/** Set to "1" when a Save is moved aside; cleared when the player dismisses the notice. */
+export const UNREADABLE_NOTICE_KEY = 'astrotype_profile_v1_unreadable_notice';
 
 export const UNREADABLE_SAVE_NOTICE =
   "Your saved progress couldn't be read, so you're starting fresh.";
@@ -83,8 +101,9 @@ const hasProfileContent = (value: unknown): boolean =>
   Object.keys(value).some((field) => PROFILE_FIELDS.has(field));
 
 /**
- * Checks a Backup file's text with the Save's schema. Text that isn't JSON, an
- * unknown version or a wrong field is refused. A Backup exported before
+ * Checks a Backup file's text with the Save's schema. Text that isn't JSON or an
+ * unknown version is refused; a wrong field is read the way a Save's is, so
+ * that field is defaulted or clamped and the rest imported. A Backup exported before
  * versions existed is read as version 1, but only when it holds real Profile
  * content: `{}` or unrelated JSON is refused instead of becoming a fresh
  * Profile. A Backup that says `version: 1` is accepted even when sparse, since
@@ -117,35 +136,47 @@ export interface LoadedSave {
 
 export interface Save {
   /**
-   * Reads the Save. Nothing stored gives a fresh Profile. A missing field
-   * takes its default, and an unversioned Save is read as version 1. A Save
-   * with a wrong field or an unknown version is moved aside, and the player
-   * starts fresh with a notice.
+   * Reads the Save. Nothing stored gives a fresh Profile. A wrong field loses
+   * only that field (see the schema); a missing field takes its default, and
+   * an unversioned Save is read as version 1. Text that isn't JSON, JSON that
+   * isn't an object and an unknown version are moved aside, and the player
+   * starts fresh. The notice shows when a Save was moved aside now, or an
+   * earlier one was and the player has not dismissed the notice.
    */
   load(): LoadedSave;
   write(profile: PlayerProfile): void;
+  /** The player dismissed the notice: it stops showing on later loads too. */
+  dismissNotice(): void;
 }
 
-export function createSave(storage: SaveStorage): Save {
+/**
+ * @param clock Gives the time a moved-aside Save is named for.
+ */
+export function createSave(storage: SaveStorage, clock: Clock): Save {
+  /** What was found: a Profile, nothing, or something that can't be a Save. */
+  const readStored = (): PlayerProfile | 'unreadable' => {
+    const stored = storage.read();
+    if (stored.kind === 'empty') return DEFAULT_PROFILE;
+    if (stored.kind === 'garbled') return 'unreadable';
+    // A stored JSON `null` is the same as nothing stored.
+    if (stored.value === null) return DEFAULT_PROFILE;
+    const result = PlayerProfileSchema.safeParse(stored.value);
+    return result.success ? result.data : 'unreadable';
+  };
+
   return {
     load() {
-      const stored = storage.read();
-      if (stored.kind === 'empty') {
-        return { profile: DEFAULT_PROFILE, notice: null };
+      const read = readStored();
+      if (read === 'unreadable') {
+        storage.moveAside(new Date(clock.now()).toISOString());
+        return { profile: DEFAULT_PROFILE, notice: UNREADABLE_SAVE_NOTICE };
       }
-      if (stored.kind === 'found') {
-        // A stored JSON `null` is the same as nothing stored.
-        if (stored.value === null) {
-          return { profile: DEFAULT_PROFILE, notice: null };
-        }
-        const result = PlayerProfileSchema.safeParse(stored.value);
-        if (result.success) {
-          return { profile: result.data, notice: null };
-        }
-      }
-      storage.moveAside();
-      return { profile: DEFAULT_PROFILE, notice: UNREADABLE_SAVE_NOTICE };
+      return {
+        profile: read,
+        notice: storage.noticePending() ? UNREADABLE_SAVE_NOTICE : null,
+      };
     },
     write: (profile) => storage.write(profile),
+    dismissNotice: () => storage.clearNotice(),
   };
 }

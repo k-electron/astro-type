@@ -4,8 +4,15 @@ import type { SaveStorage, StoredSave } from '../../src/game/save';
 export interface MemorySaveStorage extends SaveStorage {
   /** The last Profile the game saved, or null if it never saved. */
   readonly saved: PlayerProfile | null;
-  /** The Save that was moved aside as unreadable, as it was stored. */
-  readonly movedAside: unknown;
+  /**
+   * Every Save that was moved aside as unreadable, as it was stored, oldest
+   * first. Empty when nothing was moved.
+   */
+  readonly movedAside: readonly unknown[];
+  /** The stamp each move-aside was given (`movedAside[i]` was moved at `movedAsideStamps[i]`). */
+  readonly movedAsideStamps: readonly string[];
+  /** Whether the notice flag is set: a Save was moved aside and nobody dismissed the notice. */
+  readonly noticeFlagged: boolean;
 }
 
 /**
@@ -18,22 +25,36 @@ export function createMemoryStorage(initial?: unknown): MemorySaveStorage {
       ? { kind: 'empty' }
       : { kind: 'found', value: initial };
   let saved: PlayerProfile | null = null;
-  let movedAside: unknown;
+  const movedAside: unknown[] = [];
+  const movedAsideStamps: string[] = [];
+  let noticeFlagged = false;
   return {
     read: () => stored,
     write: (profile) => {
       stored = { kind: 'found', value: profile };
       saved = profile;
     },
-    moveAside: () => {
-      movedAside = stored.kind === 'found' ? stored.value : undefined;
+    moveAside: (stamp) => {
+      movedAside.push(stored.kind === 'found' ? stored.value : undefined);
+      movedAsideStamps.push(stamp);
+      noticeFlagged = true;
       stored = { kind: 'empty' };
+    },
+    noticePending: () => noticeFlagged,
+    clearNotice: () => {
+      noticeFlagged = false;
     },
     get saved() {
       return saved;
     },
     get movedAside() {
       return movedAside;
+    },
+    get movedAsideStamps() {
+      return movedAsideStamps;
+    },
+    get noticeFlagged() {
+      return noticeFlagged;
     },
   };
 }
