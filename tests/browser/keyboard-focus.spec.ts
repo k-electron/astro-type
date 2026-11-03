@@ -10,7 +10,11 @@ import {
   typeText,
 } from './helpers';
 import { OPEN_AUDIO_PANEL, laserSfxLabel } from '../../src/screens/audioLabels';
-import { MENU_HEADINGS, PAUSE_MENU_NAME } from '../shared/screens';
+import {
+  MENU_HEADINGS,
+  PAUSE_FLIGHT,
+  PAUSE_MENU_NAME,
+} from '../shared/screens';
 import { pauseButton, resumeButton } from './journey-helpers';
 
 // J2: native keyboard and focus, in a real browser. These are the things a DOM
@@ -237,6 +241,69 @@ test('native keys and focus: Space, Esc, Enter and the window losing focus', asy
   await typeText(page, 'abc');
   await expect(promptProgress(page)).toHaveText('50%');
   await expect(flightDeck(page)).toContainText(/Streak\s*3(?!\d)/i);
+
+  await test.step('part B: a stray Tab and Enter mid-Run leave the Run running, and Esc then Tab reaches the Pause Menu', async () => {
+    // Focus starts wherever launching left it (the page body, not the header).
+    // Today a Tab moves it to the header's logo and the Enter after it clicks
+    // the logo, which abandons the Run.
+    const headerPause = page
+      .getByRole('banner')
+      .getByRole('button', { name: PAUSE_FLIGHT, exact: true });
+    await expect(headerPause).toBeVisible();
+    await expect(hud(page)).toBeVisible();
+    const startedAt = await whereFocusIs(page);
+
+    await page.keyboard.press('Tab');
+    expect
+      .soft(await whereFocusIs(page), 'Tab mid-Run leaves focus where it was')
+      .toBe(startedAt);
+    await page.keyboard.press('Enter');
+
+    // The Run is still running, 50% through, with its Streak.
+    await expect(pauseMenu(page)).toBeHidden();
+    await expect(hud(page)).toBeVisible();
+    await expect(textPrompt(page)).toBeVisible();
+    await expect(promptProgress(page)).toHaveText('50%');
+    await expect(headerPause).toBeVisible();
+    await expect.soft(flightDeck(page)).toContainText(/Streak\s*3(?!\d)/i);
+    expect
+      .soft(await whereFocusIs(page), 'focus is not on a header button')
+      .not.toBe('header');
+    expect
+      .soft(await whereFocusIs(page), 'Enter mid-Run leaves focus where it was')
+      .toBe(startedAt);
+
+    await page.keyboard.press('Shift+Tab');
+    expect
+      .soft(
+        await whereFocusIs(page),
+        'Shift+Tab mid-Run leaves focus where it was',
+      )
+      .toBe(startedAt);
+    await expect(headerPause).toBeVisible();
+    await expect(promptProgress(page)).toHaveText('50%');
+
+    // Esc pauses, and from the Pause Menu Tab moves focus as normal.
+    await page.keyboard.press('Escape');
+    await expectPausedHalfway(page);
+    await page.keyboard.press('Tab');
+    const afterTab = await whereFocusIs(page);
+    expect
+      .soft(
+        ['pause-menu', 'header'],
+        'Tab on the Pause Menu moves focus into the Pause Menu or the header',
+      )
+      .toContain(afterTab);
+
+    // Back to a running Run for the steps after this one.
+    await resumeButton(page).click();
+    await expect(pauseMenu(page)).toBeHidden();
+    await expect(promptProgress(page)).toHaveText('50%');
+    await expect(flightDeck(page)).toContainText(/Streak\s*3(?!\d)/i);
+    expect
+      .soft(await whereFocusIs(page), 'resuming leaves focus off the header')
+      .not.toBe('header');
+  });
 
   await test.step('part B: Esc pauses, and Esc on the Pause Menu resumes from the same character', async () => {
     await page.keyboard.press('Escape');

@@ -1,7 +1,7 @@
 import { fireEvent } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { attachKeyboard } from '../../src/app/attachKeyboard';
-import { type Game, startedGame } from '../shared/testHelpers';
+import { type Game, newGame, startedGame } from '../shared/testHelpers';
 
 /**
  * `attachKeyboard(game, window)` is the composition root's keys: keydowns,
@@ -9,7 +9,9 @@ import { type Game, startedGame } from '../shared/testHelpers';
  * and unwinding menus, a held key, Ctrl and Cmd shortcuts, blur and a hidden
  * tab) is proven through the App in session, flight-deck and navigation. This
  * file has what those can't see: that the keys reach whatever game they were
- * attached to, and that the detach function lets go. The Esc stack (the audio
+ * attached to, that the detach function lets go, and that a running Run keeps
+ * Tab and Enter from the page (default prevented) while a paused Run or no Run
+ * leaves them alone. The Esc stack (the audio
  * panel, then a confirm, then the screen) is proven through the App in
  * navigation and wipe.
  */
@@ -60,6 +62,42 @@ describe('attached keys', () => {
 
     expect(watched.getState().phase).toBe('paused');
     expect(detached.getState().phase).toBe('running');
+  });
+});
+
+describe('Tab and Enter', () => {
+  // `fireEvent` returns false when a listener called preventDefault, which is
+  // what keeps the browser from moving focus or clicking a focused button.
+  it('are kept from the page while a Run is running, Shift+Tab included', () => {
+    const game = startedGame();
+    attach(game);
+
+    expect(fireEvent.keyDown(window, { key: 'Tab' })).toBe(false);
+    expect(fireEvent.keyDown(window, { key: 'Tab', shiftKey: true })).toBe(
+      false,
+    );
+    expect(fireEvent.keyDown(window, { key: 'Enter' })).toBe(false);
+    expect(game.getState().phase).toBe('running');
+  });
+
+  it('are left to the page once the Run is paused', () => {
+    const game = startedGame();
+    attach(game);
+    fireEvent.blur(window);
+    expect(game.getState().phase).toBe('paused');
+
+    expect(fireEvent.keyDown(window, { key: 'Tab' })).toBe(true);
+    expect(fireEvent.keyDown(window, { key: 'Tab', shiftKey: true })).toBe(
+      true,
+    );
+    expect(fireEvent.keyDown(window, { key: 'Enter' })).toBe(true);
+  });
+
+  it('are left to the page when no Run is under way', () => {
+    attach(newGame());
+
+    expect(fireEvent.keyDown(window, { key: 'Tab' })).toBe(true);
+    expect(fireEvent.keyDown(window, { key: 'Enter' })).toBe(true);
   });
 });
 

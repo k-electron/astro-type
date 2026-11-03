@@ -9,7 +9,10 @@ import { closeTopEscLayer } from './escLayers';
  * - a key goes down or up: `pressKey` / `releaseKey` while a Run is running.
  *   Which keys count (one character, no auto-repeat, no Cmd or Ctrl shortcut)
  *   is the game's call, so every keydown is passed on with its modifiers.
- *   Space is kept from scrolling the page while a Run is running.
+ *   While a Run is running it owns Space, Tab and Enter: the page never sees
+ *   them, so Space can't scroll it and a stray Tab and Enter can't walk focus
+ *   to a header button and click it, which would abandon the Run. Esc, and
+ *   anything while paused or on a menu, is left to the page.
  * - Esc: the top open layer closes, or else `PRESS_ESC` on every screen, never
  *   a keystroke. The machine decides what it means there (the Esc contract,
  *   below).
@@ -40,8 +43,12 @@ export function attachKeyboard(game: Game, win: Window): () => void {
 
     if (!isRunning()) return;
 
-    // Space must not scroll the page.
-    if (event.key === ' ') event.preventDefault();
+    // The running Run owns Space, Tab (Shift+Tab too) and Enter: none of them
+    // may scroll the page, move focus or click a focused button. The game
+    // still gets every key and decides what counts.
+    if (event.key === ' ' || event.key === 'Tab' || event.key === 'Enter') {
+      event.preventDefault();
+    }
 
     game.pressKey(event.key, {
       repeat: event.repeat,
