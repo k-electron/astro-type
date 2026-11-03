@@ -139,10 +139,8 @@ async function expectHeaderFits(page: Page, flightName: string, state: string) {
   for (const width of HEADER_WIDTHS) {
     await page.setViewportSize({ width, height: 800 });
     // The header's fonts are web fonts; measure with the real ones, not the
-    // fallback glyphs they replace. Once loaded they stay, so the first width
-    // of a state is the only one that can wait.
-    if (width === HEADER_WIDTHS[0])
-      await page.evaluate(() => document.fonts.ready);
+    // fallback glyphs they replace.
+    await page.evaluate(() => document.fonts.ready);
     const where = `${width}px, ${state}`;
     const nav = page.getByRole('navigation');
     for (const name of NAV_BUTTONS) {
