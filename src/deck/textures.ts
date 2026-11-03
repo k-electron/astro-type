@@ -31,7 +31,10 @@ function cached(key: string, make: () => Texture): Texture {
   return texture;
 }
 
-/** Drop every texture (hot reload, or the renderer going away). */
+/**
+ * Drop every texture (hot reload, or the renderer going away). Call only while
+ * tearing down the scene: sprites still on screen would hold destroyed textures.
+ */
 export function resetTextures(): void {
   for (const texture of cache.values()) texture.destroy(true);
   cache.clear();
@@ -227,8 +230,9 @@ export function sweepBoxGlows(): void {
 export class GlowSprite extends Sprite {
   private heldKey: string | null = null;
 
-  /** Show the glow of a `w` by `h` box; the same size as before changes nothing. */
+  /** Show the glow of a `w` by `h` box (and the sprite); the same size as before changes nothing else. */
   show(w: number, h: number, radius: number, blur: number): void {
+    this.visible = true;
     const { key, entry } = glowEntry(w, h, radius, blur);
     if (key === this.heldKey) return;
     entry.holders++;
@@ -238,8 +242,9 @@ export class GlowSprite extends Sprite {
     if (previous) letGo(previous);
   }
 
-  /** Stop showing a glow (the sprite is hidden, or done with its size). */
+  /** Stop showing a glow: hides the sprite and lets go of its glow. */
   release(): void {
+    this.visible = false;
     const previous = this.heldKey;
     if (!previous) return;
     this.heldKey = null;

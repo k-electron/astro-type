@@ -307,14 +307,19 @@ const replay: Move[] = [
 ];
 const resumeWhenPaused: Move[] = [{ ...resume, guard: 'isPaused' }];
 
+/** What every screen but the Flight Deck does with the Flight Deck button and with losing focus. */
+const awayFromTheFlightDeck = {
+  PRESS_FLIGHT_DECK: play,
+  LOST_FOCUS: [ignore],
+};
+
 const menuState = (from: (typeof MENUS)[number]) => ({
   on: {
     ...everywhere(from),
+    ...awayFromTheFlightDeck,
     PRESS_CLOSE: close,
     PRESS_ESC: close,
-    PRESS_FLIGHT_DECK: play,
     PRESS_RESUME: resumeWhenPaused,
-    LOST_FOCUS: [ignore],
   },
 });
 
@@ -340,9 +345,8 @@ const states = {
   'academy-home': {
     on: {
       ...everywhere('academy-home'),
-      PRESS_FLIGHT_DECK: play,
+      ...awayFromTheFlightDeck,
       PRESS_ESC: [ignore],
-      LOST_FOCUS: [ignore],
     },
   },
   'flight-deck': {
@@ -358,22 +362,20 @@ const states = {
     on: {
       ...everywhere('pause-menu'),
       PRESS_RESUME: [resume],
+      ...awayFromTheFlightDeck,
       PRESS_ESC: [resume],
-      PRESS_FLIGHT_DECK: play,
       PRESS_REPLAY: replay,
-      LOST_FOCUS: [ignore],
     },
   },
   ...menuStates,
   debrief: {
     on: {
       ...everywhere('debrief'),
-      PRESS_FLIGHT_DECK: play,
+      ...awayFromTheFlightDeck,
       PRESS_REPLAY: replay,
       PRESS_NEXT_STAGE: nextStage,
       // The same move as the Debrief's Galaxy Map button.
       PRESS_ESC: [open('debrief', 'galaxy-map')],
-      LOST_FOCUS: [ignore],
     },
   },
 } satisfies Record<Screen, unknown>;

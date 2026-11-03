@@ -192,7 +192,6 @@ export class KeyView {
   /** The glow a lit keycap casts: its lane colour for the next key and a pressed key, amber for Shift. */
   private drawGlow(target: boolean, modifier: boolean, pressed: boolean): void {
     if (!(target || modifier || pressed)) {
-      this.glow.visible = false;
       this.glow.release();
       return;
     }
@@ -202,7 +201,6 @@ export class KeyView {
     this.glow.show(w, h, 6, blur);
     this.glow.tint = modifier && !target ? '#fbbf24' : this.laneColor;
     this.glow.alpha = target ? 0.52 : modifier ? 0.65 : 0.565;
-    this.glow.visible = true;
   }
 
   /** Move the animated parts (the bouncing HOLD SHIFT badge, the blind-mode dot) to `timeMs` of effect time. */

@@ -215,7 +215,6 @@ export class DroneView {
     // The lip under the hull (0 4px 0 #020617).
     g.roundRect(-w / 2, -h / 2 + (first ? 4 : 3), w, h, 8).fill('#020617');
     // The lead glows (0 0 24px in its lane colour).
-    this.glow.visible = first;
     if (!first) this.glow.release();
     if (first) {
       this.glow.show(w, h, 8, 24);

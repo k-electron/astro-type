@@ -630,7 +630,6 @@ export class DeckEffects {
       f.sprite.visible = false;
     });
     this.ghosts.clear((g) => {
-      g.glow.visible = false;
       g.glow.release();
     });
     this.popups.clear((p) => this.giveText(p.key, p.text));
@@ -677,7 +676,6 @@ export class DeckEffects {
       const g = this.ghosts.active[i];
       g.life += d;
       if (g.life >= g.maxLife) {
-        g.glow.visible = false;
         g.glow.release();
         this.ghosts.releaseAt(i);
         continue;
@@ -917,7 +915,6 @@ export class DeckEffects {
         ghost.glow.position.set(x, y);
         ghost.glow.scale.set(1);
         ghost.glow.alpha = 0.8;
-        ghost.glow.visible = true;
       }
 
       const flash = this.flashes.acquire();

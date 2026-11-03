@@ -156,17 +156,18 @@ describe('the Back button of a menu', () => {
 });
 
 describe('the ← arrow on a Back button', () => {
-  /** The shape the arrow draws, read from the button as a player sees it; null when it has none. */
-  const arrowOn = (label: string) =>
-    screen.getByRole('button', { name: label }).querySelector('svg')
-      ?.innerHTML ?? null;
+  /** Does the button show the arrow icon (an `svg`) beside its label? */
+  const hasArrow = (label: string) =>
+    screen.getByRole('button', { name: label }).querySelector('svg') !== null;
 
-  it('"Back to Pause Menu" has the arrow "Back to Debrief" has, on every menu opened over a Run', () => {
+  it('"Back to Pause Menu" shows the arrow "Back to Debrief" shows, on every menu opened over a Run', () => {
     // The Galaxy Map opened from a Debrief is where a Back button has its arrow.
     const player = toDebrief();
     player.openHeader('Galaxy Map');
-    const arrow = arrowOn(closeLabel('debrief'));
-    expect(arrow, 'Back to Debrief draws an arrow').toBeTruthy();
+    expect(
+      hasArrow(closeLabel('debrief')),
+      'Back to Debrief draws an arrow',
+    ).toBe(true);
     player.click(closeLabel('debrief'));
     player.click('Replay');
     player.typePrompt({ characters: 3 });
@@ -179,8 +180,8 @@ describe('the ← arrow on a Back button', () => {
     ] as const) {
       player.openHeader(menu);
       expect
-        .soft(arrowOn(closeLabel('pause-menu')), `${menu}: Back to Pause Menu`)
-        .toBe(arrow);
+        .soft(hasArrow(closeLabel('pause-menu')), `${menu}: Back to Pause Menu`)
+        .toBe(true);
       player.click(closeLabel('pause-menu'));
       player.click(flightDeckLabel(true));
     }

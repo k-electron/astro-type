@@ -76,6 +76,8 @@ class DeckSession {
   private readonly resizeObserver: ResizeObserver;
   /** Ways to stop listening to the game and the frames, for `destroy`. */
   private readonly stopListening: (() => void)[] = [];
+  /** Stops watching for the screen's pixel density to change; replaced after each change. */
+  private stopWatchingDensity: (() => void) | null = null;
   private destroyed = false;
   private size: { width: number; height: number } | null = null;
   private visible = false;
@@ -177,13 +179,58 @@ class DeckSession {
     layer?.addEventListener('mousedown', (event) => event.preventDefault());
 
     this.app = app;
+    this.buildScene(app);
+    if (this.size) this.setSize(this.size.width, this.size.height);
+    this.dirty = true;
+    // A density change while the Application was starting is caught here.
+    this.followDensity();
+  }
+
+  /** Make the scene at the renderer's resolution: every piece of text is made at it. */
+  private buildScene(app: Application): void {
     this.scene = new DeckScene({
       resolution: app.renderer.resolution,
       getState: () => this.game.getState(),
       onPressKey: (spec) => pressKeycap(this.game, spec),
     });
     app.stage.addChild(this.scene.root);
-    if (this.size) this.setSize(this.size.width, this.size.height);
+  }
+
+  /**
+   * Draw at the screen's pixel density as it is now, and watch for the next
+   * change (the window dragged to a screen of another density). A query for
+   * the current ratio stops matching when the ratio changes, so each change
+   * is followed by a new query for the new ratio.
+   */
+  private followDensity(): void {
+    this.stopWatchingDensity?.();
+    this.stopWatchingDensity = null;
+    if (this.destroyed) return;
+    const ratio = window.devicePixelRatio || 1;
+    const { app } = this;
+    if (app && app.renderer.resolution !== ratio) this.setDensity(app, ratio);
+    const query = window.matchMedia(`(resolution: ${ratio}dppx)`);
+    const onChange = () => this.followDensity();
+    query.addEventListener('change', onChange);
+    this.stopWatchingDensity = () =>
+      query.removeEventListener('change', onChange);
+  }
+
+  /**
+   * The canvas's backing size becomes its CSS size times `ratio`. The text
+   * keeps the resolution it was made at, so the scene is made again; the
+   * effects playing at that moment end.
+   */
+  private setDensity(app: Application, ratio: number): void {
+    const width = this.size?.width ?? app.renderer.screen.width;
+    const height = this.size?.height ?? app.renderer.screen.height;
+    app.renderer.resize(width, height, ratio);
+    if (this.scene) {
+      app.stage.removeChild(this.scene.root);
+      this.scene.root.destroy({ children: true });
+    }
+    this.buildScene(app);
+    this.scene?.resize(width, height);
     this.dirty = true;
   }
 
@@ -253,6 +300,8 @@ class DeckSession {
     this.destroyed = true;
     for (const stop of this.stopListening) stop();
     this.resizeObserver.disconnect();
+    this.stopWatchingDensity?.();
+    this.stopWatchingDensity = null;
     this.wrapper.remove();
     resetKeyGradients();
     resetPlumeGradients();

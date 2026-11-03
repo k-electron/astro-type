@@ -533,10 +533,10 @@ describe.each([
     'resetProgress',
     (game: ReturnType<typeof loadGame>['game']) => game.resetProgress(),
   ],
-])('%s and the Stage the next mission starts on', (_, command) => {
+])('%s and the Stage the next Stage starts on', (_, command) => {
   const SECOND_STAGE = 's1-l2';
 
-  it('sends the next mission back to the first Stage when no Run is on show', () => {
+  it('sends the next Stage back to the first Stage when no Run is on show', () => {
     const { game } = loadGame(RETURNING_PLAYER);
     startStage(game, SECOND_STAGE);
     game.send({ type: 'PRESS_ESC' });

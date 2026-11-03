@@ -526,6 +526,59 @@ test('the ship, the guidance beam and the Drone lights are drawn, and the deck k
 
   // Thrusters and lights flicker while the Run goes on.
   expect(await pixels.changed(first, second)).toBeGreaterThan(300);
+
+  // Last, so the override can't touch the pictures above.
+  await test.step('the deck canvas follows the screen density mid-Run, and the deck keeps working', async () => {
+    const canvas = page.locator('canvas').last();
+    // The canvas's backing size is the one thing read off the canvas element.
+    const backing = () => canvas.evaluate((c: HTMLCanvasElement) => c.width);
+    const cssWidth = (await box(canvas)).width;
+    const viewport = page.viewportSize();
+    if (!viewport) throw new Error('The page has no viewport to keep');
+    const cdp = await page.context().newCDPSession(page);
+    const setDensity = (deviceScaleFactor: number, widen = 0) =>
+      cdp.send('Emulation.setDeviceMetricsOverride', {
+        width: viewport.width + widen,
+        height: viewport.height,
+        mobile: false,
+        deviceScaleFactor,
+      });
+    // PixiJS draws on animation frames, which only come when the clock moves.
+    const backingTracks = (css: number, ratio: number) =>
+      expect(async () => {
+        await page.clock.runFor(50);
+        expect(Math.abs((await backing()) - css * ratio)).toBeLessThanOrEqual(
+          1,
+        );
+      }).toPass({ timeout: 10_000, intervals: [50] });
+
+    try {
+      // At 1x the backing size is the CSS size (the override itself is sound).
+      await setDensity(1);
+      expect(await page.evaluate(() => window.devicePixelRatio)).toBe(1);
+      await backingTracks(cssWidth, 1);
+
+      // The window moves to a denser screen: no reload, the Run goes on.
+      await setDensity(2);
+      expect(await page.evaluate(() => window.devicePixelRatio)).toBe(2);
+      // Headless Chromium reports a density change to the page (the resolution
+      // media query) only together with a resize, where a real window dragged
+      // to another screen reports it alone. So nudge the width by 1 px at the
+      // same density, and measure the CSS width after the nudge.
+      await setDensity(2, 1);
+      const nudgedCssWidth = (await box(canvas)).width;
+      expect.soft(Math.abs(nudgedCssWidth - cssWidth)).toBeLessThanOrEqual(1);
+      await backingTracks(nudgedCssWidth, 2);
+
+      // The deck still plays: a hit takes the lead Drone out, the next waits.
+      await page.keyboard.press('b');
+      await page.clock.runFor(2000);
+      await expect(drone(page, 'b')).toBeHidden();
+      await expect(drone(page, 'q')).toBeVisible();
+    } finally {
+      await cdp.send('Emulation.clearDeviceMetricsOverride');
+    }
+  });
 });
 
 const SOLAR_FLARE = 'AMBER';
