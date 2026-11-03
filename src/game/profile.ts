@@ -209,7 +209,7 @@ export function cosmeticStatus(
  * What the Profile becomes when the player buys an item: an Upgrade's next
  * level at its price, or a Cosmetic bought and equipped (a Cosmetic already
  * owned is equipped for nothing). Null when it changes nothing: an Upgrade at
- * its last level, or Credits short of the price.
+ * its last level, a Cosmetic already equipped, or Credits short of the price.
  */
 export function purchaseOf(
   profile: PlayerProfile,
@@ -231,6 +231,7 @@ export function purchaseOf(
   const { owned, equipped } = COSMETIC_FIELDS[entry.kind];
   const ownedIds: readonly string[] = upgrades[owned];
   const status = cosmeticStatus(profile, entry);
+  if (status.equipped) return null;
   const isOwned = status.owned;
   if (!isOwned && !status.affordable) return null;
   return {

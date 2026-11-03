@@ -141,3 +141,33 @@ describe('buying a Sound Kit in the Hangar', () => {
     expect(equippedKitIndex()).toBe(1);
   });
 });
+
+// The Hangar marks what is equipped with a disabled "Active" button: choosing
+// it again would do nothing, so it is not offered. ("Active" and "Equip" are
+// not exported by the source yet, so they are spelled out here, as above.)
+describe('the Hangar, for a Cosmetic that is already equipped', () => {
+  it('shows a disabled Active button on the equipped Trail and the equipped Sound Kit', () => {
+    const player = renderGame({ profile: RETURNING_PLAYER });
+    player.openHeader('Hangar');
+
+    const active = screen.getAllByRole('button', { name: 'Active' });
+
+    expect(active).toHaveLength(2);
+    for (const button of active) {
+      expect((button as HTMLButtonElement).disabled).toBe(true);
+    }
+  });
+
+  it('offers Equip on an owned Sound Kit; equipping it moves Active onto it for free', () => {
+    const player = renderGame({ profile: OWNS_RETRO_SOUND_KIT });
+    player.openHeader('Hangar');
+    const equip = screen.getByRole('button', { name: 'Equip' });
+    expect((equip as HTMLButtonElement).disabled).toBe(false);
+
+    player.click('Equip');
+
+    expect(equippedKitIndex()).toBe(1);
+    expect((hangarKitButtons()[1] as HTMLButtonElement).disabled).toBe(true);
+    expect(credits('1,234')).toBeTruthy();
+  });
+});

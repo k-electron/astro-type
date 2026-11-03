@@ -149,7 +149,7 @@ const CosmeticCard: React.FC<{
 
       <button
         type="button"
-        disabled={!owned && !affordable}
+        disabled={equipped || (!owned && !affordable)}
         onClick={onBuy}
         className={`w-full py-1.5 px-2 rounded-lg text-[11px] font-mono transition-colors ${
           equipped

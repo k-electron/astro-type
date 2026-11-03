@@ -36,7 +36,8 @@ const UPGRADES = [
 /**
  * A Cosmetic is bought once, then equipped for free. Each kind has the Profile
  * fields that hold what is equipped and what is owned, the one the player
- * starts with, and the others with their price.
+ * starts with, and the others with their price. `equipMoments` is what
+ * equipping one announces: a Trail is heard, a Sound Kit makes no moment.
  */
 const COSMETICS = [
   {
@@ -44,6 +45,7 @@ const COSMETICS = [
     equipped: 'equippedTrailTheme',
     owned: 'unlockedThemes',
     free: 'CYAN',
+    equipMoments: [{ type: 'equip' }],
     items: [
       ['AMBER', 350],
       ['EMERALD', 450],
@@ -56,6 +58,7 @@ const COSMETICS = [
     equipped: 'equippedAudioCore',
     owned: 'unlockedAudioCores',
     free: 'CYBER_SYNTH',
+    equipMoments: [],
     items: [
       ['RETRO_8BIT', 300],
       ['DEEP_SPACE', 450],
@@ -191,6 +194,48 @@ describe.each(COSMETICS)('buy, for a $kind', (cosmetic) => {
 
     expect(game.getState().profile.upgrades[equipped]).toBe(item);
     expect(game.getState().profile.totalCredits).toBe(0);
+  });
+
+  it.each([
+    ['the one every player starts with', free, {}],
+    [
+      'one bought and equipped',
+      items[0][0],
+      { [equipped]: items[0][0], [owned]: [free, items[0][0]] },
+    ],
+  ] as const)(
+    'does nothing for %s when it is already equipped: no change, no Save written, no moment',
+    (_, item, upgrades) => {
+      const { game, storage } = loadGame({ totalCredits: 10000, upgrades });
+      expect(game.getState().profile.upgrades[equipped]).toBe(item);
+      const before = game.getState().profile;
+      const savedBefore = storage.saved;
+      const moments: unknown[] = [];
+      game.onMoment((moment) => moments.push(moment));
+
+      expect(game.buy(item)).toBe(false);
+
+      expect(game.getState().profile).toEqual(before);
+      expect(storage.saved).toBe(savedBefore);
+      expect(moments).toEqual([]);
+    },
+  );
+
+  it('equips one that is owned but not equipped, announcing its moment', () => {
+    const [[item]] = items;
+    const { game, storage } = loadGame({
+      totalCredits: 10000,
+      upgrades: { [owned]: [free, item] },
+    });
+    const savedBefore = storage.saved;
+    const moments: unknown[] = [];
+    game.onMoment((moment) => moments.push(moment));
+
+    expect(game.buy(item)).toBe(true);
+
+    expect(game.getState().profile.upgrades[equipped]).toBe(item);
+    expect(storage.saved).not.toBe(savedBefore);
+    expect(moments).toEqual(cosmetic.equipMoments);
   });
 
   for (const [item, price] of items) {
