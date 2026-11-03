@@ -20,9 +20,9 @@ import { OPEN_AUDIO_PANEL } from '../../src/screens/audioLabels';
 
 // One name for each thing: the game says what GLOSSARY.md says. It never says
 // combo, hyperspace or warp (Streak, Multiplier and Overdrive), mission,
-// highway, note, debriefing, main menu, cockpit, drill, custom practice or
-// rating (Stage and Run, Action Deck, Drone, Debrief, Academy Home, Flight
-// Deck, Free Flight, Stars), and none of the names #89 retired (Tactile Rhythm
+// highway, falling notes, debriefing, main menu, cockpit, drill, session,
+// storage, custom practice or rating (Stage and Run, Action Deck, Drone,
+// Debrief, Academy Home, Flight Deck, Free Flight, Run, Save, Stars), and none of the names #89 retired (Tactile Rhythm
 // Flight Deck, Audio Flight Deck, Report, Launch Custom Flight, Hide Deck,
 // Synthesizer and audio core, Deep Space Drone, Cadence: they are Action Deck,
 // Analytics, Start Free Flight, Key Labels, Sound Kit, Deep Space Beats and
@@ -89,6 +89,33 @@ function startOverdrive(player: Player) {
     ),
   ).toBeTruthy();
 }
+
+describe('BANNED_NAME', () => {
+  it("flags the Drone's old names but not the ordinary word note", () => {
+    expect(BANNED_NAME.test('Hit the falling notes')).toBe(true);
+    expect(BANNED_NAME.test('Laser-note')).toBe(true);
+    expect(BANNED_NAME.test('Make a note of it')).toBe(false);
+    expect(BANNED_NAME.test('Stage notes')).toBe(false);
+  });
+
+  it('flags drill in its forms, a session and storage', () => {
+    for (const banned of [
+      'A drill',
+      'drilled',
+      'Drilling',
+      'Practice session',
+      'Local storage',
+    ]) {
+      expect(BANNED_NAME.test(banned), banned).toBe(true);
+    }
+    expect(BANNED_NAME.test('localStorage')).toBe(false);
+  });
+
+  it('leaves Telemetry and paused alone', () => {
+    expect(BANNED_NAME.test('Center Telemetry (4, 5, 6, 7)')).toBe(false);
+    expect(BANNED_NAME.test('while a Run is paused')).toBe(false);
+  });
+});
 
 describe('the glossary names', () => {
   it('Academy Home uses them', () => {

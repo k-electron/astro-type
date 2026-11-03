@@ -184,7 +184,7 @@ export const Hangar: React.FC = () => {
             id="hangar-title"
             className="text-xl sm:text-2xl font-bold font-display text-white"
           >
-            Starship Hangar Upgrades
+            Starship Hangar
           </h2>
         </div>
 

@@ -12,7 +12,7 @@ import type { SoundKit } from '../../src/game/schemas';
 /** Each header button that opens a screen, and the heading of that screen. */
 export const MENU_HEADINGS = {
   'Galaxy Map': 'Galaxy Map',
-  Hangar: 'Starship Hangar Upgrades',
+  Hangar: 'Starship Hangar',
   Analytics: 'Typing Analytics & Heatmap',
   'Free Flight': 'Free Flight',
 } as const;

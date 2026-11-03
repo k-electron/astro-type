@@ -121,6 +121,11 @@ export const totalStarsOf = (
 ): number =>
   Object.values(stagesProgress).reduce((sum, sp) => sum + sp.starsEarned, 0);
 
+/** How many Stages are cleared: the ones with `completed` set, which Wipe Stars resets. */
+export const clearedStagesOf = (
+  stagesProgress: Record<string, { completed: boolean }>,
+): number => Object.values(stagesProgress).filter((sp) => sp.completed).length;
+
 /**
  * Saves and Backups made before Free Flight became practice (#86) hold an
  * entry for each Free Flight, keyed `custom-<launch time>`. They are dropped on

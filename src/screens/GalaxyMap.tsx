@@ -108,7 +108,7 @@ export const GalaxyMap: React.FC = () => {
               onClick={onOpenHangar}
               className="px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700 transition-colors whitespace-nowrap cursor-pointer"
             >
-              Hangar Upgrades
+              Hangar
             </button>
             <button
               type="button"

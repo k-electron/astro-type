@@ -372,7 +372,7 @@ describe('menus opened in the middle of a Run', () => {
 
     // A chain: Flight Deck > Galaxy Map > Hangar unwinds one step at a time.
     player.openHeader('Galaxy Map');
-    player.click('Hangar Upgrades');
+    player.click('Hangar');
     expect(menuHeading('Hangar')).not.toBeNull();
     closeMenu(player);
     expect(menuHeading('Galaxy Map')).not.toBeNull();
@@ -548,7 +548,7 @@ describe('Esc', () => {
   it('unwinds a chain of menus one step at a time', () => {
     const player = halfwayThroughARun();
     player.openHeader('Galaxy Map');
-    player.click('Hangar Upgrades');
+    player.click('Hangar');
     expect(menuHeading('Hangar')).not.toBeNull();
 
     player.press('Escape');

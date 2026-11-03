@@ -4,9 +4,9 @@
 /**
  * The words the game never says. It calls them Streak and Overdrive (combo,
  * hyperspace, warp), Stage and Run (mission), the Action Deck (highway),
- * Drones (note), the Debrief (debriefing), Academy Home (main menu), the
- * Flight Deck (cockpit), Free Flight (drill, custom practice) and Stars
- * (rating). GLOSSARY.md lists each one as a word to avoid. "Trail theme" is
+ * Drones (falling notes), the Debrief (debriefing), Academy Home (main menu), the
+ * Flight Deck (cockpit), Free Flight (drill, custom practice), Runs (session), the Save
+ * (storage) and Stars (rating). GLOSSARY.md lists each one as a word to avoid. "Trail theme" is
  * banned too, since #88 renamed the Cosmetic a Trail; it is banned as a phrase,
  * because "trail" alone is the name.
  *
@@ -29,11 +29,17 @@
  *   that says just "Report" is caught, while "report" inside a sentence is
  *   not. It can't false-positive on a longer word either way.
  *
+ * "note" is not banned as a word: the ordinary word ("Note:", "Stage notes")
+ * is fine, and only "falling notes", "laser notes" and "keystroke notes" (the
+ * Drone's old name) are. "Telemetry" and "paused" are not banned either: the
+ * Stage titles keep the first, and the Glossary itself says "while a Run is
+ * paused".
+ *
  * `\b` keeps this to whole words: "Debrief" is the screen's name and passes
  * (only "debriefing" is banned), and a word that merely contains one
  * ("swarp", "Comboy", "Notebook", "Operating") is not flagged. The endings
- * cover the plurals and "warped" and "warping", and a space or hyphen may
+ * cover the plurals, "warped" and "warping" and "drilled" and "drilling", and a space or hyphen may
  * split "hyper space", "main menu" and "custom practice".
  */
 export const BANNED_NAME =
-  /\b(?:combos?|trail[\s-]?themes?|hyper[\s-]?space|warp(?:s|ed|ing)?|missions?|highways?|notes?|debriefings?|main[\s-]?menus?|cockpits?|drills?|custom[\s-]?practices?|custom[\s-]?themes?|ratings?|tactile[\s-]rhythm|audio[\s-]flight[\s-]deck|custom[\s-]flights?|(?:hide|show)[\s-]+(?:the[\s-]+)?(?:action[\s-]+)?deck|audio[\s-]cores?|audio[\s-]synths?|synthesizers?|deep[\s-]space[\s-]drone|cadences?)\b|^reports?$/i;
+  /\b(?:combos?|trail[\s-]?themes?|hyper[\s-]?space|warp(?:s|ed|ing)?|missions?|highways?|(?:falling|laser|keystroke)[\s-]notes?|debriefings?|main[\s-]?menus?|cockpits?|drill(?:s|ed|ing)?|sessions?|storage|custom[\s-]?practices?|custom[\s-]?themes?|ratings?|tactile[\s-]rhythm|audio[\s-]flight[\s-]deck|custom[\s-]flights?|(?:hide|show)[\s-]+(?:the[\s-]+)?(?:action[\s-]+)?deck|audio[\s-]cores?|audio[\s-]synths?|synthesizers?|deep[\s-]space[\s-]drone|cadences?)\b|^reports?$/i;

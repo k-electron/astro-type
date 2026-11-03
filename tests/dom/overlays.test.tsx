@@ -203,7 +203,7 @@ describe('the Flight Deck is inert exactly while an overlay shows', () => {
     const player = halfwayThroughARun();
 
     player.openHeader('Galaxy Map');
-    player.click('Hangar Upgrades');
+    player.click('Hangar');
     expect(flightDeckInert()).toBe(true);
     player.click(/^Back to /);
     expect(flightDeckInert()).toBe(true);

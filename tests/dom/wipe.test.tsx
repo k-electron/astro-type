@@ -1,7 +1,11 @@
 import { fireEvent } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { CURRICULUM_SECTORS } from '../../src/curriculum/curriculum';
-import { RETURNING_PLAYER } from '../shared/saves';
+import {
+  clearedStages,
+  RETURNING_PLAYER,
+  stageProgress,
+} from '../shared/saves';
 import {
   DEBRIEF_TITLE,
   MENU_HEADINGS,
@@ -12,8 +16,10 @@ import { type Player, renderGame, screen, toDebrief, within } from './harness';
 import { flightDeckLabel } from '../../src/screens/closeLabel';
 import { OPEN_AUDIO_PANEL } from '../../src/screens/audioLabels';
 import {
+  FACTORY_RESET_MESSAGE,
   FACTORY_RESET_TITLE,
   WIPE_STARS_TITLE,
+  wipeStarsMessage,
 } from '../../src/screens/confirmLabels';
 
 // Wiping the Stars asks first. profile.test.tsx guards Factory Reset
@@ -138,6 +144,62 @@ describe.each(WIPES)('Wipe on $where', ({ menu, button }) => {
 
     expect(progress()).toBe(reached);
     expect(stars(0)).toBeTruthy();
+  });
+});
+
+// The Wipe Stars confirm says what it takes: the player's Stars and cleared
+// Stages, with the singular for one.
+describe('The Wipe Stars confirm message', () => {
+  const dialogText = () => screen.getByRole('alertdialog').textContent ?? '';
+
+  it('gives the Stars and the cleared Stages the player has', () => {
+    // RETURNING_PLAYER: 5 Stars over two cleared Stages.
+    const player = renderGame({ profile: RETURNING_PLAYER });
+    player.openHeader('Analytics');
+
+    player.click('Wipe Stars');
+
+    expect(dialogText()).toContain(wipeStarsMessage(5, 2));
+  });
+
+  it('uses the singular for one Star and one cleared Stage', () => {
+    const player = renderGame({ profile: clearedStages({ 's1-l1': 1 }) });
+    player.openHeader('Analytics');
+
+    player.click('Wipe Stars');
+
+    expect(dialogText()).toContain(wipeStarsMessage(1, 1));
+    expect(dialogText()).toMatch(/\b1 Star\b(?!s)/);
+    expect(dialogText()).toMatch(/\b1 cleared Stage\b(?!s)/);
+  });
+
+  it('does not count a Stage that was played but not cleared', () => {
+    const player = renderGame({
+      profile: {
+        stagesProgress: {
+          's1-l1': stageProgress('s1-l1', 0, { completed: false }),
+        },
+      },
+    });
+    player.openHeader('Analytics');
+
+    player.click('Wipe Stars');
+
+    expect(dialogText()).toMatch(/\b0 Stars\b/);
+    expect(dialogText()).toMatch(/\b0 cleared Stages\b/);
+  });
+});
+
+describe('The Factory Reset confirm message', () => {
+  it('is the one the source carries', () => {
+    const player = renderGame({ profile: RETURNING_PLAYER });
+    player.openHeader('Analytics');
+
+    player.click('Factory Reset');
+
+    expect(screen.getByRole('alertdialog').textContent).toContain(
+      FACTORY_RESET_MESSAGE,
+    );
   });
 });
 

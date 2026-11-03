@@ -15,7 +15,13 @@ import {
 } from '../curriculum/curriculum';
 import { KEYBOARD_ROWS } from '../curriculum/keyboardLayout';
 import { exportBackup, REFUSED_BACKUP_MESSAGE } from '../game/save';
-import { FACTORY_RESET_TITLE, WIPE_STARS_TITLE } from './confirmLabels';
+import { clearedStagesOf } from '../game/schemas';
+import {
+  FACTORY_RESET_MESSAGE,
+  FACTORY_RESET_TITLE,
+  WIPE_STARS_TITLE,
+  wipeStarsMessage,
+} from './confirmLabels';
 import { Download, Upload, RotateCcw } from 'lucide-react';
 
 /**
@@ -407,7 +413,7 @@ export const Analytics: React.FC = () => {
           <div className="p-4 rounded-xl border border-slate-800 bg-slate-950/60 flex flex-wrap items-center justify-between gap-3">
             <div className="text-xs text-slate-400">
               <span className="font-semibold text-slate-200 block">
-                Offline LocalStorage Storage
+                Save & Backup
               </span>
               <span>
                 All progress, Stage Stars, and records are safely cached in your
@@ -440,7 +446,7 @@ export const Analytics: React.FC = () => {
                 type="button"
                 onClick={() => setConfirmMode('WIPE_ACHIEVEMENTS')}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-900/60 bg-amber-950/40 text-xs font-medium text-amber-300 hover:bg-amber-900/50 hover:text-white transition-colors cursor-pointer"
-                title="Wipe curriculum stars and stage records for the new curriculum"
+                title="Wipe your Stars and Stage records"
               >
                 <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
                 <span>Wipe Stars</span>
@@ -450,7 +456,7 @@ export const Analytics: React.FC = () => {
                 type="button"
                 onClick={() => setConfirmMode('FULL_RESET')}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-rose-900/60 bg-rose-950/30 text-xs font-medium text-rose-300 hover:bg-rose-900/50 transition-colors cursor-pointer"
-                title="Completely reset all starship stats, credits, and achievements"
+                title="Completely reset all starship stats, Credits and achievements"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 <span>Factory Reset</span>
@@ -479,8 +485,11 @@ export const Analytics: React.FC = () => {
           }
           message={
             confirmMode === 'WIPE_ACHIEVEMENTS'
-              ? `This will wipe all ${profile.totalStars} ★ stars earned and reset stage completions to 0 so you can experience the classical touch-typing curriculum from the beginning. Your credits and upgrades are preserved.`
-              : 'This will irreversibly wipe ALL starship progress: stars, credits, ship upgrades, accuracy key analytics, Trails and Sound Kits.'
+              ? wipeStarsMessage(
+                  profile.totalStars,
+                  clearedStagesOf(profile.stagesProgress),
+                )
+              : FACTORY_RESET_MESSAGE
           }
           confirmLabel={
             confirmMode === 'WIPE_ACHIEVEMENTS'

@@ -9,7 +9,7 @@ import {
   withOldDroneSpeed,
 } from '../../tests/shared/saves';
 import type { Game } from './game';
-import { totalStarsOf } from './schemas';
+import { clearedStagesOf, totalStarsOf } from './schemas';
 import { DEFAULT_PROFILE } from './schemas';
 import { UNREADABLE_SAVE_NOTICE } from './save';
 import {
@@ -436,5 +436,18 @@ describe('total Stars', () => {
     });
 
     expect(game.getState().profile.totalStars).toBe(0);
+  });
+});
+
+describe('clearedStagesOf', () => {
+  it('counts only the Stages that are completed', () => {
+    expect(clearedStagesOf({})).toBe(0);
+    expect(
+      clearedStagesOf({
+        a: { completed: true },
+        b: { completed: true },
+        c: { completed: false },
+      }),
+    ).toBe(2);
   });
 });

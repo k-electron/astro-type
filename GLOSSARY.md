@@ -106,7 +106,7 @@ _Avoid_: Menu, main menu, home screen
 
 **Pause Menu**:
 The screen shown over the Flight Deck while a Run is paused.
-_Avoid_: Pause screen, paused
+_Avoid_: Pause screen, paused screen
 
 **Galaxy Map**:
 The screen for choosing a Stage from the Sectors.
