@@ -28,9 +28,7 @@ import { type Player, renderGame, screen, within } from './harness';
 
 /** The card the Debrief shows over the Flight Deck. */
 function debriefCard(): HTMLElement {
-  const card = screen.getByText(DEBRIEF_TITLE).parentElement;
-  if (!card) throw new Error('The Debrief has no card');
-  return card;
+  return screen.getByRole('dialog', { name: DEBRIEF_TITLE });
 }
 
 /** The names of the Debrief's buttons, in the order they are laid out. */

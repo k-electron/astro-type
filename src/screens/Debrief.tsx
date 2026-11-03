@@ -86,248 +86,253 @@ export const Debrief: React.FC = () => {
 
   return (
     <OverlayShell variant="debrief" width="xl" labelledBy="debrief-title">
-      {/* Stage Badge & Title */}
-      <span
-        id="debrief-title"
-        className="text-xs uppercase font-mono tracking-wider text-cyan-400 mb-1"
-      >
-        Debrief ·{' '}
-        {stage.origin === 'sector' ? stage.id.toUpperCase() : stage.title}
-      </span>
-      <h2 className="text-2xl sm:text-3xl font-bold font-display text-white mb-1">
-        {stage.title}
-      </h2>
-      <p className="text-xs font-mono text-slate-400 mb-5">{stage.subtitle}</p>
+      {/* Everything above the action buttons scrolls here when the window is too short */}
+      <div className="flex-1 min-h-0 overflow-y-auto px-6 pt-6 sm:px-8 sm:pt-8 flex flex-col items-center">
+        {/* Stage Badge & Title */}
+        <span
+          id="debrief-title"
+          className="text-xs uppercase font-mono tracking-wider text-cyan-400 mb-1"
+        >
+          Debrief ·{' '}
+          {stage.origin === 'sector' ? stage.id.toUpperCase() : stage.title}
+        </span>
+        <h2 className="text-2xl sm:text-3xl font-bold font-display text-white mb-1">
+          {stage.title}
+        </h2>
+        <p className="text-xs font-mono text-slate-400 mb-5">
+          {stage.subtitle}
+        </p>
 
-      {thresholds && (
-        <>
-          {/* Stars earned animation */}
-          <div className="flex items-center justify-center gap-3 mb-5">
-            {STAR_NUMBERS.map((starNum) => {
-              const isEarned = starNum <= starsEarned;
-              return (
-                <div
-                  key={starNum}
-                  className={`p-3 rounded-2xl border transition-all transform ${
-                    isEarned
-                      ? 'border-amber-400/80 bg-amber-500/20 scale-110 shadow-[0_0_20px_rgba(245,158,11,0.5)]'
-                      : 'border-slate-800 bg-slate-950/60 opacity-40'
-                  }`}
-                >
-                  <Star
-                    className={`w-8 h-8 sm:w-10 sm:h-10 ${
+        {thresholds && (
+          <>
+            {/* Stars earned animation */}
+            <div className="flex items-center justify-center gap-3 mb-5">
+              {STAR_NUMBERS.map((starNum) => {
+                const isEarned = starNum <= starsEarned;
+                return (
+                  <div
+                    key={starNum}
+                    className={`p-3 rounded-2xl border transition-all transform ${
                       isEarned
-                        ? 'fill-amber-400 text-amber-400'
-                        : 'text-slate-600 fill-slate-800'
+                        ? 'border-amber-400/80 bg-amber-500/20 scale-110 shadow-[0_0_20px_rgba(245,158,11,0.5)]'
+                        : 'border-slate-800 bg-slate-950/60 opacity-40'
                     }`}
-                  />
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Auto-Save & Stars Collection Notification Banner */}
-          <div className="w-full mb-5 p-3.5 rounded-xl border border-emerald-500/40 bg-emerald-950/30 text-left flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-[0_0_20px_rgba(16,185,129,0.12)]">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg bg-emerald-500/20 border border-emerald-400/50 flex items-center justify-center shrink-0">
-                <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold font-mono uppercase tracking-wide text-emerald-300">
-                    Stars Collected & Auto-Saved
-                  </span>
-                  <span className="px-1.5 py-0.2 rounded text-[10px] font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
-                    Saved
-                  </span>
-                </div>
-                <p className="text-[11px] text-slate-300 mt-0.5">
-                  All stars, credits, and unlocked sectors are securely recorded
-                  in your starship log.
-                </p>
-              </div>
+                  >
+                    <Star
+                      className={`w-8 h-8 sm:w-10 sm:h-10 ${
+                        isEarned
+                          ? 'fill-amber-400 text-amber-400'
+                          : 'text-slate-600 fill-slate-800'
+                      }`}
+                    />
+                  </div>
+                );
+              })}
             </div>
 
-            <div className="flex items-center gap-3 sm:border-l sm:border-emerald-500/30 sm:pl-4 shrink-0">
-              <div className="text-left font-mono">
-                <span className="text-[10px] text-slate-400 uppercase block">
-                  Total Fleet Stars
-                </span>
-                <div className="flex items-center gap-1.5 text-amber-300 font-bold text-sm">
-                  <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                  <span>{totalStars} ★</span>
-                  {newStarsAwarded > 0 && (
-                    <span className="text-[10px] text-emerald-400 font-semibold">
-                      (+{newStarsAwarded} new)
+            {/* Auto-Save & Stars Collection Notification Banner */}
+            <div className="w-full mb-5 p-3.5 rounded-xl border border-emerald-500/40 bg-emerald-950/30 text-left flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-[0_0_20px_rgba(16,185,129,0.12)]">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg bg-emerald-500/20 border border-emerald-400/50 flex items-center justify-center shrink-0">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold font-mono uppercase tracking-wide text-emerald-300">
+                      Stars Collected & Auto-Saved
                     </span>
-                  )}
+                    <span className="px-1.5 rounded text-[10px] font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                      Saved
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-300 mt-0.5">
+                    All stars, credits, and unlocked sectors are securely
+                    recorded in your starship log.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 sm:border-l sm:border-emerald-500/30 sm:pl-4 shrink-0">
+                <div className="text-left font-mono">
+                  <span className="text-[10px] text-slate-400 uppercase block">
+                    Total Fleet Stars
+                  </span>
+                  <div className="flex items-center gap-1.5 text-amber-300 font-bold text-sm">
+                    <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                    <span>{totalStars} ★</span>
+                    {newStarsAwarded > 0 && (
+                      <span className="text-[10px] text-emerald-400 font-semibold">
+                        (+{newStarsAwarded} new)
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Star Objectives Breakdown */}
-          <div className="w-full bg-slate-950/60 border border-slate-800 rounded-xl p-3 mb-5 text-xs font-mono text-left space-y-1.5">
-            <div className="flex items-center justify-between text-slate-300">
-              <span className="flex items-center gap-2">
+            {/* Star Objectives Breakdown */}
+            <div className="w-full bg-slate-950/60 border border-slate-800 rounded-xl p-3 mb-5 text-xs font-mono text-left space-y-1.5">
+              <div className="flex items-center justify-between text-slate-300">
+                <span className="flex items-center gap-2">
+                  <span
+                    className={
+                      starsEarned >= 1
+                        ? 'text-amber-400 font-bold'
+                        : 'text-slate-600'
+                    }
+                  >
+                    ★ 1
+                  </span>
+                  <span>
+                    Baseline Touch Form (Acc &ge; {thresholds.oneStarAccuracy}%)
+                  </span>
+                </span>
                 <span
                   className={
                     starsEarned >= 1
-                      ? 'text-amber-400 font-bold'
-                      : 'text-slate-600'
+                      ? 'text-emerald-400 font-bold'
+                      : 'text-rose-400'
                   }
                 >
-                  ★ 1
+                  {starsEarned >= 1 ? 'ACHIEVED' : 'MISSED'}
                 </span>
-                <span>
-                  Baseline Touch Form (Acc &ge; {thresholds.oneStarAccuracy}%)
-                </span>
-              </span>
-              <span
-                className={
-                  starsEarned >= 1
-                    ? 'text-emerald-400 font-bold'
-                    : 'text-rose-400'
-                }
-              >
-                {starsEarned >= 1 ? 'ACHIEVED' : 'MISSED'}
-              </span>
-            </div>
+              </div>
 
-            <div className="flex items-center justify-between text-slate-300">
-              <span className="flex items-center gap-2">
+              <div className="flex items-center justify-between text-slate-300">
+                <span className="flex items-center gap-2">
+                  <span
+                    className={
+                      starsEarned >= 2
+                        ? 'text-amber-400 font-bold'
+                        : 'text-slate-600'
+                    }
+                  >
+                    ★ 2
+                  </span>
+                  <span>
+                    Speed &ge; {thresholds.twoStarWpm} WPM &amp; Accuracy &ge;{' '}
+                    {thresholds.twoStarAccuracy}%
+                  </span>
+                </span>
                 <span
                   className={
                     starsEarned >= 2
-                      ? 'text-amber-400 font-bold'
-                      : 'text-slate-600'
+                      ? 'text-emerald-400 font-bold'
+                      : 'text-slate-500'
                   }
                 >
-                  ★ 2
+                  {starsEarned >= 2 ? 'ACHIEVED' : 'INCOMPLETE'}
                 </span>
-                <span>
-                  Speed &ge; {thresholds.twoStarWpm} WPM &amp; Accuracy &ge;{' '}
-                  {thresholds.twoStarAccuracy}%
-                </span>
-              </span>
-              <span
-                className={
-                  starsEarned >= 2
-                    ? 'text-emerald-400 font-bold'
-                    : 'text-slate-500'
-                }
-              >
-                {starsEarned >= 2 ? 'ACHIEVED' : 'INCOMPLETE'}
-              </span>
-            </div>
+              </div>
 
-            <div className="flex items-center justify-between text-slate-300">
-              <span className="flex items-center gap-2">
+              <div className="flex items-center justify-between text-slate-300">
+                <span className="flex items-center gap-2">
+                  <span
+                    className={
+                      starsEarned >= 3
+                        ? 'text-amber-400 font-bold'
+                        : 'text-slate-600'
+                    }
+                  >
+                    ★ 3
+                  </span>
+                  <span>
+                    Finger Form Mastery (Speed &ge; {thresholds.threeStarWpm}{' '}
+                    WPM, Acc &ge; {thresholds.threeStarAccuracy}%, Streak &ge;{' '}
+                    {thresholds.threeStarMinStreak})
+                  </span>
+                </span>
                 <span
                   className={
                     starsEarned >= 3
-                      ? 'text-amber-400 font-bold'
-                      : 'text-slate-600'
+                      ? 'text-emerald-400 font-bold'
+                      : 'text-slate-500'
                   }
                 >
-                  ★ 3
+                  {starsEarned >= 3 ? 'ACHIEVED' : 'INCOMPLETE'}
                 </span>
-                <span>
-                  Finger Form Mastery (Speed &ge; {thresholds.threeStarWpm} WPM,
-                  Acc &ge; {thresholds.threeStarAccuracy}%, Streak &ge;{' '}
-                  {thresholds.threeStarMinStreak})
-                </span>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Performance Metrics Grid */}
+        <div className="w-full grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+          <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800">
+            <span className="text-[10px] uppercase font-mono text-slate-500 block">
+              Score
+            </span>
+            <div className="flex items-center justify-center gap-1 font-mono font-bold text-white text-lg">
+              {score.toLocaleString()}
+            </div>
+            {isNewHighScore && (
+              <span className="text-[9px] font-mono text-amber-400 uppercase font-semibold">
+                New Best!
               </span>
-              <span
-                className={
-                  starsEarned >= 3
-                    ? 'text-emerald-400 font-bold'
-                    : 'text-slate-500'
-                }
-              >
-                {starsEarned >= 3 ? 'ACHIEVED' : 'INCOMPLETE'}
-              </span>
+            )}
+          </div>
+
+          <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800">
+            <span className="text-[10px] uppercase font-mono text-slate-500 block">
+              Speed
+            </span>
+            <span className="font-mono font-bold text-cyan-400 text-lg">
+              {wpm} <span className="text-xs text-slate-500">WPM</span>
+            </span>
+          </div>
+
+          <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800">
+            <span className="text-[10px] uppercase font-mono text-slate-500 block">
+              Accuracy
+            </span>
+            <span className="font-mono font-bold text-emerald-400 text-lg">
+              {accuracy}%
+            </span>
+          </div>
+
+          <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800">
+            <span className="text-[10px] uppercase font-mono text-slate-500 block">
+              Credits
+            </span>
+            <div className="flex items-center justify-center gap-1 font-mono font-bold text-amber-400 text-lg">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>+{creditsEarned}</span>
             </div>
           </div>
-        </>
-      )}
+        </div>
 
-      {/* Performance Metrics Grid */}
-      <div className="w-full grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-        <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800">
-          <span className="text-[10px] uppercase font-mono text-slate-500 block">
-            Score
-          </span>
-          <div className="flex items-center justify-center gap-1 font-mono font-bold text-white text-lg">
-            {score.toLocaleString()}
-          </div>
-          {isNewHighScore && (
-            <span className="text-[9px] font-mono text-amber-400 uppercase font-semibold">
-              New Best!
+        {/* Form & Rhythm Pedagogical Assessment Card */}
+        <div className="w-full bg-slate-950/70 border border-slate-800 rounded-xl p-3.5 mb-5 text-left">
+          <div className="flex items-center justify-between gap-2 mb-1.5">
+            <span className="text-[11px] font-mono uppercase font-bold text-cyan-400">
+              Touch-Typing Technique Assessment
             </span>
-          )}
-        </div>
-
-        <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800">
-          <span className="text-[10px] uppercase font-mono text-slate-500 block">
-            Speed
-          </span>
-          <span className="font-mono font-bold text-cyan-400 text-lg">
-            {wpm} <span className="text-xs text-slate-500">WPM</span>
-          </span>
-        </div>
-
-        <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800">
-          <span className="text-[10px] uppercase font-mono text-slate-500 block">
-            Accuracy
-          </span>
-          <span className="font-mono font-bold text-emerald-400 text-lg">
-            {accuracy}%
-          </span>
-        </div>
-
-        <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800">
-          <span className="text-[10px] uppercase font-mono text-slate-500 block">
-            Credits
-          </span>
-          <div className="flex items-center justify-center gap-1 font-mono font-bold text-amber-400 text-lg">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>+{creditsEarned}</span>
+            <span
+              className={`text-[10px] font-mono px-2 py-0.5 rounded border ${RHYTHM_PILL[band]}`}
+            >
+              Rhythm: {result.rhythm}% ({band})
+            </span>
           </div>
+          <p className="text-xs text-slate-300 leading-relaxed">
+            {accuracy >= 97
+              ? 'Flawless finger discipline! You struck each key with accurate finger placement without rushing. This deliberate muscle memory is the true foundation of touch typing.'
+              : accuracy >= 92
+                ? 'Solid rhythm and finger control. Keep your hands relaxed and resting lightly on the home anchor bumps (F and J). Speed will naturally follow.'
+                : 'Pacing advice: Slow down your stroke tempo! Touch typing is built on accurate finger selection, not raw speed. Practicing slowly with correct fingers prevents bad habits.'}
+          </p>
         </div>
+
+        {/* Sector Unlock Notification Banner */}
+        {hasUnlockedNextSector && (
+          <div className="w-full mb-5 p-3 rounded-xl border border-cyan-500/50 bg-cyan-950/40 text-cyan-200 text-xs font-mono flex items-center justify-center gap-2">
+            <Sparkles className="w-4 h-4 text-cyan-400 shrink-0" />
+            <span>New Sector Unlocked! Find it on the Galaxy Map.</span>
+          </div>
+        )}
       </div>
 
-      {/* Form & Rhythm Pedagogical Assessment Card */}
-      <div className="w-full bg-slate-950/70 border border-slate-800 rounded-xl p-3.5 mb-5 text-left">
-        <div className="flex items-center justify-between gap-2 mb-1.5">
-          <span className="text-[11px] font-mono uppercase font-bold text-cyan-400">
-            Touch-Typing Technique Assessment
-          </span>
-          <span
-            className={`text-[10px] font-mono px-2 py-0.5 rounded border ${RHYTHM_PILL[band]}`}
-          >
-            Rhythm: {result.rhythm}% ({band})
-          </span>
-        </div>
-        <p className="text-xs text-slate-300 leading-relaxed">
-          {accuracy >= 97
-            ? 'Flawless finger discipline! You struck each key with accurate finger placement without rushing. This deliberate muscle memory is the true foundation of touch typing.'
-            : accuracy >= 92
-              ? 'Solid rhythm and finger control. Keep your hands relaxed and resting lightly on the home anchor bumps (F and J). Speed will naturally follow.'
-              : 'Pacing advice: Slow down your stroke tempo! Touch typing is built on accurate finger selection, not raw speed. Practicing slowly with correct fingers prevents bad habits.'}
-        </p>
-      </div>
-
-      {/* Sector Unlock Notification Banner */}
-      {hasUnlockedNextSector && (
-        <div className="w-full mb-5 p-3 rounded-xl border border-cyan-500/50 bg-cyan-950/40 text-cyan-200 text-xs font-mono flex items-center justify-center gap-2">
-          <Sparkles className="w-4 h-4 text-cyan-400 shrink-0" />
-          <span>New Sector Unlocked! Find it on the Galaxy Map.</span>
-        </div>
-      )}
-
-      {/* Action Buttons */}
-      <div className="w-full flex flex-wrap items-center justify-center gap-2.5">
+      {/* Action Buttons: a footer that stays on screen */}
+      <div className="shrink-0 border-t border-slate-800 px-6 pb-6 pt-4 sm:px-8 sm:pb-8 flex flex-wrap items-center justify-center gap-2.5">
         <button
           type="button"
           onClick={onReplay}

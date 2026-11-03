@@ -1,6 +1,21 @@
 import { expect, test } from '@playwright/test';
-import { DEBRIEF_TITLE, GALAXY_MAP } from '../../shared/screens';
-import { clearFirstStage, debrief, startFirstStage } from '../helpers';
+import {
+  CURRICULUM_SECTORS,
+  MAX_STARS_PER_STAGE,
+} from '../../../src/curriculum/curriculum';
+import { clearedStages } from '../../shared/saves';
+import {
+  ACADEMY_HOME,
+  DEBRIEF_TITLE,
+  GALAXY_MAP,
+  NEXT_STAGE,
+} from '../../shared/screens';
+import {
+  clearFirstStage,
+  debrief,
+  seedSave,
+  startFirstStage,
+} from '../helpers';
 
 // LOCAL ONLY (run by `pnpm verify`, not in CI; docs/agents/testing.md): one full
 // Stage played for real. The Stage is 77 keys on a real clock with a real
@@ -72,4 +87,97 @@ test('the first Stage played for real from a fresh Save: its Debrief, and the St
       page.getByRole('button', { name: /Orion Belt/ }),
     ).toContainText('3/12');
   });
+});
+
+/** The windows a desktop player has, the tallest first (768px is the narrowest we support). */
+const DEBRIEF_WINDOWS = [
+  { width: 1400, height: 900 },
+  { width: 1440, height: 800 },
+  { width: 1280, height: 720 },
+  { width: 768, height: 720 },
+] as const;
+
+test('the Debrief that opens a Sector keeps its action buttons on screen, unscrolled, in every window size', async ({
+  page,
+}) => {
+  // A tall Debrief: Stage 1 cleared for 3 Stars takes a Save that is one clear
+  // short of Sector 02's gate over it, so the "New Sector Unlocked!" banner is
+  // up too. Every size is checked on it, with no separate pass without it. It is a Stage played for
+  // real (77 keys), like the journey above, because the Stars it earns decide
+  // whether the banner shows.
+  const gate = CURRICULUM_SECTORS[1].requiredStarsToUnlock;
+  const starsBefore = gate - MAX_STARS_PER_STAGE;
+  if (starsBefore < 0 || starsBefore > MAX_STARS_PER_STAGE) {
+    throw new Error(
+      `Sector 02's gate (${gate}) is no longer one clear (${MAX_STARS_PER_STAGE} Stars) past a single Stage's Stars`,
+    );
+  }
+  await seedSave(
+    page,
+    clearedStages({ [CURRICULUM_SECTORS[0].stages[1].id]: starsBefore }),
+  );
+  await page.setViewportSize(DEBRIEF_WINDOWS[0]);
+  await startFirstStage(page);
+  await clearFirstStage(page);
+  const result = debrief(page);
+  // The banner is the point of this Debrief; without it the sizes below prove less.
+  // (Its copy is not exported by the source, so it is matched by its first words.)
+  await expect(result.getByText(/New Sector Unlocked/)).toBeVisible();
+
+  const actions = ['Replay', GALAXY_MAP, ACADEMY_HOME, NEXT_STAGE];
+
+  for (const size of DEBRIEF_WINDOWS) {
+    await test.step(`every action button is on screen and reachable at ${size.width}x${size.height}`, async () => {
+      await page.setViewportSize(size);
+      for (const name of actions) {
+        const button = result.getByRole('button', { name, exact: true });
+        // Measured where it is, with no scrolling: the box, and what a click at
+        // its centre would hit. Two frames let the new size settle.
+        const where = await button.evaluate(async (element) => {
+          await new Promise((resolve) =>
+            requestAnimationFrame(() => requestAnimationFrame(resolve)),
+          );
+          const box = element.getBoundingClientRect();
+          const hit = document.elementFromPoint(
+            box.left + box.width / 2,
+            box.top + box.height / 2,
+          );
+          // Anything that scrolled to bring the button into view moved the page
+          // or one of the boxes around the button.
+          let scrolled = window.scrollY;
+          for (
+            let parent = element.parentElement;
+            parent;
+            parent = parent.parentElement
+          ) {
+            scrolled += parent.scrollTop;
+          }
+          return {
+            scrolled,
+            top: Math.round(box.top),
+            bottom: Math.round(box.bottom),
+            left: Math.round(box.left),
+            right: Math.round(box.right),
+            width: window.innerWidth,
+            height: window.innerHeight,
+            reachable: hit !== null && element.contains(hit),
+          };
+        });
+        const label = `${name} at ${size.width}x${size.height}: y ${where.top}-${where.bottom} of ${where.height}, x ${where.left}-${where.right} of ${where.width}`;
+        expect
+          .soft(
+            where.top >= 0 &&
+              where.left >= 0 &&
+              where.bottom <= where.height &&
+              where.right <= where.width,
+            `${label} lies inside the window`,
+          )
+          .toBe(true);
+        expect.soft(where.scrolled, `${label}, without scrolling`).toBe(0);
+        expect
+          .soft(where.reachable, `${label} is not covered by anything`)
+          .toBe(true);
+      }
+    });
+  }
 });

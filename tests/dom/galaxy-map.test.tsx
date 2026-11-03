@@ -56,9 +56,7 @@ function selectedSector(): string | null {
 
 /** The card the Debrief shows over the Flight Deck. */
 function debriefCard(): HTMLElement {
-  const card = screen.getByText(DEBRIEF_TITLE).parentElement;
-  if (!card) throw new Error('The Debrief has no card');
-  return card;
+  return screen.getByRole('dialog', { name: DEBRIEF_TITLE });
 }
 
 /** The Debrief's own Galaxy Map button (the header has one of that name too). */

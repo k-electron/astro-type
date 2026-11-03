@@ -14,7 +14,9 @@ import { useEscLayer } from '../app/escLayers';
  * - `window`: a panel whose sections pad themselves (Galaxy Map, Hangar,
  *   Analytics)
  * - `form`: a panel that pads and scrolls itself (Free Flight)
- * - `debrief`: a centred card on a darker backdrop (the Debrief)
+ * - `debrief`: a centred card on a darker backdrop, never taller than the
+ *   window and not scrolling itself, so the Debrief can scroll its body inside
+ *   it while its action buttons stay on screen
  * - `pause`: a small centred card (the Pause Menu)
  */
 const VARIANTS = {
@@ -27,8 +29,8 @@ const VARIANTS = {
     panel: 'p-6 flex flex-col max-h-[90vh] overflow-y-auto',
   },
   debrief: {
-    frame: 'p-3 sm:p-6 bg-slate-950/85 backdrop-blur-md overflow-y-auto',
-    panel: 'p-6 sm:p-8 flex flex-col items-center text-center my-auto',
+    frame: 'p-3 sm:p-6 bg-slate-950/85 backdrop-blur-md',
+    panel: 'flex flex-col max-h-full text-center',
   },
   pause: {
     frame: 'p-4 bg-slate-950/80 backdrop-blur-md',
