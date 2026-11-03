@@ -1,7 +1,7 @@
 import type React from 'react';
 import type { ReactNode } from 'react';
-import { useEffect, useRef } from 'react';
-import { ArrowLeft, Play } from 'lucide-react';
+import { useEffect, useId, useRef, useState } from 'react';
+import { AlertTriangle, ArrowLeft, Play, RotateCcw } from 'lucide-react';
 import { useGame } from '../app/useGame';
 import { useGameState } from '../app/useGameState';
 import { closeLabel, flightDeckLabel } from './closeLabel';
@@ -97,37 +97,88 @@ export const OverlayShell: React.FC<OverlayShellProps> = ({
 
 /**
  * A confirm over a screen (Wipe, Factory Reset): the backdrop and the card,
- * which `children` fill. While it is open it is a layer on the Esc stack (see
- * `escLayers.ts`): Esc cancels the confirm and nothing more, wherever focus is
- * (on the card, dropped to the page by a click on the backdrop, or tabbed out),
- * unless the header's audio panel is open above it. With the confirm gone, the
- * next Esc goes back from the screen as it always did. The card takes focus
- * when it opens, and focus goes back to where it was when it closes.
+ * an `alertdialog` named by `title` and described by `message`. While it is
+ * open it is a layer on the Esc stack (see `escLayers.ts`): Esc cancels the
+ * confirm and nothing more, wherever focus is (on the card, dropped to the
+ * page by a click on the backdrop, or tabbed out), unless the header's audio
+ * panel is open above it. With the confirm gone, the next Esc goes back from
+ * the screen as it always did. A click on the backdrop does nothing: a modal
+ * does not close on an outside click.
+ *
+ * Cancel takes focus when the confirm opens, so Enter or Space straight away
+ * cancels, and focus goes back to where it was when it closes. The screen
+ * under the confirm is the caller's to make `inert`; the card is not
+ * `aria-modal`, because the header stays reachable (as with `OverlayShell`).
  */
 export const OverlayConfirm: React.FC<{
+  title: string;
+  message: string;
+  confirmLabel: string;
+  onConfirm: () => void;
   onCancel: () => void;
-  children: ReactNode;
-}> = ({ onCancel, children }) => {
-  const cardRef = useRef<HTMLDivElement>(null);
+}> = ({ title, message, confirmLabel, onConfirm, onCancel }) => {
+  const titleId = useId();
+  const messageId = useId();
+  const cancelRef = useRef<HTMLButtonElement>(null);
+  // Read while rendering, not in the effect: by then the screen under the
+  // confirm is inert, and the browser may have moved focus off the button that
+  // opened it.
+  const [before] = useState(() => document.activeElement);
 
   useEffect(() => {
-    const before = document.activeElement;
-    cardRef.current?.focus();
+    cancelRef.current?.focus();
     return () => {
       if (before instanceof HTMLElement && before.isConnected) before.focus();
     };
-  }, []);
+  }, [before]);
 
   useEscLayer('confirm', onCancel);
 
   return (
     <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md">
       <div
-        ref={cardRef}
+        role="alertdialog"
+        aria-labelledby={titleId}
+        aria-describedby={messageId}
         tabIndex={-1}
         className="w-full max-w-md rounded-2xl border border-rose-900/80 bg-slate-900 shadow-2xl p-6 text-center outline-none duration-150"
       >
-        {children}
+        <div className="w-12 h-12 rounded-xl bg-rose-950/60 border border-rose-500/50 flex items-center justify-center mx-auto mb-4 text-rose-400 shadow-[0_0_20px_rgba(244,63,94,0.3)]">
+          <AlertTriangle className="w-6 h-6" />
+        </div>
+
+        <h3
+          id={titleId}
+          className="text-xl font-bold font-display text-white mb-2"
+        >
+          {title}
+        </h3>
+
+        <p
+          id={messageId}
+          className="text-xs text-slate-300 leading-relaxed mb-4"
+        >
+          {message}
+        </p>
+
+        <div className="flex items-center gap-3">
+          <button
+            ref={cancelRef}
+            type="button"
+            onClick={onCancel}
+            className="flex-1 py-2.5 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition-colors cursor-pointer"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold font-mono transition-colors shadow-lg shadow-rose-950/50 cursor-pointer flex items-center justify-center gap-1.5"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            <span>{confirmLabel}</span>
+          </button>
+        </div>
       </div>
     </div>
   );

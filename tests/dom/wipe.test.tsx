@@ -11,6 +11,10 @@ import {
 import { type Player, renderGame, screen, toDebrief, within } from './harness';
 import { flightDeckLabel } from '../../src/screens/closeLabel';
 import { OPEN_AUDIO_PANEL } from '../../src/screens/audioLabels';
+import {
+  FACTORY_RESET_TITLE,
+  WIPE_STARS_TITLE,
+} from '../../src/screens/confirmLabels';
 
 // Wiping the Stars asks first. profile.test.tsx guards Factory Reset
 // (confirming); this guards the Wipe button, which clears the Stars and Stage
@@ -245,6 +249,71 @@ describe.each(CONFIRMS)(
         screen.queryByRole('heading', { name: MENU_HEADINGS[menu] }),
       ).toBeNull();
       expect(stars(5)).toBeTruthy();
+    });
+  },
+);
+
+// A confirm is a modal for the keyboard and the mouse (#101): an alertdialog
+// named by its title, over an Analytics that is inert. The header stays
+// reachable on purpose (the model of #84), so it is not inert. @testing-library
+// does not treat `inert` as hidden, so the Analytics controls are still found
+// by role; the test asks whether each one is inert.
+const NAMED_CONFIRMS = [
+  { ask: 'Wipe Stars', title: WIPE_STARS_TITLE },
+  { ask: 'Factory Reset', title: FACTORY_RESET_TITLE },
+] as const;
+
+/** True when the element, or anything around it, is inert. */
+function isInert(element: Element): boolean {
+  for (let node: Element | null = element; node; node = node.parentElement) {
+    if (node.hasAttribute('inert')) return true;
+    if ((node as Element & { inert?: boolean }).inert === true) return true;
+  }
+  return false;
+}
+
+/** The Analytics controls a confirm sits over. Import Backup is a file chooser, found by its label. */
+const analyticsControls = () => [
+  screen.getByRole('button', { name: 'Export Backup' }),
+  screen.getByRole('button', { name: 'Wipe Stars' }),
+  screen.getByRole('button', { name: 'Factory Reset' }),
+  screen.getByText('Import Backup'),
+];
+
+describe.each(NAMED_CONFIRMS)(
+  'The $ask confirm as a modal',
+  ({ ask, title }) => {
+    it('is an alertdialog named by its title', () => {
+      const player = renderGame({ profile: RETURNING_PLAYER });
+      player.openHeader('Analytics');
+
+      player.click(ask);
+
+      expect(screen.getByRole('alertdialog', { name: title })).toBeTruthy();
+    });
+
+    it('holds Analytics inert while it is open, keeps the header live, and lets Analytics go once it closes', () => {
+      const player = renderGame({ profile: RETURNING_PLAYER });
+      player.openHeader('Analytics');
+      const controls = analyticsControls();
+      const galaxyMap = within(screen.getByRole('banner')).getByRole('button', {
+        name: 'Galaxy Map',
+      });
+      for (const control of controls) expect(isInert(control)).toBe(false);
+
+      player.click(ask);
+
+      const confirm = screen.getByRole('alertdialog', { name: title });
+      expect(isInert(confirm)).toBe(false);
+      expect(isInert(galaxyMap)).toBe(false);
+      for (const control of controls) expect(isInert(control)).toBe(true);
+
+      player.click('Cancel');
+
+      expect(screen.queryByRole('alertdialog')).toBeNull();
+      for (const control of analyticsControls()) {
+        expect(isInert(control)).toBe(false);
+      }
     });
   },
 );

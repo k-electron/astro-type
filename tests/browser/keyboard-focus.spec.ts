@@ -20,7 +20,12 @@ import {
   START_STAGE,
 } from '../shared/screens';
 import { pauseButton, resumeButton } from './journey-helpers';
-import { MOST_STARS_AND_CREDITS, MUTED_PLAYER } from '../shared/saves';
+import { WIPE_STARS_TITLE } from '../../src/screens/confirmLabels';
+import {
+  MOST_STARS_AND_CREDITS,
+  MUTED_PLAYER,
+  RETURNING_PLAYER,
+} from '../shared/saves';
 
 // J2: native keyboard and focus, in a real browser. These are the things a DOM
 // test cannot see: the default scroll action of the Space key, how a missed
@@ -71,6 +76,24 @@ async function whereFocusIs(
   if (await inside(page.getByRole('banner'))) return 'header';
   if (await inside(page.getByRole('dialog', { name: PAUSE_MENU_NAME })))
     return 'pause-menu';
+  return 'elsewhere';
+}
+
+/**
+ * Where keyboard focus is while Analytics' Wipe Stars confirm is open: in the
+ * confirm, in the header, or somewhere else (an Analytics control behind the
+ * confirm). The page body, where focus rests between stops, counts as neither.
+ */
+async function whereFocusIsOnConfirm(
+  page: Page,
+): Promise<'header' | 'confirm' | 'elsewhere' | 'body'> {
+  const inside = (landmark: Locator) =>
+    landmark.evaluate((element) => element.contains(document.activeElement));
+  if (await page.evaluate(() => document.activeElement === document.body))
+    return 'body';
+  if (await inside(page.getByRole('banner'))) return 'header';
+  if (await inside(page.getByRole('alertdialog', { name: WIPE_STARS_TITLE })))
+    return 'confirm';
   return 'elsewhere';
 }
 
@@ -562,5 +585,79 @@ test('native keys and focus: Space, Esc, Enter and the window losing focus', asy
     await expect(promptProgress(page)).toHaveText('83%');
     await expect.soft(letter('e')).toHaveCSS('text-decoration-line', struck);
     await expect.soft(letter('f')).toHaveCSS('text-decoration-line', 'none');
+  });
+
+  await test.step('Analytics: a confirm takes focus on Cancel, Tab keeps to the confirm and the header, and Esc cancels', async () => {
+    // A context of its own, with a Save that has Stars to lose, and a window
+    // wide enough for the header to show its Stars count. Last, so a failure
+    // here hides none of the steps above.
+    const context = await browser.newContext({
+      baseURL: test.info().project.use.baseURL,
+      viewport: { width: WIDEST, height: 800 },
+    });
+    try {
+      const seeded = await context.newPage();
+      await seedSave(seeded, RETURNING_PLAYER);
+      await seeded.goto('/');
+      const stars = seeded.getByRole('button', { name: '5 ★', exact: true });
+      await expect(stars).toBeVisible();
+      await seeded
+        .getByRole('navigation')
+        .getByRole('button', { name: 'Analytics', exact: true })
+        .click();
+      await expect(
+        seeded.getByRole('heading', { name: MENU_HEADINGS.Analytics }),
+      ).toBeVisible();
+
+      const wipeStars = seeded.getByRole('button', {
+        name: 'Wipe Stars',
+        exact: true,
+      });
+      const confirm = seeded.getByRole('alertdialog', {
+        name: WIPE_STARS_TITLE,
+      });
+      const cancel = confirm.getByRole('button', { name: 'Cancel' });
+
+      // Opening: focus is on Cancel, so Enter cancels and wipes nothing.
+      await wipeStars.click();
+      await expect(confirm).toBeVisible();
+      await expect.soft(cancel, 'focus starts on Cancel').toBeFocused();
+      await seeded.keyboard.press('Enter');
+      await expect(confirm).toBeHidden();
+      await expect.soft(stars, 'Enter on Cancel wipes nothing').toBeVisible();
+      await expect
+        .soft(wipeStars, 'focus goes back to the Wipe Stars button')
+        .toBeFocused();
+
+      // Tab: only the confirm's buttons and the header, never Analytics.
+      await wipeStars.click();
+      await expect(confirm).toBeVisible();
+      let reachedHeader = false;
+      let reachedConfirm = false;
+      let backInConfirm = false;
+      for (let press = 0; press < 30 && !backInConfirm; press++) {
+        await seeded.keyboard.press('Tab');
+        const where = await whereFocusIsOnConfirm(seeded);
+        expect.soft(where, `Tab press ${press + 1}`).not.toBe('elsewhere');
+        if (where === 'confirm') {
+          reachedConfirm = true;
+          if (reachedHeader) backInConfirm = true;
+        }
+        if (where === 'header') reachedHeader = true;
+      }
+      expect.soft(reachedConfirm, 'Tab reaches the confirm').toBe(true);
+      expect.soft(reachedHeader, 'Tab reaches the header').toBe(true);
+      expect.soft(backInConfirm, 'and comes back to the confirm').toBe(true);
+
+      // Esc cancels the confirm, and Analytics stays open.
+      await seeded.keyboard.press('Escape');
+      await expect.soft(confirm).toBeHidden();
+      await expect
+        .soft(seeded.getByRole('heading', { name: MENU_HEADINGS.Analytics }))
+        .toBeVisible();
+      await expect.soft(stars, 'Esc wipes nothing').toBeVisible();
+    } finally {
+      await context.close();
+    }
   });
 });
