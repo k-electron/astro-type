@@ -85,7 +85,7 @@ describe('a Run launching', () => {
     const game = startedGame();
     const moments = listen(game);
 
-    game.send({ type: 'PRESS_PAUSE' });
+    game.send({ type: 'PRESS_ESC' });
     game.send({ type: 'PRESS_RESUME' });
     hitPerfect(game, SAMPLE_TEXT.length);
     game.send({ type: 'OPEN_GALAXY_MAP' });

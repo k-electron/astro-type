@@ -42,7 +42,6 @@ type OpenEvent = {
 export type PlayerEvent =
   | OpenEvent
   | { type: 'PRESS_CLOSE' }
-  | { type: 'PRESS_PAUSE' }
   | { type: 'PRESS_RESUME' }
   | { type: 'PRESS_ESC' }
   /**
@@ -349,7 +348,6 @@ const states = {
   'flight-deck': {
     on: {
       ...everywhere('flight-deck'),
-      PRESS_PAUSE: [pause],
       PRESS_FLIGHT_DECK: [pause],
       PRESS_ESC: [pause],
       LOST_FOCUS: [pause],

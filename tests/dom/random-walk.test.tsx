@@ -92,7 +92,7 @@ function screensShowing(): ScreenName[] {
  * The buttons a player can press right now. The header is always on top.
  * Every screen but Academy Home draws the Flight Deck under the main area and
  * every menu, the Pause Menu and the Debrief as an overlay above it, so while
- * an overlay is up the Flight Deck's own buttons (its Pause button) are covered
+ * an overlay is up the Flight Deck's own buttons (its Key Labels button) are covered
  * and cannot be pressed. Disabled buttons cannot be pressed either.
  */
 function pressableButtons(): HTMLButtonElement[] {

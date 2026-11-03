@@ -32,6 +32,9 @@ export function closeLabel(opener: Screen | null): string {
   }
 }
 
+/** The header's Flight Deck button while a Run is running: it pauses the Run. */
+export const PAUSE_FLIGHT = 'Pause Flight';
+
 /**
  * The Flight Deck button's label when it is not pausing a running Run, in the
  * header and on the overlays: Resume Flight when a paused Run is waiting (the

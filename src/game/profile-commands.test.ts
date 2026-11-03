@@ -69,7 +69,7 @@ const COSMETICS = [
  * Run, buy, close it, and resume from the Pause Menu.
  */
 function buyFromHangar(game: Game, item: Parameters<Game['buy']>[0]): void {
-  game.send({ type: 'PRESS_PAUSE' });
+  game.send({ type: 'PRESS_ESC' });
   game.send({ type: 'OPEN_HANGAR' });
   game.buy(item);
   game.send({ type: 'PRESS_CLOSE' });
@@ -494,7 +494,7 @@ describe.each([
   it('sends the next mission back to the first Stage when no Run is on show', () => {
     const { game } = loadGame(RETURNING_PLAYER);
     startStage(game, SECOND_STAGE);
-    game.send({ type: 'PRESS_PAUSE' });
+    game.send({ type: 'PRESS_ESC' });
     game.send({ type: 'PRESS_HOME' });
 
     command(game);
@@ -506,7 +506,7 @@ describe.each([
   it('leaves the Stage of a Run that is still on show behind a menu', () => {
     const { game } = loadGame(RETURNING_PLAYER);
     startStage(game, SECOND_STAGE);
-    game.send({ type: 'PRESS_PAUSE' });
+    game.send({ type: 'PRESS_ESC' });
     game.send({ type: 'OPEN_HANGAR' });
 
     command(game);

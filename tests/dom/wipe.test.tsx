@@ -2,7 +2,12 @@ import { fireEvent } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { CURRICULUM_SECTORS } from '../../src/curriculum/curriculum';
 import { RETURNING_PLAYER } from '../shared/saves';
-import { DEBRIEF_TITLE, MENU_HEADINGS, START_STAGE } from '../shared/screens';
+import {
+  DEBRIEF_TITLE,
+  MENU_HEADINGS,
+  PAUSE_FLIGHT,
+  START_STAGE,
+} from '../shared/screens';
 import { type Player, renderGame, screen, toDebrief, within } from './harness';
 import { flightDeckLabel } from '../../src/screens/closeLabel';
 import { OPEN_AUDIO_PANEL } from '../../src/screens/audioLabels';
@@ -84,7 +89,7 @@ describe.each(WIPES)('Wipe on $where', ({ menu, button }) => {
   it('with no Run on show, sends Start Stage back to the first Stage', () => {
     const player = renderGame({ profile: RETURNING_PLAYER });
     player.startStage(SECOND_STAGE.id);
-    player.click('Pause');
+    player.clickHeader(PAUSE_FLIGHT);
     player.click('Exit to Academy Home');
     player.openHeader(menu);
 

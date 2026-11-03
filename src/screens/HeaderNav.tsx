@@ -18,7 +18,7 @@ import { useGame } from '../app/useGame';
 import { useGameState } from '../app/useGameState';
 import { AudioPanel } from './AudioPanel';
 import { muteAllLabel, OPEN_AUDIO_PANEL } from './audioLabels';
-import { flightDeckLabel } from './closeLabel';
+import { PAUSE_FLIGHT, flightDeckLabel } from './closeLabel';
 import { useEscLayer } from '../app/escLayers';
 
 /**
@@ -39,7 +39,7 @@ export const HeaderNav: React.FC<{ ref?: React.Ref<HTMLElement> }> = ({
       runPaused: state.phase === 'paused',
     }));
   // The Flight Deck button: what it says, which is also its tooltip.
-  const flightLabel = isPlaying ? 'Pause Flight' : flightDeckLabel(runPaused);
+  const flightLabel = isPlaying ? PAUSE_FLIGHT : flightDeckLabel(runPaused);
   const onGoHome = () => send({ type: 'PRESS_HOME' });
   const onOpenStages = () => send({ type: 'OPEN_GALAXY_MAP' });
   const onOpenHangar = () => send({ type: 'OPEN_HANGAR' });

@@ -13,6 +13,7 @@ import {
   HUD_NAME,
   LAUNCH_STAGE,
   MENU_HEADINGS,
+  PAUSE_FLIGHT,
   PAUSE_MENU_NAME,
   REPLAY_STAGE,
   RESTART_STAGE,
@@ -225,7 +226,7 @@ describe('the Galaxy Map', () => {
     if (!card) throw new Error('the Stage has no Launch Stage button');
     fireEvent.click(within(card).getByRole('button', { name: LAUNCH_STAGE }));
 
-    expect(screen.getByRole('button', { name: 'Pause' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: PAUSE_FLIGHT })).toBeTruthy();
     expect(screen.getByRole('main').textContent).toContain(
       sector.stages[1].title,
     );
@@ -263,7 +264,7 @@ describe('the header buttons', () => {
     ({ button, from }) => {
       const player =
         from === 'the Debrief' ? toDebrief() : halfwayThroughARun();
-      if (from === 'the Pause Menu') player.click('Pause');
+      if (from === 'the Pause Menu') player.clickHeader(PAUSE_FLIGHT);
       expect(from === 'the Debrief' ? debriefHeading() : pauseMenu()).not.toBe(
         null,
       );
@@ -393,7 +394,7 @@ describe('the Pause Menu', () => {
   it('pausing and resuming carries on from the same character, with the Streak', () => {
     const player = halfwayThroughARun();
 
-    player.click('Pause');
+    player.clickHeader(PAUSE_FLIGHT);
     expectPausedHalfway();
     player.click(flightDeckLabel(true));
 
@@ -408,7 +409,7 @@ describe('the Pause Menu', () => {
   it('offers "View Galaxy Map", not "Exit to Galaxy Map", and "Exit to Academy Home"', () => {
     const player = halfwayThroughARun();
 
-    player.click('Pause');
+    player.clickHeader(PAUSE_FLIGHT);
 
     expect(
       screen.getByRole('button', { name: 'View Galaxy Map' }),
@@ -423,7 +424,7 @@ describe('the Pause Menu', () => {
 
   it('View Galaxy Map opens the Galaxy Map, and Close returns to the Pause Menu with the Run kept', () => {
     const player = halfwayThroughARun();
-    player.click('Pause');
+    player.clickHeader(PAUSE_FLIGHT);
 
     player.click('View Galaxy Map');
     expect(menuHeading('Galaxy Map')).not.toBeNull();
@@ -438,7 +439,7 @@ describe('the Pause Menu', () => {
 
   it('Restart Stage begins the same Stage afresh', () => {
     const player = halfwayThroughARun();
-    player.click('Pause');
+    player.clickHeader(PAUSE_FLIGHT);
 
     player.click(RESTART_STAGE);
 
@@ -454,7 +455,7 @@ describe('the Pause Menu', () => {
     player.click(BEGIN_HOME_ROW);
     player.type('f j f j');
     expect(progress()).not.toBe('0%');
-    player.click('Pause');
+    player.clickHeader(PAUSE_FLIGHT);
 
     player.click('Exit to Academy Home');
     expect(pauseMenu()).toBeNull();
@@ -475,7 +476,7 @@ describe('the Pause Menu', () => {
     expect(progress()).toBe('0%');
     expect(score()).toBe('0');
     expect(streak()).toBe('0');
-    expect(screen.getByRole('button', { name: 'Pause' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: PAUSE_FLIGHT })).toBeTruthy();
   });
 });
 
@@ -533,7 +534,7 @@ describe('Esc', () => {
 
   it('on a menu opened from the Pause Menu goes back to the Pause Menu', () => {
     const player = halfwayThroughARun();
-    player.click('Pause');
+    player.clickHeader(PAUSE_FLIGHT);
     player.openHeader('Galaxy Map');
 
     player.press('Escape');
@@ -592,7 +593,7 @@ describe('Esc', () => {
     expect(academyHome()).not.toBeNull();
     expect(pauseMenu()).toBeNull();
     player.click(BEGIN_HOME_ROW);
-    expect(screen.getByRole('button', { name: 'Pause' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: PAUSE_FLIGHT })).toBeTruthy();
     expect(pauseMenu()).toBeNull();
   });
 
@@ -607,7 +608,7 @@ describe('Esc', () => {
     expect(menuHeading('Galaxy Map')).toBeNull();
     expect(debriefHeading()).not.toBeNull();
     player.click('Replay');
-    expect(screen.getByRole('button', { name: 'Pause' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: PAUSE_FLIGHT })).toBeTruthy();
     expect(progress()).toBe('0%');
   });
 
@@ -646,14 +647,14 @@ describe('Esc with the audio panel open', () => {
 
     expect(panelOpen()).toBe(false);
     expect(pauseMenu()).toBeNull();
-    expect(screen.getByRole('button', { name: 'Pause' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: PAUSE_FLIGHT })).toBeTruthy();
     player.pressWhereFocusIs('Escape');
     expectPausedHalfway();
   });
 
   it('over the Pause Menu closes the panel and keeps the Run paused; the next Esc resumes', () => {
     const player = halfwayThroughARun();
-    player.click('Pause');
+    player.clickHeader(PAUSE_FLIGHT);
     openAudioPanel();
 
     player.pressWhereFocusIs('Escape');
@@ -756,7 +757,7 @@ describe('leaving the page mid-Run', () => {
 
   it('leaves an already paused Run paused, on the same character', () => {
     const player = halfwayThroughARun();
-    player.click('Pause');
+    player.clickHeader(PAUSE_FLIGHT);
 
     player.blur();
     player.hideTab();

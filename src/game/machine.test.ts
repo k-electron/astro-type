@@ -34,7 +34,6 @@ const OPEN: Record<Opener, PlayerEvent> = {
   'free-flight': { type: 'OPEN_FREE_FLIGHT' },
 };
 const CLOSE: PlayerEvent = { type: 'PRESS_CLOSE' };
-const PAUSE: PlayerEvent = { type: 'PRESS_PAUSE' };
 const RESUME: PlayerEvent = { type: 'PRESS_RESUME' };
 const PLAY: PlayerEvent = { type: 'PRESS_FLIGHT_DECK' };
 const HOME: PlayerEvent = { type: 'PRESS_HOME' };
@@ -82,7 +81,7 @@ function runningGame(): Game {
 
 function pausedGame(): Game {
   const game = runningGame();
-  play(game, PAUSE);
+  play(game, ESC);
   return game;
 }
 
@@ -485,7 +484,6 @@ describe('only going to Academy Home and starting a Stage abandon a Run', () => 
     // refuses changes nothing, so the Run must be as it was either way.
     const KEEPS_THE_RUN: PlayerEvent[] = [
       CLOSE,
-      PAUSE,
       RESUME,
       ESC,
       PLAY,
@@ -567,7 +565,7 @@ describe('a pause keeps the Streak, Multiplier and Overdrive exactly as they wer
   };
 
   const ways: { name: string; pause: (game: Game) => void }[] = [
-    { name: 'the Pause button', pause: (game) => play(game, PAUSE) },
+    { name: 'Esc', pause: (game) => play(game, ESC) },
     {
       name: 'the window losing focus',
       pause: (game) => play(game, LOST_FOCUS),

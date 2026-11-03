@@ -1,5 +1,5 @@
 import type React from 'react';
-import { Shield, Zap, Pause } from 'lucide-react';
+import { Shield, Zap } from 'lucide-react';
 import { useGame } from '../app/useGame';
 import {
   X3_STEP,
@@ -53,7 +53,6 @@ export const HUD: React.FC = () => {
   }));
   const onToggleKeyboard = () =>
     game.changeSettings({ keyboardVisible: !keyboardVisible });
-  const onPause = () => game.send({ type: 'PRESS_PAUSE' });
   const band = rhythmBand(rhythm);
 
   return (
@@ -180,7 +179,7 @@ export const HUD: React.FC = () => {
         </div>
       </div>
 
-      {/* Right: Flight Deck Navigation Controls */}
+      {/* Right: the key labels toggle */}
       <div className="flex items-center gap-2 shrink-0">
         <button
           type="button"
@@ -193,15 +192,6 @@ export const HUD: React.FC = () => {
           title="Show or hide the letters on the keys"
         >
           {keyboardVisible ? 'Hide Key Labels' : 'Show Key Labels'}
-        </button>
-
-        <button
-          type="button"
-          onClick={onPause}
-          className="flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-md border border-slate-800 bg-slate-950 text-slate-300 hover:bg-slate-800 transition-colors whitespace-nowrap cursor-pointer"
-        >
-          <Pause className="w-3.5 h-3.5" />
-          <span>Pause</span>
         </button>
       </div>
     </section>

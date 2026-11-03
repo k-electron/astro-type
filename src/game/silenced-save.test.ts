@@ -62,7 +62,7 @@ describe('a Save that starts with sound settings already off', () => {
     );
     startStage(game, STAGE_ID);
 
-    game.send({ type: 'PRESS_PAUSE' });
+    game.send({ type: 'PRESS_ESC' });
     game.send({ type: 'PRESS_RESUME' });
     expect(sound.heard(), 'resumed').toEqual({ beat: false, overdrive: false });
 

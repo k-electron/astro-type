@@ -11,6 +11,7 @@ import {
 } from '../../../src/curriculum/curriculum';
 import { entriesOf } from '../../../src/game/catalog';
 import { trailEquipped } from '../../shared/saves';
+import { PAUSE_FLIGHT } from '../../shared/screens';
 import { drone, keycap, pauseMenu, seedSave } from '../helpers';
 import { launchOnStoppedClock, resumeButton } from '../journey-helpers';
 
@@ -440,7 +441,7 @@ test('the paused deck is frozen mid-explosion, and the explosion carries on from
   await page.clock.runFor(150);
   const midExplosion = await look(page, deck, pixels);
 
-  await page.getByRole('button', { name: 'Pause', exact: true }).click();
+  await page.getByRole('button', { name: PAUSE_FLIGHT, exact: true }).click();
   await expect(pauseMenu(page)).toBeVisible();
 
   // The Pause Menu fades in on the real clock. Once it has settled, the

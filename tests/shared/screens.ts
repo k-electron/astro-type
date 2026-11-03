@@ -21,8 +21,8 @@ export const MENU_HEADINGS = {
  * The names a player (or a screen reader) finds the other screens by. The app
  * writes each one inline in its component, so they are spelled out once here
  * and every test imports them. A name the source already exports is imported
- * from there instead: `flightDeckLabel` (Resume Flight) and
- * `closeLabel` (the Back buttons) in `src/screens/closeLabel.ts`, the audio
+ * from there instead: `flightDeckLabel` (Resume Flight), `PAUSE_FLIGHT`
+ * and `closeLabel` (the Back buttons) in `src/screens/closeLabel.ts`, the audio
  * labels in `src/screens/audioLabels.ts`, and Free Flight's title and subtitle
  * in `src/curriculum/curriculum.ts`.
  */
@@ -52,8 +52,12 @@ export const HUD_NAME = 'HUD';
  */
 export const START_STAGE = 'Start Stage';
 
-/** The header's Flight Deck button on a running Run, and its tooltip. */
-export const PAUSE_FLIGHT = 'Pause Flight';
+/**
+ * The header's Flight Deck button on a running Run, and its tooltip. The
+ * source exports it (`src/screens/closeLabel.ts`) and tests import it from
+ * here, so the word is written once.
+ */
+export { PAUSE_FLIGHT } from '../../src/screens/closeLabel';
 
 /** The Pause Menu's restart button. */
 export const RESTART_STAGE = 'Restart Stage';

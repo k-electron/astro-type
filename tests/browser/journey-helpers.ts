@@ -1,7 +1,7 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 import { BANNED_NAME } from '../shared/names';
 import { flightDeckLabel } from '../../src/screens/closeLabel';
-import { PAUSE_MENU_NAME } from '../shared/screens';
+import { PAUSE_FLIGHT, PAUSE_MENU_NAME } from '../shared/screens';
 import { drone, hud, launchFreeFlight, pauseMenu } from './helpers';
 
 // Helpers shared by the journeys, CI's and the local-only ones. Like
@@ -51,7 +51,7 @@ export const expectStreak = (page: Page, streak: number) =>
   );
 
 export const pauseButton = (page: Page): Locator =>
-  page.getByRole('button', { name: 'Pause', exact: true });
+  page.getByRole('button', { name: PAUSE_FLIGHT, exact: true });
 
 /**
  * The Pause Menu's Resume Flight. The header reads Resume Flight too while a

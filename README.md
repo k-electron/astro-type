@@ -26,7 +26,7 @@ The capitalised terms are defined in [`GLOSSARY.md`](GLOSSARY.md).
 | :-------------------------------------------------------- | :------------------------------------------- |
 | Type a Drone's character                                  | The matching key on your keyboard            |
 | Type it with the mouse or touch                           | Click or tap a key on the on-screen keyboard |
-| Pause a running Run                                       | `Esc`, or the Pause button in the HUD        |
+| Pause a running Run                                       | `Esc`, or the header's Pause Flight button   |
 | Resume from the Pause Menu                                | `Esc`, or the Resume Flight button           |
 | Close a menu (Galaxy Map, Hangar, Analytics, Free Flight) | `Esc`, or its own Back to ... button         |
 | Close the header's audio panel, or a confirm              | `Esc` (one layer per press, top one first)   |

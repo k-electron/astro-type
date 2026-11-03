@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { flightDeckLabel } from '../../src/screens/closeLabel';
-import { PAUSE_FLIGHT, PAUSE_MENU_NAME, START_STAGE } from '../shared/screens';
+import {
+  HUD_NAME,
+  PAUSE_FLIGHT,
+  PAUSE_MENU_NAME,
+  START_STAGE,
+} from '../shared/screens';
 import { type Player, renderGame, screen, within } from './harness';
 
 // The header carries one button that pauses a running Run ("Pause Flight"),
@@ -27,6 +32,16 @@ function halfwayThroughARun(): Player {
 }
 
 describe('the Flight Deck button in the header', () => {
+  it('is the only pause control on a running Run: the HUD has no Pause button', () => {
+    const player = halfwayThroughARun();
+    const hud = within(screen.getByRole('region', { name: HUD_NAME }));
+    expect(hud.queryByRole('button', { name: /pause/i })).toBeNull();
+    expect(screen.getAllByRole('button', { name: /pause/i })).toHaveLength(1);
+
+    player.click(PAUSE_FLIGHT);
+    expect(pauseMenu()).not.toBeNull();
+  });
+
   it('pauses a running Run, then resumes that same Run from the same character', () => {
     const player = halfwayThroughARun();
     expect(hasButton(START_STAGE)).toBe(false);

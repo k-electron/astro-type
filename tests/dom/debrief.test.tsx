@@ -19,6 +19,7 @@ import {
   HUD_NAME,
   MENU_HEADINGS,
   NEXT_STAGE,
+  PAUSE_FLIGHT,
   START_FREE_FLIGHT,
   START_STAGE,
   YOUR_TEXT,
@@ -115,7 +116,7 @@ describe('Replay and Next Stage', () => {
     );
     expect(hudText()).toMatch(FRESH_SCORE);
     expect(progress()).toBe('0%');
-    expect(screen.getByRole('button', { name: 'Pause' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: PAUSE_FLIGHT })).toBeTruthy();
   });
 });
 
@@ -353,7 +354,7 @@ describe('Free Flight', () => {
     player.type('ff j');
 
     expect(screen.queryByText(DEBRIEF_TITLE)).toBeNull();
-    expect(screen.getByRole('button', { name: 'Pause' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: PAUSE_FLIGHT })).toBeTruthy();
   });
 
   it('offers no choice of Drone speed: every Run moves at one speed', () => {

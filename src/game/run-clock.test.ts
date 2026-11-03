@@ -22,7 +22,7 @@ const TEN_MINUTES_OF_STEPS = 10 * 60 * 60;
 
 /** Pause the Run, let a long time go by, and carry on. */
 function pauseFor(game: Game, steps = TEN_MINUTES_OF_STEPS): void {
-  game.send({ type: 'PRESS_PAUSE' });
+  game.send({ type: 'PRESS_ESC' });
   game.step(steps);
   game.send({ type: 'PRESS_RESUME' });
 }
@@ -61,7 +61,7 @@ describe('Run Time', () => {
     const game = startedGame();
     game.step(60);
 
-    game.send({ type: 'PRESS_PAUSE' });
+    game.send({ type: 'PRESS_ESC' });
     expect(game.getState().phase).toBe('paused');
     game.step(TEN_MINUTES_OF_STEPS);
     expect(game.getState().runTime).toBeCloseTo(1000, 3);
@@ -153,7 +153,7 @@ describe('the Run clock steps only while the Run is running', () => {
     game.step(5);
     const inFlight = droneHeights(game);
 
-    game.send({ type: 'PRESS_PAUSE' });
+    game.send({ type: 'PRESS_ESC' });
     game.step(600);
     expect(droneHeights(game)).toEqual(inFlight);
 
@@ -173,7 +173,7 @@ describe('the Run clock steps only while the Run is running', () => {
   it('leaves the live WPM where it was during a pause', () => {
     const game = startedGame();
     game.pressKey(targetKey(game));
-    game.send({ type: 'PRESS_PAUSE' });
+    game.send({ type: 'PRESS_ESC' });
     game.step(600);
     expect(game.getState().run.netWpm).toBe(0);
 
@@ -261,7 +261,7 @@ describe('a pause in the middle of a Run leaves WPM, accuracy and Rhythm unchang
     vi.setSystemTime(new Date('2026-01-01T12:00:00Z'));
     const game = startedGame();
     hitPerfect(game, 40);
-    game.send({ type: 'PRESS_PAUSE' });
+    game.send({ type: 'PRESS_ESC' });
     vi.setSystemTime(new Date('2026-01-01T12:10:00Z'));
     game.step(TEN_MINUTES_OF_STEPS);
     game.send({ type: 'PRESS_RESUME' });

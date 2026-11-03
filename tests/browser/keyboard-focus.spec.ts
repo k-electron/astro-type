@@ -467,7 +467,7 @@ test('native keys and focus: Space, Esc, Enter and the window losing focus', asy
     await expect(pauseMenu(page)).toBeHidden();
   });
 
-  await test.step('part B: Enter and Space on a Pause Menu opened with the Pause button leave the Run paused', async () => {
+  await test.step('part B: Enter and Space on a Pause Menu opened with the header Pause Flight button leave the Run paused', async () => {
     await pauseButton(page).click();
     await expectPausedHalfway(page);
 

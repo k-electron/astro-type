@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { BEGIN_HOME_ROW } from '../shared/screens';
+import { BEGIN_HOME_ROW, PAUSE_FLIGHT } from '../shared/screens';
 import { promptProgress } from './helpers';
 
 test('a Stage can start', { tag: '@smoke' }, async ({ page }) => {
@@ -13,7 +13,7 @@ test('a Stage can start', { tag: '@smoke' }, async ({ page }) => {
 
   // Flight Deck: a Run is underway once it can be paused.
   await expect(
-    page.getByRole('button', { name: 'Pause', exact: true }),
+    page.getByRole('button', { name: PAUSE_FLIGHT, exact: true }),
   ).toBeVisible();
 
   // The text prompt's progress readout, found by its label.

@@ -7,7 +7,11 @@ import {
   promptProgress,
   typeText,
 } from './helpers';
-import { DEBRIEF_TITLE, START_FREE_FLIGHT } from '../shared/screens';
+import {
+  DEBRIEF_TITLE,
+  PAUSE_FLIGHT,
+  START_FREE_FLIGHT,
+} from '../shared/screens';
 
 // Three screenshot checks on the PixiJS Action Deck: the Flight Deck at Run
 // start, the deck frozen mid-explosion, and the Debrief. A screenshot is the
@@ -128,7 +132,7 @@ async function launchOnFixedClock(page: Page, text: string) {
   await page.getByRole('textbox').fill(text);
   await page.getByRole('button', { name: START_FREE_FLIGHT }).click();
   await expect(
-    page.getByRole('button', { name: 'Pause', exact: true }),
+    page.getByRole('button', { name: PAUSE_FLIGHT, exact: true }),
   ).toBeVisible();
   await expect(flightDeck(page)).toContainText(text);
 

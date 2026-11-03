@@ -23,7 +23,7 @@ import {
 type Snapshot = ReturnType<Game['getState']>;
 
 const OPEN_HANGAR: PlayerEvent = { type: 'OPEN_HANGAR' };
-const PAUSE: PlayerEvent = { type: 'PRESS_PAUSE' };
+const PAUSE: PlayerEvent = { type: 'PRESS_ESC' };
 const CLOSE: PlayerEvent = { type: 'PRESS_CLOSE' };
 const REPLAY: PlayerEvent = { type: 'PRESS_REPLAY' };
 

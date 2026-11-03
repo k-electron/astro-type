@@ -95,7 +95,7 @@ it('sounds right at every moment of a Run', () => {
   hitUntilOverdrive('second climb');
 
   // Pause: both go quiet, whatever Overdrive was doing.
-  game.send({ type: 'PRESS_PAUSE' });
+  game.send({ type: 'PRESS_ESC' });
   heard('paused', { beat: false, overdrive: false });
 
   // Settings changed while paused do not start the beat.
@@ -119,7 +119,7 @@ it('sounds right at every moment of a Run', () => {
   heard('music volume raised', { beat: true, overdrive: true });
 
   // Resuming while muted stays quiet until unmuted.
-  game.send({ type: 'PRESS_PAUSE' });
+  game.send({ type: 'PRESS_ESC' });
   game.changeSettings({ globalMuted: true });
   game.send({ type: 'PRESS_RESUME' });
   heard('resumed while muted', { beat: false, overdrive: true });

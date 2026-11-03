@@ -4,6 +4,7 @@ import {
   BEGIN_HOME_ROW,
   DEBRIEF_TITLE,
   HUD_NAME,
+  PAUSE_FLIGHT,
   PAUSE_MENU_NAME,
   START_FREE_FLIGHT,
 } from '../shared/screens';
@@ -107,7 +108,7 @@ export async function launchFreeFlight(
   await page.getByRole('textbox').fill(text);
   await page.getByRole('button', { name: START_FREE_FLIGHT }).click();
   await expect(
-    page.getByRole('button', { name: 'Pause', exact: true }),
+    page.getByRole('button', { name: PAUSE_FLIGHT, exact: true }),
   ).toBeVisible();
   // The prompt shows the player's text, so the Run is ready for its first key.
   await expect(page.getByRole('main')).toContainText(
@@ -120,7 +121,7 @@ export async function startFirstStage(page: Page) {
   await page.goto('/');
   await page.getByRole('button', { name: BEGIN_HOME_ROW, exact: true }).click();
   await expect(
-    page.getByRole('button', { name: 'Pause', exact: true }),
+    page.getByRole('button', { name: PAUSE_FLIGHT, exact: true }),
   ).toBeVisible();
   // The prompt shows the text the journeys type; a Stage whose text changed
   // fails here instead of hanging later.

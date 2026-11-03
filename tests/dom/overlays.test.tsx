@@ -6,6 +6,7 @@ import {
   DEBRIEF_TITLE,
   HUD_NAME,
   MENU_HEADINGS,
+  PAUSE_FLIGHT,
   PAUSE_MENU_NAME,
   START_STAGE,
 } from '../shared/screens';
@@ -138,7 +139,7 @@ describe('every overlay screen is a dialog over the Flight Deck', () => {
     const player = halfwayThroughARun();
     expectFlightDeckLive();
 
-    player.click('Pause');
+    player.clickHeader(PAUSE_FLIGHT);
 
     expectOverlay();
     expect(screen.getByRole('dialog', { name: PAUSE_MENU_NAME })).toBeTruthy();
@@ -187,7 +188,7 @@ describe('the Flight Deck is inert exactly while an overlay shows', () => {
 
   it('a menu over a paused Run: inert, and still inert on the Pause Menu after Close', () => {
     const player = halfwayThroughARun();
-    player.click('Pause');
+    player.clickHeader(PAUSE_FLIGHT);
     expect(flightDeckInert()).toBe(true);
 
     player.openHeader('Hangar');
@@ -270,7 +271,7 @@ describe('the Flight Deck button on an overlay', () => {
       );
 
       expectFlightDeckLive();
-      expect(screen.getByRole('button', { name: 'Pause' })).toBeTruthy();
+      expect(screen.getByRole('button', { name: PAUSE_FLIGHT })).toBeTruthy();
     },
   );
 
@@ -285,7 +286,7 @@ describe('the Flight Deck button on an overlay', () => {
       );
 
       expectFlightDeckLive();
-      expect(screen.getByRole('button', { name: 'Pause' })).toBeTruthy();
+      expect(screen.getByRole('button', { name: PAUSE_FLIGHT })).toBeTruthy();
     },
   );
 
@@ -318,7 +319,7 @@ describe('Free Flight over a paused Run', () => {
     'opened over $over offers Resume Flight in its dialog, which carries the Run on',
     ({ pause }) => {
       const player = halfwayThroughARun();
-      if (pause) player.click('Pause');
+      if (pause) player.clickHeader(PAUSE_FLIGHT);
       player.openHeader('Free Flight');
 
       fireEvent.click(

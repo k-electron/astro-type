@@ -3,7 +3,7 @@ import {
   REFUSED_BACKUP_MESSAGE,
   UNREADABLE_SAVE_NOTICE,
 } from '../../src/game/save';
-import { BEGIN_HOME_ROW, START_STAGE } from '../shared/screens';
+import { BEGIN_HOME_ROW, PAUSE_FLIGHT, START_STAGE } from '../shared/screens';
 import { type Player, renderGame, screen } from './harness';
 import {
   FREE_FLIGHT_SAVE,
@@ -89,7 +89,7 @@ describe('a returning player', () => {
       screen.getByRole('button', { name: muteAllLabel(false) }),
     ).toBeTruthy();
     player.click(START_STAGE);
-    expect(screen.getByRole('button', { name: 'Pause' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: PAUSE_FLIGHT })).toBeTruthy();
   });
 
   it('is told when the player had muted all audio', () => {
@@ -123,7 +123,7 @@ describe('a first visit and a Save that cannot be read', () => {
     expect(credits('0')).toBeTruthy();
     // The game still works from a fresh start.
     player.click(BEGIN_HOME_ROW);
-    expect(screen.getByRole('button', { name: 'Pause' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: PAUSE_FLIGHT })).toBeTruthy();
   });
 });
 

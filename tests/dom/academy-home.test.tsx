@@ -4,6 +4,7 @@ import {
   ACADEMY_HOME_HEADING,
   BEGIN_HOME_ROW,
   HUD_NAME,
+  PAUSE_FLIGHT,
   START_STAGE,
 } from '../shared/screens';
 import { renderGame, screen } from './harness';
@@ -25,7 +26,7 @@ describe('Academy Home', () => {
     expect(screen.getByLabelText('Text prompt').textContent).toContain(
       'f␣j␣f␣j␣ff␣jj␣fff␣jjj',
     );
-    expect(screen.getByRole('button', { name: 'Pause' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: PAUSE_FLIGHT })).toBeTruthy();
     expect(
       screen.queryByRole('heading', { name: ACADEMY_HOME_HEADING }),
     ).toBeNull();
@@ -37,7 +38,7 @@ describe('Academy Home', () => {
     player.click(BEGIN_HOME_ROW);
 
     expect(screen.getByRole('region', { name: HUD_NAME })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Pause' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: PAUSE_FLIGHT })).toBeTruthy();
   });
 
   it('shows the Stars of a player who has already cleared a Stage', () => {

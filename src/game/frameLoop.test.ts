@@ -107,7 +107,7 @@ describe('the frame loop across a pause', () => {
     const before = game.getState().runTime;
     const dronesBefore = droneHeights(game);
 
-    game.send({ type: 'PRESS_PAUSE' });
+    game.send({ type: 'PRESS_ESC' });
     browser.frames(5 * MINUTE, SECOND);
 
     expect(game.getState().runTime).toBe(before);
@@ -121,7 +121,7 @@ describe('the frame loop across a pause', () => {
     browser.frame(0);
     browser.frames(SECOND);
 
-    paused.send({ type: 'PRESS_PAUSE' });
+    paused.send({ type: 'PRESS_ESC' });
     browser.frames(5 * MINUTE, SECOND);
     paused.send({ type: 'PRESS_RESUME' });
     // The frame after resume comes a long time after the last one that ran.
@@ -163,7 +163,7 @@ describe('the frame loop reporting each frame', () => {
     browser.frame(25);
     reported.length = 0;
 
-    game.send({ type: 'PRESS_PAUSE' });
+    game.send({ type: 'PRESS_ESC' });
     browser.frame(SECOND);
     browser.frame(SECOND);
     game.send({ type: 'PRESS_RESUME' });

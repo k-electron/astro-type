@@ -8,6 +8,7 @@ import {
   HUD_NAME,
   LAUNCH_STAGE,
   MENU_HEADINGS,
+  PAUSE_FLIGHT,
   PAUSE_MENU_NAME,
   PRACTICE_TIME,
   START_STAGE,
@@ -139,7 +140,7 @@ describe('the glossary names', () => {
     const player = renderGame();
     startOverdrive(player);
 
-    player.click('Pause');
+    player.clickHeader(PAUSE_FLIGHT);
 
     expect(screen.getByRole('dialog', { name: PAUSE_MENU_NAME })).toBeTruthy();
     expectNoBannedNames(PAUSE_MENU_NAME);
