@@ -20,6 +20,7 @@ import {
 import {
   CURRICULUM_SECTORS,
   CURRICULUM_TOTALS,
+  furthestUnlockedSector,
   isSectorUnlocked,
   maxStarsOf,
   STAR_NUMBERS,
@@ -41,7 +42,9 @@ export const GalaxyMap: React.FC = () => {
   const onOpenHangar = () => send({ type: 'OPEN_HANGAR' });
   const onOpenAnalytics = () => send({ type: 'OPEN_ANALYTICS' });
   const onReturnHome = () => send({ type: 'PRESS_HOME' });
-  const [selectedSectorId, setSelectedSectorId] = useState<string>('sector-1');
+  const [selectedSectorId, setSelectedSectorId] = useState<string>(
+    () => furthestUnlockedSector(totalStars).id,
+  );
 
   const activeSector =
     CURRICULUM_SECTORS.find((s) => s.id === selectedSectorId) ||

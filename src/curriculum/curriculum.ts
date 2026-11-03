@@ -1481,6 +1481,18 @@ export function isSectorUnlocked(
   };
 }
 
+/**
+ * The last Sector, in curriculum order, whose Star gate a fleet with
+ * `totalStars` meets: where the Galaxy Map opens. A fresh Profile gets the first.
+ */
+export function furthestUnlockedSector(totalStars: number): Sector {
+  let furthest = CURRICULUM_SECTORS[0];
+  for (const sector of CURRICULUM_SECTORS) {
+    if (isSectorUnlocked(sector.id, totalStars).unlocked) furthest = sector;
+  }
+  return furthest;
+}
+
 /** Whether going from `previousStars` to `nextStars` takes the fleet past some Sector's gate. */
 export function unlocksSector(
   previousStars: number,
