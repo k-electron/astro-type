@@ -3,6 +3,7 @@ import { BANNED_NAME } from '../../tests/shared/names';
 import {
   CURRICULUM_SECTORS,
   FINGER_LANES,
+  FREE_FLIGHT_EMPTY_TEXT_MESSAGE,
   FREE_FLIGHT_PRESETS,
   FreeFlightTextSchema,
   freeFlightStage,
@@ -256,6 +257,9 @@ const untypeableOf = (text: string): string[] | undefined => {
 };
 
 describe('Free Flight text', () => {
+  const JOINER = String.fromCodePoint(0x200d);
+  const COMBINING_ACUTE = String.fromCodePoint(0x301);
+
   it('turns look-alike characters into plain keys', () => {
     const pasted = `${LEFT_DOUBLE_QUOTE}It${CURLY_APOSTROPHE}s${RIGHT_DOUBLE_QUOTE} ${EM_DASH} she said.\r\nNext\tline${EN_DASH}ok`;
     expect(FreeFlightTextSchema.parse(pasted)).toBe(
@@ -287,5 +291,43 @@ describe('Free Flight text', () => {
 
   it('refuses text with nothing to type', () => {
     expect(FreeFlightTextSchema.safeParse(' \n\t ').success).toBe(false);
+  });
+
+  it('lists a family emoji once, as itself, not split into its pieces', () => {
+    const family = String.fromCodePoint(
+      0x1f468,
+      0x200d,
+      0x1f469,
+      0x200d,
+      0x1f467,
+    );
+    expect(untypeableOf(`${family} and ${family}`)).toEqual([family]);
+  });
+
+  it('names a zero-width joiner that stands alone by its code', () => {
+    expect(untypeableOf(`${JOINER}go`)).toEqual(['U+200D']);
+  });
+
+  it('names a cluster that is entirely invisible by all its codes, one entry for the cluster', () => {
+    // Two joiners at the start of the text hold together as one cluster.
+    expect(untypeableOf(`${JOINER}${JOINER}go`)).toEqual(['U+200D U+200D']);
+    // A space and a joiner in the middle of the text do too.
+    expect(untypeableOf(`go ${JOINER}now`)).toEqual(['U+0020 U+200D']);
+  });
+
+  it('lists a cluster with a visible part whole, as itself', () => {
+    // An x with a combining accent has no key, whatever its base letter is.
+    const accentedX = `x${COMBINING_ACUTE}`;
+    expect(untypeableOf(`an ${accentedX} here`)).toEqual([accentedX]);
+  });
+
+  it('says to enter some text when the text is empty or only whitespace', () => {
+    for (const text of ['', ' \n\t ']) {
+      const result = FreeFlightTextSchema.safeParse(text);
+      expect(result.success).toBe(false);
+      expect(result.error?.issues[0].message).toBe(
+        FREE_FLIGHT_EMPTY_TEXT_MESSAGE,
+      );
+    }
   });
 });

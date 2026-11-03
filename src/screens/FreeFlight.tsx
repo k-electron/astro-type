@@ -28,10 +28,11 @@ export const FreeFlight: React.FC = () => {
   // Free Flight text is checked as it is typed, so Launch is disabled (with
   // the reason) before the player can start a Run that would get stuck.
   const checked = FreeFlightTextSchema.safeParse(customText);
-  const untypeableMessage =
-    !checked.success && customText.trim() !== ''
-      ? checked.error.issues[0].message
-      : null;
+  const untypeableMessage = checked.success
+    ? null
+    : checked.error.issues[0].message;
+  const wordCount =
+    customText.trim() === '' ? 0 : customText.trim().split(/\s+/).length;
 
   const handleLaunch = () => {
     if (!checked.success) return;
@@ -101,11 +102,16 @@ export const FreeFlight: React.FC = () => {
           placeholder="Type or paste any text, article, or code you want to train on..."
           className="w-full p-3 rounded-xl border border-slate-800 bg-slate-950 text-slate-200 font-mono text-xs sm:text-sm focus:outline-none focus:border-cyan-400 resize-none"
         />
+        {/* Why Launch is off. The line keeps its space when empty, so nothing moves. */}
+        <p
+          role="alert"
+          className="min-h-4 mt-1 text-xs font-mono text-rose-400"
+        >
+          {untypeableMessage}
+        </p>
         <div className="flex justify-between text-[11px] text-slate-500 font-mono mt-1">
           <span>{customText.length} characters</span>
-          <span>
-            Approx. {Math.round(customText.trim().split(/\s+/).length)} words
-          </span>
+          <span>Approx. {wordCount} words</span>
         </div>
       </div>
 
@@ -131,12 +137,6 @@ export const FreeFlight: React.FC = () => {
           />
         </div>
       </div>
-
-      {untypeableMessage && (
-        <p role="alert" className="mb-3 text-xs font-mono text-rose-400">
-          {untypeableMessage}
-        </p>
-      )}
 
       {/* Start Button */}
       <button

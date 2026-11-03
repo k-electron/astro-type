@@ -1599,11 +1599,24 @@ const LOOK_ALIKES: [RegExp, string][] = [
 const isTypeable = (character: string): boolean =>
   keyForCharacter(character) !== undefined;
 
-/** A character as itself, or as its code when it would be invisible. */
-const describeCharacter = (character: string): string =>
-  /[\p{C}\p{Z}]/u.test(character)
-    ? `U+${(character.codePointAt(0) ?? 0).toString(16).toUpperCase().padStart(4, '0')}`
+const graphemes = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
+
+const codeOf = (codePoint: string): string =>
+  `U+${(codePoint.codePointAt(0) ?? 0).toString(16).toUpperCase().padStart(4, '0')}`;
+
+/**
+ * A character as the player sees it: itself, or, when nothing of it would
+ * show, each of its code points as a code.
+ */
+const describeCharacter = (character: string): string => {
+  const codePoints = [...character];
+  return codePoints.every((codePoint) => /[\p{C}\p{Z}]/u.test(codePoint))
+    ? codePoints.map(codeOf).join(' ')
     : character;
+};
+
+/** What Free Flight says when there is no text to type. */
+export const FREE_FLIGHT_EMPTY_TEXT_MESSAGE = 'Enter some text to type.';
 
 export const FreeFlightTextSchema = z
   .string()
@@ -1617,12 +1630,17 @@ export const FreeFlightTextSchema = z
     if (context.value === '') {
       context.issues.push({
         code: 'custom',
-        message: 'Enter some text to type.',
+        message: FREE_FLIGHT_EMPTY_TEXT_MESSAGE,
         input: context.value,
       });
       return;
     }
-    const untypeable = [...new Set([...context.value])].filter(
+    // By user-perceived character: a family emoji is one, and a cluster of
+    // several code points has no key, so it is listed whole.
+    const clusters = new Set(
+      Array.from(graphemes.segment(context.value), ({ segment }) => segment),
+    );
+    const untypeable = [...clusters].filter(
       (character) => !isTypeable(character),
     );
     if (untypeable.length > 0) {
