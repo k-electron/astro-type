@@ -6,6 +6,7 @@ import {
   HUD_NAME,
   PAUSE_FLIGHT,
   PAUSE_MENU_NAME,
+  REPLAY,
   START_FREE_FLIGHT,
 } from '../shared/screens';
 
@@ -51,7 +52,7 @@ export const currentCharacter = (page: Page): Locator =>
 export const debrief = (page: Page): Locator =>
   page
     .locator('div')
-    .filter({ has: page.getByRole('button', { name: 'Replay' }) })
+    .filter({ has: page.getByRole('button', { name: REPLAY }) })
     .filter({ has: page.getByRole('heading', { level: 2 }) })
     .last();
 

@@ -346,3 +346,17 @@ export function toDebrief(): Player {
   expect(screen.getByText(DEBRIEF_TITLE)).toBeTruthy();
   return player;
 }
+
+/** The card the Debrief shows over the Flight Deck. */
+export function debriefCard(): HTMLElement {
+  return screen.getByRole('dialog', { name: DEBRIEF_TITLE });
+}
+
+/** True when the element, or anything around it, is inert. */
+export function isInert(element: Element): boolean {
+  for (let node: Element | null = element; node; node = node.parentElement) {
+    if (node.hasAttribute('inert')) return true;
+    if ((node as Element & { inert?: boolean }).inert === true) return true;
+  }
+  return false;
+}

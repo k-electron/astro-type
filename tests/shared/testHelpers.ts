@@ -8,6 +8,7 @@ import {
   DEFAULT_FREE_FLIGHT_WPM,
   getStageById,
 } from '../../src/curriculum/curriculum';
+import type { Clock } from '../../src/game/clock';
 import { createGame, type Game, type Sound } from '../../src/game/game';
 import { createMemoryStorage, type MemorySaveStorage } from './memoryStorage';
 
@@ -44,14 +45,16 @@ export interface Upgrades {
  * A game over an in-memory Save, with the Save's storage to look at. `seed` is
  * the Save the player already has (any value, even an unreadable one on
  * purpose); fields left out take their defaults. `sound` is where the game's
- * sound goes.
+ * sound goes; `clock` is the wall clock the game stamps with (a hand-stepped
+ * one when left out).
  */
 export function loadGame(
   seed?: unknown,
   sound?: Sound,
+  clock?: Clock,
 ): { game: Game; storage: MemorySaveStorage } {
   const storage = createMemoryStorage(seed);
-  return { game: createGame({ storage, sound }), storage };
+  return { game: createGame({ storage, sound, clock }), storage };
 }
 
 /** A fresh game over an in-memory Save, optionally seeded (merged over a fresh Profile). */

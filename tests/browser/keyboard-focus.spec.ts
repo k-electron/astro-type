@@ -139,8 +139,10 @@ async function expectHeaderFits(page: Page, flightName: string, state: string) {
   for (const width of HEADER_WIDTHS) {
     await page.setViewportSize({ width, height: 800 });
     // The header's fonts are web fonts; measure with the real ones, not the
-    // fallback glyphs they replace.
-    await page.evaluate(() => document.fonts.ready);
+    // fallback glyphs they replace. Once loaded they stay, so the first width
+    // of a state is the only one that can wait.
+    if (width === HEADER_WIDTHS[0])
+      await page.evaluate(() => document.fonts.ready);
     const where = `${width}px, ${state}`;
     const nav = page.getByRole('navigation');
     for (const name of NAV_BUTTONS) {
@@ -237,7 +239,8 @@ test('native keys and focus: Space, Esc, Enter and the window losing focus', asy
   browser,
 }) => {
   // The most real-clock keys of any journey, and the header measured in four
-  // profiles: a busy machine can double its time.
+  // profiles (one launch each): a busy machine can double its time. Under
+  // `verify`'s five workers it took 66 s, so 120 s was too thin.
   test.setTimeout(180_000);
   await test.step('the header fits from 768px up, with no Run, a running Run and a paused Run', async () => {
     await expectHeaderFitsInEveryState(page, 'a new player');
@@ -405,8 +408,8 @@ test('native keys and focus: Space, Esc, Enter and the window losing focus', asy
 
   await test.step('part B: a stray Tab and Enter mid-Run leave the Run running, and Esc then Tab reaches the Pause Menu', async () => {
     // Focus starts wherever launching left it (the page body, not the header).
-    // Today a Tab moves it to the header's logo and the Enter after it clicks
-    // the logo, which abandons the Run.
+    // A Tab and an Enter mid-Run must not reach the header's logo and abandon
+    // the Run: focus stays where it was.
     const headerPause = page
       .getByRole('banner')
       .getByRole('button', { name: PAUSE_FLIGHT, exact: true });
@@ -444,17 +447,20 @@ test('native keys and focus: Space, Esc, Enter and the window losing focus', asy
     await expect(headerPause).toBeVisible();
     await expect(promptProgress(page)).toHaveText('50%');
 
-    // Esc pauses, and from the Pause Menu Tab moves focus as normal.
+    // Esc pauses. The Pause Menu takes focus onto its dialog, not a button, so
+    // the first Tab moves it on to the Pause Menu's first button, Resume Flight.
     await page.keyboard.press('Escape');
     await expectPausedHalfway(page);
-    await page.keyboard.press('Tab');
-    const afterTab = await whereFocusIs(page);
     expect
-      .soft(
-        ['pause-menu', 'header'],
-        'Tab on the Pause Menu moves focus into the Pause Menu or the header',
-      )
-      .toContain(afterTab);
+      .soft(await whereFocusIs(page), 'the Pause Menu has focus when it opens')
+      .toBe('pause-menu');
+    await expect
+      .soft(resumeButton(page), 'no button has focus before the first Tab')
+      .not.toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect
+      .soft(resumeButton(page), 'the first Tab goes to Resume Flight')
+      .toBeFocused();
 
     // Back to a running Run for the steps after this one.
     await resumeButton(page).click();

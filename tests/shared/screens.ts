@@ -23,7 +23,8 @@ export const MENU_HEADINGS = {
  * and every test imports them. A name the source already exports is imported
  * from there instead: `flightDeckLabel` (Resume Flight), `PAUSE_FLIGHT`
  * and `closeLabel` (the Back buttons) in `src/screens/closeLabel.ts`, the audio
- * labels in `src/screens/audioLabels.ts`, and Free Flight's title and subtitle
+ * labels in `src/screens/audioLabels.ts`, the Debrief's Replay and Sector-unlock
+ * notice in `src/screens/debriefLabels.ts`, and Free Flight's title and subtitle
  * in `src/curriculum/curriculum.ts`.
  */
 
@@ -67,6 +68,13 @@ export const ACADEMY_HOME = 'Academy Home';
 
 /** The Debrief's Galaxy Map button, and the header's button that opens the screen. */
 export const GALAXY_MAP = 'Galaxy Map';
+
+/**
+ * The Debrief's Replay button and its Sector-unlock notice. The source
+ * exports both (`src/screens/debriefLabels.ts`) and tests import them from
+ * here, so each is written once.
+ */
+export { NEW_SECTOR_UNLOCKED, REPLAY } from '../../src/screens/debriefLabels';
 
 /** The Debrief's button for the next Stage in the curriculum. */
 export const NEXT_STAGE = 'Next Stage';

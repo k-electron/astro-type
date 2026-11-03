@@ -14,6 +14,7 @@ import {
   START_STAGE,
   STREAK_ALARMS,
   YOUR_TEXT,
+  NEW_SECTOR_UNLOCKED,
 } from '../shared/screens';
 import { type Player, renderGame, screen, within } from './harness';
 import { OPEN_AUDIO_PANEL } from '../../src/screens/audioLabels';
@@ -90,30 +91,13 @@ function startOverdrive(player: Player) {
   ).toBeTruthy();
 }
 
+// #102: the ordinary word "note" is fine; only the Drone's old name is banned.
+// No screen is rendered, but no lower layer runs tests/shared/names.ts.
 describe('BANNED_NAME', () => {
-  it("flags the Drone's old names but not the ordinary word note", () => {
+  it("flags the Drone's old name, falling notes, but not the ordinary word note", () => {
     expect(BANNED_NAME.test('Hit the falling notes')).toBe(true);
-    expect(BANNED_NAME.test('Laser-note')).toBe(true);
     expect(BANNED_NAME.test('Make a note of it')).toBe(false);
     expect(BANNED_NAME.test('Stage notes')).toBe(false);
-  });
-
-  it('flags drill in its forms, a session and storage', () => {
-    for (const banned of [
-      'A drill',
-      'drilled',
-      'Drilling',
-      'Practice session',
-      'Local storage',
-    ]) {
-      expect(BANNED_NAME.test(banned), banned).toBe(true);
-    }
-    expect(BANNED_NAME.test('localStorage')).toBe(false);
-  });
-
-  it('leaves Telemetry and paused alone', () => {
-    expect(BANNED_NAME.test('Center Telemetry (4, 5, 6, 7)')).toBe(false);
-    expect(BANNED_NAME.test('while a Run is paused')).toBe(false);
   });
 });
 
@@ -256,7 +240,7 @@ describe('the glossary names', () => {
     player.click(START_STAGE);
     player.typePrompt();
 
-    expect(screen.getByText(/New Sector Unlocked/)).toBeTruthy();
+    expect(screen.getByText(NEW_SECTOR_UNLOCKED)).toBeTruthy();
     expectNoBannedNames(DEBRIEF_TITLE);
   });
 

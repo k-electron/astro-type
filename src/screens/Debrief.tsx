@@ -15,6 +15,7 @@ import type { GameState } from '../game/game';
 import { type RhythmBand, rhythmBand } from '../game/rules';
 import { useGame } from '../app/useGame';
 import { useGameState } from '../app/useGameState';
+import { NEW_SECTOR_UNLOCKED, REPLAY } from './debriefLabels';
 import { OverlayShell } from './OverlayShell';
 
 /** The Rhythm pill's colours, by band. */
@@ -326,7 +327,7 @@ export const Debrief: React.FC = () => {
         {hasUnlockedNextSector && (
           <div className="w-full mb-5 p-3 rounded-xl border border-cyan-500/50 bg-cyan-950/40 text-cyan-200 text-xs font-mono flex items-center justify-center gap-2">
             <Sparkles className="w-4 h-4 text-cyan-400 shrink-0" />
-            <span>New Sector Unlocked! Find it on the Galaxy Map.</span>
+            <span>{NEW_SECTOR_UNLOCKED}</span>
           </div>
         )}
       </div>
@@ -339,7 +340,7 @@ export const Debrief: React.FC = () => {
           className="flex-1 min-w-[120px] px-3.5 py-2.5 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs sm:text-sm font-medium flex items-center justify-center gap-2 transition-colors cursor-pointer"
         >
           <RotateCcw className="w-4 h-4" />
-          <span>Replay</span>
+          <span>{REPLAY}</span>
         </button>
 
         {/* With a Next Stage or a Free Flight, Galaxy Map is a side choice. Otherwise it is the one Galaxy Map button, last, where Next Stage would be. */}

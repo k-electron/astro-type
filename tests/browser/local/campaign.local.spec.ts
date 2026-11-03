@@ -8,7 +8,9 @@ import {
   ACADEMY_HOME,
   DEBRIEF_TITLE,
   GALAXY_MAP,
+  NEW_SECTOR_UNLOCKED,
   NEXT_STAGE,
+  REPLAY,
 } from '../../shared/screens';
 import {
   clearFirstStage,
@@ -63,102 +65,103 @@ test('the first Stage played for real from a fresh Save: its Debrief, and the St
   await test.step(`with no Sector banner the Debrief fits at ${size}: nothing in it scrolls and nothing is cut off`, async () => {
     const dialog = page.getByRole('dialog', { name: DEBRIEF_TITLE });
     // The plain clear of the first Stage from a fresh Save unlocks nothing.
-    // (The banner's copy is not exported by the source, so it is matched by
-    // its first words, as in the test below.)
-    await expect(dialog.getByText(/New Sector Unlocked/)).toHaveCount(0);
+    await expect(dialog.getByText(NEW_SECTOR_UNLOCKED)).toHaveCount(0);
 
     // The technique card's heading is a JSX literal in the source, with no
     // export to import (a gap to close if the source ever exports it).
     const technique = 'Touch-Typing Technique Assessment';
-    const offenders = await dialog.evaluate((root, heading) => {
-      const found: string[] = [];
-      const rect = (element: Element) => element.getBoundingClientRect();
-      const name = (element: Element) =>
-        `<${element.tagName.toLowerCase()}> "${(element.textContent ?? '').trim().slice(0, 24)}…"`;
-      const scrolls = (element: Element) =>
-        ['auto', 'scroll'].includes(getComputedStyle(element).overflowY);
+    const offenders = await dialog.evaluate(
+      (root, { heading, replayName }) => {
+        const found: string[] = [];
+        const rect = (element: Element) => element.getBoundingClientRect();
+        const name = (element: Element) =>
+          `<${element.tagName.toLowerCase()}> "${(element.textContent ?? '').trim().slice(0, 24)}…"`;
+        const scrolls = (element: Element) =>
+          ['auto', 'scroll'].includes(getComputedStyle(element).overflowY);
 
-      // 1. Nothing scrolls: not the page, the dialog, anything in it, or the
-      // boxes around it.
-      const pageScrolledBy = document.scrollingElement?.scrollTop ?? 0;
-      if (pageScrolledBy > 0)
-        found.push(`the page is scrolled by ${pageScrolledBy}`);
-      const boxes = [root, ...root.querySelectorAll('*')];
-      for (
-        let parent = root.parentElement;
-        parent;
-        parent = parent.parentElement
-      ) {
-        boxes.push(parent);
-      }
-      for (const element of boxes) {
-        if (
-          scrolls(element) &&
-          element.scrollHeight - element.clientHeight > 1
+        // 1. Nothing scrolls: not the page, the dialog, anything in it, or the
+        // boxes around it.
+        const pageScrolledBy = document.scrollingElement?.scrollTop ?? 0;
+        if (pageScrolledBy > 0)
+          found.push(`the page is scrolled by ${pageScrolledBy}`);
+        const boxes = [root, ...root.querySelectorAll('*')];
+        for (
+          let parent = root.parentElement;
+          parent;
+          parent = parent.parentElement
         ) {
+          boxes.push(parent);
+        }
+        for (const element of boxes) {
+          if (
+            scrolls(element) &&
+            element.scrollHeight - element.clientHeight > 1
+          ) {
+            found.push(
+              `${name(element)} scrolls: scrollHeight ${element.scrollHeight} > clientHeight ${element.clientHeight}`,
+            );
+          }
+        }
+
+        // 2. The technique card (the nearest box with a border above and below
+        // its heading) ends above the line that tops the action buttons (the
+        // nearest box over Replay with a top border).
+        const text = [...root.querySelectorAll('*')].find(
+          (element) =>
+            element.children.length === 0 &&
+            (element.textContent ?? '').includes(heading),
+        );
+        const hasBorders = (element: Element) => {
+          const style = getComputedStyle(element);
+          return (
+            Number.parseFloat(style.borderTopWidth) > 0 &&
+            Number.parseFloat(style.borderBottomWidth) > 0
+          );
+        };
+        let card = text?.parentElement ?? null;
+        while (card && !hasBorders(card)) card = card.parentElement;
+        const replay = [...root.querySelectorAll('button')].find(
+          (button) => button.textContent?.trim() === replayName,
+        );
+        let footer = replay?.parentElement ?? null;
+        while (
+          footer &&
+          !(Number.parseFloat(getComputedStyle(footer).borderTopWidth) > 0)
+        ) {
+          footer = footer.parentElement;
+        }
+        if (!card || !footer) {
           found.push(
-            `${name(element)} scrolls: scrollHeight ${element.scrollHeight} > clientHeight ${element.clientHeight}`,
+            `could not find the technique card (${Boolean(card)}) or the action buttons' top line (${Boolean(footer)})`,
+          );
+          return found;
+        }
+        const cardBox = rect(card);
+        const footerTop = rect(footer).top;
+        if (cardBox.bottom > footerTop + 1) {
+          found.push(
+            `technique card bottom ${cardBox.bottom} is below the action buttons' top line ${footerTop}`,
           );
         }
-      }
 
-      // 2. The technique card (the nearest box with a border above and below
-      // its heading) ends above the line that tops the action buttons (the
-      // nearest box over Replay with a top border).
-      const text = [...root.querySelectorAll('*')].find(
-        (element) =>
-          element.children.length === 0 &&
-          (element.textContent ?? '').includes(heading),
-      );
-      const hasBorders = (element: Element) => {
-        const style = getComputedStyle(element);
-        return (
-          Number.parseFloat(style.borderTopWidth) > 0 &&
-          Number.parseFloat(style.borderBottomWidth) > 0
-        );
-      };
-      let card = text?.parentElement ?? null;
-      while (card && !hasBorders(card)) card = card.parentElement;
-      const replay = [...root.querySelectorAll('button')].find(
-        (button) => button.textContent?.trim() === 'Replay',
-      );
-      let footer = replay?.parentElement ?? null;
-      while (
-        footer &&
-        !(Number.parseFloat(getComputedStyle(footer).borderTopWidth) > 0)
-      ) {
-        footer = footer.parentElement;
-      }
-      if (!card || !footer) {
-        found.push(
-          `could not find the technique card (${Boolean(card)}) or the action buttons' top line (${Boolean(footer)})`,
-        );
+        // 3. No box around the card cuts it off, scrolling or not.
+        for (
+          let parent = card.parentElement;
+          parent && parent !== root.parentElement;
+          parent = parent.parentElement
+        ) {
+          if (getComputedStyle(parent).overflowY === 'visible') continue;
+          const box = rect(parent);
+          if (cardBox.top < box.top - 1 || cardBox.bottom > box.bottom + 1) {
+            found.push(
+              `technique card y ${cardBox.top}-${cardBox.bottom} is cut off by ${name(parent)} at y ${box.top}-${box.bottom}`,
+            );
+          }
+        }
         return found;
-      }
-      const cardBox = rect(card);
-      const footerTop = rect(footer).top;
-      if (cardBox.bottom > footerTop + 1) {
-        found.push(
-          `technique card bottom ${cardBox.bottom} is below the action buttons' top line ${footerTop}`,
-        );
-      }
-
-      // 3. No box around the card cuts it off, scrolling or not.
-      for (
-        let parent = card.parentElement;
-        parent && parent !== root.parentElement;
-        parent = parent.parentElement
-      ) {
-        if (getComputedStyle(parent).overflowY === 'visible') continue;
-        const box = rect(parent);
-        if (cardBox.top < box.top - 1 || cardBox.bottom > box.bottom + 1) {
-          found.push(
-            `technique card y ${cardBox.top}-${cardBox.bottom} is cut off by ${name(parent)} at y ${box.top}-${box.bottom}`,
-          );
-        }
-      }
-      return found;
-    }, technique);
+      },
+      { heading: technique, replayName: REPLAY },
+    );
     expect.soft(offenders, `the Debrief at ${size} with no banner`).toEqual([]);
   });
 
@@ -172,7 +175,7 @@ test('the first Stage played for real from a fresh Save: its Debrief, and the St
       { timeout: 1000 },
     );
 
-    await result.getByRole('button', { name: 'Replay', exact: true }).click();
+    await result.getByRole('button', { name: REPLAY, exact: true }).click();
     await expect(page.getByText(DEBRIEF_TITLE)).toBeHidden();
 
     // Well inside the few seconds it would otherwise take to fall.
@@ -229,10 +232,9 @@ test('the Debrief that opens a Sector keeps its action buttons on screen, unscro
   await clearFirstStage(page);
   const result = debrief(page);
   // The banner is the point of this Debrief; without it the sizes below prove less.
-  // (Its copy is not exported by the source, so it is matched by its first words.)
-  await expect(result.getByText(/New Sector Unlocked/)).toBeVisible();
+  await expect(result.getByText(NEW_SECTOR_UNLOCKED)).toBeVisible();
 
-  const actions = ['Replay', GALAXY_MAP, ACADEMY_HOME, NEXT_STAGE];
+  const actions = [REPLAY, GALAXY_MAP, ACADEMY_HOME, NEXT_STAGE];
 
   for (const size of DEBRIEF_WINDOWS) {
     await test.step(`every action button is on screen and reachable at ${size.width}x${size.height}`, async () => {

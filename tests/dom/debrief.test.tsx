@@ -23,13 +23,16 @@ import {
   START_FREE_FLIGHT,
   START_STAGE,
   YOUR_TEXT,
+  NEW_SECTOR_UNLOCKED,
+  REPLAY,
 } from '../shared/screens';
-import { type Player, renderGame, screen, within } from './harness';
-
-/** The card the Debrief shows over the Flight Deck. */
-function debriefCard(): HTMLElement {
-  return screen.getByRole('dialog', { name: DEBRIEF_TITLE });
-}
+import {
+  debriefCard,
+  type Player,
+  renderGame,
+  screen,
+  within,
+} from './harness';
 
 /** The names of the Debrief's buttons, in the order they are laid out. */
 function debriefButtons(): string[] {
@@ -52,8 +55,6 @@ const progress = () =>
 const mostStars =
   3 *
   CURRICULUM_SECTORS.reduce((count, sector) => count + sector.stages.length, 0);
-
-const BANNER = 'New Sector Unlocked! Find it on the Galaxy Map.';
 
 /** Start Stage 1 from Academy Home and type it to the end. */
 function clearStageOne(player: Player) {
@@ -89,7 +90,7 @@ describe('Replay and Next Stage', () => {
     clearStageOne(player);
     expect(hudText()).not.toMatch(FRESH_SCORE);
 
-    player.click('Replay');
+    player.click(REPLAY);
 
     expect(screen.queryByText(DEBRIEF_TITLE)).toBeNull();
     expect(screen.getByRole('main').textContent).toContain(
@@ -175,7 +176,7 @@ describe('the Debrief buttons', () => {
 
     player.typePrompt();
 
-    expect(screen.getByText(BANNER)).toBeTruthy();
+    expect(screen.getByText(NEW_SECTOR_UNLOCKED)).toBeTruthy();
     player.click(NEXT_STAGE);
 
     expect(screen.queryByText(DEBRIEF_TITLE)).toBeNull();
@@ -189,7 +190,7 @@ describe('the Debrief buttons', () => {
     clearStageOne(player);
 
     expect(debriefButtons()).toEqual([
-      'Replay',
+      REPLAY,
       GALAXY_MAP,
       ACADEMY_HOME,
       NEXT_STAGE,
@@ -201,7 +202,7 @@ describe('the Debrief buttons', () => {
 
     player.typePrompt();
 
-    expect(debriefButtons()).toEqual(['Replay', GALAXY_MAP, ACADEMY_HOME]);
+    expect(debriefButtons()).toEqual([REPLAY, GALAXY_MAP, ACADEMY_HOME]);
   });
 
   it('Academy Home leaves the Debrief for Academy Home', () => {
@@ -224,8 +225,8 @@ describe('the Sector unlock banner', () => {
 
     clearStageOne(player);
 
-    expect(debriefButtons()).toContain('Replay');
-    expect(screen.getByText(BANNER)).toBeTruthy();
+    expect(debriefButtons()).toContain(REPLAY);
+    expect(screen.getByText(NEW_SECTOR_UNLOCKED)).toBeTruthy();
     expect(stars(6)).toBeTruthy();
   });
 
@@ -235,8 +236,8 @@ describe('the Sector unlock banner', () => {
 
     clearStageOne(player);
 
-    expect(debriefButtons()).toContain('Replay');
-    expect(screen.queryByText(/New Sector Unlocked/)).toBeNull();
+    expect(debriefButtons()).toContain(REPLAY);
+    expect(screen.queryByText(NEW_SECTOR_UNLOCKED)).toBeNull();
   });
 });
 
@@ -303,7 +304,7 @@ describe('Free Flight', () => {
 
     for (const flight of [1, 2]) {
       if (flight === 2) {
-        player.click('Replay');
+        player.click(REPLAY);
         expect(screen.queryByText(DEBRIEF_TITLE)).toBeNull();
       }
       player.typePrompt();

@@ -16,6 +16,9 @@ import { resetTextures } from './textures';
 /** Give up waiting for fonts after this long, so a blocked font request can't stall the deck. */
 const FONT_WAIT_MS = 2000;
 
+/** The screen's pixel density as it is now (a window with none reported draws at 1). */
+const screenDensity = (): number => window.devicePixelRatio || 1;
+
 /** Keys that hold no character; clicking their keycaps does nothing. */
 const MODIFIER_KEYS = new Set([
   'ShiftLeft',
@@ -150,7 +153,7 @@ class DeckSession {
       height: this.size?.height ?? STAGE_HEIGHT,
       backgroundAlpha: 0,
       antialias: true,
-      resolution: window.devicePixelRatio || 1,
+      resolution: screenDensity(),
       autoDensity: true,
       // The Run clock's frame loop draws; PixiJS's ticker stays off.
       autoStart: false,
@@ -206,7 +209,7 @@ class DeckSession {
     this.stopWatchingDensity?.();
     this.stopWatchingDensity = null;
     if (this.destroyed) return;
-    const ratio = window.devicePixelRatio || 1;
+    const ratio = screenDensity();
     const { app } = this;
     if (app && app.renderer.resolution !== ratio) this.setDensity(app, ratio);
     const query = window.matchMedia(`(resolution: ${ratio}dppx)`);

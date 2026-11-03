@@ -13,8 +13,15 @@ import {
   PAUSE_FLIGHT,
   PAUSE_MENU_NAME,
   viewGalaxyMap,
+  NEW_SECTOR_UNLOCKED,
 } from '../shared/screens';
-import { type Player, renderGame, screen, within } from './harness';
+import {
+  debriefCard,
+  type Player,
+  renderGame,
+  screen,
+  within,
+} from './harness';
 
 // Where the Galaxy Map starts: on the furthest Sector the player has unlocked,
 // whichever way they come in (#96). A player reads the selected Sector as the
@@ -52,11 +59,6 @@ const SECTOR_THREE_PLAYER = saveWithStars(UNLOCKS_SECTOR_THREE);
 function selectedSector(): string | null {
   const map = screen.getByRole('dialog', { name: MENU_HEADINGS['Galaxy Map'] });
   return within(map).getByRole('heading', { level: 3 }).textContent;
-}
-
-/** The card the Debrief shows over the Flight Deck. */
-function debriefCard(): HTMLElement {
-  return screen.getByRole('dialog', { name: DEBRIEF_TITLE });
 }
 
 /** The Debrief's own Galaxy Map button (the header has one of that name too). */
@@ -155,7 +157,7 @@ describe('the Galaxy Map starts on the furthest unlocked Sector', () => {
     );
 
     clearFirstStage(player);
-    expect(screen.getByText(/New Sector Unlocked/)).toBeTruthy();
+    expect(screen.getByText(NEW_SECTOR_UNLOCKED)).toBeTruthy();
     clickDebriefGalaxyMap();
 
     expect(selectedSector()).toBe(SECTOR_TWO.name);
@@ -167,7 +169,7 @@ describe('the Galaxy Map starts on the furthest unlocked Sector', () => {
     const player = renderGame();
     player.startStage(SECTOR_ONE.stages[SECTOR_ONE.stages.length - 1].id);
     player.typePrompt();
-    expect(screen.queryByText(/New Sector Unlocked/)).toBeNull();
+    expect(screen.queryByText(NEW_SECTOR_UNLOCKED)).toBeNull();
 
     clickDebriefGalaxyMap();
 

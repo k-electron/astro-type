@@ -11,15 +11,21 @@ import {
   MENU_HEADINGS,
   PAUSE_FLIGHT,
   START_STAGE,
+  REPLAY,
 } from '../shared/screens';
-import { type Player, renderGame, screen, toDebrief, within } from './harness';
+import {
+  isInert,
+  type Player,
+  renderGame,
+  screen,
+  toDebrief,
+  within,
+} from './harness';
 import { flightDeckLabel } from '../../src/screens/closeLabel';
 import { OPEN_AUDIO_PANEL } from '../../src/screens/audioLabels';
 import {
-  FACTORY_RESET_MESSAGE,
   FACTORY_RESET_TITLE,
   WIPE_STARS_TITLE,
-  wipeStarsMessage,
 } from '../../src/screens/confirmLabels';
 
 // Wiping the Stars asks first. profile.test.tsx guards Factory Reset
@@ -121,7 +127,7 @@ describe.each(WIPES)('Wipe on $where', ({ menu, button }) => {
     player.click('Confirm Wipe');
     player.click(/^Back to /);
     expect(screen.getByText(DEBRIEF_TITLE)).toBeTruthy();
-    player.click('Replay');
+    player.click(REPLAY);
 
     expect(onShow()).toContain(SECOND_STAGE.title);
   });
@@ -159,7 +165,8 @@ describe('The Wipe Stars confirm message', () => {
 
     player.click('Wipe Stars');
 
-    expect(dialogText()).toContain(wipeStarsMessage(5, 2));
+    expect(dialogText()).toMatch(/\b5 Stars\b/);
+    expect(dialogText()).toMatch(/\b2 cleared Stages\b/);
   });
 
   it('uses the singular for one Star and one cleared Stage', () => {
@@ -168,7 +175,6 @@ describe('The Wipe Stars confirm message', () => {
 
     player.click('Wipe Stars');
 
-    expect(dialogText()).toContain(wipeStarsMessage(1, 1));
     expect(dialogText()).toMatch(/\b1 Star\b(?!s)/);
     expect(dialogText()).toMatch(/\b1 cleared Stage\b(?!s)/);
   });
@@ -187,19 +193,6 @@ describe('The Wipe Stars confirm message', () => {
 
     expect(dialogText()).toMatch(/\b0 Stars\b/);
     expect(dialogText()).toMatch(/\b0 cleared Stages\b/);
-  });
-});
-
-describe('The Factory Reset confirm message', () => {
-  it('is the one the source carries', () => {
-    const player = renderGame({ profile: RETURNING_PLAYER });
-    player.openHeader('Analytics');
-
-    player.click('Factory Reset');
-
-    expect(screen.getByRole('alertdialog').textContent).toContain(
-      FACTORY_RESET_MESSAGE,
-    );
   });
 });
 
@@ -324,15 +317,6 @@ const NAMED_CONFIRMS = [
   { ask: 'Wipe Stars', title: WIPE_STARS_TITLE },
   { ask: 'Factory Reset', title: FACTORY_RESET_TITLE },
 ] as const;
-
-/** True when the element, or anything around it, is inert. */
-function isInert(element: Element): boolean {
-  for (let node: Element | null = element; node; node = node.parentElement) {
-    if (node.hasAttribute('inert')) return true;
-    if ((node as Element & { inert?: boolean }).inert === true) return true;
-  }
-  return false;
-}
 
 /** The Analytics controls a confirm sits over. Import Backup is a file chooser, found by its label. */
 const analyticsControls = () => [

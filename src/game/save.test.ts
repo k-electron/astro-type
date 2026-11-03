@@ -8,7 +8,6 @@ import {
   withLegacyReactorKey,
   withOldDroneSpeed,
 } from '../../tests/shared/saves';
-import { createMemoryStorage } from '../../tests/shared/memoryStorage';
 import { DEFAULT_TRAIL, entriesOf, MAX_UPGRADE_LEVEL } from './catalog';
 import { createSteppedClock } from './clock';
 import { createGame, type Game } from './game';
@@ -682,9 +681,11 @@ describe('a Save that cannot be read at all', () => {
     // Not the stepped clock's default start, so a fixed stamp would not pass.
     const clock = createSteppedClock(1_800_000_000_000);
     clock.step(3600);
-    const storage = createMemoryStorage({ ...completeSave(), version: 2 });
-
-    createGame({ storage, clock });
+    const { storage } = loadGame(
+      { ...completeSave(), version: 2 },
+      undefined,
+      clock,
+    );
 
     expect(storage.movedAsideStamps).toEqual([
       new Date(clock.now()).toISOString(),
@@ -696,8 +697,7 @@ describe('the notice for a Save that could not be read', () => {
   const bad = { ...completeSave(), version: 2 };
 
   it('shows again on the next load, when the player has not played on', () => {
-    const storage = createMemoryStorage(bad);
-    createGame({ storage });
+    const { storage } = loadGame(bad);
 
     const nextVisit = createGame({ storage });
 
@@ -707,8 +707,7 @@ describe('the notice for a Save that could not be read', () => {
   });
 
   it('shows again on the next load, after a fresh Save was written, and does not move that Save aside', () => {
-    const storage = createMemoryStorage(bad);
-    const game = createGame({ storage });
+    const { game, storage } = loadGame(bad);
     startStage(game, STAGE_ID);
     clearStage(game, { seconds: 60 });
 
@@ -720,8 +719,7 @@ describe('the notice for a Save that could not be read', () => {
   });
 
   it('is gone for good once the player dismisses it', () => {
-    const storage = createMemoryStorage(bad);
-    const game = createGame({ storage });
+    const { game, storage } = loadGame(bad);
     startStage(game, STAGE_ID);
     clearStage(game, { seconds: 60 });
 

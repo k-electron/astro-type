@@ -18,6 +18,7 @@ import {
   REPLAY_STAGE,
   RESTART_STAGE,
   START_STAGE,
+  REPLAY,
 } from '../shared/screens';
 import {
   type HeaderButton,
@@ -169,7 +170,7 @@ describe('the ← arrow on a Back button', () => {
       'Back to Debrief draws an arrow',
     ).toBe(true);
     player.click(closeLabel('debrief'));
-    player.click('Replay');
+    player.click(REPLAY);
     player.typePrompt({ characters: 3 });
 
     for (const menu of [
@@ -608,7 +609,7 @@ describe('Esc', () => {
     player.click(closeLabel('debrief'));
     expect(menuHeading('Galaxy Map')).toBeNull();
     expect(debriefHeading()).not.toBeNull();
-    player.click('Replay');
+    player.click(REPLAY);
     expect(screen.getByRole('button', { name: PAUSE_FLIGHT })).toBeTruthy();
     expect(progress()).toBe('0%');
   });

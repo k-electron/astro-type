@@ -9,9 +9,11 @@ import {
   PAUSE_FLIGHT,
   PAUSE_MENU_NAME,
   START_STAGE,
+  REPLAY,
 } from '../shared/screens';
 import {
   type HeaderButton,
+  isInert,
   type Player,
   renderGame,
   screen,
@@ -28,15 +30,6 @@ const MENU_BUTTONS = Object.keys(MENU_HEADINGS) as MenuButton[];
 
 const dialog = () => screen.getByRole('dialog');
 const noDialog = () => screen.queryByRole('dialog');
-
-/** True when the element, or anything around it, is inert. */
-function isInert(element: Element): boolean {
-  for (let node: Element | null = element; node; node = node.parentElement) {
-    if (node.hasAttribute('inert')) return true;
-    if ((node as Element & { inert?: boolean }).inert === true) return true;
-  }
-  return false;
-}
 
 /**
  * Whether the Flight Deck is inert: its HUD, found by name (`hidden` so a
@@ -152,7 +145,7 @@ describe('every overlay screen is a dialog over the Flight Deck', () => {
 
     expectOverlay();
     expect(within(dialog()).getByText(DEBRIEF_TITLE)).toBeTruthy();
-    player.click('Replay');
+    player.click(REPLAY);
     expectFlightDeckLive();
   });
 
