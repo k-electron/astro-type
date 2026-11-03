@@ -164,8 +164,8 @@ export interface Game {
    * Buy an item from the catalog at its catalog price: an Upgrade's next
    * level, or a Cosmetic (bought and equipped, or just equipped when it is
    * already owned). True when it bought or equipped something; false, with
-   * the Profile unchanged, when the Upgrade is at its last level or the
-   * Credits fall short.
+   * the Profile unchanged, when the Upgrade is at its last level, the
+   * Cosmetic is the one already equipped, or the Credits fall short.
    */
   buy(itemId: CatalogItemId): boolean;
   /** Replace the Profile with a Backup's, if it passes the Save's checks. */
