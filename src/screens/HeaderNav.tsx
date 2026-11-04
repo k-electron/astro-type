@@ -12,7 +12,7 @@ import {
   Map as MapIcon,
   Rocket,
   ChartColumn,
-  Type,
+  TextCursorInput,
 } from 'lucide-react';
 import { useGame } from '../app/useGame';
 import { useGameState } from '../app/useGameState';
@@ -50,7 +50,7 @@ export const HeaderNav: React.FC<{ ref?: React.Ref<HTMLElement> }> = ({
     { name: 'Galaxy Map', Icon: MapIcon, onPress: onOpenStages },
     { name: 'Hangar', Icon: Rocket, onPress: onOpenHangar },
     { name: 'Analytics', Icon: ChartColumn, onPress: onOpenAnalytics },
-    { name: 'Free Flight', Icon: Type, onPress: onOpenCustom },
+    { name: 'Free Flight', Icon: TextCursorInput, onPress: onOpenCustom },
   ];
   const onQuickPlay = () => send({ type: 'PRESS_FLIGHT_DECK' });
   const [isAudioMenuOpen, setIsAudioMenuOpen] = useState(false);
@@ -110,9 +110,7 @@ export const HeaderNav: React.FC<{ ref?: React.Ref<HTMLElement> }> = ({
             <span className="font-bold tabular-nums text-sm text-amber-200">
               {totalStars}
             </span>
-            <span className="hidden xl:inline text-[10px] text-amber-400/80 font-medium">
-              ★
-            </span>
+            <span className="sr-only">★</span>
           </button>
 
           <button

@@ -24,6 +24,7 @@ import {
 } from '../game/catalog';
 import { type CosmeticStatus, cosmeticStatus } from '../game/profile';
 import { useGame } from '../app/useGame';
+import { EQUIP, EQUIPPED } from './hangarLabels';
 import { useGameState } from '../app/useGameState';
 
 const UPGRADE_ICONS: Record<UpgradeIcon, LucideIcon> = {
@@ -127,7 +128,7 @@ const UpgradeCard: React.FC<{
 
 /**
  * One Cosmetic's card: its own heading (`children`), and the button that
- * buys it, equips it or says it is Active.
+ * buys it, equips it or says it is Equipped.
  */
 const CosmeticCard: React.FC<{
   entry: TrailEntry | SoundKitEntry;
@@ -161,7 +162,7 @@ const CosmeticCard: React.FC<{
                 : 'bg-slate-800/40 text-slate-600 cursor-not-allowed'
         }`}
       >
-        {equipped ? 'Active' : owned ? 'Equip' : `${entry.price} Cr`}
+        {equipped ? EQUIPPED : owned ? EQUIP : `${entry.price} Cr`}
       </button>
     </div>
   );
@@ -254,8 +255,8 @@ export const Hangar: React.FC = () => {
                       style={{ backgroundColor: trail.color }}
                     />
                     {status.equipped && (
-                      <span className="text-[10px] font-mono font-bold text-cyan-400 flex items-center gap-0.5">
-                        <Check className="w-3 h-3" /> EQUIPPED
+                      <span className="text-[10px] font-mono font-bold uppercase text-cyan-400 flex items-center gap-0.5">
+                        <Check className="w-3 h-3" /> {EQUIPPED}
                       </span>
                     )}
                   </div>
@@ -293,8 +294,8 @@ export const Hangar: React.FC = () => {
                       {kit.name}
                     </span>
                     {status.equipped && (
-                      <span className="text-[10px] font-mono font-bold text-cyan-400">
-                        ACTIVE
+                      <span className="text-[10px] font-mono font-bold uppercase text-cyan-400 flex items-center gap-0.5">
+                        <Check className="w-3 h-3" /> {EQUIPPED}
                       </span>
                     )}
                   </div>
