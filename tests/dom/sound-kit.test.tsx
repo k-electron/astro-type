@@ -1,8 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { OWNS_RETRO_SOUND_KIT, RETURNING_PLAYER } from '../shared/saves';
+import {
+  OWNS_RETRO_SOUND_KIT,
+  RETURNING_PLAYER,
+  trailEquipped,
+} from '../shared/saves';
 import { soundKitName } from '../shared/screens';
-import { renderGame, screen } from './harness';
+import { renderGame, screen, within } from './harness';
 import { OPEN_AUDIO_PANEL } from '../../src/screens/audioLabels';
+import { EQUIP, EQUIPPED } from '../../src/screens/hangarLabels';
 
 // A Sound Kit is a paid Cosmetic: the Hangar sells it, and the header's
 // audio panel only equips the ones the player owns. The panel still lists all
@@ -30,14 +35,16 @@ const showsAPrice = (which: keyof typeof VOICES) =>
   /\d{3}/.test(voice(which).textContent ?? '');
 
 // The Hangar lists the voices in the panel's order and marks the equipped one
-// with an "Active" button; the others read "Equip" or their price. (The Laser
-// Theme above them has its own "Active" button, so take the last four.)
+// with an Equipped button; the others read Equip or their price. (The Trails
+// above them have Equipped and Equip buttons too, so take the last four.)
 const hangarKitButtons = () =>
   screen
-    .getAllByRole('button', { name: /^(Active|Equip|[\d,]+ Cr)$/ })
+    .getAllByRole('button', {
+      name: new RegExp(`^(${EQUIPPED}|${EQUIP}|[\\d,]+ Cr)$`),
+    })
     .slice(-4);
 const equippedKitIndex = () =>
-  hangarKitButtons().findIndex((core) => core.textContent === 'Active');
+  hangarKitButtons().findIndex((core) => core.textContent === EQUIPPED);
 const credits = (text: string) =>
   screen.getByRole('button', { name: new RegExp(`^${text}\\s*Cr$`) });
 
@@ -102,7 +109,7 @@ describe('a Sound Kit the player does not own', () => {
 });
 
 describe('a Sound Kit the player owns', () => {
-  it('is equipped from the header at no cost, and the Hangar shows it Active', () => {
+  it('is equipped from the header at no cost, and the Hangar shows it Equipped', () => {
     const player = renderGame({ profile: OWNS_RETRO_SOUND_KIT });
     player.click(OPEN_AUDIO_PANEL);
 
@@ -142,32 +149,74 @@ describe('buying a Sound Kit in the Hangar', () => {
   });
 });
 
-// The Hangar marks what is equipped with a disabled "Active" button: choosing
-// it again would do nothing, so it is not offered. ("Active" and "Equip" are
-// not exported by the source yet, so they are spelled out here, as above.)
+// The Hangar marks what is equipped, on a Trail and on a Sound Kit alike, with
+// a "✓ EQUIPPED" badge on the card and a disabled Equipped button: choosing it
+// again would do nothing, so it is not offered. Both words come from
+// `src/screens/hangarLabels.ts`. (The badge shows the same word in capitals, so
+// its text is the word itself; the check mark is an icon, which only the
+// play-check sees.)
+
+/**
+ * The Cosmetic card a button belongs to: the nearest ancestor that holds no
+ * other button (a card has one button; the grid of cards has many).
+ */
+const cardOf = (button: HTMLElement): HTMLElement => {
+  let card = button;
+  while (card.parentElement?.querySelectorAll('button').length === 1) {
+    card = card.parentElement;
+  }
+  return card;
+};
+/** The corner badges on a card: the word outside any button. */
+const badgesIn = (card: HTMLElement) =>
+  within(card).queryAllByText(EQUIPPED, { ignore: 'button, script, style' });
+const equippedButtons = () =>
+  screen.getAllByRole('button', { name: EQUIPPED }) as HTMLButtonElement[];
+
 describe('the Hangar, for a Cosmetic that is already equipped', () => {
-  it('shows a disabled Active button on the equipped Trail and the equipped Sound Kit', () => {
+  it('shows the badge and a disabled Equipped button on the equipped Trail and the equipped Sound Kit', () => {
     const player = renderGame({ profile: RETURNING_PLAYER });
     player.openHeader('Hangar');
 
-    const active = screen.getAllByRole('button', { name: 'Active' });
+    const buttons = equippedButtons();
 
-    expect(active).toHaveLength(2);
-    for (const button of active) {
-      expect((button as HTMLButtonElement).disabled).toBe(true);
+    expect(buttons).toHaveLength(2);
+    for (const button of buttons) {
+      expect(button.disabled).toBe(true);
+      expect(badgesIn(cardOf(button))).toHaveLength(1);
     }
   });
 
-  it('offers Equip on an owned Sound Kit; equipping it moves Active onto it for free', () => {
+  it('offers Equip, and no badge, on an owned Trail that is not equipped', () => {
+    const player = renderGame({
+      profile: { ...RETURNING_PLAYER, ...trailEquipped('AMBER') },
+    });
+    player.openHeader('Hangar');
+
+    const equip = screen.getByRole('button', { name: EQUIP });
+
+    expect((equip as HTMLButtonElement).disabled).toBe(false);
+    expect(badgesIn(cardOf(equip))).toHaveLength(0);
+    // The Trail the player equipped has the badge now: one Trail, one Sound Kit.
+    expect(equippedButtons()).toHaveLength(2);
+  });
+
+  it('offers Equip, and no badge, on an owned Sound Kit; equipping it moves the badge and Equipped onto it for free', () => {
     const player = renderGame({ profile: OWNS_RETRO_SOUND_KIT });
     player.openHeader('Hangar');
-    const equip = screen.getByRole('button', { name: 'Equip' });
+    const equip = screen.getByRole('button', { name: EQUIP });
     expect((equip as HTMLButtonElement).disabled).toBe(false);
+    expect(badgesIn(cardOf(equip))).toHaveLength(0);
 
-    player.click('Equip');
+    player.click(EQUIP);
 
     expect(equippedKitIndex()).toBe(1);
-    expect((hangarKitButtons()[1] as HTMLButtonElement).disabled).toBe(true);
+    const nowEquipped = hangarKitButtons()[1] as HTMLButtonElement;
+    expect(nowEquipped.disabled).toBe(true);
+    expect(badgesIn(cardOf(nowEquipped))).toHaveLength(1);
+    expect(badgesIn(cardOf(hangarKitButtons()[0] as HTMLElement))).toHaveLength(
+      0,
+    );
     expect(credits('1,234')).toBeTruthy();
   });
 });

@@ -51,6 +51,18 @@ test('the Save outlives a reload: Stars, a Backup round trip, a Free Flight, and
     await expect.soft(notice(page)).toHaveCount(0);
   });
 
+  await test.step('the Stars button draws no ★ after the count: the icon is the only star', async () => {
+    // The default window is 1280px wide, where the header once added a "★" of
+    // its own. The button's name still ends in one ("5 ★", read above), so
+    // the glyph may stay in the page for a screen reader, but it may take no
+    // room: a DOM test can't tell, because it has no CSS.
+    const glyph = stars(page, 5).getByText('★', { exact: true });
+    const box = (await glyph.count()) > 0 ? await glyph.boundingBox() : null;
+    expect
+      .soft(box === null || box.width <= 1, 'the ★ after the count takes room')
+      .toBe(true);
+  });
+
   let backupPath = '';
   await test.step('Export Backup downloads a file that says which version it is', async () => {
     await page.getByRole('button', { name: 'Analytics', exact: true }).click();
