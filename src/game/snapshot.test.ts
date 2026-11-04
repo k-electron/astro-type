@@ -133,6 +133,15 @@ describe('one notification per move', () => {
     expect(seen).toHaveLength(0);
   });
 
+  it('sending the player back to a first Stage they are already on leaves the Run the same object', () => {
+    const game = newGame();
+    const before = game.getState().run;
+
+    game.resetProgress();
+
+    expect(game.getState().run).toBe(before);
+  });
+
   it('a listener that has unsubscribed hears nothing more', () => {
     const game = newGame();
     const { seen, stop } = watch(game);

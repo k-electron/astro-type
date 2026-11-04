@@ -22,7 +22,7 @@ import {
   type StageResult,
 } from './profile';
 import {
-  clearedPerformance,
+  clearedRun,
   countsAsKeystroke,
   idleRun,
   type KeyOptions,
@@ -116,7 +116,13 @@ export function createRunSlice(
     },
 
     showFirstStage: () => {
-      set({ run: { ...get().run, stage: FIRST_STAGE }, debrief: null });
+      const { run } = get();
+      // Already on the first Stage: the Run stays the very object it was.
+      set(
+        run.stage === FIRST_STAGE
+          ? { debrief: null }
+          : { run: { ...run, stage: FIRST_STAGE }, debrief: null },
+      );
     },
 
     pressKey: (key, options) => {
@@ -180,7 +186,7 @@ export function createRunSlice(
       );
 
       set({
-        run: clearedPerformance(run),
+        run: clearedRun(run),
         debrief: {
           ...outcome,
           score: result.score,

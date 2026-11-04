@@ -85,7 +85,8 @@ export type GameProfile = PlayerProfile & { totalStars: number };
 /**
  * Everything a screen shows, settled: the machine and the store have both
  * finished the move that made it. It is replaced, never changed in place, and
- * only when one of its fields changed; `run` is the store's own Run, a different object only when the Run changed.
+ * only when one of its fields changed; `run` is the store's own Run, a
+ * different object only when the Run changed.
  */
 export interface GameState {
   screen: Screen;

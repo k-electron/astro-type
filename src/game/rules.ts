@@ -520,7 +520,7 @@ export function tick(run: Run, steps: number): Run {
 }
 
 /** The Run's numbers once it is cleared: the Streak, Multiplier and Overdrive are over. */
-export function clearedPerformance(run: Run): Run {
+export function clearedRun(run: Run): Run {
   return {
     ...run,
     overdriveActive: false,
@@ -566,8 +566,8 @@ function wpmOf(run: Run, elapsedSeconds: number): number {
 }
 
 /** Live WPM for the HUD. Accuracy follows every keystroke instead (see `strike`). */
-function withLiveWpm(prev: Run, elapsedSeconds: number): Run {
-  return { ...prev, netWpm: wpmOf(prev, elapsedSeconds) };
+function withLiveWpm(run: Run, elapsedSeconds: number): Run {
+  return { ...run, netWpm: wpmOf(run, elapsedSeconds) };
 }
 
 /** What scoring a cleared Run gives: the part of a Stage's result the rules work out. */
