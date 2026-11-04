@@ -1586,13 +1586,16 @@ export const FREE_FLIGHT_PRESETS = [
 ];
 
 // Free Flight text, checked at Launch. This schema is the only definition of
-// what Free Flight text is: look-alike characters become plain keys, and any
-// character the shown keyboard still can't type is reported.
+// what Free Flight text is: look-alike characters become plain keys, invisible
+// formatting characters are dropped, and any character the shown keyboard
+// still can't type is reported.
 const LOOK_ALIKES: [RegExp, string][] = [
   [/[\u2018\u2019\u201B]/g, "'"], // curly single quotes
   [/[\u201C\u201D\u201F]/g, '"'], // curly double quotes
   [/[\u2010-\u2015\u2212]/g, '-'], // long dashes and the minus sign
   [/\r\n|[\r\n\t\u2028\u2029]/g, ' '], // line breaks and tabs
+  [/\p{Cf}/gu, ''], // invisible formatting characters: joiners, soft hyphen, BOM, bidi marks
+  [/[\u00A0\u2000-\u200A\u202F\u205F\u3000]/g, ' '], // spaces that look like a space
 ];
 
 /** A character has a key on the shown keyboard when the key table has it. */
@@ -1635,8 +1638,8 @@ export const FreeFlightTextSchema = z
       });
       return;
     }
-    // By user-perceived character: a family emoji is one, and a cluster of
-    // several code points has no key, so it is listed whole.
+    // By user-perceived character: a cluster of several code points (a
+    // letter with a combining mark, say) has no key, so it is listed whole.
     const clusters = new Set(
       Array.from(graphemes.segment(context.value), ({ segment }) => segment),
     );
