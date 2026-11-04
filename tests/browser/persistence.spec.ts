@@ -9,6 +9,7 @@ import { DISMISS_NOTICE_LABEL } from '../../src/screens/dismissLabel';
 import { RETURNING_PLAYER } from '../shared/saves';
 import { DEBRIEF_TITLE, MENU_HEADINGS } from '../shared/screens';
 import { launchFreeFlight, seedSave, typeText } from './helpers';
+import { inFreshContext } from './journey-helpers';
 
 // J5: the Save in real localStorage, across reloads. Whether a Save is read
 // and written the right way is for the unit tests (save.test.ts,
@@ -67,6 +68,9 @@ test('the Save outlives a reload: Stars, a Backup round trip, a Free Flight, and
   });
 
   let backupPath = '';
+  // The version the game writes into a Backup, read from the one it exports
+  // below; the refused-Backup step builds a newer one from it.
+  let backupVersion = 0;
   await test.step('Export Backup downloads a file that says which version it is', async () => {
     await page.getByRole('button', { name: 'Analytics', exact: true }).click();
     await expect(
@@ -77,6 +81,7 @@ test('the Save outlives a reload: Stars, a Backup round trip, a Free Flight, and
     await page.getByRole('button', { name: 'Export Backup' }).click();
     backupPath = await (await download).path();
     const backup = JSON.parse(await readFile(backupPath, 'utf8'));
+    backupVersion = backup.version;
     expect.soft(backup.version).toBe(1);
     expect.soft(backup.totalCredits).toBe(1234);
   });
@@ -102,108 +107,105 @@ test('the Save outlives a reload: Stars, a Backup round trip, a Free Flight, and
     // A context of its own at 1280x800, so Analytics opens scrolled to the top
     // and nothing earlier in the journey has already scrolled the card into
     // view. Only the DOM-blind fact is checked here: where the card ends up.
-    const context = await browser.newContext({
-      baseURL: test.info().project.use.baseURL,
-      viewport: { width: 1280, height: 800 },
-    });
-    try {
-      const tall = await context.newPage();
-      await seedSave(tall, RETURNING_PLAYER);
-      await tall.goto('/');
-      await tall
-        .getByRole('button', { name: 'Analytics', exact: true })
-        .click();
-      await expect(
-        tall.getByRole('dialog', { name: MENU_HEADINGS.Analytics }),
-      ).toBeVisible();
+    await inFreshContext(
+      browser,
+      async (tall) => {
+        await seedSave(tall, RETURNING_PLAYER);
+        await tall.goto('/');
+        await tall
+          .getByRole('button', { name: 'Analytics', exact: true })
+          .click();
+        await expect(
+          tall.getByRole('dialog', { name: MENU_HEADINGS.Analytics }),
+        ).toBeVisible();
 
-      // A Backup from a newer version of the game: refused, with a message.
-      await tall.getByLabel('Import Backup', { exact: true }).setInputFiles({
-        name: 'astrotype_backup.json',
-        mimeType: 'application/json',
-        buffer: Buffer.from(
-          JSON.stringify({ ...RETURNING_PLAYER, version: 2 }),
-        ),
-      });
-      const message = tall.getByText(NEWER_BACKUP_MESSAGE, { exact: true });
-      await expect(message).toBeVisible();
+        // A Backup from a newer version of the game: refused, with a message.
+        await tall.getByLabel('Import Backup', { exact: true }).setInputFiles({
+          name: 'astrotype_backup.json',
+          mimeType: 'application/json',
+          buffer: Buffer.from(
+            JSON.stringify({ ...RETURNING_PLAYER, version: backupVersion + 1 }),
+          ),
+        });
+        const message = tall.getByText(NEWER_BACKUP_MESSAGE, { exact: true });
+        await expect(message).toBeVisible();
 
-      // The card is the nearest box around the message that has a border above
-      // and below it and also holds Export Backup (the message row may have a
-      // border of its own). The card has no name of its own to find it by.
-      const measure = () =>
-        message.evaluate((row, exportName) => {
-          const bordered = (element: Element) => {
-            const style = getComputedStyle(element);
-            return (
-              Number.parseFloat(style.borderTopWidth) > 0 &&
-              Number.parseFloat(style.borderBottomWidth) > 0
-            );
-          };
-          let card: Element | null = row;
-          while (
-            card &&
-            !(
-              bordered(card) &&
-              [...card.querySelectorAll('button')].some(
-                (button) => button.textContent?.trim() === exportName,
+        // The card is the nearest box around the message that has a border above
+        // and below it and also holds Export Backup (the message row may have a
+        // border of its own). The card has no name of its own to find it by.
+        const measure = () =>
+          message.evaluate((row, exportName) => {
+            const bordered = (element: Element) => {
+              const style = getComputedStyle(element);
+              return (
+                Number.parseFloat(style.borderTopWidth) > 0 &&
+                Number.parseFloat(style.borderBottomWidth) > 0
+              );
+            };
+            let card: Element | null = row;
+            while (
+              card &&
+              !(
+                bordered(card) &&
+                [...card.querySelectorAll('button')].some(
+                  (button) => button.textContent?.trim() === exportName,
+                )
               )
-            )
-          ) {
-            card = card.parentElement;
-          }
-          if (!card) return { found: false as const };
+            ) {
+              card = card.parentElement;
+            }
+            if (!card) return { found: false as const };
 
-          // What is on screen of the card's place: the viewport, narrowed by
-          // every box around it that clips or scrolls its content.
-          const box = card.getBoundingClientRect();
-          let top = 0;
-          let bottom = window.innerHeight;
-          for (
-            let parent = card.parentElement;
-            parent;
-            parent = parent.parentElement
-          ) {
-            if (getComputedStyle(parent).overflowY === 'visible') continue;
-            const clip = parent.getBoundingClientRect();
-            top = Math.max(top, clip.top);
-            bottom = Math.min(bottom, clip.bottom);
-          }
-          const inside = row.getBoundingClientRect();
-          return {
-            found: true as const,
-            cardTop: box.top,
-            cardBottom: box.bottom,
-            top,
-            bottom,
-            messageInsideCard:
-              inside.top >= box.top - 1 && inside.bottom <= box.bottom + 1,
-          };
-        }, 'Export Backup');
+            // What is on screen of the card's place: the viewport, narrowed by
+            // every box around it that clips or scrolls its content.
+            const box = card.getBoundingClientRect();
+            let top = 0;
+            let bottom = window.innerHeight;
+            for (
+              let parent = card.parentElement;
+              parent;
+              parent = parent.parentElement
+            ) {
+              if (getComputedStyle(parent).overflowY === 'visible') continue;
+              const clip = parent.getBoundingClientRect();
+              top = Math.max(top, clip.top);
+              bottom = Math.min(bottom, clip.bottom);
+            }
+            const inside = row.getBoundingClientRect();
+            return {
+              found: true as const,
+              cardTop: box.top,
+              cardBottom: box.bottom,
+              top,
+              bottom,
+              messageInsideCard:
+                inside.top >= box.top - 1 && inside.bottom <= box.bottom + 1,
+            };
+          }, 'Export Backup');
 
-      // Polled: the scroll may still be moving when the message appears.
-      await expect
-        .configure({ soft: true })
-        .poll(async () => {
-          const m = await measure();
-          if (!m.found) return 'the Save & Backup card was not found';
-          if (m.cardBottom > m.bottom + 1)
-            return `the card's bottom edge is ${Math.round(m.cardBottom - m.bottom)}px below the fold`;
-          if (m.cardTop < m.top - 1)
-            return `the card's top edge is ${Math.round(m.top - m.cardTop)}px above the panel`;
-          return 'whole';
-        })
-        .toBe('whole');
-      const final = await measure();
-      expect
-        .soft(
-          final.found && final.messageInsideCard,
-          'the message is in the card',
-        )
-        .toBe(true);
-    } finally {
-      await context.close();
-    }
+        // Polled: the scroll may still be moving when the message appears.
+        await expect
+          .configure({ soft: true })
+          .poll(async () => {
+            const m = await measure();
+            if (!m.found) return 'the Save & Backup card was not found';
+            if (m.cardBottom > m.bottom + 1)
+              return `the card's bottom edge is ${Math.round(m.cardBottom - m.bottom)}px below the fold`;
+            if (m.cardTop < m.top - 1)
+              return `the card's top edge is ${Math.round(m.top - m.cardTop)}px above the panel`;
+            return 'whole';
+          })
+          .toBe('whole');
+        const final = await measure();
+        expect
+          .soft(
+            final.found && final.messageInsideCard,
+            'the message is in the card',
+          )
+          .toBe(true);
+      },
+      { width: 1280, height: 800 },
+    );
   });
 
   await test.step('clearing a Free Flight earns no Stars, and what it paid is kept after a reload', async () => {
@@ -220,11 +222,7 @@ test('the Save outlives a reload: Stars, a Backup round trip, a Free Flight, and
 
   await test.step('a Save the game cannot read starts fresh with a notice, which stays through reloads until it is dismissed', async () => {
     // A second browser context has localStorage of its own.
-    const context = await browser.newContext({
-      baseURL: test.info().project.use.baseURL,
-    });
-    try {
-      const second = await context.newPage();
+    await inFreshContext(browser, async (second) => {
       // A version this game does not know: the whole Save is set aside.
       await seedSave(second, { ...RETURNING_PLAYER, version: 2 });
       await second.goto('/');
@@ -245,8 +243,6 @@ test('the Save outlives a reload: Stars, a Backup round trip, a Free Flight, and
       await second.reload();
       await expect(stars(second, 0)).toBeVisible();
       await expect.soft(notice(second)).toHaveCount(0);
-    } finally {
-      await context.close();
-    }
+    });
   });
 });

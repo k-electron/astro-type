@@ -1,4 +1,10 @@
-import { expect, type Locator, type Page } from '@playwright/test';
+import {
+  type Browser,
+  expect,
+  type Locator,
+  type Page,
+  test,
+} from '@playwright/test';
 import { BANNED_NAME } from '../shared/names';
 import { flightDeckLabel } from '../../src/screens/closeLabel';
 import { PAUSE_FLIGHT, PAUSE_MENU_NAME } from '../shared/screens';
@@ -8,6 +14,28 @@ import { drone, hud, launchFreeFlight, pauseMenu } from './helpers';
 // helpers.ts, they find things the way a player sees them: by role and visible
 // text, and, inside the Action Deck's canvas, through the PixiJS accessibility
 // layer.
+
+/**
+ * Runs `journey` on a page of a browser context of its own, so the Save the
+ * step seeds, and the window size it sets, reach no other step. The context is
+ * closed afterwards, even when the step fails. It needs the running test's
+ * project for the `baseURL`, so call it inside a test.
+ */
+export async function inFreshContext(
+  browser: Browser,
+  journey: (page: Page) => Promise<void>,
+  viewport?: { width: number; height: number },
+): Promise<void> {
+  const context = await browser.newContext({
+    baseURL: test.info().project.use.baseURL,
+    ...(viewport ? { viewport } : {}),
+  });
+  try {
+    await journey(await context.newPage());
+  } finally {
+    await context.close();
+  }
+}
 
 /** The bottom edge of an element on the page, or -1 while it isn't drawn. */
 export async function bottomEdge(element: Locator): Promise<number> {

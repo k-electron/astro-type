@@ -255,12 +255,13 @@ const untypeableOf = (text: string): string[] | undefined => {
   return undefined;
 };
 
+/** A code point as the game names it, such as "U+00AD". */
+const codeOf = (codePoint: number): string =>
+  `U+${codePoint.toString(16).toUpperCase().padStart(4, '0')}`;
+
 /** Test-name labels for a table of code points, such as "U+00AD soft hyphen". */
 const labelled = (rows: [number, string][]): [string, number][] =>
-  rows.map(([codePoint, name]) => [
-    `U+${codePoint.toString(16).toUpperCase().padStart(4, '0')} ${name}`,
-    codePoint,
-  ]);
+  rows.map(([codePoint, name]) => [`${codeOf(codePoint)} ${name}`, codePoint]);
 
 describe('Free Flight text', () => {
   const JOINER = String.fromCodePoint(0x200d);
@@ -323,37 +324,6 @@ describe('Free Flight text', () => {
     );
   });
 
-  it.each(
-    labelled([
-      [0x00ad, 'soft hyphen'],
-      [0x200b, 'zero-width space'],
-      [0x200c, 'zero-width non-joiner'],
-      [0x200d, 'zero-width joiner'],
-      [0x200e, 'left-to-right mark'],
-      [0x200f, 'right-to-left mark'],
-      [0x202a, 'left-to-right embedding'],
-      [0x202b, 'right-to-left embedding'],
-      [0x202c, 'pop directional formatting'],
-      [0x202d, 'left-to-right override'],
-      [0x202e, 'right-to-left override'],
-      [0x2060, 'word joiner'],
-      [0x2061, 'function application'],
-      [0x2062, 'invisible times'],
-      [0x2063, 'invisible separator'],
-      [0x2064, 'invisible plus'],
-      [0xfeff, 'zero-width no-break space'],
-      // "The rest of Cf": other members of the category.
-      [0x061c, 'Arabic letter mark'],
-      [0x180e, 'Mongolian vowel separator'],
-      [0x2066, 'left-to-right isolate'],
-      [0x206f, 'nominal digit shapes'],
-      [0xe0001, 'language tag'],
-    ]),
-  )('removes %s from the middle of a word', (_, codePoint) => {
-    const character = String.fromCodePoint(codePoint);
-    expect(FreeFlightTextSchema.parse(`a${character}b`)).toBe('ab');
-  });
-
   it('removes every invisible formatting character of Unicode, wherever it sits', () => {
     const notRemoved: string[] = [];
     for (let codePoint = 0; codePoint <= 0x10ffff; codePoint++) {
@@ -361,7 +331,7 @@ describe('Free Flight text', () => {
       if (!/^\p{Cf}$/u.test(character)) continue;
       const result = FreeFlightTextSchema.safeParse(`a${character}b`);
       if (!result.success || result.data !== 'ab') {
-        notRemoved.push(`U+${codePoint.toString(16).toUpperCase()}`);
+        notRemoved.push(codeOf(codePoint));
       }
     }
     expect(notRemoved).toEqual([]);

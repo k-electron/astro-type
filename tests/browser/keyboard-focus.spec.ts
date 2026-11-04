@@ -20,7 +20,7 @@ import {
   PAUSE_MENU_NAME,
   START_STAGE,
 } from '../shared/screens';
-import { pauseButton, resumeButton } from './journey-helpers';
+import { inFreshContext, pauseButton, resumeButton } from './journey-helpers';
 import { WIPE_STARS_TITLE } from '../../src/screens/confirmLabels';
 import { CURRICULUM_SECTORS } from '../../src/curriculum/curriculum';
 import {
@@ -250,16 +250,10 @@ test('native keys and focus: Space, Esc, Enter and the window losing focus', asy
   await test.step('the header still fits when Audio is muted and the Stars and Credits are large', async () => {
     for (const [who, save] of Object.entries(HEADER_PROFILES)) {
       // A context of its own, so the Save does not reach the steps below.
-      const context = await browser.newContext({
-        baseURL: test.info().project.use.baseURL,
-      });
-      try {
-        const seeded = await context.newPage();
+      await inFreshContext(browser, async (seeded) => {
         await seedSave(seeded, save);
         await expectHeaderFitsInEveryState(seeded, who);
-      } finally {
-        await context.close();
-      }
+      });
     }
   });
 
@@ -269,11 +263,7 @@ test('native keys and focus: Space, Esc, Enter and the window losing focus', asy
     const furthest = CURRICULUM_SECTORS.at(-1);
     if (!furthest) throw new Error('the curriculum has no Sectors');
     // A context of its own, so the Save does not reach the steps below.
-    const context = await browser.newContext({
-      baseURL: test.info().project.use.baseURL,
-    });
-    try {
-      const seeded = await context.newPage();
+    await inFreshContext(browser, async (seeded) => {
       await seedSave(seeded, EVERY_STAGE_CLEARED);
       for (const height of [720, 800]) {
         await seeded.setViewportSize({ width: 1280, height });
@@ -294,9 +284,7 @@ test('native keys and focus: Space, Esc, Enter and the window losing focus', asy
           )
           .toBeInViewport({ ratio: 1 });
       }
-    } finally {
-      await context.close();
-    }
+    });
   });
 
   await test.step('the text prompt wraps between words, and inside a word only when it cannot fit a line', async () => {
@@ -634,73 +622,70 @@ test('native keys and focus: Space, Esc, Enter and the window losing focus', asy
     // A context of its own, with a Save that has Stars to lose, and a window
     // wide enough for the header to show its Stars count. Last, so a failure
     // here hides none of the steps above.
-    const context = await browser.newContext({
-      baseURL: test.info().project.use.baseURL,
-      viewport: { width: WIDEST, height: 800 },
-    });
-    try {
-      const seeded = await context.newPage();
-      await seedSave(seeded, RETURNING_PLAYER);
-      await seeded.goto('/');
-      const stars = seeded.getByRole('button', { name: '5 ★', exact: true });
-      await expect(stars).toBeVisible();
-      await seeded
-        .getByRole('navigation')
-        .getByRole('button', { name: 'Analytics', exact: true })
-        .click();
-      await expect(
-        seeded.getByRole('heading', { name: MENU_HEADINGS.Analytics }),
-      ).toBeVisible();
+    await inFreshContext(
+      browser,
+      async (seeded) => {
+        await seedSave(seeded, RETURNING_PLAYER);
+        await seeded.goto('/');
+        const stars = seeded.getByRole('button', { name: '5 ★', exact: true });
+        await expect(stars).toBeVisible();
+        await seeded
+          .getByRole('navigation')
+          .getByRole('button', { name: 'Analytics', exact: true })
+          .click();
+        await expect(
+          seeded.getByRole('heading', { name: MENU_HEADINGS.Analytics }),
+        ).toBeVisible();
 
-      const wipeStars = seeded.getByRole('button', {
-        name: 'Wipe Stars',
-        exact: true,
-      });
-      const confirm = seeded.getByRole('alertdialog', {
-        name: WIPE_STARS_TITLE,
-      });
-      const cancel = confirm.getByRole('button', { name: 'Cancel' });
+        const wipeStars = seeded.getByRole('button', {
+          name: 'Wipe Stars',
+          exact: true,
+        });
+        const confirm = seeded.getByRole('alertdialog', {
+          name: WIPE_STARS_TITLE,
+        });
+        const cancel = confirm.getByRole('button', { name: 'Cancel' });
 
-      // Opening: focus is on Cancel, so Enter cancels and wipes nothing.
-      await wipeStars.click();
-      await expect(confirm).toBeVisible();
-      await expect.soft(cancel, 'focus starts on Cancel').toBeFocused();
-      await seeded.keyboard.press('Enter');
-      await expect(confirm).toBeHidden();
-      await expect.soft(stars, 'Enter on Cancel wipes nothing').toBeVisible();
-      await expect
-        .soft(wipeStars, 'focus goes back to the Wipe Stars button')
-        .toBeFocused();
+        // Opening: focus is on Cancel, so Enter cancels and wipes nothing.
+        await wipeStars.click();
+        await expect(confirm).toBeVisible();
+        await expect.soft(cancel, 'focus starts on Cancel').toBeFocused();
+        await seeded.keyboard.press('Enter');
+        await expect(confirm).toBeHidden();
+        await expect.soft(stars, 'Enter on Cancel wipes nothing').toBeVisible();
+        await expect
+          .soft(wipeStars, 'focus goes back to the Wipe Stars button')
+          .toBeFocused();
 
-      // Tab: only the confirm's buttons and the header, never Analytics.
-      await wipeStars.click();
-      await expect(confirm).toBeVisible();
-      let reachedHeader = false;
-      let reachedConfirm = false;
-      let backInConfirm = false;
-      for (let press = 0; press < 30 && !backInConfirm; press++) {
-        await seeded.keyboard.press('Tab');
-        const where = await whereFocusIsOnConfirm(seeded);
-        expect.soft(where, `Tab press ${press + 1}`).not.toBe('elsewhere');
-        if (where === 'confirm') {
-          reachedConfirm = true;
-          if (reachedHeader) backInConfirm = true;
+        // Tab: only the confirm's buttons and the header, never Analytics.
+        await wipeStars.click();
+        await expect(confirm).toBeVisible();
+        let reachedHeader = false;
+        let reachedConfirm = false;
+        let backInConfirm = false;
+        for (let press = 0; press < 30 && !backInConfirm; press++) {
+          await seeded.keyboard.press('Tab');
+          const where = await whereFocusIsOnConfirm(seeded);
+          expect.soft(where, `Tab press ${press + 1}`).not.toBe('elsewhere');
+          if (where === 'confirm') {
+            reachedConfirm = true;
+            if (reachedHeader) backInConfirm = true;
+          }
+          if (where === 'header') reachedHeader = true;
         }
-        if (where === 'header') reachedHeader = true;
-      }
-      expect.soft(reachedConfirm, 'Tab reaches the confirm').toBe(true);
-      expect.soft(reachedHeader, 'Tab reaches the header').toBe(true);
-      expect.soft(backInConfirm, 'and comes back to the confirm').toBe(true);
+        expect.soft(reachedConfirm, 'Tab reaches the confirm').toBe(true);
+        expect.soft(reachedHeader, 'Tab reaches the header').toBe(true);
+        expect.soft(backInConfirm, 'and comes back to the confirm').toBe(true);
 
-      // Esc cancels the confirm, and Analytics stays open.
-      await seeded.keyboard.press('Escape');
-      await expect.soft(confirm).toBeHidden();
-      await expect
-        .soft(seeded.getByRole('heading', { name: MENU_HEADINGS.Analytics }))
-        .toBeVisible();
-      await expect.soft(stars, 'Esc wipes nothing').toBeVisible();
-    } finally {
-      await context.close();
-    }
+        // Esc cancels the confirm, and Analytics stays open.
+        await seeded.keyboard.press('Escape');
+        await expect.soft(confirm).toBeHidden();
+        await expect
+          .soft(seeded.getByRole('heading', { name: MENU_HEADINGS.Analytics }))
+          .toBeVisible();
+        await expect.soft(stars, 'Esc wipes nothing').toBeVisible();
+      },
+      { width: WIDEST, height: 800 },
+    );
   });
 });

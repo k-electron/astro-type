@@ -1588,8 +1588,10 @@ export const FREE_FLIGHT_PRESETS = [
 // Free Flight text, checked at Launch. This schema is the only definition of
 // what Free Flight text is: look-alike characters become plain keys, invisible
 // formatting characters are dropped, and any character the shown keyboard
-// still can't type is reported.
-const LOOK_ALIKES: [RegExp, string][] = [
+// still can't type is reported. The cleanups below run first, in order: each is
+// a pattern and what replaces it (a look-alike swap, a removal, or a fold into
+// a plain space).
+const TEXT_CLEANUPS: [RegExp, string][] = [
   [/[\u2018\u2019\u201B]/g, "'"], // curly single quotes
   [/[\u201C\u201D\u201F]/g, '"'], // curly double quotes
   [/[\u2010-\u2015\u2212]/g, '-'], // long dashes and the minus sign
@@ -1624,8 +1626,9 @@ export const FREE_FLIGHT_EMPTY_TEXT_MESSAGE = 'Enter some text to type.';
 export const FreeFlightTextSchema = z
   .string()
   .transform((text) =>
-    LOOK_ALIKES.reduce(
-      (cleaned, [lookAlike, plain]) => cleaned.replace(lookAlike, plain),
+    TEXT_CLEANUPS.reduce(
+      (cleaned, [pattern, replacement]) =>
+        cleaned.replace(pattern, replacement),
       text,
     ).trim(),
   )
