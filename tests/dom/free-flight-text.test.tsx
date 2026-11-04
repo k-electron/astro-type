@@ -8,7 +8,12 @@ import { START_FREE_FLIGHT, YOUR_TEXT } from '../shared/screens';
 import { renderGame, screen } from './harness';
 
 const ROCKET = String.fromCodePoint(0x1f680);
-const FAMILY = String.fromCodePoint(0x1f468, 0x200d, 0x1f469, 0x200d, 0x1f467);
+const JOINER = String.fromCodePoint(0x200d);
+const NO_BREAK_SPACE = String.fromCodePoint(0xa0);
+const FAMILY_PARTS = [0x1f468, 0x1f469, 0x1f467].map((codePoint) =>
+  String.fromCodePoint(codePoint),
+);
+const FAMILY = FAMILY_PARTS.join(JOINER);
 
 /** Free Flight, open, with `text` in the text box. */
 function freeFlightWith(text: string) {
@@ -59,15 +64,26 @@ describe('Free Flight tells you why you cannot start', () => {
     expect(startButton().disabled).toBe(true);
   });
 
-  it('names a family emoji once, as itself, not as its pieces', () => {
+  it('lists a family emoji as its separate parts, not as the joined emoji', () => {
     const text = `ready ${FAMILY} launch`;
     freeFlightWith(text);
 
     const message = screen.getByText(messageFor(text)).textContent ?? '';
-    // Once, as itself (two parts around it means exactly one occurrence).
-    expect(message.split(FAMILY)).toHaveLength(2);
+    for (const part of FAMILY_PARTS) expect(message).toContain(part);
+    expect(message).not.toContain(FAMILY);
     expect(message).not.toMatch(/U\+200D/);
     expect(startButton().disabled).toBe(true);
+  });
+
+  it.each([
+    ['a zero-width joiner', `ready${JOINER} launch`],
+    ['a no-break space', `ready${NO_BREAK_SPACE}launch`],
+  ])('says nothing, and can start, when the text has %s', (_, text) => {
+    freeFlightWith(text);
+
+    // The message line is always on screen; it is empty when the text is fine.
+    expect(screen.getByRole('alert').textContent).toBe('');
+    expect(startButton().disabled).toBe(false);
   });
 
   it('puts the message right under the text box, above the count', () => {

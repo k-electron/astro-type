@@ -244,7 +244,6 @@ const RIGHT_DOUBLE_QUOTE = '\u201D';
 const CURLY_APOSTROPHE = '\u2019';
 const EM_DASH = '\u2014';
 const EN_DASH = '\u2013';
-const NO_BREAK_SPACE = '\u00A0';
 
 const untypeableOf = (text: string): string[] | undefined => {
   const result = FreeFlightTextSchema.safeParse(text);
@@ -256,8 +255,18 @@ const untypeableOf = (text: string): string[] | undefined => {
   return undefined;
 };
 
+/** Test-name labels for a table of code points, such as "U+00AD soft hyphen". */
+const labelled = (rows: [number, string][]): [string, number][] =>
+  rows.map(([codePoint, name]) => [
+    `U+${codePoint.toString(16).toUpperCase().padStart(4, '0')} ${name}`,
+    codePoint,
+  ]);
+
 describe('Free Flight text', () => {
   const JOINER = String.fromCodePoint(0x200d);
+  const ZERO_WIDTH_SPACE = String.fromCodePoint(0x200b);
+  const SOFT_HYPHEN = String.fromCodePoint(0xad);
+  const BOM = String.fromCodePoint(0xfeff);
   const COMBINING_ACUTE = String.fromCodePoint(0x301);
 
   it('turns look-alike characters into plain keys', () => {
@@ -285,34 +294,130 @@ describe('Free Flight text', () => {
     ]);
   });
 
-  it('names an invisible character by its code', () => {
-    expect(untypeableOf(`no${NO_BREAK_SPACE}break`)).toEqual(['U+00A0']);
+  it('names a control character, which nothing can show, by its code', () => {
+    expect(untypeableOf('go\u0007now')).toEqual(['U+0007']);
+  });
+
+  it('names each control character once, in the order they appear', () => {
+    expect(untypeableOf('a\u0085b\u0007c\u0085d')).toEqual([
+      'U+0085',
+      'U+0007',
+    ]);
   });
 
   it('refuses text with nothing to type', () => {
     expect(FreeFlightTextSchema.safeParse(' \n\t ').success).toBe(false);
   });
 
-  it('lists a family emoji once, as itself, not split into its pieces', () => {
-    const family = String.fromCodePoint(
-      0x1f468,
-      0x200d,
-      0x1f469,
-      0x200d,
-      0x1f467,
+  it('removes an invisible formatting character glued to a letter', () => {
+    expect(FreeFlightTextSchema.parse(`a${JOINER}b`)).toBe('ab');
+    expect(FreeFlightTextSchema.parse(`go ${JOINER}now`)).toBe('go now');
+    expect(FreeFlightTextSchema.parse(`${JOINER}go`)).toBe('go');
+    expect(FreeFlightTextSchema.parse(`${JOINER}${JOINER}go`)).toBe('go');
+  });
+
+  it('removes a byte order mark at the start and a soft hyphen inside a word', () => {
+    expect(FreeFlightTextSchema.parse(`${BOM}hello`)).toBe('hello');
+    expect(FreeFlightTextSchema.parse(`co${SOFT_HYPHEN}operate`)).toBe(
+      'cooperate',
     );
-    expect(untypeableOf(`${family} and ${family}`)).toEqual([family]);
   });
 
-  it('names a zero-width joiner that stands alone by its code', () => {
-    expect(untypeableOf(`${JOINER}go`)).toEqual(['U+200D']);
+  it.each(
+    labelled([
+      [0x00ad, 'soft hyphen'],
+      [0x200b, 'zero-width space'],
+      [0x200c, 'zero-width non-joiner'],
+      [0x200d, 'zero-width joiner'],
+      [0x200e, 'left-to-right mark'],
+      [0x200f, 'right-to-left mark'],
+      [0x202a, 'left-to-right embedding'],
+      [0x202b, 'right-to-left embedding'],
+      [0x202c, 'pop directional formatting'],
+      [0x202d, 'left-to-right override'],
+      [0x202e, 'right-to-left override'],
+      [0x2060, 'word joiner'],
+      [0x2061, 'function application'],
+      [0x2062, 'invisible times'],
+      [0x2063, 'invisible separator'],
+      [0x2064, 'invisible plus'],
+      [0xfeff, 'zero-width no-break space'],
+      // "The rest of Cf": other members of the category.
+      [0x061c, 'Arabic letter mark'],
+      [0x180e, 'Mongolian vowel separator'],
+      [0x2066, 'left-to-right isolate'],
+      [0x206f, 'nominal digit shapes'],
+      [0xe0001, 'language tag'],
+    ]),
+  )('removes %s from the middle of a word', (_, codePoint) => {
+    const character = String.fromCodePoint(codePoint);
+    expect(FreeFlightTextSchema.parse(`a${character}b`)).toBe('ab');
   });
 
-  it('names a cluster that is entirely invisible by all its codes, one entry for the cluster', () => {
-    // Two joiners at the start of the text hold together as one cluster.
-    expect(untypeableOf(`${JOINER}${JOINER}go`)).toEqual(['U+200D U+200D']);
-    // A space and a joiner in the middle of the text do too.
-    expect(untypeableOf(`go ${JOINER}now`)).toEqual(['U+0020 U+200D']);
+  it('removes every invisible formatting character of Unicode, wherever it sits', () => {
+    const notRemoved: string[] = [];
+    for (let codePoint = 0; codePoint <= 0x10ffff; codePoint++) {
+      const character = String.fromCodePoint(codePoint);
+      if (!/^\p{Cf}$/u.test(character)) continue;
+      const result = FreeFlightTextSchema.safeParse(`a${character}b`);
+      if (!result.success || result.data !== 'ab') {
+        notRemoved.push(`U+${codePoint.toString(16).toUpperCase()}`);
+      }
+    }
+    expect(notRemoved).toEqual([]);
+  });
+
+  it('says to enter some text when only invisible formatting characters and whitespace are left', () => {
+    // None of these is whitespace to `trim`, so only the cleanup empties them.
+    for (const text of [
+      ZERO_WIDTH_SPACE,
+      `${JOINER}${SOFT_HYPHEN}`,
+      ` ${ZERO_WIDTH_SPACE} \n${JOINER}\t`,
+    ]) {
+      const result = FreeFlightTextSchema.safeParse(text);
+      expect(result.success).toBe(false);
+      expect(result.error?.issues[0].message).toBe(
+        FREE_FLIGHT_EMPTY_TEXT_MESSAGE,
+      );
+    }
+  });
+
+  it('lists a family emoji as its separate parts, once each', () => {
+    const [man, woman, girl] = [0x1f468, 0x1f469, 0x1f467].map((codePoint) =>
+      String.fromCodePoint(codePoint),
+    );
+    const family = [man, woman, girl].join(JOINER);
+    expect(untypeableOf(`${family} and ${family}`)).toEqual([man, woman, girl]);
+  });
+
+  it('turns a no-break space into a plain space', () => {
+    expect(FreeFlightTextSchema.parse('no\u00A0break')).toBe('no break');
+  });
+
+  it.each(
+    labelled([
+      [0x2000, 'en quad'],
+      [0x2001, 'em quad'],
+      [0x2002, 'en space'],
+      [0x2003, 'em space'],
+      [0x2004, 'three-per-em space'],
+      [0x2005, 'four-per-em space'],
+      [0x2006, 'six-per-em space'],
+      [0x2007, 'figure space'],
+      [0x2008, 'punctuation space'],
+      [0x2009, 'thin space'],
+      [0x200a, 'hair space'],
+      [0x202f, 'narrow no-break space'],
+      [0x205f, 'medium mathematical space'],
+      [0x3000, 'ideographic space'],
+    ]),
+  )('turns %s into a plain space', (_, codePoint) => {
+    const space = String.fromCodePoint(codePoint);
+    expect(FreeFlightTextSchema.parse(`no${space}break`)).toBe('no break');
+  });
+
+  it('does not turn the Ogham space mark, which draws a dash, into a space', () => {
+    expect(FreeFlightTextSchema.safeParse('no\u1680break').success).toBe(false);
   });
 
   it('lists a cluster with a visible part whole, as itself', () => {
