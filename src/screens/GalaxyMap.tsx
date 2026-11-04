@@ -1,5 +1,5 @@
 import type React from 'react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Star,
   Lock,
@@ -45,6 +45,15 @@ export const GalaxyMap: React.FC = () => {
   const [selectedSectorId, setSelectedSectorId] = useState<string>(
     () => furthestUnlockedSector(totalStars).id,
   );
+
+  // The selected row's button. When the map opens on a far Sector, its row can
+  // sit below the fold of the Sectors list; `nearest` scrolls only as far as
+  // needed, and not at all when the row is already in view.
+  const selectedRowRef = useRef<HTMLButtonElement>(null);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: the ref moves to the newly selected row, so the effect re-runs on each selection
+  useEffect(() => {
+    selectedRowRef.current?.scrollIntoView?.({ block: 'nearest' });
+  }, [selectedSectorId]);
 
   const activeSector =
     CURRICULUM_SECTORS.find((s) => s.id === selectedSectorId) ||
@@ -172,6 +181,7 @@ export const GalaxyMap: React.FC = () => {
               <button
                 type="button"
                 key={sector.id}
+                ref={isSelected ? selectedRowRef : undefined}
                 onClick={() => setSelectedSectorId(sector.id)}
                 className={`w-full text-left p-3 rounded-xl border transition-all flex items-center justify-between cursor-pointer ${
                   isSelected
