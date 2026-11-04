@@ -131,6 +131,14 @@ export const Debrief: React.FC = () => {
               })}
             </div>
 
+            {/* Sector Unlock Notification Banner */}
+            {hasUnlockedNextSector && (
+              <div className="w-full mb-5 p-3 rounded-xl border border-cyan-500/50 bg-cyan-950/40 text-cyan-200 text-xs font-mono flex items-center justify-center gap-2">
+                <Sparkles className="w-4 h-4 text-cyan-400 shrink-0" />
+                <span>{NEW_SECTOR_UNLOCKED}</span>
+              </div>
+            )}
+
             {/* Auto-Save & Stars Collection Notification Banner */}
             <div className="w-full mb-5 p-3.5 rounded-xl border border-emerald-500/40 bg-emerald-950/30 text-left flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-[0_0_20px_rgba(16,185,129,0.12)]">
               <div className="flex items-center gap-3">
@@ -322,14 +330,6 @@ export const Debrief: React.FC = () => {
                 : 'Pacing advice: Slow down your stroke tempo! Touch typing is built on accurate finger selection, not raw speed. Practicing slowly with correct fingers prevents bad habits.'}
           </p>
         </div>
-
-        {/* Sector Unlock Notification Banner */}
-        {hasUnlockedNextSector && (
-          <div className="w-full mb-5 p-3 rounded-xl border border-cyan-500/50 bg-cyan-950/40 text-cyan-200 text-xs font-mono flex items-center justify-center gap-2">
-            <Sparkles className="w-4 h-4 text-cyan-400 shrink-0" />
-            <span>{NEW_SECTOR_UNLOCKED}</span>
-          </div>
-        )}
       </div>
 
       {/* Action Buttons: a footer that stays on screen */}
