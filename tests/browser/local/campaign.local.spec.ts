@@ -208,14 +208,16 @@ const DEBRIEF_WINDOWS = [
   { width: 768, height: 720 },
 ] as const;
 
-test('the Debrief that opens a Sector keeps its action buttons on screen, unscrolled, in every window size', async ({
+test('the Debrief that opens a Sector shows its unlock banner and keeps its action buttons on screen, unscrolled, in every window size', async ({
   page,
 }) => {
   // A tall Debrief: Stage 1 cleared for 3 Stars takes a Save that is one clear
   // short of Sector 02's gate over it, so the "New Sector Unlocked!" banner is
   // up too. Every size is checked on it, with no separate pass without it. It is a Stage played for
   // real (77 keys), like the journey above, because the Stars it earns decide
-  // whether the banner shows.
+  // whether the banner shows. At each size the banner must be seen as the
+  // Debrief opens (inside the visible part of the box that scrolls, with
+  // nothing scrolled) and so must every action button.
   const gate = CURRICULUM_SECTORS[1].requiredStarsToUnlock;
   const starsBefore = gate - MAX_STARS_PER_STAGE;
   if (starsBefore < 0 || starsBefore > MAX_STARS_PER_STAGE) {
@@ -237,6 +239,76 @@ test('the Debrief that opens a Sector keeps its action buttons on screen, unscro
   const actions = [REPLAY, GALAXY_MAP, ACADEMY_HOME, NEXT_STAGE];
 
   for (const size of DEBRIEF_WINDOWS) {
+    await test.step(`the unlock banner is fully visible, unscrolled, at ${size.width}x${size.height}`, async () => {
+      await page.setViewportSize(size);
+      const banner = result.getByText(NEW_SECTOR_UNLOCKED);
+      const where = await banner.evaluate(async (element) => {
+        await new Promise((resolve) =>
+          requestAnimationFrame(() => requestAnimationFrame(resolve)),
+        );
+        const box = element.getBoundingClientRect();
+        // The box the banner scrolls in: its nearest ancestor that scrolls
+        // (found by its overflow, so it is the same box at every size).
+        let scroller: HTMLElement | null = null;
+        let scrolled = window.scrollY;
+        for (
+          let parent = element.parentElement;
+          parent;
+          parent = parent.parentElement
+        ) {
+          scrolled += parent.scrollTop;
+          const overflowY = getComputedStyle(parent).overflowY;
+          if (!scroller && (overflowY === 'auto' || overflowY === 'scroll')) {
+            scroller = parent;
+          }
+        }
+        const hit = document.elementFromPoint(
+          box.left + box.width / 2,
+          box.top + box.height / 2,
+        );
+        const visible = scroller && {
+          top: scroller.getBoundingClientRect().top + scroller.clientTop,
+          bottom:
+            scroller.getBoundingClientRect().top +
+            scroller.clientTop +
+            scroller.clientHeight,
+        };
+        return {
+          scrolled,
+          top: Math.round(box.top),
+          bottom: Math.round(box.bottom),
+          visibleTop: visible && Math.round(visible.top),
+          visibleBottom: visible && Math.round(visible.bottom),
+          height: window.innerHeight,
+          reachable: hit !== null && element.contains(hit),
+        };
+      });
+      const label = `banner at ${size.width}x${size.height}: y ${where.top}-${where.bottom}, scrolling body shows ${where.visibleTop}-${where.visibleBottom}, window ${where.height}`;
+      // No scrolling body means this check is not measuring what it says.
+      expect
+        .soft(where.visibleTop, `${label}: found no scrolling body`)
+        .not.toBeNull();
+      expect
+        .soft(
+          where.visibleTop !== null &&
+            where.visibleBottom !== null &&
+            where.top >= where.visibleTop &&
+            where.bottom <= where.visibleBottom,
+          `${label} lies inside the visible part of the scrolling body`,
+        )
+        .toBe(true);
+      expect
+        .soft(
+          where.top >= 0 && where.bottom <= where.height,
+          `${label} lies inside the window`,
+        )
+        .toBe(true);
+      expect.soft(where.scrolled, `${label}, without scrolling`).toBe(0);
+      expect
+        .soft(where.reachable, `${label} is not covered by anything`)
+        .toBe(true);
+    });
+
     await test.step(`every action button is on screen and reachable at ${size.width}x${size.height}`, async () => {
       await page.setViewportSize(size);
       for (const name of actions) {
