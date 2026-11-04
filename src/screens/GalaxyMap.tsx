@@ -48,11 +48,24 @@ export const GalaxyMap: React.FC = () => {
 
   // The selected row's button. When the map opens on a far Sector, its row can
   // sit below the fold of the Sectors list; `nearest` scrolls only as far as
-  // needed, and not at all when the row is already in view.
+  // needed, and not at all when the row is already in view. A web font that is
+  // still loading when the map opens changes the text metrics, which moves the
+  // list's content by a pixel or so once it arrives and can leave the row
+  // clipped at the edge, so the scroll is done again when the fonts are ready.
   const selectedRowRef = useRef<HTMLButtonElement>(null);
   // biome-ignore lint/correctness/useExhaustiveDependencies: the ref moves to the newly selected row, so the effect re-runs on each selection
   useEffect(() => {
-    selectedRowRef.current?.scrollIntoView?.({ block: 'nearest' });
+    const reveal = () =>
+      selectedRowRef.current?.scrollIntoView?.({ block: 'nearest' });
+    reveal();
+    if (document.fonts?.status !== 'loading') return;
+    let selectionStillCurrent = true;
+    document.fonts.ready.then(() => {
+      if (selectionStillCurrent) reveal();
+    });
+    return () => {
+      selectionStillCurrent = false;
+    };
   }, [selectedSectorId]);
 
   const activeSector =
