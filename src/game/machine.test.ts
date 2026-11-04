@@ -94,10 +94,10 @@ function clearedGame(): Game {
 
 /** Type every remaining character: the last one clears the Run. */
 function finishRun(game: Game): void {
-  const { currentStage, currentCharIndex } = game.getState().run;
-  for (let i = currentCharIndex; i < currentStage.sampleText.length; i++) {
+  const { stage, currentCharIndex } = game.getState().run;
+  for (let i = currentCharIndex; i < stage.sampleText.length; i++) {
     game.step(30);
-    game.pressKey(currentStage.sampleText[i]);
+    game.pressKey(stage.sampleText[i]);
   }
 }
 
@@ -258,7 +258,7 @@ describe('Play, Resume and Go to Flight Deck resume a paused Run straight away',
       expect(progress(game)).toEqual(before);
       // Carry on from the same character.
       game.step(30);
-      game.pressKey(game.getState().run.currentStage.sampleText[before.index]);
+      game.pressKey(game.getState().run.stage.sampleText[before.index]);
       expect(game.getState().run.currentCharIndex).toBe(before.index + 1);
     });
   }
@@ -406,7 +406,7 @@ describe('Next Stage on the Debrief', () => {
       const game = clearedStage(curriculum[i].id);
       play(game, NEXT_STAGE);
       expect(game.getState().screen, curriculum[i].id).toBe('flight-deck');
-      expect(game.getState().run.currentStage.id, curriculum[i].id).toBe(
+      expect(game.getState().run.stage.id, curriculum[i].id).toBe(
         curriculum[i + 1].id,
       );
     }
@@ -447,7 +447,7 @@ describe('only going to Academy Home and starting a Stage abandon a Run', () => 
     play(game, OPEN['galaxy-map']);
     play(game, pickStage('s1-l2'));
     freshRun(game);
-    expect(game.getState().run.currentStage.id).toBe('s1-l2');
+    expect(game.getState().run.stage.id).toBe('s1-l2');
   });
 
   it('launching Free Flight starts a fresh Run on the player’s text', () => {
@@ -455,28 +455,28 @@ describe('only going to Academy Home and starting a Stage abandon a Run', () => 
     play(game, OPEN['free-flight']);
     play(game, freeFlightLaunch());
     freshRun(game);
-    expect(game.getState().run.currentStage.sampleText).toBe('ab ba');
+    expect(game.getState().run.stage.sampleText).toBe('ab ba');
   });
 
   it('Replay on the Pause Menu starts a fresh Run of the same Stage', () => {
     const game = pausedGame();
     play(game, REPLAY);
     freshRun(game);
-    expect(game.getState().run.currentStage.id).toBe(STAGE_ID);
+    expect(game.getState().run.stage.id).toBe(STAGE_ID);
   });
 
   it('Replay on the Debrief starts a fresh Run of the same Stage', () => {
     const game = clearedGame();
     play(game, REPLAY);
     freshRun(game);
-    expect(game.getState().run.currentStage.id).toBe(STAGE_ID);
+    expect(game.getState().run.stage.id).toBe(STAGE_ID);
   });
 
   it('Next Stage on the Debrief starts a fresh Run of the next Stage', () => {
     const game = clearedGame();
     play(game, NEXT_STAGE);
     freshRun(game);
-    expect(game.getState().run.currentStage.id).not.toBe(STAGE_ID);
+    expect(game.getState().run.stage.id).not.toBe(STAGE_ID);
   });
 
   it('nothing else the player can do on a Run in progress abandons it', () => {
@@ -522,7 +522,7 @@ describe('Play with no Run starts the current Stage fresh', () => {
     play(game, PLAY);
     expect(game.getState().screen).toBe('flight-deck');
     expect(game.getState().phase).toBe('running');
-    expect(game.getState().run.currentStage.id).toBe(STAGE_ID);
+    expect(game.getState().run.stage.id).toBe(STAGE_ID);
     expect(progress(game)).toEqual({ index: 0, score: 0 });
     // A live Run, not an empty frozen deck: the Stage's first key counts.
     game.step(30);

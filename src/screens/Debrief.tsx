@@ -36,7 +36,7 @@ let celebrated: GameState['debrief'] = null;
 export const Debrief: React.FC = () => {
   const { send } = useGame();
   const { stage, stageAhead, result, totalStars } = useGameState((state) => ({
-    stage: state.run.currentStage,
+    stage: state.run.stage,
     stageAhead: state.stageAhead,
     result: state.debrief,
     totalStars: state.profile.totalStars,

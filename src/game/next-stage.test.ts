@@ -32,7 +32,7 @@ const lastStage = (() => {
 /** Clear a Sector Stage by typing its text at the Strike Line's pace; its Debrief is then showing. */
 function clearSectorStage(game: Game, stageId: string, stepsPerKey?: number) {
   startStage(game, stageId);
-  const stage = game.getState().run.currentStage;
+  const stage = game.getState().run.stage;
   typeText(game, stage.sampleText, stepsPerKey);
   expect(game.getState().screen, stageId).toBe('debrief');
 }
@@ -52,7 +52,7 @@ function expectNextStageStartsNothing(game: Game) {
   const after = game.getState();
   expect(after.screen).toBe('debrief');
   expect(after.phase).toBe('cleared');
-  expect(after.run.currentStage.id).toBe(before.run.currentStage.id);
+  expect(after.run.stage.id).toBe(before.run.stage.id);
   expect(after.debrief).toEqual(before.debrief);
 }
 
@@ -66,7 +66,7 @@ describe('Next Stage in front of a locked Sector', () => {
     expect(game.getState().profile.totalStars).toBeLessThan(SECTOR_TWO_STARS);
     expect(game.getState().stageAhead).not.toBe('next-stage');
     expectNextStageStartsNothing(game);
-    expect(game.getState().run.currentStage.id).not.toBe(sectorTwoStart.id);
+    expect(game.getState().run.stage.id).not.toBe(sectorTwoStart.id);
   });
 
   it('is offered, and starts the Sector, when the Save already holds the Stars', () => {
@@ -78,7 +78,7 @@ describe('Next Stage in front of a locked Sector', () => {
     game.send(NEXT_STAGE);
 
     expect(game.getState().screen).toBe('flight-deck');
-    expect(game.getState().run.currentStage.id).toBe(sectorTwoStart.id);
+    expect(game.getState().run.stage.id).toBe(sectorTwoStart.id);
   });
 
   it('is offered when the clear itself takes the Stars to the gate', () => {
@@ -90,7 +90,7 @@ describe('Next Stage in front of a locked Sector', () => {
 
     game.send(NEXT_STAGE);
 
-    expect(game.getState().run.currentStage.id).toBe(sectorTwoStart.id);
+    expect(game.getState().run.stage.id).toBe(sectorTwoStart.id);
   });
 });
 

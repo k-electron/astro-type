@@ -545,7 +545,7 @@ describe.each([
     command(game);
     game.send({ type: 'PRESS_FLIGHT_DECK' });
 
-    expect(game.getState().run.currentStage?.id).toBe(STAGE_ID);
+    expect(game.getState().run.stage?.id).toBe(STAGE_ID);
   });
 
   it('leaves the Stage of a Run that is still on show behind a menu', () => {
@@ -556,6 +556,6 @@ describe.each([
 
     command(game);
 
-    expect(game.getState().run.currentStage?.id).toBe(SECOND_STAGE);
+    expect(game.getState().run.stage?.id).toBe(SECOND_STAGE);
   });
 });

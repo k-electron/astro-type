@@ -20,7 +20,7 @@ function wordGroups(text: string): { start: number; text: string }[] {
 
 /** The Stage's text and where the player is in it. It selects only what it shows. */
 export const TextPromptStream: React.FC = () => {
-  const stage = useGameState((state) => state.run.currentStage);
+  const stage = useGameState((state) => state.run.stage);
   const currentIndex = useGameState((state) => state.run.currentCharIndex);
   const errorIndices = useGameState((state) => state.run.errorIndices);
   const fullText = stage.sampleText;

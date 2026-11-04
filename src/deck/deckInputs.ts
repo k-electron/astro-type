@@ -10,7 +10,7 @@ import type { GameState } from '../game/game';
  * colours the lasers, which `judge` reads fresh from the game.)
  */
 export interface DeckInputs {
-  stage: GameState['run']['currentStage'];
+  stage: GameState['run']['stage'];
   charIndex: number;
   lastPressedKey: string | null;
   keyboardVisible: boolean;
@@ -19,7 +19,7 @@ export interface DeckInputs {
 
 export function deckInputs({ run, profile }: GameState): DeckInputs {
   return {
-    stage: run.currentStage,
+    stage: run.stage,
     charIndex: run.currentCharIndex,
     lastPressedKey: run.lastPressedKey,
     keyboardVisible: profile.keyboardVisible,

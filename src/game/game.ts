@@ -21,9 +21,8 @@ import {
   type RunPhase,
   type Screen,
 } from './machine';
-import type { Stage } from '../curriculum/curriculum';
 import { type Clock, createRunClock, createSteppedClock } from './clock';
-import type { Drone, KeyOptions, LivePerformance, RunState } from './rules';
+import type { KeyOptions, Run } from './rules';
 import type { Moment } from './moments';
 import {
   cueFor,
@@ -39,7 +38,7 @@ import type { BackupImport, SaveStorage } from './save';
 import { type PlayerProfile, type Settings, totalStarsOf } from './schemas';
 
 export type { Sound } from './sound';
-export type { Judgement } from './rules';
+export type { Judgement, Run } from './rules';
 export type { Moment } from './moments';
 export type { PlayerEvent, Screen } from './machine';
 
@@ -76,17 +75,6 @@ export interface GameOptions {
   onRefusedMove?: (error: RefusedMoveError) => void;
 }
 
-/** The live Run: the performance numbers, plus the Drones and the Stage. */
-export type Run = LivePerformance & {
-  /** Today's Drones. The lead Drone is first; the Strike Line is y=84. */
-  drones: Drone[];
-  currentStage: Stage;
-  /** The positions in the text where a wrong key was pressed: the Miss marks. */
-  errorIndices: ReadonlySet<number>;
-  /** The key the player has down (the Action Deck's pressed keycap), or null. */
-  lastPressedKey: string | null;
-};
-
 /**
  * The Profile as a screen reads it: the Save's fields, and the total of Stars
  * worked out from the Stages' Stars. The total is derived whenever the
@@ -97,7 +85,7 @@ export type GameProfile = PlayerProfile & { totalStars: number };
 /**
  * Everything a screen shows, settled: the machine and the store have both
  * finished the move that made it. It is replaced, never changed in place, and
- * only when one of its fields changed; `run` is rebuilt only when the Run did.
+ * only when one of its fields changed; `run` is the store's own Run, a different object only when the Run changed.
  */
 export interface GameState {
   screen: Screen;
@@ -276,41 +264,6 @@ export function createGame(options: GameOptions): Game {
     return openers[openers.length - 1] ?? null;
   };
 
-  // The public Run is made of five things in the store's Run; it is rebuilt
-  // only when one of them is a different object.
-  let builtFrom: Pick<
-    RunState,
-    'performance' | 'drones' | 'stage' | 'errorIndices' | 'lastPressedKey'
-  > | null = null;
-  let builtRun: Run | null = null;
-  const buildRun = ({
-    performance,
-    drones,
-    stage,
-    errorIndices,
-    lastPressedKey,
-  }: RunState): Run => {
-    if (
-      builtRun &&
-      builtFrom?.performance === performance &&
-      builtFrom.drones === drones &&
-      builtFrom.stage === stage &&
-      builtFrom.errorIndices === errorIndices &&
-      builtFrom.lastPressedKey === lastPressedKey
-    ) {
-      return builtRun;
-    }
-    builtFrom = { performance, drones, stage, errorIndices, lastPressedKey };
-    builtRun = {
-      ...performance,
-      drones,
-      currentStage: stage,
-      errorIndices,
-      lastPressedKey,
-    };
-    return builtRun;
-  };
-
   // The settled snapshot. A move can touch the machine and the store several
   // times (a clear starts in the store, goes through the machine, and ends in
   // the store again), so every move runs inside `move`: the snapshot is only
@@ -341,7 +294,7 @@ export function createGame(options: GameOptions): Game {
       phase: getPhase(),
       opener: getOpener(),
       stageAhead: stageAheadOf(state.run.stage, profile.totalStars),
-      run: buildRun(state.run),
+      run: state.run,
       debrief: state.debrief,
       profile,
       loadNotice: state.loadNotice,

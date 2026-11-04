@@ -26,7 +26,7 @@ import {
   countsAsKeystroke,
   idleRun,
   type KeyOptions,
-  type RunState,
+  type Run,
   scoreRun,
   startRun,
   strike,
@@ -42,7 +42,7 @@ export type DebriefResult = Pick<
 
 /** The Run's state in the store. */
 export interface RunSliceState {
-  run: RunState;
+  run: Run;
   /** The Debrief of the last cleared Run, or null. */
   debrief: DebriefResult | null;
 }
@@ -134,7 +134,10 @@ export function createRunSlice(
 
     releaseKey: (key) => {
       const { run } = get();
-      if (!key || run.lastPressedKey?.toLowerCase() === key.toLowerCase()) {
+      // Nothing is down, so there is nothing to let go of: the Run stays the
+      // very object it was, and the snapshot with it.
+      if (run.lastPressedKey === null) return;
+      if (!key || run.lastPressedKey.toLowerCase() === key.toLowerCase()) {
         set({ run: { ...run, lastPressedKey: null } });
       }
     },
@@ -152,21 +155,21 @@ export function createRunSlice(
 
     recordResult: () => {
       const { run } = get();
-      const { performance, stage } = run;
+      const { stage } = run;
 
       const now = clock.now();
       const elapsedSeconds = Math.max(1, runClock.runTimeMs() / 1000);
 
-      const outcome = scoreRun(performance, elapsedSeconds, stage);
+      const outcome = scoreRun(run, elapsedSeconds, stage);
 
       emit({ type: 'cleared', stars: outcome.starsEarned });
 
       const result: StageResult = {
         ...outcome,
-        score: performance.score,
-        maxStreak: performance.maxStreak,
-        keystrokesCount: performance.totalKeystrokes,
-        errorsCount: performance.incorrectKeystrokes,
+        score: run.score,
+        maxStreak: run.maxStreak,
+        keystrokesCount: run.totalKeystrokes,
+        errorsCount: run.incorrectKeystrokes,
         practiceSeconds: Math.round(elapsedSeconds),
         keyStats: run.keyStats,
       };
@@ -177,12 +180,12 @@ export function createRunSlice(
       );
 
       set({
-        run: { ...run, performance: clearedPerformance(performance) },
+        run: clearedPerformance(run),
         debrief: {
           ...outcome,
           score: result.score,
           ...record,
-          rhythm: performance.rhythm,
+          rhythm: run.rhythm,
         },
       });
     },

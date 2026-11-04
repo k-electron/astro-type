@@ -54,7 +54,7 @@ describe('one notification per move', () => {
     const [state] = seen;
     expect(state.screen).toBe('flight-deck');
     expect(state.phase).toBe('running');
-    expect(state.run.currentStage.id).toBe(STAGE_ID);
+    expect(state.run.stage.id).toBe(STAGE_ID);
     expect(state.run.currentCharIndex).toBe(0);
   });
 
@@ -201,7 +201,7 @@ describe('clearing a Stage settles the machine, the Run and the Profile together
     const [state] = seen;
     expect(state.screen).toBe('flight-deck');
     expect(state.phase).toBe('running');
-    expect(state.run.currentStage.id).toBe(STAGE_ID);
+    expect(state.run.stage.id).toBe(STAGE_ID);
     expect(state.run.currentCharIndex).toBe(0);
     expect(state.run.score).toBe(0);
   });
@@ -241,6 +241,19 @@ describe('the snapshot keeps its identity until something changes', () => {
     game.send(CLOSE);
 
     expect(game.getState().run).toBe(run);
+  });
+
+  it('letting go when no key is down leaves the Run the same object', () => {
+    const game = runningGame();
+    game.pressKey(targetKey(game));
+    game.releaseKey();
+    const run = game.getState().run;
+    const { seen } = watch(game);
+
+    game.releaseKey();
+
+    expect(game.getState().run).toBe(run);
+    expect(seen).toHaveLength(0);
   });
 
   it('a hit, a Miss and a step each hand back a new Run', () => {

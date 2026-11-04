@@ -28,9 +28,9 @@ describe('launching a Free Flight from { text, targetWpm }', () => {
 
     const state = game.getState();
     expect(state.screen).toBe('flight-deck');
-    expect(state.run.currentStage.sampleText).toBe(TEXT);
-    expect(state.run.currentStage.origin).toBe('free-flight');
-    expect(state.run.currentStage.targetWpm).toBe(30);
+    expect(state.run.stage.sampleText).toBe(TEXT);
+    expect(state.run.stage.origin).toBe('free-flight');
+    expect(state.run.stage.targetWpm).toBe(30);
   });
 });
 
@@ -39,7 +39,7 @@ describe('where a Stage comes from', () => {
     const game = newGame();
     startStage(game, STAGE_ID);
 
-    expect(game.getState().run.currentStage.origin).toBe('sector');
+    expect(game.getState().run.stage.origin).toBe('sector');
   });
 });
 

@@ -363,9 +363,9 @@ export class DeckScene {
 
   private updateKeysAndHands(state: GameState, layout: Layout): void {
     const { run } = state;
-    const { currentStage, lastPressedKey } = run;
+    const { stage, lastPressedKey } = run;
     const keyboardVisible = state.profile.keyboardVisible;
-    const text = currentStage.sampleText;
+    const text = stage.sampleText;
     const inputs = deckInputs(state);
     if (this.drawnFrom && sameDeckInputs(this.drawnFrom, inputs)) return;
     this.drawnFrom = inputs;
@@ -473,7 +473,7 @@ export class DeckScene {
 
 /** The character the Run is waiting for, or null once the text is typed. */
 function currentChar({ run }: GameState): string | null {
-  return run.currentStage.sampleText[run.currentCharIndex] || null;
+  return run.stage.sampleText[run.currentCharIndex] || null;
 }
 
 /**
