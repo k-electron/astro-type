@@ -44,12 +44,13 @@ export const Analytics: React.FC = () => {
   // Why the last import was refused, shown beside the import control. A good
   // import clears it: the header's Stars and Credits are the player's proof.
   const [refusal, setRefusal] = useState<string | null>(null);
-  // The Backup card is the last block of a scrolling panel, so a message that
-  // appears under the Import button can land below the fold: bring it into
-  // view (scrolling only as far as needed, and not at all if it is visible).
-  const refusalRef = useRef<HTMLDivElement>(null);
+  // The Backup card is the last block of a scrolling panel, so a refusal that
+  // appears inside it can land below the fold. Bring the whole card into view,
+  // not just the message row, so its bottom padding and border show too
+  // (scrolling only as far as needed, and not at all if it is all visible).
+  const backupCardRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (refusal) refusalRef.current?.scrollIntoView?.({ block: 'nearest' });
+    if (refusal) backupCardRef.current?.scrollIntoView?.({ block: 'nearest' });
   }, [refusal]);
 
   const {
@@ -418,7 +419,10 @@ export const Analytics: React.FC = () => {
           </div>
 
           {/* Data Backup & Offline Management */}
-          <div className="p-4 rounded-xl border border-slate-800 bg-slate-950/60 flex flex-wrap items-center justify-between gap-3">
+          <div
+            ref={backupCardRef}
+            className="p-4 rounded-xl border border-slate-800 bg-slate-950/60 flex flex-wrap items-center justify-between gap-3"
+          >
             <div className="text-xs text-slate-400">
               <span className="font-semibold text-slate-200 block">
                 Save & Backup
@@ -472,10 +476,7 @@ export const Analytics: React.FC = () => {
             </div>
 
             {refusal && (
-              <div
-                ref={refusalRef}
-                className="basis-full flex items-center gap-3"
-              >
+              <div className="basis-full flex items-center gap-3">
                 <p role="alert" className="text-xs font-medium text-rose-300">
                   {refusal}
                 </p>
