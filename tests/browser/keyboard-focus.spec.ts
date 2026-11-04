@@ -14,6 +14,7 @@ import { OPEN_AUDIO_PANEL, laserSfxLabel } from '../../src/screens/audioLabels';
 import { flightDeckLabel } from '../../src/screens/closeLabel';
 import {
   ACADEMY_HOME,
+  GALAXY_MAP,
   MENU_HEADINGS,
   PAUSE_FLIGHT,
   PAUSE_MENU_NAME,
@@ -21,7 +22,9 @@ import {
 } from '../shared/screens';
 import { pauseButton, resumeButton } from './journey-helpers';
 import { WIPE_STARS_TITLE } from '../../src/screens/confirmLabels';
+import { CURRICULUM_SECTORS } from '../../src/curriculum/curriculum';
 import {
+  EVERY_STAGE_CLEARED,
   MOST_STARS_AND_CREDITS,
   MUTED_PLAYER,
   RETURNING_PLAYER,
@@ -257,6 +260,42 @@ test('native keys and focus: Space, Esc, Enter and the window losing focus', asy
       } finally {
         await context.close();
       }
+    }
+  });
+
+  await test.step("the Galaxy Map opens with the selected Sector's row in view, at 1280x720 and 1280x800 (#110)", async () => {
+    // Every Stage cleared opens the furthest Sector, whose row sits below the
+    // fold of the Sectors list at these heights.
+    const furthest = CURRICULUM_SECTORS.at(-1);
+    if (!furthest) throw new Error('the curriculum has no Sectors');
+    // A context of its own, so the Save does not reach the steps below.
+    const context = await browser.newContext({
+      baseURL: test.info().project.use.baseURL,
+    });
+    try {
+      const seeded = await context.newPage();
+      await seedSave(seeded, EVERY_STAGE_CLEARED);
+      for (const height of [720, 800]) {
+        await seeded.setViewportSize({ width: 1280, height });
+        await seeded.goto('/');
+        await seeded
+          .getByRole('button', { name: GALAXY_MAP, exact: true })
+          .click();
+        const map = seeded.getByRole('dialog', {
+          name: MENU_HEADINGS['Galaxy Map'],
+        });
+        await expect(map).toBeVisible();
+        // toBeInViewport clips by every scrolling ancestor, so a row below the
+        // fold of the Sectors list is out of view.
+        await expect
+          .soft(
+            map.getByRole('button', { name: new RegExp(furthest.codenick) }),
+            `1280x${height}: the ${furthest.codenick} row is fully in view`,
+          )
+          .toBeInViewport({ ratio: 1 });
+      }
+    } finally {
+      await context.close();
     }
   });
 
