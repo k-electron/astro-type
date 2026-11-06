@@ -103,6 +103,48 @@ const pageOverflow = (page: Page): Promise<number> =>
     () => document.documentElement.scrollHeight - window.innerHeight,
   );
 
+/**
+ * The whole Flight Deck fits a window: the page does not scroll, and the HUD, the
+ * text prompt and the bottom keycap row are on screen. Sets the window, then
+ * waits for the deck's redraw before reading.
+ */
+async function expectFlightDeckFits(
+  page: Page,
+  window: { width: number; height: number },
+): Promise<void> {
+  await page.setViewportSize(window);
+  const size = `${window.width}x${window.height}`;
+
+  await expect.soft
+    .poll(() => pageOverflow(page), {
+      message: `${size}: the page does not scroll`,
+    })
+    .toBeLessThanOrEqual(0);
+  // The lowest keycap is the bottom row (and whatever hangs below it): its
+  // bottom edge, in the window, must not be below the window's bottom edge.
+  await expect.soft
+    .poll(() => lowestKeycapBottom(page), {
+      message: `${size}: the bottom keycap row is above the bottom of the window`,
+    })
+    .toBeLessThanOrEqual(window.height);
+  expect
+    .soft(
+      (await keycapRects(page)).length,
+      `${size}: the accessibility layer labels the keys`,
+    )
+    .toBeGreaterThanOrEqual(AT_LEAST_KEYCAPS);
+  // Fully in view also counts any scrolling box that would clip it.
+  await expect
+    .soft(keycap(page, MEASURED_KEY), `${size}: a bottom-row keycap is in view`)
+    .toBeInViewport({ ratio: 1 });
+  await expect
+    .soft(hud(page), `${size}: the HUD is in view`)
+    .toBeInViewport({ ratio: 1 });
+  await expect
+    .soft(textPrompt(page), `${size}: the text prompt is in view`)
+    .toBeInViewport({ ratio: 1 });
+}
+
 // J1: the Action Deck and its accessibility layer, on the real clock, with real
 // key presses and mouse clicks. The Drones and keycaps live in a canvas, so
 // this reads them the only way a screen reader can: through PixiJS's
@@ -199,9 +241,9 @@ test('the Action Deck draws, moves and answers keys and clicks', async ({
 
   // The window sizes below are set mid-Run: the deck redraws on a resize, so
   // each step waits for the redraw to land before it reads anything. They run
-  // short, then 1280x800, then tall, then 1440x900, so each step starts from a
-  // deck that a stale read could only make fail, never pass (a stale 1280x800
-  // still scrolls from the short window, and a stale tall deck is too small).
+  // short, then tall, then 1440x900, then 1280x800, so each step starts from a
+  // deck that a stale read could only make fail, never pass (a stale deck is
+  // too small for tall, and too big for 1440x900 and for 1280x800).
   await test.step('on a window too short for the deck, the page scrolls as before and the deck stops shrinking', async () => {
     const heights: number[] = [];
     for (const shortWindow of SHORT_WINDOWS) {
@@ -236,39 +278,6 @@ test('the Action Deck draws, moves and answers keys and clicks', async ({
       .toBe(heights[0]);
   });
 
-  await test.step('at 1280x800 the whole Flight Deck fits: the page does not scroll, and the HUD, the text prompt and the bottom keycap row are on screen', async () => {
-    await page.setViewportSize(SMALL_LAPTOP_WINDOW);
-    const size = `${SMALL_LAPTOP_WINDOW.width}x${SMALL_LAPTOP_WINDOW.height}`;
-    await expect.soft
-      .poll(() => pageOverflow(page), {
-        message: `${size}: the page does not scroll`,
-      })
-      .toBeLessThanOrEqual(0);
-    await expect.soft
-      .poll(() => lowestKeycapBottom(page), {
-        message: `${size}: the bottom keycap row is above the bottom of the window`,
-      })
-      .toBeLessThanOrEqual(SMALL_LAPTOP_WINDOW.height);
-    expect
-      .soft(
-        (await keycapRects(page)).length,
-        `${size}: the accessibility layer labels the keys`,
-      )
-      .toBeGreaterThanOrEqual(AT_LEAST_KEYCAPS);
-    await expect
-      .soft(
-        keycap(page, MEASURED_KEY),
-        `${size}: a bottom-row keycap is in view`,
-      )
-      .toBeInViewport({ ratio: 1 });
-    await expect
-      .soft(hud(page), `${size}: the HUD is in view`)
-      .toBeInViewport({ ratio: 1 });
-    await expect
-      .soft(textPrompt(page), `${size}: the text prompt is in view`)
-      .toBeInViewport({ ratio: 1 });
-  });
-
   await test.step('on a tall window the deck is drawn at full size: a keycap is as tall as it always was', async () => {
     await page.setViewportSize(TALL_WINDOW);
     await expect.soft
@@ -279,40 +288,19 @@ test('the Action Deck draws, moves and answers keys and clicks', async ({
   });
 
   await test.step('at 1440x900 the whole Flight Deck fits: the page does not scroll, and the HUD, the text prompt and the bottom keycap row are on screen', async () => {
-    await page.setViewportSize(LAPTOP_WINDOW);
-    const size = `${LAPTOP_WINDOW.width}x${LAPTOP_WINDOW.height}`;
+    await expectFlightDeckFits(page, LAPTOP_WINDOW);
+  });
 
-    await expect.soft
-      .poll(() => pageOverflow(page), {
-        message: `${size}: the page does not scroll`,
-      })
-      .toBeLessThanOrEqual(0);
-    // The lowest keycap is the bottom row (and whatever hangs below it): its
-    // bottom edge, in the window, must not be below the window's bottom edge.
-    await expect.soft
+  await test.step('at 1280x800 the whole Flight Deck fits too (#118)', async () => {
+    await expectFlightDeckFits(page, SMALL_LAPTOP_WINDOW);
+    // Back to 1440x900 for the clicks below: the deck is drawn larger again
+    // once its lowest keycap sits below where it did at 800.
+    await page.setViewportSize(LAPTOP_WINDOW);
+    await expect
       .poll(() => lowestKeycapBottom(page), {
-        message: `${size}: the bottom keycap row is above the bottom of the window`,
+        message: 'the deck is redrawn for 1440x900',
       })
-      .toBeLessThanOrEqual(LAPTOP_WINDOW.height);
-    expect
-      .soft(
-        (await keycapRects(page)).length,
-        `${size}: the accessibility layer labels the keys`,
-      )
-      .toBeGreaterThanOrEqual(AT_LEAST_KEYCAPS);
-    // Fully in view also counts any scrolling box that would clip it.
-    await expect
-      .soft(
-        keycap(page, MEASURED_KEY),
-        `${size}: a bottom-row keycap is in view`,
-      )
-      .toBeInViewport({ ratio: 1 });
-    await expect
-      .soft(hud(page), `${size}: the HUD is in view`)
-      .toBeInViewport({ ratio: 1 });
-    await expect
-      .soft(textPrompt(page), `${size}: the text prompt is in view`)
-      .toBeInViewport({ ratio: 1 });
+      .toBeGreaterThan(SMALL_LAPTOP_WINDOW.height);
   });
 
   await test.step('at 1440x900, clicking the "b" keycap counts as typing that key', async () => {
@@ -379,8 +367,8 @@ test('the text prompt keeps the current character in view through a long text at
     await expect(
       textPrompt(page).getByText('Q', { exact: true }),
     ).toBeInViewport({ ratio: 1 });
-    expect
-      .soft(await pageOverflow(page), `${size}: no scrolling`)
+    await expect.soft
+      .poll(() => pageOverflow(page), { message: `${size}: no scrolling` })
       .toBeLessThanOrEqual(0);
   });
 
@@ -400,13 +388,13 @@ test('the text prompt keeps the current character in view through a long text at
         )
         .toBeInViewport({ ratio: 1 });
     }
+    await expect.soft
+      .poll(() => pageOverflow(page), { message: `${size}: no scrolling` })
+      .toBeLessThanOrEqual(0);
     // Without this, a text that never got past two lines would pass the loop.
     await expect(
       textPrompt(page).getByText('Q', { exact: true }),
       'the first line has scrolled out of the text box',
     ).not.toBeInViewport();
-    expect
-      .soft(await pageOverflow(page), `${size}: no scrolling`)
-      .toBeLessThanOrEqual(0);
   });
 });
