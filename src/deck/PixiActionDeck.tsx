@@ -5,6 +5,10 @@ import { FINGER_COLOR_MAP } from '../curriculum/curriculum';
 import { overdriveScoreFactor, X2_STEP } from '../game/rules';
 import { useGameState } from '../app/useGameState';
 import { getDeckSession } from './deckSession';
+import { MIN_STAGE_HEIGHT, STAGE_HEIGHT } from './layout';
+
+/** The header bar's height, border included. The card stops growing at this plus the tallest stage. */
+const DECK_BAR_HEIGHT = 41;
 
 /** The header bar badges the Streak from the x2 step. */
 const STREAK_BADGE_FROM = X2_STEP.streak;
@@ -39,9 +43,15 @@ export const PixiActionDeck = memo(function PixiActionDeck() {
   }, [game, onFrame]);
 
   return (
-    <div className="w-full flex flex-col rounded-2xl border border-slate-800 bg-slate-950/80 shadow-2xl overflow-hidden backdrop-blur-md relative">
+    <div
+      className="w-full flex-1 flex flex-col rounded-2xl border border-slate-800 bg-slate-950/80 shadow-2xl overflow-hidden backdrop-blur-md relative"
+      style={{ maxHeight: DECK_BAR_HEIGHT + STAGE_HEIGHT + 2 }}
+    >
       {/* Header bar: Sleek HUD indicators */}
-      <div className="flex items-center justify-between px-3.5 py-2 border-b border-slate-800/90 bg-slate-900/90 z-30 relative">
+      <div
+        className="flex items-center justify-between px-3.5 border-b border-slate-800/90 bg-slate-900/90 z-30 relative shrink-0"
+        style={{ height: DECK_BAR_HEIGHT }}
+      >
         <div className="flex items-center gap-2">
           <div className="px-2.5 py-1 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 font-mono text-xs font-bold uppercase tracking-wider flex items-center gap-2 shadow-[0_0_12px_rgba(6,182,212,0.15)]">
             <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
@@ -104,7 +114,8 @@ export const PixiActionDeck = memo(function PixiActionDeck() {
       {/* The stage: the PixiJS canvas and its accessibility layer go in here. */}
       <div
         ref={stageRef}
-        className="relative w-full h-[620px] sm:h-[700px] bg-transparent overflow-hidden select-none"
+        className="relative w-full flex-1 bg-transparent overflow-hidden select-none"
+        style={{ minHeight: MIN_STAGE_HEIGHT, maxHeight: STAGE_HEIGHT }}
       />
     </div>
   );

@@ -8,10 +8,29 @@ import { STRIKE_LINE_Y } from '../game/rules';
  * target can't nudge its neighbours.
  *
  * The numbers are the desktop (Tailwind `sm:`) sizes. Phone and tablet
- * layouts are out of scope for v1. The stage is 700 px tall from 640 px wide
- * up.
+ * layouts are out of scope for v1.
+ *
+ * The layout is always computed in the deck's own space, which is 700 px tall
+ * (`STAGE_HEIGHT`). On a short window the page gives the stage less than that
+ * and the deck draws the same picture smaller, by `deckScale`.
  */
 export const STAGE_HEIGHT = 700;
+
+/**
+ * The shortest the stage gets, and so the smallest the deck is drawn (about
+ * 0.6 of `STAGE_HEIGHT`). On a window with less room the stage keeps this
+ * height and the page scrolls. The one dial for how small a keycap may get.
+ */
+export const MIN_STAGE_HEIGHT = 420;
+
+/**
+ * How much smaller than its own 700-high space the deck is drawn on a stage
+ * `stageHeight` tall: never bigger than 1, never smaller than the minimum
+ * stage allows.
+ */
+export function deckScale(stageHeight: number): number {
+  return Math.min(1, Math.max(MIN_STAGE_HEIGHT, stageHeight) / STAGE_HEIGHT);
+}
 
 export const KEY_H = 36;
 const KEY_GAP = 6;

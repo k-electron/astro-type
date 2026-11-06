@@ -24,6 +24,7 @@ import { GlowSprite, sweepBoxGlows } from './textures';
 import {
   computeLayout,
   droneTop,
+  deckScale,
   type Layout,
   keyRectOf,
   STAGE_HEIGHT,
@@ -126,9 +127,16 @@ export class DeckScene {
     this.ship.reset();
   }
 
-  /** The stage changed size. */
+  /**
+   * The stage changed size. The scene is laid out in its own space, which is
+   * the stage's size divided by the scale, and drawn at that scale; the scene's
+   * transform carries it, so PixiJS's hit-testing and its accessibility layer
+   * follow it.
+   */
   resize(width: number, height: number): void {
-    this.size = { width, height };
+    const scale = deckScale(height);
+    this.root.scale.set(scale);
+    this.size = { width: width / scale, height: height / scale };
     this.applyLayout(this.options.getState().profile.handsVisible);
   }
 
