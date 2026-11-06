@@ -73,7 +73,7 @@ export default function App() {
       <HeaderNav ref={headerRef} />
 
       {/* Main Game Screen */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-6 flex flex-col gap-4">
+      <main className="flex-1 max-w-7xl w-full mx-auto p-3 sm:px-6 sm:py-3 flex flex-col gap-4">
         {screen === 'academy-home' ? (
           /* Title Screen / Academy Briefing */
           <AcademyHome />
