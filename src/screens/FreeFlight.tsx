@@ -7,6 +7,8 @@ import {
   FREE_FLIGHT_TITLE,
   FREE_FLIGHT_PRESETS,
   FreeFlightTextSchema,
+  cleanFreeFlightText,
+  countCharacters,
 } from '../curriculum/curriculum';
 import { useGame } from '../app/useGame';
 import {
@@ -31,8 +33,10 @@ export const FreeFlight: React.FC = () => {
   const untypeableMessage = checked.success
     ? null
     : checked.error.issues[0].message;
-  const wordCount =
-    customText.trim() === '' ? 0 : customText.trim().split(/\s+/).length;
+  // The counts are of the text the Run will type, whether or not it passes.
+  const typed = cleanFreeFlightText(customText);
+  const characterCount = countCharacters(typed);
+  const wordCount = typed === '' ? 0 : typed.split(/\s+/).length;
 
   const handleLaunch = () => {
     if (!checked.success) return;
@@ -110,7 +114,7 @@ export const FreeFlight: React.FC = () => {
           {untypeableMessage}
         </p>
         <div className="flex justify-between text-[11px] text-slate-500 font-mono mt-1">
-          <span>{customText.length} characters</span>
+          <span>{characterCount} characters</span>
           <span>Approx. {wordCount} words</span>
         </div>
       </div>

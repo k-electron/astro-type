@@ -110,3 +110,62 @@ describe('Free Flight counts words', () => {
     );
   });
 });
+
+/** The "N characters" line under the text box, as the player reads it. */
+const characterCount = () =>
+  screen.getByText(/characters$/).textContent?.trim() ?? '';
+
+describe('Free Flight counts the keys to type', () => {
+  it('counts ordinary text as it is', () => {
+    freeFlightWith('ready to launch');
+
+    expect(characterCount()).toBe('15 characters');
+  });
+
+  it('does not count an invisible formatting character', () => {
+    freeFlightWith(`a${JOINER}b c`);
+
+    expect(characterCount()).toBe('4 characters');
+  });
+
+  it('counts a CRLF line break as the one space it becomes', () => {
+    freeFlightWith('go\r\nnow');
+
+    expect(characterCount()).toBe('6 characters');
+  });
+
+  it('does not count a soft hyphen, or spaces around the text', () => {
+    const SOFT_HYPHEN = String.fromCodePoint(0xad);
+    freeFlightWith(`  co${SOFT_HYPHEN}op\r\nerate \r\n`);
+
+    expect(characterCount()).toBe('10 characters');
+  });
+
+  it('counts a letter with a combining mark as one character', () => {
+    freeFlightWith(`ready e${String.fromCodePoint(0x301)}`);
+
+    expect(characterCount()).toBe('7 characters');
+  });
+
+  it('counts a character outside the basic plane once, though it has no key', () => {
+    freeFlightWith(`go ${ROCKET}`);
+
+    expect(characterCount()).toBe('4 characters');
+  });
+
+  it('counts an emptied box as 0', () => {
+    freeFlightWith(` ${JOINER}\n`);
+
+    expect(characterCount()).toBe('0 characters');
+  });
+});
+
+describe('Free Flight counts words in the text it will fly', () => {
+  it('does not count a joiner-only word, or spaces around the text', () => {
+    freeFlightWith(`  one ${JOINER} two  `);
+
+    expect(screen.getByText(/Approx\./).textContent).toMatch(
+      /Approx\.\s*2\s*words/,
+    );
+  });
+});

@@ -1623,15 +1623,24 @@ const describeCharacter = (character: string): string => {
 /** What Free Flight says when there is no text to type. */
 export const FREE_FLIGHT_EMPTY_TEXT_MESSAGE = 'Enter some text to type.';
 
+/**
+ * The text Free Flight flies for what the player entered: the cleanups, then
+ * the trim. The one place that says what the cleaned text is, so what the
+ * screen counts is what the Run types.
+ */
+export const cleanFreeFlightText = (text: string): string =>
+  TEXT_CLEANUPS.reduce(
+    (cleaned, [pattern, replacement]) => cleaned.replace(pattern, replacement),
+    text,
+  ).trim();
+
+/** How many characters `text` is, by user-perceived character rather than code unit. */
+export const countCharacters = (text: string): number =>
+  Array.from(graphemes.segment(text)).length;
+
 export const FreeFlightTextSchema = z
   .string()
-  .transform((text) =>
-    TEXT_CLEANUPS.reduce(
-      (cleaned, [pattern, replacement]) =>
-        cleaned.replace(pattern, replacement),
-      text,
-    ).trim(),
-  )
+  .transform(cleanFreeFlightText)
   .check((context) => {
     if (context.value === '') {
       context.issues.push({
