@@ -77,7 +77,7 @@ export default defineConfig({
             timeout: 240_000,
             use: {
               ...devices['Desktop Chrome'],
-              viewport: { width: 1280, height: 1100 },
+              viewport: { width: 1280, height: 1200 },
               launchOptions: {
                 args: lavapipeInstalled() ? softwareVulkan : [],
               },

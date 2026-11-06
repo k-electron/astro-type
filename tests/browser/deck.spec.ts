@@ -10,6 +10,7 @@ import {
   promptProgress,
   textPrompt,
 } from './helpers';
+import { KEY_H } from '../../src/deck/layout';
 import { DEBRIEF_TITLE } from '../shared/screens';
 import { bottomEdge } from './journey-helpers';
 
@@ -25,11 +26,11 @@ async function sidewaysGap(a: Locator, b: Locator): Promise<number> {
 
 /**
  * A keycap's height (CSS px) in the Action Deck at full size, which is what a
- * window tall enough for the whole Flight Deck shows. It is a layout fact of
- * the unscaled deck, not a rule number: it is here as the oracle for "today",
- * so a tall window's deck going smaller turns the test red.
+ * window tall enough for the whole Flight Deck shows: imported, so a deliberate
+ * keycap resize doesn't turn the test red, but a tall window's deck going
+ * smaller does.
  */
-const KEYCAP_HEIGHT = 36;
+const KEYCAP_HEIGHT = KEY_H;
 
 /** Tall enough for the whole Flight Deck with the deck at full size (about 1,144). */
 const TALL_WINDOW = { width: 1440, height: 1200 };
@@ -209,10 +210,17 @@ test('the Action Deck draws, moves and answers keys and clicks', async ({
       // The redraw has landed once the keycap is smaller than on a tall window;
       // without this a deck that never redraws would read the same at both sizes.
       await expect.soft
-        .poll(() => keycapHeight(page, MEASURED_KEY), {
-          message: `${size}: the deck is drawn smaller than on a tall window`,
-        })
-        .toBeLessThan(KEYCAP_HEIGHT);
+        .poll(
+          async () => {
+            const height = await keycapHeight(page, MEASURED_KEY);
+            // -1 is "no keycap drawn", which is not a smaller deck.
+            return height > 0 && height < KEYCAP_HEIGHT;
+          },
+          {
+            message: `${size}: the deck is drawn, and smaller than on a tall window`,
+          },
+        )
+        .toBe(true);
       heights.push(await settledKeycapHeight(page, MEASURED_KEY));
     }
     expect

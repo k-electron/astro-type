@@ -208,9 +208,12 @@ test.skip(
   'Local-only: pnpm verify runs it, CI does not',
 );
 // Tall enough that the Drones, the Strike Line and the keyboard are all on
-// screen at once. (The local project sets the same viewport and a timeout of
-// 240 s, since every frame stepped under a stopped clock is drawn.)
-test.use({ viewport: { width: 1280, height: 1100 } });
+// screen at once, and that the Action Deck is drawn at full size (it scales
+// down when the Flight Deck doesn't fit, which is about 1,144 px tall), so the
+// pixel counts below don't depend on the deck's scale. (The local project sets
+// the same viewport and a timeout of 240 s, since every frame stepped under a
+// stopped clock is drawn.)
+test.use({ viewport: { width: 1280, height: 1200 } });
 // The tests are independent, so they can run on separate workers.
 test.describe.configure({ mode: 'parallel' });
 
@@ -600,7 +603,7 @@ async function hitOnLeftIndex(
 ): Promise<{ beamWaiting: number; amberWaiting: number; amberRise: number }> {
   const context = await browser.newContext({
     baseURL: test.info().project.use.baseURL,
-    viewport: { width: 1280, height: 1100 },
+    viewport: { width: 1280, height: 1200 },
   });
   try {
     const page = await context.newPage();

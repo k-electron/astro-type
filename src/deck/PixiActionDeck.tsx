@@ -7,8 +7,14 @@ import { useGameState } from '../app/useGameState';
 import { getDeckSession } from './deckSession';
 import { MIN_STAGE_HEIGHT, STAGE_HEIGHT } from './layout';
 
-/** The header bar's height, border included. The card stops growing at this plus the tallest stage. */
-const DECK_BAR_HEIGHT = 41;
+/**
+ * The card around the stage (its two 1 px borders and the header bar at its
+ * usual 43 px) stops growing at this plus the tallest stage, so a tall window
+ * shows the deck at its usual size with room left over, not a taller card. The
+ * bar sizes itself; if it ever grew, the stage would give up the difference
+ * and the deck would draw a hair under full size.
+ */
+const CARD_CHROME_HEIGHT = 2 + 43;
 
 /** The header bar badges the Streak from the x2 step. */
 const STREAK_BADGE_FROM = X2_STEP.streak;
@@ -45,13 +51,10 @@ export const PixiActionDeck = memo(function PixiActionDeck() {
   return (
     <div
       className="w-full flex-1 flex flex-col rounded-2xl border border-slate-800 bg-slate-950/80 shadow-2xl overflow-hidden backdrop-blur-md relative"
-      style={{ maxHeight: DECK_BAR_HEIGHT + STAGE_HEIGHT + 2 }}
+      style={{ maxHeight: CARD_CHROME_HEIGHT + STAGE_HEIGHT }}
     >
       {/* Header bar: Sleek HUD indicators */}
-      <div
-        className="flex items-center justify-between px-3.5 border-b border-slate-800/90 bg-slate-900/90 z-30 relative shrink-0"
-        style={{ height: DECK_BAR_HEIGHT }}
-      >
+      <div className="flex items-center justify-between px-3.5 py-2 border-b border-slate-800/90 bg-slate-900/90 z-30 relative shrink-0">
         <div className="flex items-center gap-2">
           <div className="px-2.5 py-1 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 font-mono text-xs font-bold uppercase tracking-wider flex items-center gap-2 shadow-[0_0_12px_rgba(6,182,212,0.15)]">
             <Sparkles className="w-3.5 h-3.5 text-cyan-400" />

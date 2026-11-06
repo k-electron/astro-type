@@ -7,8 +7,8 @@ import { STRIKE_LINE_Y } from '../game/rules';
  * size, never measured from the page, so a keycap that grows when it is the
  * target can't nudge its neighbours.
  *
- * The numbers are the desktop (Tailwind `sm:`) sizes. Phone and tablet
- * layouts are out of scope for v1.
+ * The numbers are the desktop sizes. Phone and tablet layouts are out of
+ * scope for v1.
  *
  * The layout is always computed in the deck's own space, which is 700 px tall
  * (`STAGE_HEIGHT`). On a short window the page gives the stage less than that
