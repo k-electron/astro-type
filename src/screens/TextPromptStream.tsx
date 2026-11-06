@@ -201,10 +201,10 @@ export const TextPromptStream: React.FC = () => {
         </div>
       )}
 
-      {/* Main Streaming Text Content (Strict Fixed Height: h-32) */}
+      {/* Main Streaming Text Content (Strict Fixed Height: h-24, two lines) */}
       <div
         ref={containerRef}
-        className="p-4 h-32 overflow-y-auto font-mono text-base sm:text-lg leading-relaxed tracking-wider select-none text-slate-400"
+        className="p-4 h-24 overflow-y-auto font-mono text-base sm:text-lg leading-relaxed tracking-wider select-none text-slate-400"
       >
         {wordGroups(fullText).map((group) => (
           <span key={group.start} className="inline-block max-w-full align-top">
