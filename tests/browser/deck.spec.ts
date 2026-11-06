@@ -6,13 +6,15 @@ import {
   hud,
   keycap,
   labelled,
+  currentCharacter,
   launchFreeFlight,
   promptProgress,
   textPrompt,
+  typeText,
 } from './helpers';
 import { KEY_H } from '../../src/deck/layout';
 import { DEBRIEF_TITLE } from '../shared/screens';
-import { bottomEdge } from './journey-helpers';
+import { bottomEdge, launchOnStoppedClock } from './journey-helpers';
 
 /** How far the middle of an element is from the middle of another, sideways. */
 async function sidewaysGap(a: Locator, b: Locator): Promise<number> {
@@ -36,6 +38,8 @@ const KEYCAP_HEIGHT = KEY_H;
 const TALL_WINDOW = { width: 1440, height: 1200 };
 /** An ordinary laptop window. */
 const LAPTOP_WINDOW = { width: 1440, height: 900 };
+/** A small laptop window: the smallest the Flight Deck is meant to fit without scrolling. */
+const SMALL_LAPTOP_WINDOW = { width: 1280, height: 800 };
 /** Both far below what the deck's smallest size needs, so the page scrolls at each. */
 const SHORT_WINDOWS = [
   { width: 1280, height: 500 },
@@ -195,8 +199,9 @@ test('the Action Deck draws, moves and answers keys and clicks', async ({
 
   // The window sizes below are set mid-Run: the deck redraws on a resize, so
   // each step waits for the redraw to land before it reads anything. They run
-  // short, then tall, then 1440x900, so each step starts from a deck that a
-  // stale read could only make fail, never pass.
+  // short, then 1280x800, then tall, then 1440x900, so each step starts from a
+  // deck that a stale read could only make fail, never pass (a stale 1280x800
+  // still scrolls from the short window, and a stale tall deck is too small).
   await test.step('on a window too short for the deck, the page scrolls as before and the deck stops shrinking', async () => {
     const heights: number[] = [];
     for (const shortWindow of SHORT_WINDOWS) {
@@ -229,6 +234,39 @@ test('the Action Deck draws, moves and answers keys and clicks', async ({
         `a shorter window (${SHORT_WINDOWS[1].height} px) draws the keycap no smaller than ${SHORT_WINDOWS[0].height} px does`,
       )
       .toBe(heights[0]);
+  });
+
+  await test.step('at 1280x800 the whole Flight Deck fits: the page does not scroll, and the HUD, the text prompt and the bottom keycap row are on screen', async () => {
+    await page.setViewportSize(SMALL_LAPTOP_WINDOW);
+    const size = `${SMALL_LAPTOP_WINDOW.width}x${SMALL_LAPTOP_WINDOW.height}`;
+    await expect.soft
+      .poll(() => pageOverflow(page), {
+        message: `${size}: the page does not scroll`,
+      })
+      .toBeLessThanOrEqual(0);
+    await expect.soft
+      .poll(() => lowestKeycapBottom(page), {
+        message: `${size}: the bottom keycap row is above the bottom of the window`,
+      })
+      .toBeLessThanOrEqual(SMALL_LAPTOP_WINDOW.height);
+    expect
+      .soft(
+        (await keycapRects(page)).length,
+        `${size}: the accessibility layer labels the keys`,
+      )
+      .toBeGreaterThanOrEqual(AT_LEAST_KEYCAPS);
+    await expect
+      .soft(
+        keycap(page, MEASURED_KEY),
+        `${size}: a bottom-row keycap is in view`,
+      )
+      .toBeInViewport({ ratio: 1 });
+    await expect
+      .soft(hud(page), `${size}: the HUD is in view`)
+      .toBeInViewport({ ratio: 1 });
+    await expect
+      .soft(textPrompt(page), `${size}: the text prompt is in view`)
+      .toBeInViewport({ ratio: 1 });
   });
 
   await test.step('on a tall window the deck is drawn at full size: a keycap is as tall as it always was', async () => {
@@ -313,5 +351,62 @@ test('the Action Deck draws, moves and answers keys and clicks', async ({
 
     await page.keyboard.press('E');
     await expect(page.getByText(DEBRIEF_TITLE)).toBeVisible();
+  });
+});
+
+// The text prompt's box shows two lines. Where the Run is must stay inside it
+// however long the text, at the smallest window the Flight Deck is meant to fit.
+// "Q" is the one capital in the text, so the first line has a character of its
+// own to look for once the box has scrolled on.
+const SENTENCE =
+  'Quick brown foxes jump over the lazy dogs while the sleepy moon rises';
+const LONG_TEXT = `Q${SENTENCE.slice(1)} ${Array(3).fill(SENTENCE.toLowerCase()).join(' ')}`;
+/** Far enough in to be well past the second line, with the third and fourth reached. */
+const TYPED_CHARACTERS = 215;
+/** How many keys between one look at the prompt. */
+const KEYS_PER_LOOK = 5;
+
+test('the text prompt keeps the current character in view through a long text at 1280x800', async ({
+  page,
+}) => {
+  await page.setViewportSize(SMALL_LAPTOP_WINDOW);
+  // The clock is stopped: every key is a Good, and the keys cost no drawing.
+  await launchOnStoppedClock(page, LONG_TEXT);
+  const size = `${SMALL_LAPTOP_WINDOW.width}x${SMALL_LAPTOP_WINDOW.height}`;
+
+  await test.step('the current character starts in view, and the page does not scroll', async () => {
+    await expect(currentCharacter(page)).toBeInViewport({ ratio: 1 });
+    await expect(
+      textPrompt(page).getByText('Q', { exact: true }),
+    ).toBeInViewport({ ratio: 1 });
+    expect
+      .soft(await pageOverflow(page), `${size}: no scrolling`)
+      .toBeLessThanOrEqual(0);
+  });
+
+  await test.step('typing on through the text, the current character stays in the text box, and the first line scrolls out of it', async () => {
+    for (let typed = 0; typed < TYPED_CHARACTERS; typed += KEYS_PER_LOOK) {
+      await typeText(page, LONG_TEXT.slice(typed, typed + KEYS_PER_LOOK));
+      // The Run has reached the next character, so the look below is at the
+      // right place and not at the one before it.
+      const next = LONG_TEXT[typed + KEYS_PER_LOOK];
+      await expect(currentCharacter(page)).toHaveText(
+        next === ' ' ? '␣' : next,
+      );
+      await expect
+        .soft(
+          currentCharacter(page),
+          `after ${typed + KEYS_PER_LOOK} characters: "${LONG_TEXT[typed + KEYS_PER_LOOK]}" is in the text box`,
+        )
+        .toBeInViewport({ ratio: 1 });
+    }
+    // Without this, a text that never got past two lines would pass the loop.
+    await expect(
+      textPrompt(page).getByText('Q', { exact: true }),
+      'the first line has scrolled out of the text box',
+    ).not.toBeInViewport();
+    expect
+      .soft(await pageOverflow(page), `${size}: no scrolling`)
+      .toBeLessThanOrEqual(0);
   });
 });
