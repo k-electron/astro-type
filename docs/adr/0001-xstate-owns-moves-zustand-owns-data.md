@@ -12,6 +12,7 @@ The XState machine is the only authority on which screen is showing and what pha
 ## Amended 2026-10-27 (phase B restructure)
 
 The decision stands: the machine owns the moves and the store owns the data. The restructure made the line between them a rule you can apply, and changed how they are joined.
+
 - **The test is "who reads it to decide?"** The machine's context holds what its guards and transitions read: the screen, the Run phase and the openers stack. The store holds what the rules read and write: the live Run and the Profile. Overdrive is the worked example. It is on or off, which looks like machine state, but no guard reads it, so it lives in the Run.
 - **One named crossing.** One guard (is there a next Stage?) reads the current Stage, which is the Run's. Nothing else in the machine reads the store.
 - **The machine declares its effects; the `Game` provides them.** The machine names each effect action and that guard, and `createGame` fills them in. An effect nobody provided throws, so it can't quietly do nothing. The forwarding interface the machine used to call the store through is gone.

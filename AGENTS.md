@@ -35,5 +35,6 @@ A browser typing game; `README.md` says what it is and what it's built with. Use
 ## Skills and tracker
 
 Work runs through Matt Pocock's skills (`mattpocock-skills`), so reach for one first: `/wayfinder` maps the work, `/grill-with-docs` settles decisions, `/to-spec`, `/to-tickets` and `/implement` build it, `/diagnosing-bugs` handles bugs, `/code-review` reviews a change.
+
 - Issues, specs and wayfinder maps are GitHub Issues on k-electron/astro-type, via `gh`: `docs/agents/issue-tracker.md`. Labels: `docs/agents/triage-labels.md`.
 - One `GLOSSARY.md` and the ADRs in `docs/adr/`, read before working in their area: `docs/agents/domain.md`.
