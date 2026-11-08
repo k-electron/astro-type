@@ -15,12 +15,14 @@ A test that restates the code is a change detector: delete it. That covers check
 ## Starting a test
 
 Every layer starts from the same two modules, so no test builds a Save or sets up a `Game` of its own:
+
 - **`tests/shared/saves.ts`** builds every Save. `stageProgress(id, stars, overrides?)` is one Stage's entry; `clearedStages({ 's1-l1': 3 })` is a Profile's Stage progress; `RETURNING_PLAYER` is 5 Stars in all and 1,234 Credits; `completeSave()` is a complete Save in today's format with every field set off its default; `OLD_LIVE_EXPORT` is a fixture, the Backup the game exported before versions existed. `createMemoryStorage(save)` in `tests/shared/memoryStorage.ts` is the in-memory stand-in for localStorage; it also reports the last Save written, every Save moved aside (with its stamp) and whether the notice flag is set. Pass one to `createMemoryStorage` or `loadGame` (unit), `renderGame({ profile })` (DOM) or `seedSave` from `tests/browser/helpers.ts` (browser). Add a Save here, never as a local copy. The folder also holds `names.ts` (the words the game never says), `multiplier.ts` (the Multiplier steps) and `screens.ts` (the heading of each menu, and the names of the Pause Menu, the Debrief, Academy Home, the HUD and the Sound Kits). Button names and copy that the source exports are imported from there, or from `screens.ts`, which re-exports some: `src/screens/audioLabels.ts`; `flightDeckLabel`, `closeLabel` and `PAUSE_FLIGHT` in `src/screens/closeLabel.ts`; `src/screens/confirmLabels.ts` (the two confirms' titles and messages); `DISMISS_NOTICE_LABEL` in `src/screens/dismissLabel.ts`; `REPLAY` and `NEW_SECTOR_UNLOCKED` (the Debrief's Replay button and unlock notice) in `src/screens/debriefLabels.ts`; and `EQUIPPED` and `EQUIP` (a Cosmetic card's button, and the word in its badge) in `src/screens/hangarLabels.ts`. It imports from no test runner, so every layer can use it.
 - **`tests/shared/testHelpers.ts`** is the one test-helpers module. It sets up a `Game` through `send` over a seeded Save, and plays it by `pressKey` and `step`: `newGame(seed)`, `loadGame(seed, sound, clock)` (which also gives the Save's storage; `sound` is where the game's sound goes, `clock` the wall clock it stamps with), `startedGame({ upgrades })`, `startStage(game, id)`, `startFreeFlight(game, text)`, `hitPerfect`, `miss`, `typeText` and `clearStage`. It imports from no test runner and no React, so a headless test and the DOM harness both use it (the harness's `player.startStage` is its `startStage` over the harness's own game).
 
 ## Unit tests (headless)
 
 Vitest, in `src/**/*.test.ts`, on `createGame` with the Run clock stepped by hand, only where the logic is real:
+
 - Judgement and scoring: Perfect, Great or Good by distance to the Strike Line, Multiplier steps, Overdrive, shields
 - Stars from WPM, accuracy and Streak
 - WPM, accuracy and Rhythm measured in Run Time
@@ -51,6 +53,7 @@ it('shows the Debrief when the text is typed to the end', () => {
 ```
 
 `tests/dom/harness.tsx` is the whole interface; read its doc comments.
+
 - `renderGame({ profile?, storage?, text?, sound? })` mounts the app on a new game. `profile` is the Save the player already has (one from `tests/shared/saves.ts`; any fields you leave out take their defaults); `text` starts a Free Flight Run of that text; `sound` is where the game's sound goes, for a test that listens to it (the recording sound adapter's `effects` port from `tests/shared/recordingSound.ts`; `audio-panel-sound.test.tsx` does). Left out, the game is silent.
 - `player.openHeader('Galaxy Map' | 'Hangar' | 'Analytics' | 'Free Flight' | 'Academy Home')`, `player.click(name)` and `player.clickHeader(name)` press real buttons. The header stays reachable under an overlay, so a name can be on it and on the overlay (Resume Flight is on the header and on the Pause Menu while a Run is paused): `click` takes the dialog on show when it has the button, and `clickHeader` looks only in the header.
 - `player.launchFreeFlight(text)`, `player.press(key, { repeat?, ctrlKey?, metaKey? })`, `player.type(text, { stepsPerKey? })` and `player.step(steps)` start and play a Run. Keys go through the keys the harness attaches to its game, `attachKeyboard` (`src/app/attachKeyboard.ts`, the same adapter the composition root attaches), as a keydown and a keyup on `window` (`player.pressWhereFocusIs(key)` sends them from the focused element instead, bubbling up, for a test where it matters who sees the key first); the App has no key listener of its own. `type` steps the Run clock half a second (30 steps) before each character so the Drone is at the Strike Line.
@@ -59,6 +62,7 @@ it('shows the Debrief when the text is typed to the end', () => {
 - The player has no handle on the game, so a test can only check what is on screen. The HUD's Accuracy follows every keystroke; its Speed refreshes every 30 steps, so `type` leaves it current, and after a bare `press` call `step(30)` before reading Speed.
 
 Rules:
+
 - Find things the way a player sees them: `getByRole` with a name, `getByText`, `getByLabelText`. No test ids, no class names, no store reads for what the screen shows. The harness gives no access to the game, the store or the machine.
 - No snapshots of markup, and no checks that a function was called. Assert on text, buttons and headings, and import copy, headings and Stage text rather than retyping them.
 - Test one behaviour per test, through the screen. A rule's outcome (Judgement, Stars, WPM) belongs in a unit test; a DOM test checks that the screen shows it.
@@ -66,6 +70,7 @@ Rules:
 - No fixed sleeps and no fake timers: nothing here runs on real time. The Run only moves when the test calls `step` or `type`.
 
 **What is stubbed, and why.** Everything every DOM test needs is in `tests/dom/setup.ts`, with a numbered comment each:
+
 - The PixiJS deck session (`getDeckSession`, the only place `pixi.js` loads) attaches to nothing. It needs WebGL, and a DOM has none. The Action Deck's React header bar around it stays real: the Overdrive and Streak badges and the Hands toggle can be tested here. The canvas under it (Drones, keycaps, effects) is not there, so assert nothing about anything drawn.
 - `src/app/appGame.ts`, the app's real game, is a tripwire: loading it fails the test, because it would bring in real time and localStorage. The tree reads its game with `useGame()` (`src/app/useGame.tsx`), and `renderGame` provides a headless one.
 - `canvas-confetti` draws on a canvas.
@@ -75,6 +80,7 @@ Rules:
 Tailwind is not loaded, so no element is hidden by CSS: a DOM test sees the header's `md:flex` navigation at every width and sees a modal's buttons whether or not they would fit on screen. happy-dom also has no scrolling or native key activation.
 
 **What still needs the real browser.** Do not try to cover these in a DOM test; they have a Playwright journey (CI's, in `tests/browser/*.spec.ts` using `tests/browser/journey-helpers.ts`, or the local-only suite), a screenshot, or a person playing:
+
 - the Action Deck's canvas: Drones, keycaps, lasers, effects, hit popups, and clicking a keycap
 - the real clock and frames: Drone motion, catch-up after a slow frame, a pause freezing the deck, exact Judgement timing
 - native focus and keyboard: what has focus after a screen opens or closes, a stray Enter or Space on a focused button, Space scrolling the page (the keyboard adapter's handling of `blur`, tab-hidden, Esc and a held key is DOM-testable, via `blur()`, `hideTab()` and `press(..., { repeat })`; `attach-keyboard.test.tsx` holds what only the adapter sees; the Esc stack, one layer per Esc (the header's audio panel, then a confirm, then the screen), is tested through the App with `pressWhereFocusIs`, which sends the key from the focused element the way a keyboard does)
@@ -85,6 +91,7 @@ Tailwind is not loaded, so no element is hidden by CSS: a DOM test sees the head
 ## Browser tests
 
 Playwright, in `tests/browser/*.spec.ts`, Chromium only, against the production build. `playwright.config.ts` has two projects: `chromium`, the CI journeys, which ignores `*.local.spec.ts`, and `local`, the local-only suite (below). Playwright's `webServer` owns the build: every run does `pnpm build`, then serves `dist/` with `vite preview` on port 4318 (`--strictPort`, never reusing a server), so a browser test can't run against a stale build or a server left on 4173. That is `verify`'s one build.
+
 - The browser keeps only what a real browser proves: the Action Deck and its accessibility layer, motion and a frozen pause on the real or a stopped clock, native keyboard and focus behaviour (Space not scrolling, Enter and Space not activating the Pause Menu), the Save in localStorage across a reload, the screenshots, and the `@smoke` journey.
 - There are a few journeys, one launch each. Each fact is a `test.step`, and checks that don't gate the next step use `expect.soft`, so one run reports every broken fact. Helpers shared by the journeys are in `tests/browser/journey-helpers.ts`, CI's and the local-only ones alike. What every layer of tests shares (the Saves to start from, the banned names, the Multiplier steps) is in `tests/shared/`, which imports from no test runner.
 - Add a test to an existing journey before adding a new one.
@@ -96,6 +103,7 @@ Playwright, in `tests/browser/*.spec.ts`, Chromium only, against the production 
 - Screenshot comparisons are limited to a few key frames, and they're compared only in CI's fixed Playwright image. `verify` runs them there, last, through `scripts/screenshots.mjs` (CI's screenshots job runs the same script); `pnpm screenshots:update` redraws the baselines on purpose, in `tests/browser/screenshots.spec.ts-snapshots`. The per-pixel `threshold` is 0, the strictest value that stayed green over 10 runs in a row in CI's image (the frames draw pixel-identically there, so no tolerance was needed); `maxDiffPixelRatio` stays at 0.001. Both need Docker, and `verify` fails at once, with a message, when Docker isn't running, rather than skipping them. CI's checks job runs `verify --no-screenshots`, because its screenshots have a parallel job of their own; that flag is the only way to skip them. A failure leaves the before, after and diff images in `screenshot-results/test-results`, which CI uploads. The baselines carry the Playwright version they were made with, so a Playwright upgrade (a Dependabot bump) fails the check until the upgrade's branch has run `pnpm screenshots:update` and committed the new pictures. The Playwright step of `verify` skips them: they run only in the Docker step.
 
 Two exceptions to "read nothing but the screen, on the real clock" are sanctioned, both for the canvas:
+
 - `tests/browser/local/effects.local.spec.ts` checks the Action Deck's effects (lasers, explosions, the ship, the guidance beam, keycap glow) by comparing the pixels of captures taken within the same run. There are no stored baselines, so it runs on any machine, but only in the `local` project, which `pnpm verify` runs and CI does not. It uses `page.clock` so an effect is caught mid-flight, and its thresholds are wide: the effects have to be there and run their course, not match a picture. Its last step, the deck following the screen's pixel density, also reads the one number a drawing can't show: the deck canvas element's backing width (its `width` attribute), which must be the CSS width times the density. It sets the density through a Chrome DevTools Protocol device-metrics override (`Emulation.setDeviceMetricsOverride`), clears it when done, and runs last so the override can't touch the pictures before it.
 - The screenshot specs stub `AudioContext` and `Math.random` and block web fonts, so the same frame draws the same pixels on every run: the sound engine draws random numbers on its own real-time schedule, and a font arriving mid-run would redraw the text. Nothing else in the browser tests does this.
 
