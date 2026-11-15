@@ -19,30 +19,30 @@
   },
   "dependencies": {
     "canvas-confetti": "^1.9.4",
-    "lucide-react": "^1.69.0",
-    "pixi.js": "^8.22.0",
+    "lucide-react": "^1.72.0",
+    "pixi.js": "^8.23.0",
     "react": "^19.0.1",
     "react-dom": "^19.0.1",
-    "xstate": "^5.33.2",
+    "xstate": "^5.33.4",
     "zod": "^4.6.7",
-    "zustand": "^5.0.15"
+    "zustand": "^5.1.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.6.5",
-    "@playwright/test": "1.64.1",
-    "@tailwindcss/vite": "^4.3.4",
+    "@biomejs/biome": "2.6.7",
+    "@playwright/test": "1.65.0",
+    "@tailwindcss/vite": "^4.3.5",
     "@testing-library/dom": "10.4.2",
     "@testing-library/react": "16.3.3",
     "@types/canvas-confetti": "^1.9.0",
     "@types/node": "^26.6.6",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
-    "@vitejs/plugin-react": "^6.2.1",
+    "@vitejs/plugin-react": "^6.3.0",
     "happy-dom": "21.0.4",
-    "tailwindcss": "^4.3.4",
+    "tailwindcss": "^4.3.5",
     "typescript": "^7.0.2",
-    "vite": "^8.3.6",
+    "vite": "^8.3.8",
     "vitest": "5.1.0",
-    "wrangler": "4.158.0"
+    "wrangler": "4.160.1"
   }
 }
