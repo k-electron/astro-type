@@ -4,6 +4,7 @@ How the engineering skills consume this repo's domain documentation. The repo is
 
 ## Before exploring, read these
 
+- **`docs/PHILOSOPHY.md`**: the principles every change traces back to.
 - **`GLOSSARY.md`** at the repo root.
 - **`docs/adr/`**: the ADRs that touch the area you're about to work in.
 
