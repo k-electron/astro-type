@@ -38,7 +38,7 @@ Each Stage adds one small new thing. Progress has real gates (Stars on a Stage, 
 
 ### P5. Earned, not bought
 
-Stars, unlocks and Upgrades come only from typing performance. Nothing can be bought, or grinded for, that makes a Star easier to earn. A player's ship reflects their typing ability.
+Stars, unlocks and Upgrades come only from typing performance. Nothing can be bought, or grinded for, that makes a Star easier to earn. Credits buy Cosmetics only: they change how the game looks and sounds, never how it plays. A player's ship reflects their typing ability.
 
 ### P6. Never punish absence
 
@@ -115,7 +115,7 @@ Rules the game has today that conflict with the principles above. They stay unti
 | Today                                                                                                                                         | Conflicts with        |
 | :-------------------------------------------------------------------------------------------------------------------------------------------- | :-------------------- |
 | Judgements grade a hit Perfect, Great or Good by how close its Drone was to the Strike Line                                                   | P1                    |
-| Credits, earned by replaying, buy shields that keep the Streak, and the 3-Star bar needs a minimum Streak                                     | P1, P5                |
+| Credits buy Upgrades (shields, reactor, sensors) that change play, and shields keep the Streak the 3-Star bar needs                           | P1, P5                |
 | 1-Star accuracy bars run from 75% to 92%                                                                                                      | P2                    |
 | Every Stage is one fixed text, so practice can't target the player's weak keys and a replay can earn Stars on a text the player has memorised | P4, P10               |
 | The Action Deck shows the full keyboard from the first Stage                                                                                  | P3                    |
