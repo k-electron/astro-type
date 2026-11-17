@@ -116,11 +116,13 @@ Rules the game has today that conflict with the principles above. They stay unti
 | :-------------------------------------------------------------------------------------------------------------------------------------------- | :-------------------- |
 | Judgements grade a hit Perfect, Great or Good by how close its Drone was to the Strike Line                                                   | P1                    |
 | Credits buy Upgrades (shields, reactor, sensors) that change play, and shields keep the Streak the 3-Star bar needs                           | P1, P5                |
-| 1-Star accuracy bars run from 75% to 92%                                                                                                      | P2                    |
+| Overdrive fills on every correct keystroke, not from steady Rhythm                                                                            | P1                    |
+| Drones fall at one speed and wait at the Strike Line, so Drone pressure isn't the Stage's target speed                                        | P1                    |
+| 1-Star accuracy bars run from 82% to 92%                                                                                                      | P2                    |
 | Every Stage is one fixed text, so practice can't target the player's weak keys and a replay can earn Stars on a text the player has memorised | P4, P10               |
 | The Action Deck shows the full keyboard from the first Stage                                                                                  | P3                    |
 | The lit keycap and the hands stay the same however well a key is known                                                                        | P3                    |
-| Accuracy counts every wrong keystroke, and WPM counts Run Time from launch, pauses included                                                   | P10                   |
+| Accuracy counts every wrong keystroke, and WPM counts Run Time from launch, before the first keystroke                                        | P10                   |
 | Analytics shows per-key hits and misses only, and nothing reads it to choose practice                                                         | P10                   |
 | A day's play has no shape, and there is no warm-up                                                                                            | P6, P7                |
 | Capitals come after numbers; Backspace, Enter and Tab are never taught                                                                        | P12, success criteria |
