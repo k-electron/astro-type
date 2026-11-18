@@ -11,7 +11,7 @@ A themed group of Stages that forms one step of the curriculum.
 _Avoid_: Zone, world, chapter
 
 **Stage**:
-A fixed text to type, either from a Sector or set up by the player in Free Flight. Only a Sector Stage has its own goal and star thresholds.
+A fixed text to type, either from a Sector or set up by the player in Free Flight. Only a Sector Stage has its own goal and Star bars.
 _Avoid_: Level, mission, lesson
 
 ### Play
@@ -39,6 +39,10 @@ _Avoid_: Receptor, hit line, target line
 **Judgement**:
 The verdict on one keystroke: Perfect, Great or Good by how close the Drone was to the Strike Line, or Miss for a wrong key.
 _Avoid_: Timing, timing feedback, rating
+
+**Miss mark**:
+A character of the text where a wrong key was pressed, marked in the text prompt. However many wrong keys the player presses on one character, it carries one Miss mark.
+_Avoid_: Error mark, typo
 
 **Streak**:
 The number of correct keystrokes in a row in the current Run. A Miss that a shield doesn't absorb resets it.
@@ -77,6 +81,10 @@ _Avoid_: Export, save file
 **Stars**:
 The 0–3 result a Sector Stage earns from a cleared Run; a Stage keeps its best. Stars open new Sectors. A Free Flight earns none.
 _Avoid_: Rating, score
+
+**Star bar**:
+The accuracy, WPM or Streak a cleared Run must reach for a Star. Each Sector Stage sets its own for 1, 2 and 3 Stars.
+_Avoid_: Threshold, star threshold
 
 **Credits**:
 Currency earned on each Debrief and spent in the Hangar.

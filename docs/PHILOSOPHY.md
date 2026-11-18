@@ -24,7 +24,7 @@ Drills are welcome. They just have to be played, not sat through.
 
 ### P2. Accuracy before speed
 
-Clean typing is rewarded before fast typing. Speed targets rise only after accuracy holds. At 90% accuracy, roughly every other word has a mistake; that is not a passing grade here, so no Star is earned below it.
+Clean typing is rewarded before fast typing. Speed targets rise only after accuracy holds. At 90% accuracy, roughly every other word has a mistake. That is the lowest a Star allows: no Star is earned below 90%, on any Stage.
 
 ### P3. Simpler machines, not training wheels
 
