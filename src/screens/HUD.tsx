@@ -8,6 +8,7 @@ import {
   rhythmBand,
 } from '../game/rules';
 import { useGameState } from '../app/useGameState';
+import { roundDown } from './roundDown';
 
 /** The Rhythm gauge's dot and name, by band. */
 const RHYTHM_LOOK: Record<RhythmBand, { dot: string; text: string }> = {
@@ -133,7 +134,7 @@ export const HUD: React.FC = () => {
                   : 'text-amber-400'
             }`}
           >
-            {accuracy}%
+            {roundDown(accuracy)}%
           </span>
         </div>
 

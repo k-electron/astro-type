@@ -90,7 +90,7 @@ describe('a Miss', () => {
     expectStreak(0);
     expect(progress()).toBe('50%');
     expect(currentCharacters()).toEqual(['d']);
-    // 3 right keys and 1 wrong one. The HUD works Accuracy out on every keystroke.
+    // 4 characters reached, 1 of them marked. The HUD works Accuracy out on every keystroke.
     player.step(30);
     expectAccuracy(75);
 

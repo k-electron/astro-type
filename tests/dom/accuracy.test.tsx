@@ -2,9 +2,9 @@ import { expect, it } from 'vitest';
 import { HUD_NAME } from '../shared/screens';
 import { renderGame, screen } from './harness';
 
-// HUD Accuracy is the share of the Run's keystrokes that were right, worked
-// out on every keystroke. Speed is a different readout: it keeps refreshing on
-// the Run clock's own tick, twice a second.
+// HUD Accuracy is the share of the characters reached that carry no Miss mark,
+// worked out on every keystroke and shown rounded down. Speed is a different
+// readout: it keeps refreshing on the Run clock's own tick, twice a second.
 
 // Six different letters; "z" is never a target.
 const TEXT = 'abcdef';
@@ -18,26 +18,42 @@ const accuracy = () => /Accuracy\s*(\d+%)/.exec(hudText())?.[1];
 /** The HUD's Speed readout, as the player reads it: "36WPM". */
 const speed = () => /Speed\s*(\d+)\s*WPM/.exec(hudText())?.[1];
 
-it('shows Accuracy as correct over all keystrokes after every keystroke, a Miss or a hit, with no time passing', () => {
+it('shows 100% before the first key, and keeps it while every character reached is clean', () => {
   const player = renderGame({ text: TEXT });
-  player.type('abc');
   expect(accuracy()).toBe('100%');
 
-  // 3 right keys of 4.
+  player.type('abc');
+  expect(accuracy()).toBe('100%');
+});
+
+it('drops at a wrong key before the character is typed, and shows the share rounded down, with no time passing', () => {
+  const player = renderGame({ text: TEXT });
+  player.type('ab');
+
+  // 2 clean of 3 reached is 66.7%: shown as 66%, not 67%.
   player.press('z');
+  expect(accuracy()).toBe('66%');
+
+  // More wrong keys on the same character change nothing.
+  player.press('z');
+  player.press('z');
+  expect(accuracy()).toBe('66%');
+
+  // Typing the marked character leaves its mark.
+  player.press('c');
+  expect(accuracy()).toBe('66%');
+
+  // 3 clean of 4 reached.
+  player.press('d');
   expect(accuracy()).toBe('75%');
 
   // 3 of 5.
   player.press('z');
   expect(accuracy()).toBe('60%');
 
-  // 4 of 6: a right key brings it up straight away.
-  player.press('d');
-  expect(accuracy()).toBe('67%');
-
-  // 4 of 7.
-  player.press('z');
-  expect(accuracy()).toBe('57%');
+  // Typing the marked character leaves 3 of 5.
+  player.press('e');
+  expect(accuracy()).toBe('60%');
 });
 
 it('keeps Speed to its own refresh: a keystroke does not change it, the next tick does', () => {

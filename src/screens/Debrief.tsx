@@ -15,6 +15,7 @@ import type { GameState } from '../game/game';
 import { type RhythmBand, rhythmBand } from '../game/rules';
 import { useGame } from '../app/useGame';
 import { useGameState } from '../app/useGameState';
+import { roundDown } from './roundDown';
 import { NEW_SECTOR_UNLOCKED, REPLAY } from './debriefLabels';
 import { OverlayShell } from './OverlayShell';
 
@@ -295,7 +296,7 @@ export const Debrief: React.FC = () => {
               Accuracy
             </span>
             <span className="font-mono font-bold text-emerald-400 text-lg">
-              {accuracy}%
+              {roundDown(accuracy)}%
             </span>
           </div>
 

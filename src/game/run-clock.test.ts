@@ -203,7 +203,7 @@ describe('the Run clock steps only while the Run is running', () => {
 });
 
 describe('a pause in the middle of a Run leaves WPM, accuracy and Rhythm unchanged', () => {
-  /** 3 hits, a gap, 3 more hits and 2 wrong keys: 4 s of Run Time, in 3 stretches of whole half seconds. */
+  /** 3 hits, a gap, 3 more hits and 2 wrong keys on the next character: 4 s of Run Time, in 3 stretches of whole half seconds. */
   function play(game: Game, pauseInTheMiddle: boolean): void {
     hitPerfect(game, 3);
     if (pauseInTheMiddle) pauseFor(game);
@@ -219,10 +219,11 @@ describe('a pause in the middle of a Run leaves WPM, accuracy and Rhythm unchang
     play(paused, true);
 
     // 6 right and 2 wrong keys in 4 s: net (6 - 2) / 5 / (4 / 60) = 12.
+    // Accuracy: 7 characters reached, 1 of them marked.
     // Each wrong key costs the Rhythm 15.
     expect(readings(straight)).toEqual({
       netWpm: 12,
-      accuracy: 75,
+      accuracy: expect.closeTo(600 / 7),
       rhythm: 70,
     });
     expect(readings(paused)).toEqual(readings(straight));

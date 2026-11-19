@@ -635,12 +635,12 @@ describe('the Debrief shows the result of the Run just cleared', () => {
     expect(first?.accuracy).toBe(100);
 
     play(game, REPLAY);
-    clearStage(game, { seconds: 60, missesFirst: 4 });
+    clearStage(game, { seconds: 60, missMarks: 4 });
 
     expect(game.getState().screen).toBe('debrief');
     const second = game.getState().debrief;
     expect(second).not.toEqual(first);
-    // 77 right keys and 4 wrong ones.
+    // 4 of the 77 characters carry a Miss mark.
     expect(second?.accuracy).toBeLessThan(100);
     expect(second?.wpm).toBeLessThan(first?.wpm ?? 0);
   });

@@ -39,20 +39,20 @@ afterEach(() => {
   engine.played.length = 0;
 });
 
-// A fast clean clear is 3 Stars; Misses before the first correct key take Stars off.
+// A fast clean clear is 3 Stars; characters carrying a Miss mark take Stars off.
 it.each([
-  { stars: 3, missesFirst: 0 },
-  { stars: 2, missesFirst: 4 },
-  { stars: 1, missesFirst: 14 },
-  { stars: 0, missesFirst: 15 },
+  { stars: 3, missMarks: 0 },
+  { stars: 2, missMarks: 3 },
+  { stars: 1, missMarks: 7 },
+  { stars: 0, missMarks: 12 },
 ])(
   'plays the fanfare, then $stars chime(s) one after the other',
-  ({ stars, missesFirst }) => {
+  ({ stars, missMarks }) => {
     vi.useFakeTimers();
     const { game } = loadGame(RETURNING_PLAYER, engineSound);
     startStage(game, STAGE_ID);
 
-    clearStage(game, { seconds: 60, missesFirst });
+    clearStage(game, { seconds: 60, missMarks });
 
     expect(
       game.getState().debrief?.starsEarned,

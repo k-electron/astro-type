@@ -107,19 +107,39 @@ export function miss(game: Game, times = 1): void {
  * Clear Stage 1 by typing the whole sample text with every correct key a Perfect,
  * so the Run takes exactly `seconds` of Run Time.
  *
- * - `missesFirst`: wrong keys pressed before the first correct key (Streak is 0 then,
- *   so they cost accuracy and nothing else).
- * - `missBeforeLast`: one wrong key just before the last character, ending the Streak.
+ * - `missMarks`: that many characters, the first ones, each get one wrong key before
+ *   their correct key. Each is one Miss mark, so each costs accuracy, and the first
+ *   few break the Streak while it is still short.
+ * - `missesFirst`: wrong keys pressed before the first correct key, all on the first
+ *   character, so together they are one Miss mark.
+ * - `missBeforeLast`: one wrong key just before the last character, ending the Streak
+ *   and giving that character a Miss mark.
+ *
+ * No wrong key takes any Run Time.
  */
 export function clearStage(
   game: Game,
-  opts: { seconds: number; missesFirst?: number; missBeforeLast?: boolean },
+  opts: {
+    seconds: number;
+    missMarks?: number;
+    missesFirst?: number;
+    missBeforeLast?: boolean;
+  },
 ): void {
-  const { seconds, missesFirst = 0, missBeforeLast = false } = opts;
+  const {
+    seconds,
+    missMarks = 0,
+    missesFirst = 0,
+    missBeforeLast = false,
+  } = opts;
   const total = seconds * 60;
   const lastIndex = SAMPLE_TEXT.length - 1;
   miss(game, missesFirst);
-  hitPerfect(game, lastIndex);
+  for (let i = 0; i < lastIndex; i++) {
+    game.step(STEPS_TO_REACH_LINE);
+    if (i < missMarks) miss(game);
+    game.pressKey(targetKey(game));
+  }
   game.step(total - lastIndex * STEPS_TO_REACH_LINE);
   if (missBeforeLast) miss(game);
   game.pressKey(targetKey(game));
@@ -138,4 +158,23 @@ export function typeText(
     game.step(stepsPerKey);
     game.pressKey(key);
   }
+}
+
+/**
+ * Type `text` key by key like `typeText`, with `wrongKeys` wrong keys pressed
+ * first on each character whose index in `text` is in `missAt`: each of those
+ * characters carries one Miss mark, however many wrong keys it got. `text`
+ * must not contain `WRONG_KEY`.
+ */
+export function typeTextWithMissMarks(
+  game: Game,
+  text: string,
+  missAt: readonly number[],
+  { wrongKeys = 1, stepsPerKey = STEPS_TO_REACH_LINE } = {},
+): void {
+  Array.from(text).forEach((key, index) => {
+    game.step(stepsPerKey);
+    if (missAt.includes(index)) miss(game, wrongKeys);
+    game.pressKey(key);
+  });
 }

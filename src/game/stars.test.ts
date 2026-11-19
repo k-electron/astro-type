@@ -9,13 +9,16 @@ import {
   startedGame,
   startStage,
   typeText,
+  typeTextWithMissMarks,
 } from '../../tests/shared/testHelpers';
 
 /**
  * Stars, Credits and the Profile after clearing Stage 1 (s1-l1), read from the Debrief.
  * Its thresholds: 1 Star at 85% accuracy; 2 Stars at 10 WPM and 92%; 3 Stars at
  * 14 WPM, 97% and a best Streak of 14. Every Stage clear types the 77-character
- * sample text, so WPM is set by the Run Time and accuracy by the number of Misses.
+ * sample text, so WPM is set by the Run Time and accuracy by the number of
+ * characters carrying a Miss mark. Stars compare the exact accuracy to the
+ * Star bars; only the screens round it down.
  */
 
 function debriefOf(game: ReturnType<typeof startedGame>) {
@@ -66,36 +69,87 @@ describe('Stars from WPM, accuracy and Streak', () => {
     expect(debriefOf(slowest).starsEarned).toBe(1);
   });
 
-  it('Misses lower accuracy and the Stars with it, even at a fast pace', () => {
+  it('Miss marks lower accuracy and the Stars with it, even at a fast pace', () => {
     const game = startedGame();
-    clearStage(game, { seconds: 60, missesFirst: 4 });
+    clearStage(game, { seconds: 60, missMarks: 4 });
     const debrief = debriefOf(game);
-    expect(debrief.accuracy).toBe(95); // 77 of 81
+    expect(debrief.accuracy).toBeCloseTo((73 * 100) / 77); // 4 of 77 characters marked
     expect(debrief.wpm).toBe(15); // wrong keys cost WPM too: (77 - 4) / 5 = 14.6
     expect(debrief.starsEarned).toBe(2); // 3 Stars needs 97%
   });
 
-  it('accuracy is judged as the percentage the Debrief shows', () => {
+  it('wrong keys on one character count as one Miss mark, so four of them keep the 3rd Star', () => {
+    const game = startedGame();
+    clearStage(game, { seconds: 60, missesFirst: 4 });
+    const debrief = debriefOf(game);
+    expect(debrief.accuracy).toBeCloseTo((76 * 100) / 77); // 1 of 77 characters marked
+    expect(debrief.wpm).toBe(15); // wrong keys cost WPM too: (77 - 4) / 5 = 14.6
+    expect(debrief.starsEarned).toBe(3);
+  });
+
+  it('a Star bar is reached at its accuracy and missed just under it', () => {
     const justEnough = startedGame();
-    clearStage(justEnough, { seconds: 60, missesFirst: 14 });
-    expect(debriefOf(justEnough).accuracy).toBe(85);
+    clearStage(justEnough, { seconds: 60, missMarks: 11 });
+    expect(debriefOf(justEnough).accuracy).toBeCloseTo((66 * 100) / 77); // 85.7
     expect(debriefOf(justEnough).starsEarned).toBe(1);
 
     const notEnough = startedGame();
-    clearStage(notEnough, { seconds: 60, missesFirst: 15 });
-    expect(debriefOf(notEnough).accuracy).toBe(84);
+    clearStage(notEnough, { seconds: 60, missMarks: 12 });
+    expect(debriefOf(notEnough).accuracy).toBeCloseTo((65 * 100) / 77); // 84.4
     expect(debriefOf(notEnough).starsEarned).toBe(0);
+  });
+
+  it('compares the exact accuracy, so a Run that rounds up to a bar but falls short of it earns the lower Star', () => {
+    // Stage s1-l2 has 87 characters. 3 Miss marks leave 84 clean: 96.55%,
+    // which rounds to its 97% bar for the 3rd Star without reaching it.
+    // 2 Miss marks leave 97.70%, which does.
+    const stage = getStageById('s1-l2');
+    if (!stage) throw new Error('No Stage s1-l2');
+    const characters = Array.from(stage.sampleText).length;
+    const bar = stage.starThresholds.threeStarAccuracy;
+    const exact = (marks: number) => ((characters - marks) * 100) / characters;
+    // If a Star bar moves, this test must be rebuilt rather than go quiet.
+    expect(exact(3)).toBeLessThan(bar);
+    expect(Math.round(exact(3))).toBeGreaterThanOrEqual(bar);
+    expect(exact(2)).toBeGreaterThanOrEqual(bar);
+
+    const fly = (marks: number) => {
+      const game = newGame();
+      startStage(game, stage.id);
+      typeTextWithMissMarks(
+        game,
+        stage.sampleText,
+        Array.from({ length: marks }, (_, i) => i),
+        { stepsPerKey: 20 },
+      );
+      return debriefOf(game);
+    };
+
+    const enough = fly(2);
+    expect(enough.accuracy).toBeCloseTo(exact(2));
+    expect(enough.wpm).toBeGreaterThanOrEqual(
+      stage.starThresholds.threeStarWpm,
+    );
+    expect(enough.starsEarned).toBe(3);
+
+    const short = fly(3);
+    expect(short.accuracy).toBeCloseTo(exact(3));
+    expect(short.wpm).toBeGreaterThanOrEqual(stage.starThresholds.threeStarWpm);
+    expect(short.starsEarned).toBe(2);
   });
 
   it('a 0-Star clear still pays Credits and counts as completed', () => {
     const game = startedGame();
-    clearStage(game, { seconds: 60, missesFirst: 15 });
+    clearStage(game, { seconds: 60, missMarks: 12 });
 
-    expect(debriefOf(game).creditsEarned).toBe(100 + 222); // no Star bonus
+    const debrief = debriefOf(game);
+    expect(debrief.starsEarned).toBe(0);
+    // 100 for the clear and score / 200, with no Star bonus.
+    expect(debrief.creditsEarned).toBe(100 + Math.round(debrief.score / 200));
     const profile = game.getState().profile;
-    expect(profile.totalCredits).toBe(322);
+    expect(profile.totalCredits).toBe(debrief.creditsEarned);
     expect(profile.totalStars).toBe(0);
-    expect(profile.totalErrors).toBe(15);
+    expect(profile.totalErrors).toBe(12);
     expect(profile.stagesProgress[STAGE_ID]).toMatchObject({
       completed: true,
       starsEarned: 0,
@@ -113,8 +167,9 @@ describe('Stars from WPM, accuracy and Streak', () => {
   it('the 3rd Star also needs the Streak: a Run that clears every other bar falls to 2 Stars when the Streak stays short of it', () => {
     // On Stage 1 accuracy trips before the Streak can. Stage s5-l1 (57
     // characters) asks 96% accuracy, 28 WPM and a Streak of 20 for its 3rd
-    // Star: two Misses, one a third of the way through and one at two thirds,
-    // keep accuracy at 97% and the Streak at 19, with the typing fast enough.
+    // Star: two Miss marks, one a third of the way through and one at two
+    // thirds, keep accuracy at 96.5% and the Streak at 19, with the typing
+    // fast enough.
     const stage = getStageById('s5-l1');
     if (!stage) throw new Error('No Stage s5-l1');
     const text = stage.sampleText;

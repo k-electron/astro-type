@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useGame } from '../app/useGame';
 import { useGameState } from '../app/useGameState';
+import { roundDown } from './roundDown';
 import {
   OverlayCloseButton,
   OverlayFlightDeckButton,
@@ -402,7 +403,7 @@ export const GalaxyMap: React.FC = () => {
                           <span>
                             Acc:{' '}
                             <strong className="text-slate-200">
-                              {progress.bestAccuracy}%
+                              {roundDown(progress.bestAccuracy)}%
                             </strong>
                           </span>
                         </div>

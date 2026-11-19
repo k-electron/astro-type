@@ -2,6 +2,7 @@ import { fireEvent } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import {
   CURRICULUM_SECTORS,
+  FIRST_STAGE,
   FREE_FLIGHT_SUBTITLE,
   FREE_FLIGHT_TITLE,
 } from '../../src/curriculum/curriculum';
@@ -26,6 +27,7 @@ import {
   NEW_SECTOR_UNLOCKED,
   REPLAY,
 } from '../shared/screens';
+import { WRONG_KEY } from '../shared/testHelpers';
 import {
   debriefCard,
   type Player,
@@ -238,6 +240,28 @@ describe('the Sector unlock banner', () => {
 
     expect(debriefButtons()).toContain(REPLAY);
     expect(screen.queryByText(NEW_SECTOR_UNLOCKED)).toBeNull();
+  });
+});
+
+describe('Accuracy', () => {
+  it("shows a Sector Stage Run's accuracy rounded down", () => {
+    const player = renderGame();
+    player.startStage(FIRST_STAGE.id);
+    // One Miss mark on the first character: 76 clean of 77, 98.7%.
+    player.press(WRONG_KEY);
+    player.typePrompt();
+
+    expect(debriefCard().textContent).toMatch(/Accuracy\s*98%/);
+  });
+
+  it("shows a Free Flight's accuracy rounded down, and counts three wrong keys on one character once", () => {
+    const player = renderGame({ text: 'abc' });
+    player.type('ab');
+    // "c" gets three wrong keys: 2 clean of 3 characters, 66.7%.
+    for (let i = 0; i < 3; i++) player.press(WRONG_KEY);
+    player.typePrompt();
+
+    expect(debriefCard().textContent).toMatch(/Accuracy\s*66%/);
   });
 });
 

@@ -4,7 +4,7 @@ import {
   CURRICULUM_SECTORS,
   FIRST_STAGE,
 } from '../../src/curriculum/curriculum';
-import { clearedStages } from '../shared/saves';
+import { clearedStages, stageProgress } from '../shared/saves';
 import {
   DEBRIEF_TITLE,
   GALAXY_MAP,
@@ -183,5 +183,26 @@ describe('the Galaxy Map starts on the furthest unlocked Sector', () => {
     player.click(new RegExp(SECTOR_TWO.name));
 
     expect(selectedSector()).toBe(SECTOR_TWO.name);
+  });
+});
+
+describe("a Stage's best accuracy", () => {
+  it('is shown rounded down, so a 96.55% best never reads as 97%', () => {
+    const player = renderGame({
+      profile: {
+        stagesProgress: {
+          [FIRST_STAGE.id]: stageProgress(FIRST_STAGE.id, 2, {
+            bestAccuracy: 96.55,
+          }),
+        },
+      },
+    });
+
+    player.openHeader('Galaxy Map');
+
+    const map = screen.getByRole('dialog', {
+      name: MENU_HEADINGS['Galaxy Map'],
+    });
+    expect(map.textContent).toMatch(/Acc:\s*96%/);
   });
 });

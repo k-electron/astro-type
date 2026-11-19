@@ -418,8 +418,10 @@ export function strike(
     } as const;
     return {
       run: {
-        ...withAccuracy(missed.run),
-        errorIndices: new Set(run.errorIndices).add(index),
+        ...withAccuracy({
+          ...missed.run,
+          errorIndices: new Set(run.errorIndices).add(index),
+        }),
         keyStats: {
           ...run.keyStats,
           [target]: { ...stats, misses: stats.misses + 1 },
@@ -532,21 +534,23 @@ export function clearedRun(run: Run): Run {
 
 // ---- Accuracy, WPM, Stars and Credits ---------------------------------------
 
-/** Accuracy follows every keystroke: it is worked out from the Run's counts each time. */
+/** Accuracy follows every keystroke: it is worked out from the Miss marks each time. */
 function withAccuracy(run: Run): Run {
   return { ...run, accuracy: accuracyOf(run) };
 }
 
+/**
+ * The share of the characters reached that carry no Miss mark, exact and
+ * unrounded: screens round it down, and Stars compare it as it is. A
+ * character is reached once it is typed or a wrong key has been pressed on it,
+ * and however many wrong keys it got it carries one mark. The multiplication
+ * comes first so a whole answer comes out whole.
+ */
 function accuracyOf(run: Run): number {
-  return run.totalKeystrokes > 0
-    ? Math.max(
-        0,
-        Math.min(
-          100,
-          Math.round((run.correctKeystrokes / run.totalKeystrokes) * 100),
-        ),
-      )
-    : 100;
+  const at = run.currentCharIndex;
+  const reached = at + (run.errorIndices.has(at) ? 1 : 0);
+  if (reached === 0) return 100;
+  return ((reached - run.errorIndices.size) * 100) / reached;
 }
 
 /**
