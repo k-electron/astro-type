@@ -38,7 +38,7 @@ Each Stage adds one small new thing. Progress has real gates (Stars on a Stage, 
 
 ### P5. Earned, not bought
 
-Stars, unlocks and Upgrades come only from typing performance. Nothing can be bought, or grinded for, that makes a Star easier to earn. Credits buy Cosmetics only: they change how the game looks and sounds, never how it plays. A player's ship reflects their typing ability.
+Stars, unlocks and Upgrades come only from typing performance. Nothing can be bought, or grinded for, that makes a Star easier to earn. Credits buy Cosmetics only: they change how the game looks and sounds, never how it plays. A Cosmetic may reshape the ship or a Drone's hull, but never changes what the player reads to type or to judge themselves: the finger colours, a Drone's size and the key on it, the keyboard and hands, the Strike Line, Miss marks and the Multiplier's colours. A player's ship reflects their typing ability.
 
 ### P6. Never punish absence
 
