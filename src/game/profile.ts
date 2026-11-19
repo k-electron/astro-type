@@ -62,8 +62,10 @@ export interface StageResult {
   maxStreak: number;
   starsEarned: number;
   creditsEarned: number;
-  keystrokesCount: number;
-  errorsCount: number;
+  /** The characters of the text, all typed by the clear. */
+  charactersTyped: number;
+  /** The characters that carry a Miss mark. */
+  missMarks: number;
   practiceSeconds: number;
   keyStats: Record<string, KeyAnalytics>;
 }
@@ -72,7 +74,7 @@ export interface StageResult {
  * The Profile after a cleared Run, and what the clear means for the Debrief.
  * `stageId` is the Sector Stage that was cleared, whose entry keeps the best
  * result and its Stars; null for a Free Flight, which is practice: it leaves no
- * Stage entry and earns no Stars, but its Credits and keystrokes count.
+ * Stage entry and earns no Stars, but its Credits and characters count.
  */
 export function recordStageResult(
   currentProfile: PlayerProfile,
@@ -95,10 +97,11 @@ export function recordStageResult(
   const afterRun: PlayerProfile = {
     ...currentProfile,
     totalCredits: currentProfile.totalCredits + result.creditsEarned,
-    totalKeystrokes: currentProfile.totalKeystrokes + result.keystrokesCount,
-    totalErrors: currentProfile.totalErrors + result.errorsCount,
+    totalCharactersTyped:
+      currentProfile.totalCharactersTyped + result.charactersTyped,
+    totalMissMarks: currentProfile.totalMissMarks + result.missMarks,
     totalWordsTyped:
-      currentProfile.totalWordsTyped + Math.round(result.keystrokesCount / 5),
+      currentProfile.totalWordsTyped + Math.round(result.charactersTyped / 5),
     totalPracticeSeconds:
       currentProfile.totalPracticeSeconds + result.practiceSeconds,
     highestWpmAllTime: Math.max(currentProfile.highestWpmAllTime, result.wpm),

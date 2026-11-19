@@ -35,6 +35,16 @@ const KEYBOARD_HEATMAP_ROWS = KEYBOARD_ROWS.map((row) =>
   row.map(({ key }) => key).filter((key) => HEATMAP_KEY.test(key)),
 ).filter((row) => row.length > 0);
 
+/**
+ * `part` of `whole` as a whole percentage, rounded down so a shown 90% is at
+ * least 90%, or null when there is no `whole`. The multiplication comes first
+ * so a share that is mathematically whole comes out whole.
+ */
+function shareOf(part: number, whole: number): number | null {
+  if (whole <= 0) return null;
+  return roundDown(Math.max(0, Math.min(100, (part * 100) / whole)));
+}
+
 export const Analytics: React.FC = () => {
   const game = useGame();
   const { importBackup, wipeAchievements, resetProgress } = game;
@@ -57,8 +67,8 @@ export const Analytics: React.FC = () => {
   const {
     totalPracticeSeconds,
     totalWordsTyped,
-    totalKeystrokes,
-    totalErrors,
+    totalCharactersTyped,
+    totalMissMarks,
     highestWpmAllTime,
     keyAnalytics,
   } = profile;
@@ -68,18 +78,10 @@ export const Analytics: React.FC = () => {
   const minutes = totalMinutes % 60;
   const timeFormatted = `${hours > 0 ? `${hours}h ` : ''}${minutes}m`;
 
-  const overallAccuracy =
-    totalKeystrokes > 0
-      ? Math.max(
-          0,
-          Math.min(
-            100,
-            Math.round(
-              ((totalKeystrokes - totalErrors) / totalKeystrokes) * 100,
-            ),
-          ),
-        )
-      : 100;
+  const overallAccuracy = shareOf(
+    totalCharactersTyped - totalMissMarks,
+    totalCharactersTyped,
+  );
 
   // Calculate Left vs Right hand accuracy
   let leftHits = 0;
@@ -100,16 +102,10 @@ export const Analytics: React.FC = () => {
     }
   });
 
-  const leftAcc =
-    leftHits + leftMisses > 0
-      ? Math.round((leftHits / (leftHits + leftMisses)) * 100)
-      : 100;
-  const rightAcc =
-    rightHits + rightMisses > 0
-      ? Math.round((rightHits / (rightHits + rightMisses)) * 100)
-      : 100;
+  const leftAcc = shareOf(leftHits, leftHits + leftMisses) ?? 100;
+  const rightAcc = shareOf(rightHits, rightHits + rightMisses) ?? 100;
 
-  // Trouble keys: struck at least 3 times, with more than 12% of them missed
+  // Trouble keys: typed at least 3 times, with more than 12% of them missed
   const troubleKeys = Object.entries(keyAnalytics)
     .filter(([_, stats]) => {
       const total = stats.hits + stats.misses;
@@ -200,7 +196,7 @@ export const Analytics: React.FC = () => {
               </span>
               <div className="flex items-baseline gap-1 font-mono">
                 <span className="text-2xl font-bold text-emerald-400 tabular-nums">
-                  {overallAccuracy}%
+                  {overallAccuracy ?? 100}%
                 </span>
               </div>
             </div>
@@ -271,15 +267,15 @@ export const Analytics: React.FC = () => {
               <div className="flex items-center gap-3 text-[11px] font-mono text-slate-400">
                 <span className="flex items-center gap-1">
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />{' '}
-                  &gt;95%
+                  95%+
                 </span>
                 <span className="flex items-center gap-1">
                   <span className="w-2.5 h-2.5 rounded-full bg-cyan-500" />{' '}
-                  88-95%
+                  88-94%
                 </span>
                 <span className="flex items-center gap-1">
                   <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />{' '}
-                  80-88%
+                  80-87%
                 </span>
                 <span className="flex items-center gap-1">
                   <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />{' '}
@@ -295,8 +291,7 @@ export const Analytics: React.FC = () => {
                     const stats = keyAnalytics[k] ||
                       keyAnalytics[k.toUpperCase()] || { hits: 0, misses: 0 };
                     const total = stats.hits + stats.misses;
-                    const acc =
-                      total > 0 ? Math.round((stats.hits / total) * 100) : null;
+                    const acc = shareOf(stats.hits, total);
 
                     let bgClass =
                       'bg-slate-900 border-slate-800 text-slate-500';

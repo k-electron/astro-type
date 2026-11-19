@@ -174,8 +174,8 @@ export function createRunSlice(
         ...outcome,
         score: run.score,
         maxStreak: run.maxStreak,
-        keystrokesCount: run.totalKeystrokes,
-        errorsCount: run.incorrectKeystrokes,
+        charactersTyped: run.currentCharIndex,
+        missMarks: run.errorIndices.size,
         practiceSeconds: Math.round(elapsedSeconds),
         keyStats: run.keyStats,
       };

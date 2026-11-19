@@ -6,7 +6,7 @@ import {
 } from '../../src/game/save';
 import { closeLabel } from '../../src/screens/closeLabel';
 import { DISMISS_NOTICE_LABEL } from '../../src/screens/dismissLabel';
-import { RETURNING_PLAYER } from '../shared/saves';
+import { keyStats, lifetimeTotals, RETURNING_PLAYER } from '../shared/saves';
 import { renderGame, screen } from './harness';
 
 // What Analytics tells the player about their keys: the hand balance, the
@@ -73,13 +73,87 @@ describe('Analytics and the characters that need Shift', () => {
     }
   });
 
-  it('shows what was typed on a letter key on that key', () => {
+  it('shows what was typed on a letter key on that key, rounded down', () => {
+    // 48 of 49 is 97.96%, which reads 97% and not 98%.
+    const player = renderGame({ profile: keyStats({ f: [48, 1] }) });
+    player.openHeader('Analytics');
+
+    expect(screen.getByTitle(/^F: 97%/)).toBeTruthy();
+  });
+});
+
+describe('Analytics rounds accuracy down', () => {
+  // A share is shown rounded down, so 66.67% reads 66% and never 67%, and a
+  // result that is not perfect never reads 100%. A share that is whole shows
+  // whole, even where the float maths of ratio * 100 would fall short of it
+  // (0.57 * 100 is 56.99999999999999).
+
+  it("shows a key's accuracy rounded down: 2 hits and 1 miss is 66%", () => {
     const player = renderGame({
-      profile: { keyAnalytics: { f: { hits: 48, misses: 1 } } },
+      profile: keyStats({ f: [2, 1] }),
     });
     player.openHeader('Analytics');
 
-    expect(screen.getByTitle(/^F: 98%/)).toBeTruthy();
+    expect(screen.getByTitle(/^F: 66%/)).toBeTruthy();
+  });
+
+  it("shows a key's accuracy as the whole share it is: 57 hits and 43 misses is 57%", () => {
+    const player = renderGame({
+      profile: keyStats({ f: [57, 43] }),
+    });
+    player.openHeader('Analytics');
+
+    expect(screen.getByTitle(/^F: 57%/)).toBeTruthy();
+  });
+
+  it('shows the lifetime accuracy rounded down: 3 characters with 1 Miss mark is 66%', () => {
+    const player = renderGame({
+      profile: lifetimeTotals(3, 1),
+    });
+    player.openHeader('Analytics');
+
+    const reading = sectionText(/^Lifetime Accuracy/);
+    expect(reading).toMatch(/66%/);
+    expect(reading).not.toMatch(/67/);
+  });
+
+  it('shows the lifetime accuracy as the whole share it is: 100 characters with 43 Miss marks is 57%', () => {
+    const player = renderGame({
+      profile: lifetimeTotals(100, 43),
+    });
+    player.openHeader('Analytics');
+
+    expect(sectionText(/^Lifetime Accuracy/)).toMatch(/57%/);
+  });
+
+  it('never shows 100% while a Miss mark is on record: 1,000 characters with 1 Miss mark is 99%', () => {
+    const player = renderGame({
+      profile: lifetimeTotals(1000, 1),
+    });
+    player.openHeader('Analytics');
+
+    const reading = sectionText(/^Lifetime Accuracy/);
+    expect(reading).toMatch(/99%/);
+    expect(reading).not.toMatch(/100/);
+  });
+
+  it('shows each hand rounded down: 2 hits and 1 miss on the left is 66%, 7 and 1 on the right is 87%', () => {
+    const player = renderGame({
+      profile: keyStats({ f: [2, 1], j: [7, 1] }),
+    });
+    player.openHeader('Analytics');
+
+    expect(handAccuracy('Left')).toContain('66%');
+    expect(handAccuracy('Right')).toContain('87%');
+  });
+
+  it('shows a hand as the whole share it is: 57 hits and 43 misses is 57%', () => {
+    const player = renderGame({
+      profile: keyStats({ f: [57, 43] }),
+    });
+    player.openHeader('Analytics');
+
+    expect(handAccuracy('Left')).toContain('57%');
   });
 });
 

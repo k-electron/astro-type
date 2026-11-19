@@ -170,8 +170,8 @@ function readStoredUpgrades(upgrades: unknown): unknown {
 export const SaveFieldsSchema = z.object({
   version: z.literal(1).default(1),
   totalCredits: numberField({ min: 0, integer: true, fallback: 0 }),
-  totalKeystrokes: numberField({ min: 0, integer: true, fallback: 0 }),
-  totalErrors: numberField({ min: 0, integer: true, fallback: 0 }),
+  totalCharactersTyped: numberField({ min: 0, integer: true, fallback: 0 }),
+  totalMissMarks: numberField({ min: 0, integer: true, fallback: 0 }),
   totalWordsTyped: numberField({ min: 0, integer: true, fallback: 0 }),
   totalPracticeSeconds: numberField({ min: 0, fallback: 0 }),
   highestWpmAllTime: numberField({ min: 0, fallback: 0 }),

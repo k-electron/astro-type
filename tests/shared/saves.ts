@@ -101,8 +101,8 @@ export function completeSave() {
   return {
     ...RETURNING_PLAYER,
     totalStars: 5,
-    totalKeystrokes: 154,
-    totalErrors: 3,
+    totalCharactersTyped: 154,
+    totalMissMarks: 3,
     totalWordsTyped: 30,
     totalPracticeSeconds: 120,
     highestWpmAllTime: 31,
@@ -129,6 +129,32 @@ export function completeSave() {
     musicVolume: 0.2,
     beatTheme: 'COSMIC_LOFI',
     globalMuted: true,
+  };
+}
+
+/**
+ * A Save with these lifetime totals: the characters typed over every cleared
+ * Run, and how many of them carried a Miss mark. Lifetime accuracy is the
+ * share without one.
+ */
+export function lifetimeTotals(characters: number, missMarks: number) {
+  return { totalCharactersTyped: characters, totalMissMarks: missMarks };
+}
+
+/**
+ * A Save with these key stats: for each key, how many of its characters were
+ * typed right first time (`hits`) and how many carried a Miss mark (`misses`).
+ */
+export function keyStats(
+  stats: Record<string, [hits: number, misses: number]>,
+) {
+  return {
+    keyAnalytics: Object.fromEntries(
+      Object.entries(stats).map(([key, [hits, misses]]) => [
+        key,
+        { hits, misses },
+      ]),
+    ),
   };
 }
 

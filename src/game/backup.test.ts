@@ -43,6 +43,21 @@ describe('importing a Backup', () => {
     expect(storage.saved?.totalCredits).toBe(900);
   });
 
+  it('brings back the lifetime characters typed and Miss marks it was exported with', () => {
+    const save = completeSave();
+    const { game: playedGame } = gameWith(save);
+    const backup = exportBackup(playedGame.getState().profile);
+
+    const { game, storage } = gameWith();
+    game.importBackup(backup);
+
+    const profile = game.getState().profile;
+    expect(profile.totalCharactersTyped).toBe(save.totalCharactersTyped);
+    expect(profile.totalMissMarks).toBe(save.totalMissMarks);
+    expect(storage.saved?.totalCharactersTyped).toBe(save.totalCharactersTyped);
+    expect(storage.saved?.totalMissMarks).toBe(save.totalMissMarks);
+  });
+
   it('reads a Backup exported before versions existed as version 1', () => {
     const { game } = gameWith();
     const unversioned = JSON.stringify({

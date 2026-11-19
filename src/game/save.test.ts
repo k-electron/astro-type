@@ -108,7 +108,10 @@ describe('a Save that is readable', () => {
     // Credits and Analytics are untouched.
     expect(game.getState().profile.totalCredits).toBe(kept.totalCredits);
     expect(game.getState().profile.keyAnalytics).toEqual(kept.keyAnalytics);
-    expect(game.getState().profile.totalKeystrokes).toBe(kept.totalKeystrokes);
+    expect(game.getState().profile.totalCharactersTyped).toBe(
+      kept.totalCharactersTyped,
+    );
+    expect(game.getState().profile.totalMissMarks).toBe(kept.totalMissMarks);
   });
 
   it('writes the Save without the Free Flight entries on the next write', () => {
@@ -265,6 +268,8 @@ describe('a Save with every key the game has since retired', () => {
       expect(profile?.totalCredits).toBe(credits);
       expect(profile?.stagesProgress).toEqual(save.stagesProgress);
       expect(profile?.keyAnalytics).toEqual(save.keyAnalytics);
+      expect(profile?.totalCharactersTyped).toBe(save.totalCharactersTyped);
+      expect(profile?.totalMissMarks).toBe(save.totalMissMarks);
       expect(profile?.upgrades.deflectorShields).toBe(
         save.upgrades.deflectorShields,
       );
@@ -384,8 +389,8 @@ describe('a Save with a wrong field', () => {
     ],
     [
       'a count that is null',
-      { ...save, totalKeystrokes: null },
-      without(save, 'totalKeystrokes'),
+      { ...save, totalCharactersTyped: null },
+      without(save, 'totalCharactersTyped'),
     ],
     [
       'Stage progress that is a list',
@@ -410,8 +415,8 @@ describe('a Save with a wrong field', () => {
     ],
     [
       'a negative count',
-      { ...save, totalErrors: -1 },
-      { ...save, totalErrors: 0 },
+      { ...save, totalMissMarks: -1 },
+      { ...save, totalMissMarks: 0 },
     ],
     [
       'a shield Upgrade above the maximum',

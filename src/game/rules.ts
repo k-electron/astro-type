@@ -416,6 +416,9 @@ export function strike(
   }
 
   const stats = run.keyStats[target] ?? { hits: 0, misses: 0 };
+  // The per-key stats count characters, as accuracy does: a character is one
+  // miss for its key if it carries a Miss mark, one hit if it doesn't.
+  const marked = run.errorIndices.has(index);
   // Typing Time starts at the Run's first keystroke, right or wrong.
   const keystrokeSteps = {
     firstKeystrokeStep: run.firstKeystrokeStep ?? time.steps,
@@ -436,7 +439,7 @@ export function strike(
         }),
         keyStats: {
           ...run.keyStats,
-          [target]: { ...stats, misses: stats.misses + 1 },
+          [target]: { ...stats, misses: stats.misses + (marked ? 0 : 1) },
         },
         lastPressedKey: key,
         ...keystrokeSteps,
@@ -508,7 +511,7 @@ export function strike(
       ),
       keyStats: {
         ...run.keyStats,
-        [target]: { ...stats, hits: stats.hits + 1 },
+        [target]: { ...stats, hits: stats.hits + (marked ? 0 : 1) },
       },
       recentKeystrokeTimes: keystrokeTimes,
       lastPressedKey: key,

@@ -53,8 +53,8 @@ describe('Stars from WPM, accuracy and Streak', () => {
     const profile = game.getState().profile;
     expect(profile.totalCredits).toBe(547);
     expect(profile.totalStars).toBe(3);
-    expect(profile.totalKeystrokes).toBe(77);
-    expect(profile.totalErrors).toBe(0);
+    expect(profile.totalCharactersTyped).toBe(77);
+    expect(profile.totalMissMarks).toBe(0);
     expect(profile.stagesProgress[STAGE_ID]).toMatchObject({
       completed: true,
       starsEarned: 3,
@@ -190,7 +190,7 @@ describe('Stars from WPM, accuracy and Streak', () => {
     const profile = game.getState().profile;
     expect(profile.totalCredits).toBe(debrief.creditsEarned);
     expect(profile.totalStars).toBe(0);
-    expect(profile.totalErrors).toBe(12);
+    expect(profile.totalMissMarks).toBe(12);
     expect(profile.stagesProgress[STAGE_ID]).toMatchObject({
       completed: true,
       starsEarned: 0,
