@@ -54,6 +54,8 @@ export interface HitShot {
   laserColor: string;
   /** The Judgement's colour. */
   hitColor: string;
+  /** PROTOTYPE (#129): the popup's whole text, in place of the grade's words. */
+  label?: string;
 }
 
 /** The wrong key was struck. */
@@ -103,6 +105,8 @@ interface Bolt {
   /** What the hit scored, for its popup, and whether Overdrive doubled it. */
   points: number;
   overdrive: boolean;
+  /** PROTOTYPE (#129): the popup's whole text, or null for the grade's words. */
+  label: string | null;
   keyName: string;
   /** The locked Drone drawn at the target while the laser flies. */
   locked: { display: string; color: string } | null;
@@ -333,6 +337,7 @@ export class DeckEffects {
       grade: null,
       points: 0,
       overdrive: false,
+      label: null,
       keyName: '',
       locked: null,
       glyph: null,
@@ -511,6 +516,7 @@ export class DeckEffects {
     bolt.grade = shot.grade;
     bolt.points = shot.points;
     bolt.overdrive = shot.overdrive;
+    bolt.label = shot.label ?? null;
     bolt.keyName = '';
     bolt.locked = { display: shot.display, color: shot.laneColor };
     const key = `glyph|${shot.display}`;
@@ -556,6 +562,7 @@ export class DeckEffects {
     bolt.hitColor = '#ef4444';
     bolt.isSpace = false;
     bolt.grade = null;
+    bolt.label = null;
     bolt.keyName = shot.keyName;
     bolt.locked = null;
     bolt.glyph = null;
@@ -868,10 +875,19 @@ export class DeckEffects {
     slot.maxLife = maxLife;
   }
 
+  /** PROTOTYPE (#129): a big line of text across the deck, held a little longer than a popup. */
+  banner(label: string, color: string, x: number, y: number): void {
+    const before = this.popups.active.length;
+    this.popup(label, color, x, y, 70, -0.8, true);
+    if (this.popups.active.length === before) return;
+    this.popups.active[before]?.text?.scale.set(1.7);
+  }
+
   /** The popup of a hit: a few words, then the points that hit scored. */
   private hitPopup(
     hit: Pick<HitShot, 'isSpace' | 'points' | 'overdrive'> & {
       grade: Grade | null;
+      label?: string | null;
     },
     color: string,
     x: number,
@@ -884,7 +900,7 @@ export class DeckEffects {
       overdrive: hit.overdrive,
     });
     this.popup(
-      hitPopupLabel(pick(stems), hit.points),
+      hit.label ?? hitPopupLabel(pick(stems), hit.points),
       color,
       x,
       y - 26,

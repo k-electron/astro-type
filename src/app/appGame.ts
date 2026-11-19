@@ -4,6 +4,10 @@ import { createRealtimeClock } from '../game/clock';
 import { createGame } from '../game/game';
 import { startFrameLoop } from '../game/frameLoop';
 import { browserFrameEnvironment } from './frameSource';
+import {
+  mountHitsSwitcher,
+  withPrototypeHitSound,
+} from './hitFeedback.prototype';
 import { createLocalStorageSave } from './localStorageSave';
 
 /**
@@ -19,7 +23,8 @@ import { createLocalStorageSave } from './localStorageSave';
 export const game = createGame({
   storage: createLocalStorageSave(),
   clock: createRealtimeClock(),
-  sound: engineSound,
+  // PROTOTYPE (#129): `?hits=` swaps the hit sound; without it, this is engineSound.
+  sound: withPrototypeHitSound(engineSound, () => game.getState()),
   onRefusedMove: (error) => {
     if (import.meta.env.DEV) console.warn(error.message);
   },
@@ -48,6 +53,7 @@ const stopFrameLoop = startFrameLoop(
   },
 );
 const detachKeyboard = attachKeyboard(game, window);
+mountHitsSwitcher();
 import.meta.hot?.dispose(() => {
   stopFrameLoop();
   detachKeyboard();

@@ -17,6 +17,7 @@ import { DroneView } from './DroneView';
 import type { DroneMotion } from './droneMotion';
 import { makeText } from './draw';
 import { HandView, type HandState } from './HandView';
+import { hitFeedback, missBanner, noteStreak } from './hitFeedback.prototype';
 import { hitPopupColor } from './hitPopups';
 import { KeyView, keycapLabel } from './KeyView';
 import { ShipView } from './ShipView';
@@ -317,7 +318,22 @@ export class DeckScene {
         isSpace,
         overdrive: judgement.overdrive,
       });
+      // PROTOTYPE (#129): with `?hits=`, the variant decides the size, colour and words.
+      const proto = hitFeedback(
+        state.run,
+        judgement.points,
+        judgement.overdrive,
+      );
+      noteStreak(state.run);
       this.ship.fire(false, 0);
+      if (proto?.banner) {
+        this.effects.banner(
+          proto.banner.label,
+          proto.banner.color,
+          layout.width / 2,
+          layout.deckY * 0.45,
+        );
+      }
       this.effects.fireHit({
         x: rect.cx,
         y: topY,
@@ -325,15 +341,27 @@ export class DeckScene {
         h: rect.h,
         originY,
         isSpace,
-        grade,
+        grade: proto?.size ?? grade,
         points: judgement.points,
         overdrive: judgement.overdrive,
         display: rect.spec.display,
         laneColor,
         laserColor,
-        hitColor,
+        hitColor: proto?.color ?? hitColor,
+        label: proto?.label,
       });
       return;
+    }
+
+    // PROTOTYPE (#129): the Streak variant says what a Miss broke.
+    const broken = judgement.type === 'miss' ? missBanner() : null;
+    if (broken) {
+      this.effects.banner(
+        broken.label,
+        broken.color,
+        layout.width / 2,
+        layout.deckY * 0.45,
+      );
     }
 
     // A Miss, or a shield that took it: the ship fires at the key that was struck.
