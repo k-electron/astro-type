@@ -14,8 +14,9 @@
  * - The HUD's Accuracy follows every keystroke. Its Speed refreshes only on the
  *   Run clock's live WPM refresh, every 30 steps: `type` steps 30 between keys,
  *   so Speed is current after it; after a bare `press`, call `step(30)` first.
- * - A Run that was typed with no steps has Run Time 0, so its Speed means
- *   nothing. Reach a Debrief with `type`.
+ * - Speed reads `NO_SPEED` (a dash) until the second character is typed, and
+ *   a Run typed with no steps has no Typing Time, so it never has a Speed
+ *   (its Debrief shows 0). Reach a Debrief with `type`.
  * - Tailwind is not loaded: no element is hidden by CSS, and there is no layout.
  */
 import {

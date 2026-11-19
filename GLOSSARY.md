@@ -57,8 +57,12 @@ A boosted mode that doubles the score of each hit: during Overdrive a hit scores
 _Avoid_: Hyperspace, warp, hyperdrive
 
 **Run Time**:
-The time a Run has spent running, with pauses left out. WPM and Stars are measured against it.
+The time a Run has spent running, with pauses left out. WPM is measured against Typing Time; Run Time is what practice time counts.
 _Avoid_: Elapsed time, stage time
+
+**Typing Time**:
+The time from a Run's first keystroke to the one that clears it, with pauses left out. WPM is measured against it.
+_Avoid_: Typing duration, active time
 
 **Rhythm**:
 How evenly the player types, from 0 to 100%: the HUD shows it as Steady, Paced or Uneven, and the Debrief gives the percentage. It is measured in Run Time.

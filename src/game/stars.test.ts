@@ -3,6 +3,8 @@ import { stageProgress } from '../../tests/shared/saves';
 import { getStageById } from '../curriculum/curriculum';
 import {
   clearStage,
+  clearStageTypingSteps,
+  expectedWpm,
   miss,
   newGame,
   STAGE_ID,
@@ -16,10 +18,15 @@ import {
  * Stars, Credits and the Profile after clearing Stage 1 (s1-l1), read from the Debrief.
  * Its thresholds: 1 Star at 85% accuracy; 2 Stars at 10 WPM and 92%; 3 Stars at
  * 14 WPM, 97% and a best Streak of 14. Every Stage clear types the 77-character
- * sample text, so WPM is set by the Run Time and accuracy by the number of
- * characters carrying a Miss mark. Stars compare the exact accuracy to the
- * Star bars; only the screens round it down.
+ * sample text, so WPM is set by the Typing Time (see `clearStage`) and accuracy
+ * by the number of characters carrying a Miss mark. Stars compare the exact
+ * accuracy and the exact WPM to the Star bars; only the screens round them down.
  */
+
+const CHARACTERS = 77;
+/** The exact WPM of a `clearStage` Run of `seconds`, however many Miss marks it has. */
+const stageWpm = (seconds: number, missesFirst = 0) =>
+  expectedWpm(CHARACTERS, clearStageTypingSteps({ seconds, missesFirst }));
 
 function debriefOf(game: ReturnType<typeof startedGame>) {
   const debrief = game.getState().debrief;
@@ -34,7 +41,7 @@ describe('Stars from WPM, accuracy and Streak', () => {
 
     expect(game.getState().screen).toBe('debrief');
     const debrief = debriefOf(game);
-    expect(debrief.wpm).toBe(15); // 77 correct keys / 5 per word / 1 minute = 15.4
+    expect(debrief.wpm).toBeCloseTo(stageWpm(60), 6); // 76 / 5 over 59.5 s = 15.3
     expect(debrief.accuracy).toBe(100);
     expect(debrief.score).toBe(44300);
     expect(debrief.starsEarned).toBe(3);
@@ -54,18 +61,23 @@ describe('Stars from WPM, accuracy and Streak', () => {
       highScore: 44300,
       timesPlayed: 1,
     });
+    // The Profile keeps the exact WPM too.
+    expect(profile.stagesProgress[STAGE_ID]?.bestWpm).toBeCloseTo(
+      stageWpm(60),
+      6,
+    );
   });
 
   it('a slower Run loses the 3rd Star, then the 2nd, on WPM alone', () => {
     const slower = startedGame();
-    clearStage(slower, { seconds: 90 }); // 10.3 WPM
-    expect(debriefOf(slower).wpm).toBe(10);
+    clearStage(slower, { seconds: 90 }); // 10.2 WPM
+    expect(debriefOf(slower).wpm).toBeCloseTo(stageWpm(90), 6);
     expect(debriefOf(slower).accuracy).toBe(100);
     expect(debriefOf(slower).starsEarned).toBe(2);
 
     const slowest = startedGame();
     clearStage(slowest, { seconds: 100 }); // 9.2 WPM
-    expect(debriefOf(slowest).wpm).toBe(9);
+    expect(debriefOf(slowest).wpm).toBeCloseTo(stageWpm(100), 6);
     expect(debriefOf(slowest).starsEarned).toBe(1);
   });
 
@@ -74,7 +86,8 @@ describe('Stars from WPM, accuracy and Streak', () => {
     clearStage(game, { seconds: 60, missMarks: 4 });
     const debrief = debriefOf(game);
     expect(debrief.accuracy).toBeCloseTo((73 * 100) / 77); // 4 of 77 characters marked
-    expect(debrief.wpm).toBe(15); // wrong keys cost WPM too: (77 - 4) / 5 = 14.6
+    // Wrong keys take nothing off the WPM: it is the clean Run's.
+    expect(debrief.wpm).toBeCloseTo(stageWpm(60), 6);
     expect(debrief.starsEarned).toBe(2); // 3 Stars needs 97%
   });
 
@@ -83,7 +96,8 @@ describe('Stars from WPM, accuracy and Streak', () => {
     clearStage(game, { seconds: 60, missesFirst: 4 });
     const debrief = debriefOf(game);
     expect(debrief.accuracy).toBeCloseTo((76 * 100) / 77); // 1 of 77 characters marked
-    expect(debrief.wpm).toBe(15); // wrong keys cost WPM too: (77 - 4) / 5 = 14.6
+    // The wrong keys come first, so the clock starts with them, at Run Time 0.
+    expect(debrief.wpm).toBeCloseTo(stageWpm(60, 4), 6); // 15.2
     expect(debrief.starsEarned).toBe(3);
   });
 
@@ -135,6 +149,33 @@ describe('Stars from WPM, accuracy and Streak', () => {
     const short = fly(3);
     expect(short.accuracy).toBeCloseTo(exact(3));
     expect(short.wpm).toBeGreaterThanOrEqual(stage.starThresholds.threeStarWpm);
+    expect(short.starsEarned).toBe(2);
+  });
+
+  it('compares the exact WPM, so a Run that rounds up to a bar but falls short of it earns the lower Star', () => {
+    const stage = getStageById(STAGE_ID);
+    if (!stage) throw new Error(`No Stage ${STAGE_ID}`);
+    const bar = stage.starThresholds.threeStarWpm;
+    // A Run of 66 s is 13.9 WPM, which rounds to the 14 WPM bar without
+    // reaching it; 65 s is 14.1, which does.
+    const exact = (seconds: number) => stageWpm(seconds);
+    // If a Star bar moves, this test must be rebuilt rather than go quiet.
+    expect(exact(66)).toBeLessThan(bar);
+    expect(Math.round(exact(66))).toBeGreaterThanOrEqual(bar);
+    expect(exact(65)).toBeGreaterThanOrEqual(bar);
+
+    const fly = (seconds: number) => {
+      const game = startedGame();
+      clearStage(game, { seconds });
+      return debriefOf(game);
+    };
+
+    const enough = fly(65);
+    expect(enough.wpm).toBeCloseTo(exact(65), 6);
+    expect(enough.starsEarned).toBe(3);
+
+    const short = fly(66);
+    expect(short.wpm).toBeCloseTo(exact(66), 6);
     expect(short.starsEarned).toBe(2);
   });
 

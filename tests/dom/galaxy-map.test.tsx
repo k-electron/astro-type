@@ -206,3 +206,25 @@ describe("a Stage's best accuracy", () => {
     expect(map.textContent).toMatch(/Acc:\s*96%/);
   });
 });
+
+describe("a Stage's best WPM", () => {
+  it('is shown rounded down, so a 37.9 best never reads as 38 WPM', () => {
+    const player = renderGame({
+      profile: {
+        stagesProgress: {
+          [FIRST_STAGE.id]: stageProgress(FIRST_STAGE.id, 2, {
+            bestWpm: 37.9,
+          }),
+        },
+      },
+    });
+
+    player.openHeader('Galaxy Map');
+
+    const map = screen.getByRole('dialog', {
+      name: MENU_HEADINGS['Galaxy Map'],
+    });
+    expect(map.textContent).toMatch(/\b37\s*WPM/);
+    expect(map.textContent).not.toMatch(/\b38\s*WPM/);
+  });
+});

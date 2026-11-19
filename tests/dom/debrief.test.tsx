@@ -265,6 +265,24 @@ describe('Accuracy', () => {
   });
 });
 
+describe('Speed', () => {
+  // Typed 29 steps a key, a Run's WPM is 720 / 29 = 24.83, exactly.
+  it("shows a Sector Stage Run's WPM rounded down", () => {
+    const player = renderGame();
+    player.startStage(FIRST_STAGE.id);
+    player.typePrompt({ stepsPerKey: 29 });
+
+    expect(debriefCard().textContent).toMatch(/Speed\s*24\s*WPM/);
+  });
+
+  it("shows a Free Flight's WPM rounded down", () => {
+    const player = renderGame({ text: 'the quick fox' });
+    player.typePrompt({ stepsPerKey: 29 });
+
+    expect(debriefCard().textContent).toMatch(/Speed\s*24\s*WPM/);
+  });
+});
+
 describe('Free Flight', () => {
   it('plays a short text of your own through to a Debrief with Speed and 100% Accuracy', () => {
     const player = renderGame({ text: 'the quick fox' });

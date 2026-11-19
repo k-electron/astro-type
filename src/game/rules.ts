@@ -41,7 +41,8 @@ export interface LivePerformance {
   correctKeystrokes: number;
   incorrectKeystrokes: number;
   totalKeystrokes: number;
-  netWpm: number;
+  /** Gross WPM over Typing Time so far, exact; null until there is one (see `grossWpm`). */
+  wpm: number | null;
   accuracy: number;
   /** The typed position: the index in the Stage's text of the character to type next. */
   currentCharIndex: number;
@@ -115,6 +116,10 @@ export type Run = LivePerformance & {
   recentKeystrokeTimes: number[];
   /** The key the player has down (the Action Deck's pressed keycap), or null. */
   lastPressedKey: string | null;
+  /** The step of the Run's first keystroke, right or wrong, or null before it. Typing Time starts here. */
+  firstKeystrokeStep: number | null;
+  /** The step of the latest keystroke, right or wrong. At the clear it is the clearing one, where Typing Time ends. */
+  lastKeystrokeStep: number | null;
 };
 
 /** When a rule runs: the Run's step count, and the wall clock for a Drone's id. */
@@ -135,6 +140,8 @@ export function idleRun(stage: Stage, loadout: Loadout): Run {
     keyStats: {},
     recentKeystrokeTimes: [],
     lastPressedKey: null,
+    firstKeystrokeStep: null,
+    lastKeystrokeStep: null,
   };
 }
 
@@ -155,7 +162,7 @@ function freshPerformance(shields: number): LivePerformance {
     correctKeystrokes: 0,
     incorrectKeystrokes: 0,
     totalKeystrokes: 0,
-    netWpm: 0,
+    wpm: null,
     accuracy: 100,
     currentCharIndex: 0,
     rhythm: 100,
@@ -409,6 +416,11 @@ export function strike(
   }
 
   const stats = run.keyStats[target] ?? { hits: 0, misses: 0 };
+  // Typing Time starts at the Run's first keystroke, right or wrong.
+  const keystrokeSteps = {
+    firstKeystrokeStep: run.firstKeystrokeStep ?? time.steps,
+    lastKeystrokeStep: time.steps,
+  };
 
   if (key !== target) {
     const missed = applyMiss(run, rhythmAfterMiss(run.rhythm));
@@ -427,6 +439,7 @@ export function strike(
           [target]: { ...stats, misses: stats.misses + 1 },
         },
         lastPressedKey: key,
+        ...keystrokeSteps,
       },
       moments: [judgement],
       cleared: false,
@@ -499,6 +512,7 @@ export function strike(
       },
       recentKeystrokeTimes: keystrokeTimes,
       lastPressedKey: key,
+      ...keystrokeSteps,
     }),
     moments,
     cleared: nextIndex >= stage.sampleText.length,
@@ -517,8 +531,10 @@ const WPM_REFRESH_EVERY_STEPS = 30;
 export function tick(run: Run, steps: number): Run {
   const moved = { ...run, drones: moveDrones(run.drones) };
   if (steps % WPM_REFRESH_EVERY_STEPS !== 0) return moved;
-  const elapsedSeconds = Math.max(1, (steps * STEP_MS) / 1000);
-  return withLiveWpm(moved, elapsedSeconds);
+  // Typing Time keeps running between keystrokes, so the live figure sinks.
+  const typingSteps =
+    run.firstKeystrokeStep === null ? 0 : steps - run.firstKeystrokeStep;
+  return { ...moved, wpm: grossWpm(run.currentCharIndex, typingSteps) };
 }
 
 /** The Run's numbers once it is cleared: the Streak, Multiplier and Overdrive are over. */
@@ -553,25 +569,27 @@ function accuracyOf(run: Run): number {
   return ((reached - run.errorIndices.size) * 100) / reached;
 }
 
+/** Steps of 1/60 s in a minute. */
+const STEPS_PER_MINUTE = 3600;
+
 /**
- * Net WPM over `elapsedSeconds` of Run Time: the right keystrokes less the
- * wrong ones, five to a word. The one place the formula is written.
+ * Gross WPM: the characters typed less one, five to a word, over `typingSteps`
+ * of Typing Time. No subtraction for wrong keystrokes. It is null below two
+ * characters or with no Typing Time, where there is no WPM yet. The multiplication
+ * comes first, on whole numbers, so a result that should be whole comes out
+ * whole. The one place the formula is written.
  */
-function wpmOf(run: Run, elapsedSeconds: number): number {
-  const minutes = elapsedSeconds / 60;
-  return (
-    Math.max(
-      0,
-      Math.round(
-        (run.correctKeystrokes - run.incorrectKeystrokes) / 5 / minutes,
-      ),
-    ) || 0
-  );
+function grossWpm(characters: number, typingSteps: number): number | null {
+  if (characters < 2 || typingSteps <= 0) return null;
+  return ((characters - 1) * (STEPS_PER_MINUTE / 5)) / typingSteps;
 }
 
-/** Live WPM for the HUD. Accuracy follows every keystroke instead (see `strike`). */
-function withLiveWpm(run: Run, elapsedSeconds: number): Run {
-  return { ...run, netWpm: wpmOf(run, elapsedSeconds) };
+/** Typing Time of a cleared Run, in steps: the first keystroke to the clearing one. */
+function typingStepsOf(run: Run): number {
+  if (run.firstKeystrokeStep === null || run.lastKeystrokeStep === null) {
+    return 0;
+  }
+  return run.lastKeystrokeStep - run.firstKeystrokeStep;
 }
 
 /** What scoring a cleared Run gives: the part of a Stage's result the rules work out. */
@@ -581,15 +599,13 @@ export type RunOutcome = Pick<
 >;
 
 /**
- * WPM, accuracy, Stars and Credits for a cleared Run of `stage`. A Free Flight
- * is practice: no Stars, and Credits for the score alone.
+ * WPM, accuracy, Stars and Credits for a cleared Run of `stage`. Stars
+ * compare the exact WPM and accuracy. A cleared Run with no Typing Time (or a
+ * text of one character) has a WPM of 0. A Free Flight is practice: no Stars,
+ * and Credits for the score alone.
  */
-export function scoreRun(
-  run: Run,
-  elapsedSeconds: number,
-  stage: Stage,
-): RunOutcome {
-  const wpm = wpmOf(run, elapsedSeconds);
+export function scoreRun(run: Run, stage: Stage): RunOutcome {
+  const wpm = grossWpm(run.currentCharIndex, typingStepsOf(run)) ?? 0;
   const accuracy = accuracyOf(run);
   const scoreCredits = Math.round(run.score / 200);
 

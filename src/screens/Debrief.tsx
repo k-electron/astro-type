@@ -287,7 +287,8 @@ export const Debrief: React.FC = () => {
               Speed
             </span>
             <span className="font-mono font-bold text-cyan-400 text-lg">
-              {wpm} <span className="text-xs text-slate-500">WPM</span>
+              {roundDown(wpm)}{' '}
+              <span className="text-xs text-slate-500">WPM</span>
             </span>
           </div>
 

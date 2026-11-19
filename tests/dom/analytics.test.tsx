@@ -139,6 +139,17 @@ describe('Analytics refusing a Backup', () => {
   });
 });
 
+describe("Analytics' highest speed", () => {
+  it('is shown rounded down, so a 37.9 WPM best never reads as 38', () => {
+    const player = renderGame({ profile: { highestWpmAllTime: 37.9 } });
+    player.openHeader('Analytics');
+
+    const reading = sectionText(/^Highest Speed/);
+    expect(reading).toMatch(/37\s*WPM/);
+    expect(reading).not.toMatch(/38/);
+  });
+});
+
 function escapeForPattern(text: string): string {
   return text.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
 }

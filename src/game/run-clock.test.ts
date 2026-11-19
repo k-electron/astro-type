@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   clearStage,
+  clearStageTypingSteps,
+  expectedWpm,
   type Game,
   hitPerfect,
   miss,
@@ -12,8 +14,9 @@ import {
 
 /**
  * The Run clock: Run Time is the time a Run has spent running, pauses left
- * out. It drives the HUD timer, live and final WPM, Stars and Rhythm. The
- * tests step the clock by hand, 60 steps a second.
+ * out. It drives the HUD timer, live and final WPM (which is measured over
+ * Typing Time, the part of Run Time from the first keystroke), Stars, practice
+ * time and Rhythm. The tests step the clock by hand, 60 steps a second.
  */
 
 const STEP_MS = 1000 / 60;
@@ -27,11 +30,15 @@ function pauseFor(game: Game, steps = TEN_MINUTES_OF_STEPS): void {
   game.send({ type: 'PRESS_RESUME' });
 }
 
+/** The WPM of a Stage 1 clear of `seconds` (77 characters over its Typing Time). */
+const clearWpm = (seconds: number) =>
+  expectedWpm(77, clearStageTypingSteps({ seconds }));
+
 /** What the HUD shows (Speed, Accuracy), and the Rhythm reading, all measured in Run Time. */
 function readings(game: Game) {
   const run = game.getState().run;
   return {
-    netWpm: run.netWpm,
+    wpm: run.wpm,
     accuracy: run.accuracy,
     rhythm: run.rhythm,
   };
@@ -140,10 +147,10 @@ describe('Run Time', () => {
     expect(game.getState().runTime).toBeCloseTo(1000, 3);
 
     // The whole Run is judged on its 60 steps a second, not on what the
-    // wall clock says: 77 keys in a minute of Run Time is 15 WPM.
+    // wall clock says: 77 keys in a minute of Run Time is 15.3 WPM.
     clearStage(game, { seconds: 60 });
     vi.setSystemTime(new Date('2026-01-01T12:20:00Z'));
-    expect(game.getState().debrief?.wpm).toBe(15);
+    expect(game.getState().debrief?.wpm).toBeCloseTo(clearWpm(60), 6);
   });
 });
 
@@ -172,33 +179,37 @@ describe('the Run clock steps only while the Run is running', () => {
 
   it('leaves the live WPM where it was during a pause', () => {
     const game = startedGame();
-    game.pressKey(targetKey(game));
+    hitPerfect(game, 2); // keys at 30 and 60 steps
+    game.step(30);
+    // 2 characters over 60 steps of Typing Time: 12 WPM.
+    expect(game.getState().run.wpm).toBeCloseTo(expectedWpm(2, 60), 6);
+
     game.send({ type: 'PRESS_ESC' });
     game.step(600);
-    expect(game.getState().run.netWpm).toBe(0);
+    expect(game.getState().run.wpm).toBeCloseTo(expectedWpm(2, 60), 6);
 
+    // The Typing Time carries on from where it stopped: 90 steps, not 690.
     game.send({ type: 'PRESS_RESUME' });
     game.step(30);
-    expect(game.getState().run.netWpm).toBe(12);
+    expect(game.getState().run.wpm).toBeCloseTo(expectedWpm(2, 90), 6);
   });
 
   it('refreshes the live WPM every 30 steps, which is 500 ms', () => {
     const game = startedGame();
-    game.pressKey(targetKey(game));
+    hitPerfect(game, 2); // keys at 30 and 60 steps
+    expect(game.getState().run.wpm).toBeNull();
 
-    // One key in the first second of Run Time: 1 / 5 / (1 / 60) = 12 WPM.
-    // A Run under a second long is read as one second.
     game.step(29);
-    expect(game.getState().run.netWpm).toBe(0);
+    expect(game.getState().run.wpm).toBeNull();
     game.step(1);
-    expect(game.getState().run.netWpm).toBe(12);
+    expect(game.getState().run.wpm).toBeCloseTo(expectedWpm(2, 60), 6);
 
-    // A second key lands in the next half second: not shown until step 60.
+    // A third key at 90 steps is not shown until the refresh at 120.
     game.pressKey(targetKey(game));
     game.step(29);
-    expect(game.getState().run.netWpm).toBe(12);
+    expect(game.getState().run.wpm).toBeCloseTo(expectedWpm(2, 60), 6);
     game.step(1);
-    expect(game.getState().run.netWpm).toBe(24);
+    expect(game.getState().run.wpm).toBeCloseTo(expectedWpm(3, 90), 6);
   });
 });
 
@@ -218,11 +229,12 @@ describe('a pause in the middle of a Run leaves WPM, accuracy and Rhythm unchang
     const paused = startedGame();
     play(paused, true);
 
-    // 6 right and 2 wrong keys in 4 s: net (6 - 2) / 5 / (4 / 60) = 12.
+    // 6 characters over 210 steps of Typing Time (the first key is at step
+    // 30 of 240): 5 / 5 / (210 / 3600) = 17.1. The 2 wrong keys take nothing off.
     // Accuracy: 7 characters reached, 1 of them marked.
     // Each wrong key costs the Rhythm 15.
     expect(readings(straight)).toEqual({
-      netWpm: 12,
+      wpm: expect.closeTo(expectedWpm(6, 210), 6),
       accuracy: expect.closeTo(600 / 7),
       rhythm: 70,
     });
@@ -234,7 +246,7 @@ describe('a pause in the middle of a Run leaves WPM, accuracy and Rhythm unchang
   });
 
   it('gives the same final WPM, accuracy, Stars and Credits on the Debrief', () => {
-    /** 77 keys in 60 s of Run Time (15 WPM, 3 Stars), with or without a pause on the way. */
+    /** 77 keys in 60 s of Run Time (15.3 WPM, 3 Stars), with or without a pause on the way. */
     function clear(pauseInTheMiddle: boolean) {
       const game = startedGame();
       hitPerfect(game, 40);
@@ -249,13 +261,13 @@ describe('a pause in the middle of a Run leaves WPM, accuracy and Rhythm unchang
     const straight = clear(false);
     const paused = clear(true);
 
-    expect(straight?.wpm).toBe(15);
+    expect(straight?.wpm).toBeCloseTo(clearWpm(60), 6);
     expect(straight?.starsEarned).toBe(3);
     expect(paused).toEqual(straight);
   });
 
   it('does not cost a Star when the pause would have pushed the WPM under a threshold', () => {
-    // 77 keys in 60 s is 15 WPM, over the 14 WPM of the third Star. Counting
+    // 77 keys in 60 s is 15.3 WPM, over the 14 WPM of the third Star. Counting
     // ten minutes of pause it would be about 1 WPM and no second Star.
     // The wall clock moving on during the pause must not matter either.
     vi.useFakeTimers({ toFake: ['Date'] });
@@ -271,9 +283,35 @@ describe('a pause in the middle of a Run leaves WPM, accuracy and Rhythm unchang
     game.pressKey(targetKey(game));
 
     const debrief = game.getState().debrief;
-    expect(debrief?.wpm).toBe(15);
+    expect(debrief?.wpm).toBeCloseTo(clearWpm(60), 6);
     expect(debrief?.starsEarned).toBe(3);
-    expect(game.getState().profile.stagesProgress[STAGE_ID]?.bestWpm).toBe(15);
+    expect(
+      game.getState().profile.stagesProgress[STAGE_ID]?.bestWpm,
+    ).toBeCloseTo(clearWpm(60), 6);
+  });
+
+  it('leaves a pause out of Typing Time, however long it is', () => {
+    const game = startedGame();
+    hitPerfect(game, 5); // keys at 30 to 150 steps
+    pauseFor(game);
+    game.step(30);
+
+    // 5 characters over 150 steps of Typing Time (the first key at 30 to the
+    // refresh at 180), not over the ten minutes of the pause.
+    expect(game.getState().run.wpm).toBeCloseTo(expectedWpm(5, 150), 6);
+  });
+
+  it('counts an idle gap in Typing Time in full, with no cap, though a pause of the same length is left out', () => {
+    const game = startedGame();
+    hitPerfect(game, 5); // keys at 30 to 150 steps
+    game.step(TEN_MINUTES_OF_STEPS);
+
+    // The same ten minutes with the Run running: Typing Time is the 120 steps
+    // of typing and the gap, up to the refresh at the end of it.
+    expect(game.getState().run.wpm).toBeCloseTo(
+      expectedWpm(5, 120 + TEN_MINUTES_OF_STEPS),
+      6,
+    );
   });
 
   it('counts the time between keystrokes in Run Time, so a pause is not one slow keystroke', () => {

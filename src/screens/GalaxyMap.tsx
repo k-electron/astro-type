@@ -394,7 +394,7 @@ export const GalaxyMap: React.FC = () => {
                           <span>
                             Best:{' '}
                             <strong className="text-slate-200">
-                              {progress.bestWpm} WPM
+                              {roundDown(progress.bestWpm)} WPM
                             </strong>
                           </span>
                         </div>

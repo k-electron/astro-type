@@ -105,7 +105,15 @@ export function miss(game: Game, times = 1): void {
 
 /**
  * Clear Stage 1 by typing the whole sample text with every correct key a Perfect,
- * so the Run takes exactly `seconds` of Run Time.
+ * so the Run takes exactly `seconds` of Run Time (at least 38 s: the 76 waits
+ * before the keys that follow the first take that long, and a smaller `seconds`
+ * does not shorten them).
+ *
+ * Typing Time, which WPM is measured over, is shorter than that: the first key
+ * lands after the first wait, so it starts at 0.5 s of Run Time and Typing Time
+ * is `seconds` less half a second (`clearStageTypingSteps` gives it in steps).
+ * With `missesFirst` the first keystroke is a wrong key at Run Time 0, so
+ * Typing Time is the whole `seconds`.
  *
  * - `missMarks`: that many characters, the first ones, each get one wrong key before
  *   their correct key. Each is one Miss mark, so each costs accuracy, and the first
@@ -143,6 +151,34 @@ export function clearStage(
   game.step(total - lastIndex * STEPS_TO_REACH_LINE);
   if (missBeforeLast) miss(game);
   game.pressKey(targetKey(game));
+}
+
+/**
+ * The steps of Typing Time a `clearStage` Run has, for working out the WPM it
+ * must come to (`expectedWpm`). Keep it beside `clearStage`: it says where
+ * `clearStage` puts the first keystroke.
+ */
+export function clearStageTypingSteps(opts: {
+  seconds: number;
+  missesFirst?: number;
+}): number {
+  const { seconds, missesFirst = 0 } = opts;
+  if (seconds * 60 < (SAMPLE_TEXT.length - 1) * STEPS_TO_REACH_LINE) {
+    throw new Error(
+      `clearStage never runs under ${(SAMPLE_TEXT.length - 1) * 0.5} s, so ${seconds} s is not its Run Time`,
+    );
+  }
+  return seconds * 60 - (missesFirst > 0 ? 0 : STEPS_TO_REACH_LINE);
+}
+
+/**
+ * The WPM rule, worked out in whole steps (one minute is 3600 steps): the
+ * characters typed less one, divided by 5, over the Typing Time in minutes.
+ * Wrong keystrokes take nothing off. The game's value is exact and not
+ * rounded, but float arithmetic is not exact, so compare with `toBeCloseTo`.
+ */
+export function expectedWpm(characters: number, typingSteps: number): number {
+  return (characters - 1) / 5 / (typingSteps / 3600);
 }
 
 /**

@@ -26,7 +26,7 @@ function flyingOn(text: string, save?: Record<string, unknown>): Game {
 }
 
 const accuracy = (game: Game) => game.getState().run.accuracy;
-const wpm = (game: Game) => game.getState().run.netWpm;
+const wpm = (game: Game) => game.getState().run.wpm;
 
 describe('Accuracy', () => {
   it('is 100% before the first key', () => {
@@ -114,6 +114,7 @@ describe('Accuracy', () => {
     const game = flyingOn(TEXT);
     typeText(game, 'abc');
     const before = wpm(game);
+    expect(before).not.toBeNull();
 
     game.pressKey('d');
     game.pressKey(WRONG_KEY);

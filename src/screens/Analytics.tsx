@@ -24,6 +24,7 @@ import {
 } from './confirmLabels';
 import { Download, Upload, RotateCcw } from 'lucide-react';
 import { DISMISS_NOTICE_LABEL } from './dismissLabel';
+import { roundDown } from './roundDown';
 
 /**
  * The keyboard's keys for the heatmap, row by row: the letters, the digits and
@@ -187,7 +188,7 @@ export const Analytics: React.FC = () => {
               </span>
               <div className="flex items-baseline gap-1 font-mono">
                 <span className="text-2xl font-bold text-cyan-400 tabular-nums">
-                  {highestWpmAllTime}
+                  {roundDown(highestWpmAllTime)}
                 </span>
                 <span className="text-xs text-slate-500">WPM</span>
               </div>

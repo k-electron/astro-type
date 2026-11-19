@@ -60,6 +60,13 @@ export const START_STAGE = 'Start Stage';
  */
 export { PAUSE_FLIGHT } from '../../src/screens/closeLabel';
 
+/**
+ * What the HUD's Speed reads until the Run has a WPM (before the second
+ * character is typed). The source exports it (`src/screens/hudLabels.ts`) and
+ * tests import it from here, so the dash is written once.
+ */
+export { NO_SPEED } from '../../src/screens/hudLabels';
+
 /** The Pause Menu's restart button. */
 export const RESTART_STAGE = 'Restart Stage';
 

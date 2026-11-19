@@ -77,7 +77,7 @@ export interface RunDeps {
   reportRunCleared: () => void;
   /** Timestamps only: when a Stage was last played, a Drone's id. */
   clock: Clock;
-  /** Run Time: what WPM, Stars, Rhythm and keystroke intervals are measured in. */
+  /** Run Time: what practice time, Rhythm and keystroke intervals (and so Typing Time) are measured in. */
   runClock: RunClock;
   /** Told of each moment as it happens: a launch, the Judgement, Overdrive catching fire, a clear. */
   emit: (moment: Moment) => void;
@@ -166,7 +166,7 @@ export function createRunSlice(
       const now = clock.now();
       const elapsedSeconds = Math.max(1, runClock.runTimeMs() / 1000);
 
-      const outcome = scoreRun(run, elapsedSeconds, stage);
+      const outcome = scoreRun(run, stage);
 
       emit({ type: 'cleared', stars: outcome.starsEarned });
 

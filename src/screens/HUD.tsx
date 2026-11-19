@@ -8,6 +8,7 @@ import {
   rhythmBand,
 } from '../game/rules';
 import { useGameState } from '../app/useGameState';
+import { NO_SPEED } from './hudLabels';
 import { roundDown } from './roundDown';
 
 /** The Rhythm gauge's dot and name, by band. */
@@ -36,7 +37,7 @@ export const HUD: React.FC = () => {
     overdriveActive,
     overdriveEnergy,
     shieldsRemaining,
-    netWpm,
+    wpm,
     accuracy,
     rhythm,
     keyboardVisible,
@@ -47,7 +48,7 @@ export const HUD: React.FC = () => {
     overdriveActive: state.run.overdriveActive,
     overdriveEnergy: state.run.overdriveEnergy,
     shieldsRemaining: state.run.shieldsRemaining,
-    netWpm: state.run.netWpm,
+    wpm: state.run.wpm,
     accuracy: state.run.accuracy,
     rhythm: state.run.rhythm,
     keyboardVisible: state.profile.keyboardVisible,
@@ -115,7 +116,7 @@ export const HUD: React.FC = () => {
           </span>
           <div className="flex items-baseline justify-center gap-0.5">
             <span className="text-lg sm:text-xl font-bold font-mono tabular-nums text-cyan-300 leading-none">
-              {netWpm}
+              {wpm === null ? NO_SPEED : roundDown(wpm)}
             </span>
             <span className="text-[10px] font-mono text-slate-500">WPM</span>
           </div>

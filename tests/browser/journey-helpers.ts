@@ -7,7 +7,7 @@ import {
 } from '@playwright/test';
 import { BANNED_NAME } from '../shared/names';
 import { flightDeckLabel } from '../../src/screens/closeLabel';
-import { PAUSE_FLIGHT, PAUSE_MENU_NAME } from '../shared/screens';
+import { NO_SPEED, PAUSE_FLIGHT, PAUSE_MENU_NAME } from '../shared/screens';
 import { drone, hud, launchFreeFlight, pauseMenu } from './helpers';
 
 // Helpers shared by the journeys, CI's and the local-only ones. Like
@@ -51,9 +51,10 @@ export async function hudScore(page: Page): Promise<number> {
   return Number(match[1].replaceAll(',', ''));
 }
 
-/** The Speed the HUD shows right now. */
-export async function hudSpeed(page: Page): Promise<number> {
+/** The Speed the HUD shows right now, or null while it shows the dash (the Run has no WPM yet). */
+export async function hudSpeed(page: Page): Promise<number | null> {
   const text = (await hud(page).textContent()) ?? '';
+  if (new RegExp(`Speed\\s*${NO_SPEED}`).test(text)) return null;
   const match = /Speed\s*(\d+)\s*WPM/i.exec(text);
   if (!match) throw new Error(`No Speed in the HUD: ${text}`);
   return Number(match[1]);

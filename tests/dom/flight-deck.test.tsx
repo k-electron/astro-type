@@ -11,7 +11,7 @@ import { type Player, renderGame, screen, within } from './harness';
 // Six different letters, so each position in the prompt is easy to tell apart.
 const TEXT = 'abcdef';
 
-/** The HUD as one string: "Score0 Speed0WPM Accuracy100% Streak3 ...". */
+/** The HUD as one string: "Score0 Speed– Accuracy100% Streak3 ...". */
 const hudText = () =>
   screen.getByRole('region', { name: HUD_NAME }).textContent ?? '';
 

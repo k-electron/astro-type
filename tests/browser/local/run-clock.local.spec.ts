@@ -20,8 +20,9 @@ import {
 // moves when a test says so. Nothing here sleeps.
 //
 // The HUD has no timer to read. What the player sees of Run Time is the
-// Speed in the HUD and on the Debrief (WPM is measured against Run Time) and
-// the Rhythm (Rhythm is measured between keystrokes in Run Time).
+// Speed in the HUD and on the Debrief (WPM is measured against Typing Time,
+// the part of Run Time from the first keystroke) and the Rhythm (Rhythm is
+// measured between keystrokes in Run Time).
 //
 // What is guarded here: a capped catch-up after a stall, and a pause not
 // dragging down the final Speed or the Rhythm.
@@ -43,6 +44,7 @@ const MINUTE = 60_000;
 async function speedBetween(page: Page, min: number, max: number) {
   await expect.poll(() => hudSpeed(page)).toBeGreaterThanOrEqual(min);
   const speed = await hudSpeed(page);
+  if (speed === null) throw new Error('The HUD shows no Speed');
   expect(speed).toBeLessThanOrEqual(max);
   return speed;
 }
@@ -78,19 +80,20 @@ test('a pause in the middle of a Run does not drag the final Speed or the Rhythm
 }) => {
   await launchOnStoppedClock(page, 'abcdef');
 
-  // One key a second: 3 before the pause, 3 after it. The Run lasts 6 seconds
-  // of Run Time: 6 keys / 5 / (6 / 60) = 12 WPM, at an even rhythm.
-  for (const key of 'abc') await pressAfter(page, 1000, key);
+  // One key every 900 ms: 3 before the pause, 3 after it. The Run lasts 5.4
+  // seconds of Run Time, and its Typing Time 4.5 s, from the first key to the
+  // last: 6 keys, 5 / 5 / (4.5 / 60) = 13.3 WPM, shown as 13, at an even rhythm.
+  for (const key of 'abc') await pressAfter(page, 900, key);
   await pause(page);
   await page.clock.fastForward(5 * MINUTE);
   await page.clock.runFor(500);
   await resume(page);
-  for (const key of 'def') await pressAfter(page, 1000, key);
+  for (const key of 'def') await pressAfter(page, 900, key);
 
   const result = debrief(page);
   await expect(result).toContainText(DEBRIEF_TITLE);
-  // Counting the pause it would be 6 / 5 / (306 / 60) = 0 WPM and a 30% rhythm.
-  await expect(result).toContainText(/Speed\s*12\s*WPM/i);
+  // Counting the pause it would be 5 / 5 / (304.5 / 60) = 0 WPM and a 30% rhythm.
+  await expect(result).toContainText(/Speed\s*13\s*WPM/i);
   await expect(result).toContainText(/Rhythm:\s*\d+% \(Steady\)/i);
 });
 
@@ -116,15 +119,17 @@ test('catch-up after a long stall is capped: the Drones do not jump across the d
   });
 
   await test.step('a second stall is caught up only by a fraction of a second, so the Speed is what the typing gives', async () => {
-    // 8 keys in about 6 seconds of Run: 8 / 5 / (6 / 60) = 16 WPM.
+    // 8 keys, the first typed about 0.1 s into the Run and the rest 1 s later,
+    // then 5 s more: Typing Time is about 6 s, so 7 / 5 / (6 / 60) = 14 WPM.
+    // The range is wide for the live refresh landing a half second either way.
     await page.clock.runFor(1000);
     for (const key of 'bcdefgh') await page.keyboard.press(key);
     await expect(promptProgress(page)).toHaveText('50%');
     await page.clock.runFor(5000);
-    const before = await speedBetween(page, 15, 17);
+    const before = await speedBetween(page, 13, 15);
 
     // The Run has only 100 ms of the stall to catch up on, so the Speed is what
-    // about 7 seconds of typing gives (13 WPM), not what 5 minutes gives (0).
+    // about 7 seconds of Typing Time gives (12 WPM), not what 5 minutes would give (under 1).
     await page.clock.fastForward(5 * MINUTE);
     await page.clock.runFor(1000);
     await speedStillNear(page, before, 4);

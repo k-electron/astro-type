@@ -38,7 +38,8 @@ test('the paused deck is frozen: Drones and the Speed stand still, and carry on 
 
   await test.step('the HUD shows a Speed once the Run has gone on a little', async () => {
     // Four hits with no time passing, then a second of Run Time: the HUD
-    // refreshes its Speed on a tick.
+    // refreshes its Speed on a tick, and four characters typed in that time
+    // are a Speed.
     await typeKeys(page, 'abcd');
     await page.clock.runFor(1000);
 
@@ -55,7 +56,7 @@ test('the paused deck is frozen: Drones and the Speed stand still, and carry on 
     expect.soft(midFall).toBeGreaterThan(settled);
   });
 
-  let speedAtPause = 0;
+  let speedAtPause: number | null = null;
   await test.step('behind the Pause Menu, minutes go by and the Drone and the Speed have not moved', async () => {
     await pauseButton(page).click();
     await expect(pauseMenu(page)).toBeVisible();
