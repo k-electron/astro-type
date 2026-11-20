@@ -2,18 +2,15 @@ import { describe, expect, it } from 'vitest';
 import {
   clearedStages,
   completeSave,
-  FREE_FLIGHT_SAVE,
-  OLD_DRONE_SPEEDS,
   OLD_LIVE_EXPORT,
-  withLegacyReactorKey,
-  withOldDroneSpeed,
 } from '../../tests/shared/saves';
 import { DEFAULT_TRAIL, MAX_UPGRADE_LEVEL } from './catalog';
-import { DEFAULT_PROFILE } from './schemas';
+import { DEFAULT_PROFILE, SAVE_VERSION } from './schemas';
 import {
   exportBackup,
   NEWER_BACKUP_MESSAGE,
   NOT_A_BACKUP_MESSAGE,
+  OLDER_BACKUP_MESSAGE,
 } from './save';
 import { type Game, loadGame } from '../../tests/shared/testHelpers';
 
@@ -32,7 +29,7 @@ describe('importing a Backup', () => {
       ...clearedStages({ 's1-l1': 3 }),
     });
     const backup = exportBackup(playedGame.getState().profile);
-    expect(JSON.parse(backup).version).toBe(1);
+    expect(JSON.parse(backup).version).toBe(SAVE_VERSION);
 
     const { game, storage } = gameWith();
     const outcome = game.importBackup(backup);
@@ -58,67 +55,11 @@ describe('importing a Backup', () => {
     expect(storage.saved?.totalMissMarks).toBe(save.totalMissMarks);
   });
 
-  it('reads a Backup exported before versions existed as version 1', () => {
-    const { game } = gameWith();
-    const unversioned = JSON.stringify({
-      totalCredits: 50,
-      ...clearedStages({ 's1-l1': 2 }),
-    });
-
-    expect(game.importBackup(unversioned).ok).toBe(true);
-    expect(game.getState().profile.version).toBe(1);
-    expect(game.getState().profile.totalStars).toBe(2);
-  });
-
-  it('reads an export of the live game from before versions existed, and saves it as version 1', () => {
-    const { game, storage } = gameWith({
-      totalCredits: 7,
-      ...clearedStages({ 's1-l2': 1 }),
-    });
-
-    const outcome = game.importBackup(JSON.stringify(OLD_LIVE_EXPORT));
-
-    expect(outcome.ok).toBe(true);
-    const profile = game.getState().profile;
-    expect(profile.version).toBe(1);
-    expect(profile.totalStars).toBe(3);
-    expect(profile.totalCredits).toBe(491);
-    expect(profile.stagesProgress['s1-l1']?.bestWpm).toBe(82);
-    expect(profile.stagesProgress['s1-l2']).toBeUndefined();
-    expect(storage.saved?.version).toBe(1);
-    expect(storage.saved?.totalCredits).toBe(491);
-  });
-
-  // Backups made when the player could choose a Drone speed carry it. Every
-  // Run now moves at one speed, so the Backup loads with its progress and the
-  // field is left behind, in the Save and in the next Backup.
-  it.each(OLD_DRONE_SPEEDS)(
-    'reads an old Backup carrying the %s speed, keeps its progress, and leaves the speed behind',
-    (speed) => {
-      const { game, storage } = gameWith();
-
-      const outcome = game.importBackup(
-        JSON.stringify(withOldDroneSpeed(OLD_LIVE_EXPORT, speed)),
-      );
-
-      expect(outcome.ok).toBe(true);
-      const profile = game.getState().profile;
-      expect(profile.totalStars).toBe(3);
-      expect(profile.totalCredits).toBe(491);
-      expect(profile.stagesProgress['s1-l1']?.bestWpm).toBe(82);
-      expect(profile).not.toHaveProperty('highwaySpeed');
-      expect(storage.saved?.totalCredits).toBe(491);
-      expect(storage.saved).not.toHaveProperty('highwaySpeed');
-      expect(JSON.parse(exportBackup(profile))).not.toHaveProperty(
-        'highwaySpeed',
-      );
-    },
-  );
-
-  it('keeps the Credits, Upgrades, settings and key stats of an old export, and the next Save and Backup keep them', () => {
+  it('keeps the Credits, Upgrades, settings and key stats of a Backup, and the next Save and Backup keep them', () => {
+    const save = completeSave();
     const { game, storage } = gameWith();
 
-    game.importBackup(JSON.stringify({ ...OLD_LIVE_EXPORT, totalStars: 99 }));
+    game.importBackup(JSON.stringify(save));
 
     const SETTINGS = [
       'soundEnabled',
@@ -130,19 +71,13 @@ describe('importing a Backup', () => {
       'beatTheme',
       'globalMuted',
     ] as const;
-    // The export names the Reactor's level by its old key; today's Save keeps it as `overdriveReactor`.
-    const { hyperdriveReactor, ...otherUpgrades } = OLD_LIVE_EXPORT.upgrades;
-    const upgradesToday = {
-      ...otherUpgrades,
-      overdriveReactor: hyperdriveReactor,
-    };
     const expectIntact = (profile: Profile | null) => {
-      expect(profile?.totalCredits).toBe(OLD_LIVE_EXPORT.totalCredits);
-      expect(profile?.upgrades).toEqual(upgradesToday);
-      expect(profile?.keyAnalytics).toEqual(OLD_LIVE_EXPORT.keyAnalytics);
-      expect(profile?.stagesProgress).toEqual(OLD_LIVE_EXPORT.stagesProgress);
+      expect(profile?.totalCredits).toBe(save.totalCredits);
+      expect(profile?.upgrades).toEqual(save.upgrades);
+      expect(profile?.keyAnalytics).toEqual(save.keyAnalytics);
+      expect(profile?.stagesProgress).toEqual(save.stagesProgress);
       for (const field of SETTINGS) {
-        expect(profile?.[field], field).toEqual(OLD_LIVE_EXPORT[field]);
+        expect(profile?.[field], field).toEqual(save[field]);
       }
     };
     expect(game.getState().loadNotice).toBeNull();
@@ -151,117 +86,10 @@ describe('importing a Backup', () => {
     expectIntact(JSON.parse(exportBackup(game.getState().profile)));
   });
 
-  // The Overdrive Reactor's level used to be saved as `hyperdriveReactor`.
-  // Backups made then still import, with the level intact, and leave the old
-  // key behind in the Save and in the next Backup.
-  it('reads an export of the live game that has the Reactor under its old key, keeping its level', () => {
-    const { game, storage } = gameWith();
-
-    const outcome = game.importBackup(
-      JSON.stringify(withLegacyReactorKey(OLD_LIVE_EXPORT, 2)),
-    );
-
-    expect(outcome.ok).toBe(true);
-    expect(game.getState().profile.upgrades.overdriveReactor).toBe(2);
-    expect(storage.saved?.upgrades.overdriveReactor).toBe(2);
-  });
-
-  it('reads a versioned Backup that has the Reactor under its old key, keeping its level', () => {
-    const { game: playedGame } = gameWith({
-      totalCredits: 900,
-      ...clearedStages({ 's1-l1': 3 }),
-    });
-    const backup = withLegacyReactorKey(
-      JSON.parse(exportBackup(playedGame.getState().profile)),
-      3,
-    );
-
-    const { game } = gameWith();
-    const outcome = game.importBackup(JSON.stringify(backup));
-
-    expect(outcome.ok).toBe(true);
-    expect(backup.version).toBe(1);
-    expect(game.getState().profile.upgrades.overdriveReactor).toBe(3);
-    expect(game.getState().profile.totalCredits).toBe(900);
-  });
-
-  it('leaves the old Reactor key behind in the Save and in the next Backup', () => {
-    const { game, storage } = gameWith();
-
-    game.importBackup(JSON.stringify(withLegacyReactorKey(OLD_LIVE_EXPORT, 2)));
-
-    expect(storage.saved?.upgrades).not.toHaveProperty('hyperdriveReactor');
-    expect(game.getState().profile.upgrades).not.toHaveProperty(
-      'hyperdriveReactor',
-    );
-    const nextBackup = JSON.parse(exportBackup(game.getState().profile));
-    expect(nextBackup.upgrades.overdriveReactor).toBe(2);
-    expect(nextBackup.upgrades).not.toHaveProperty('hyperdriveReactor');
-  });
-
-  it('reads a versioned Backup carrying a speed the same way', () => {
-    const { game: playedGame } = gameWith({
-      totalCredits: 900,
-      ...clearedStages({ 's1-l1': 3, 's1-l2': 2 }),
-    });
-    const backup = withOldDroneSpeed(
-      JSON.parse(exportBackup(playedGame.getState().profile)),
-      'HYPER',
-    );
-
-    const { game, storage } = gameWith();
-    const outcome = game.importBackup(JSON.stringify(backup));
-
-    expect(outcome.ok).toBe(true);
-    expect(backup.version).toBe(1);
-    expect(game.getState().profile.totalStars).toBe(5);
-    expect(game.getState().profile.totalCredits).toBe(900);
-    expect(storage.saved).not.toHaveProperty('highwaySpeed');
-  });
-
-  it('drops the Free Flight entries of a Backup made before Free Flight became practice, and the Stars they counted', () => {
-    // FREE_FLIGHT_SAVE claims 10 Stars: 5 from the curriculum, 5 from Free Flight.
-    const { game, storage } = gameWith();
-
-    const outcome = game.importBackup(JSON.stringify(FREE_FLIGHT_SAVE));
-
-    expect(outcome.ok).toBe(true);
-    const profile = game.getState().profile;
-    const kept = completeSave();
-    expect(profile.stagesProgress).toEqual(kept.stagesProgress);
-    expect(profile.totalStars).toBe(5);
-    expect(profile.totalCredits).toBe(kept.totalCredits);
-    expect(profile.keyAnalytics).toEqual(kept.keyAnalytics);
-    expect(storage.saved?.stagesProgress).toEqual(kept.stagesProgress);
-    expect(JSON.parse(exportBackup(profile)).stagesProgress).toEqual(
-      kept.stagesProgress,
-    );
-  });
-
-  it("reads this game's own Backup with the version taken off, as an old export", () => {
-    const { game: playedGame } = gameWith({
-      totalCredits: 900,
-      ...clearedStages({ 's1-l1': 3, 's1-l2': 2 }),
-      upgrades: { deflectorShields: 2 },
-    });
-    const { version: _version, ...oldExport } = JSON.parse(
-      exportBackup(playedGame.getState().profile),
-    );
-
-    const { game, storage } = gameWith();
-    const outcome = game.importBackup(JSON.stringify(oldExport));
-
-    expect(outcome.ok).toBe(true);
-    expect(game.getState().profile.totalStars).toBe(5);
-    expect(game.getState().profile.totalCredits).toBe(900);
-    expect(game.getState().profile.upgrades.deflectorShields).toBe(2);
-    expect(storage.saved?.version).toBe(1);
-  });
-
   // A wrong field costs only that field (ticket #103), in a Backup as in the Save.
   it('imports a Backup with a wrong field, taking the default for that field only', () => {
     const { game, storage } = gameWith();
-    const backup = { ...completeSave(), version: 1, totalCredits: 'lots' };
+    const backup = { ...completeSave(), totalCredits: 'lots' };
 
     const outcome = game.importBackup(JSON.stringify(backup));
 
@@ -279,25 +107,10 @@ describe('importing a Backup', () => {
     expect(game.getState().loadNotice).toBeNull();
   });
 
-  it('imports an old Backup with a wrong field next to real content', () => {
-    const { game } = gameWith();
-
-    const outcome = game.importBackup(
-      JSON.stringify({ ...OLD_LIVE_EXPORT, soundVolume: 'loud' }),
-    );
-
-    expect(outcome.ok).toBe(true);
-    const profile = game.getState().profile;
-    expect(profile.soundVolume).toBe(DEFAULT_PROFILE.soundVolume);
-    expect(profile.totalCredits).toBe(OLD_LIVE_EXPORT.totalCredits);
-    expect(profile.totalStars).toBe(3);
-  });
-
   it('imports a Backup with a number out of range, clamped into range', () => {
     const { game } = gameWith();
     const backup = {
       ...completeSave(),
-      version: 1,
       totalCredits: -50,
       musicVolume: 4,
       upgrades: {
@@ -321,7 +134,6 @@ describe('importing a Backup', () => {
     const { game } = gameWith();
     const backup = {
       ...completeSave(),
-      version: 1,
       upgrades: {
         ...completeSave().upgrades,
         equippedTrailTheme: 'GONE_TRAIL',
@@ -342,32 +154,10 @@ describe('importing a Backup', () => {
     expect(game.getState().profile.totalCredits).toBe(1234);
   });
 
-  // The Reactor above its maximum, in a Backup, under either key.
-  it.each([
-    ['an export of the live game', OLD_LIVE_EXPORT],
-    ['a versioned Backup', { ...OLD_LIVE_EXPORT, version: 1 }],
-  ])(
-    'caps a Reactor level above the maximum at the maximum, under its old key, in %s',
-    (_what, backup) => {
-      const { game, storage } = gameWith();
-
-      const outcome = game.importBackup(
-        JSON.stringify(withLegacyReactorKey(backup, 9)),
-      );
-
-      expect(outcome.ok).toBe(true);
-      expect(game.getState().profile.upgrades.overdriveReactor).toBe(
-        MAX_UPGRADE_LEVEL,
-      );
-      expect(storage.saved?.upgrades.overdriveReactor).toBe(MAX_UPGRADE_LEVEL);
-    },
-  );
-
-  it('caps a Reactor level above the maximum at the maximum, under its new key', () => {
+  it('caps a Reactor level above the maximum at the maximum', () => {
     const { game } = gameWith();
     const backup = {
       ...completeSave(),
-      version: 1,
       upgrades: { ...completeSave().upgrades, overdriveReactor: 9 },
     };
 
@@ -377,41 +167,56 @@ describe('importing a Backup', () => {
     );
   });
 
-  // A file with no version has to hold real Profile content: a wrong file
-  // must not quietly reset the Profile to its defaults.
-  it.each([
-    ['an empty object', '{}'],
-    ['an empty list', '[]'],
-    ['an object with only unknown keys', '{"foo":1,"hello":"world"}'],
+  // The one rule for a Backup's `version`: lower or missing is refused as made
+  // before the rules changed, higher as made by a newer game, and a file that
+  // is not a Backup at all (not JSON, not an object, a version that is not a
+  // number) as not a Backup. Each leaves the Profile and the Save untouched.
+  const refusals: Array<[string, string, string]> = [
+    ...[
+      ['a Backup exported before versions existed', OLD_LIVE_EXPORT],
+      ['version 1', { ...completeSave(), version: 1 }],
+      ['version 0', { ...completeSave(), version: 0 }],
+      ['a fractional version below the current one', { version: 1.5 }],
+      ['an empty object', {}],
+      ['an object with only unknown keys', { foo: 1, hello: 'world' }],
+      [
+        "some other program's JSON",
+        { name: 'my-app', private: true, dependencies: { react: '^19.0.0' } },
+      ],
+    ].map(([what, backup]): [string, string, string] => [
+      what as string,
+      JSON.stringify(backup),
+      OLDER_BACKUP_MESSAGE,
+    ]),
+    ...[
+      ['one version above the current one', SAVE_VERSION + 1],
+      ['a far newer version', 99],
+    ].map(([what, version]): [string, string, string] => [
+      what as string,
+      JSON.stringify({ ...completeSave(), version }),
+      NEWER_BACKUP_MESSAGE,
+    ]),
+    ['not JSON', '{"totalCredits": 5', NOT_A_BACKUP_MESSAGE],
+    ['an empty file', '', NOT_A_BACKUP_MESSAGE],
+    ['null', 'null', NOT_A_BACKUP_MESSAGE],
+    ['an empty list', '[]', NOT_A_BACKUP_MESSAGE],
+    ['a number', '42', NOT_A_BACKUP_MESSAGE],
+    ['a string', '"a string"', NOT_A_BACKUP_MESSAGE],
     [
-      "some other program's JSON",
-      '{"name":"my-app","private":true,"dependencies":{"react":"^19.0.0"}}',
+      'a version that is the right number as text',
+      JSON.stringify({ ...completeSave(), version: String(SAVE_VERSION) }),
+      NOT_A_BACKUP_MESSAGE,
     ],
-  ])('refuses %s, leaving the Profile and the Save untouched', (_, text) => {
-    const { game, storage } = gameWith({
-      totalCredits: 321,
-      ...clearedStages({ 's1-l1': 3 }),
-    });
-    const before = game.getState().profile;
+    [
+      'a version that is null',
+      JSON.stringify({ ...completeSave(), version: null }),
+      NOT_A_BACKUP_MESSAGE,
+    ],
+  ];
 
-    const outcome = game.importBackup(text);
-
-    expect(outcome.ok).toBe(false);
-    expect(outcome.ok === false && outcome.message).toBe(NOT_A_BACKUP_MESSAGE);
-    expect(game.getState().profile).toEqual(before);
-    expect(game.getState().profile.totalCredits).toBe(321);
-    expect(storage.saved).toBeNull();
-  });
-
-  it.each([
-    ['not JSON', '{"totalCredits": 5'],
-    ['a version that is not a number', '{"version":"abc"}'],
-    ['a version below the one this game writes', '{"version":0}'],
-    ['not an object', 'null'],
-    ['an empty file', ''],
-  ])(
-    'refuses %s as not a Backup, leaving the Profile and the Save untouched',
-    (_, text) => {
+  it.each(refusals)(
+    'refuses %s, leaving the Profile and the Save untouched',
+    (_what, text, message) => {
       const { game, storage } = gameWith({
         totalCredits: 321,
         ...clearedStages({ 's1-l1': 3 }),
@@ -421,34 +226,27 @@ describe('importing a Backup', () => {
       const outcome = game.importBackup(text);
 
       expect(outcome.ok).toBe(false);
-      expect(outcome.ok === false && outcome.message).toBe(
-        NOT_A_BACKUP_MESSAGE,
-      );
+      expect(outcome.ok === false && outcome.message).toBe(message);
       expect(game.getState().profile).toEqual(before);
+      expect(game.getState().profile.totalCredits).toBe(321);
       expect(storage.saved).toBeNull();
     },
   );
 
-  it.each([
-    ['version 2', { version: 2, totalCredits: 5 }],
-    ['a far newer version', { ...completeSave(), version: 99 }],
-  ])(
-    'refuses %s as made by a newer version, leaving the Profile and the Save untouched',
-    (_, backup) => {
-      const { game, storage } = gameWith({
-        totalCredits: 321,
-        ...clearedStages({ 's1-l1': 3 }),
-      });
-      const before = game.getState().profile;
+  it("refuses this game's own Backup once its version is taken off, as made before the rules changed", () => {
+    const { game: playedGame } = gameWith({
+      totalCredits: 900,
+      ...clearedStages({ 's1-l1': 3, 's1-l2': 2 }),
+    });
+    const { version: _version, ...unversioned } = JSON.parse(
+      exportBackup(playedGame.getState().profile),
+    );
 
-      const outcome = game.importBackup(JSON.stringify(backup));
+    const { game, storage } = gameWith();
+    const outcome = game.importBackup(JSON.stringify(unversioned));
 
-      expect(outcome.ok).toBe(false);
-      expect(outcome.ok === false && outcome.message).toBe(
-        NEWER_BACKUP_MESSAGE,
-      );
-      expect(game.getState().profile).toEqual(before);
-      expect(storage.saved).toBeNull();
-    },
-  );
+    expect(outcome.ok === false && outcome.message).toBe(OLDER_BACKUP_MESSAGE);
+    expect(game.getState().profile.totalCredits).toBe(0);
+    expect(storage.saved).toBeNull();
+  });
 });

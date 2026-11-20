@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { completeSave, OLD_LIVE_EXPORT } from '../../tests/shared/saves';
+import { completeSave } from '../../tests/shared/saves';
 import { exportBackup } from './save';
 import {
   clearStage,
@@ -10,9 +10,9 @@ import {
 
 // The total of Stars is worked out from the Stages' Stars whenever it is
 // needed, so neither the Save the game writes nor the Backup it exports
-// carries one. Saves and Backups made before still say `totalStars`; they load
-// (save.test.ts, backup.test.ts, and the header in tests/dom/profile.test.tsx)
-// and the Stages' Stars win over whatever they claimed.
+// carries one. A Save or Backup that still says `totalStars` loads (the header
+// in tests/dom/profile.test.tsx covers the Backup) and the Stages' Stars win
+// over whatever it claimed.
 
 describe('the Save the game writes', () => {
   it('has no total of Stars, whatever the Save it read claimed', () => {
@@ -28,14 +28,15 @@ describe('the Save the game writes', () => {
 });
 
 describe('the Backup the game exports', () => {
-  it('has no total of Stars, even from a Profile loaded from an export that had one', () => {
+  it('has no total of Stars, even from a Profile loaded from a Backup that had one', () => {
+    const save = completeSave();
     const { game } = loadGame();
-    game.importBackup(JSON.stringify({ ...OLD_LIVE_EXPORT, totalStars: 99 }));
+    game.importBackup(JSON.stringify({ ...save, totalStars: 99 }));
 
     const backup = JSON.parse(exportBackup(game.getState().profile));
 
     expect(backup).not.toHaveProperty('totalStars');
-    expect(backup.totalCredits).toBe(OLD_LIVE_EXPORT.totalCredits);
-    expect(backup.stagesProgress).toEqual(OLD_LIVE_EXPORT.stagesProgress);
+    expect(backup.totalCredits).toBe(save.totalCredits);
+    expect(backup.stagesProgress).toEqual(save.stagesProgress);
   });
 });

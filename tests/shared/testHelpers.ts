@@ -11,6 +11,7 @@ import {
 import type { Clock } from '../../src/game/clock';
 import { createGame, type Game, type Sound } from '../../src/game/game';
 import { createMemoryStorage, type MemorySaveStorage } from './memoryStorage';
+import { asCurrentSave } from './saves';
 
 export type { Game } from '../../src/game/game';
 
@@ -43,8 +44,12 @@ export interface Upgrades {
 
 /**
  * A game over an in-memory Save, with the Save's storage to look at. `seed` is
- * the Save the player already has (any value, even an unreadable one on
- * purpose); fields left out take their defaults. `sound` is where the game's
+ * the Save the player already has, as the current game writes it: a plain
+ * object with no `version` of its own is stamped with `SAVE_VERSION`
+ * (`asCurrentSave`), and fields left out take their defaults. Anything else is
+ * stored as given, even an unreadable value on purpose; a test that needs an
+ * older or unversioned Save raw uses `createGame({ storage:
+ * createMemoryStorage(raw) })` instead. `sound` is where the game's
  * sound goes; `clock` is the wall clock the game stamps with (a hand-stepped
  * one when left out).
  */
@@ -53,7 +58,7 @@ export function loadGame(
   sound?: Sound,
   clock?: Clock,
 ): { game: Game; storage: MemorySaveStorage } {
-  const storage = createMemoryStorage(seed);
+  const storage = createMemoryStorage(asCurrentSave(seed));
   return { game: createGame({ storage, sound, clock }), storage };
 }
 

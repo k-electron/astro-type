@@ -1,21 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import {
   completeSave,
-  FREE_FLIGHT_SAVE,
-  OLD_DRONE_SPEEDS,
   RETURNING_PLAYER,
   stageProgress,
-  withLegacyReactorKey,
-  withOldDroneSpeed,
 } from '../../tests/shared/saves';
+import { createMemoryStorage } from '../../tests/shared/memoryStorage';
 import { DEFAULT_TRAIL, entriesOf, MAX_UPGRADE_LEVEL } from './catalog';
 import { createSteppedClock } from './clock';
 import { createGame, type Game } from './game';
 import {
   clearedStagesOf,
   DEFAULT_PROFILE,
+  SAVE_VERSION,
   SoundKitSchema,
-  totalStarsOf,
 } from './schemas';
 import { UNREADABLE_SAVE_NOTICE } from './save';
 import {
@@ -31,8 +28,6 @@ import {
 const load = (save?: unknown) => loadGame(save);
 
 type ReturningSave = ReturnType<typeof completeSave>;
-// What the Save and a Backup hold: the Profile without the derived total of Stars.
-type Profile = Omit<ReturnType<Game['getState']>['profile'], 'totalStars'>;
 
 function withUpgrades(
   save: ReturningSave,
@@ -71,14 +66,6 @@ describe('a Save that is readable', () => {
     expect(storage.movedAside).toEqual([]);
   });
 
-  it('reads a Save that says version 1 the same way', () => {
-    const { game } = load({ ...completeSave(), version: 1 });
-
-    expect(game.getState().profile.totalStars).toBe(5);
-    expect(game.getState().profile.totalCredits).toBe(1234);
-    expect(game.getState().loadNotice).toBeNull();
-  });
-
   it('starts a player with no Save fresh, without a notice', () => {
     const { game, storage } = load(undefined);
 
@@ -87,42 +74,16 @@ describe('a Save that is readable', () => {
     expect(storage.movedAside).toEqual([]);
   });
 
-  it('writes an unversioned Save back as version 1', () => {
+  it('writes the Save back as the current version, and reads what it wrote as the same Profile', () => {
     const { game, storage } = load(completeSave());
 
     // 1,234 Credits buys the first sensors Upgrade (200), which saves.
     game.buy('sensors');
 
-    expect(storage.saved?.version).toBe(1);
-  });
-
-  it('drops the Free Flight entries of a production Save, and the Stars they counted', () => {
-    // FREE_FLIGHT_SAVE: 5 Stars from the curriculum and 5 from Free Flight, so
-    // it claims 10 and opened Sector 02 (6) on Free Flight Stars alone.
-    const { game } = load(FREE_FLIGHT_SAVE);
-    const kept = completeSave();
-
-    expect(game.getState().loadNotice).toBeNull();
-    expect(game.getState().profile.stagesProgress).toEqual(kept.stagesProgress);
-    expect(game.getState().profile.totalStars).toBe(5);
-    // Credits and Analytics are untouched.
-    expect(game.getState().profile.totalCredits).toBe(kept.totalCredits);
-    expect(game.getState().profile.keyAnalytics).toEqual(kept.keyAnalytics);
-    expect(game.getState().profile.totalCharactersTyped).toBe(
-      kept.totalCharactersTyped,
-    );
-    expect(game.getState().profile.totalMissMarks).toBe(kept.totalMissMarks);
-  });
-
-  it('writes the Save without the Free Flight entries on the next write', () => {
-    const { game, storage } = load(FREE_FLIGHT_SAVE);
-    startStage(game, STAGE_ID);
-    clearStage(game, { seconds: 60 });
-
-    expect(game.getState().screen).toBe('debrief');
-    expect(Object.keys(storage.saved?.stagesProgress ?? {})).toEqual(
-      Object.keys(completeSave().stagesProgress),
-    );
+    expect(storage.saved?.version).toBe(SAVE_VERSION);
+    const nextVisit = createGame({ storage });
+    expect(nextVisit.getState().loadNotice).toBeNull();
+    expect(nextVisit.getState().profile).toEqual(game.getState().profile);
   });
 
   it('accepts Upgrades at level 3', () => {
@@ -162,131 +123,6 @@ describe('a Save that is readable', () => {
     expect(JSON.stringify(storage.saved)).not.toMatch(
       /xyzzy|bonusStars|warpDrive/,
     );
-  });
-});
-
-describe('a Save made when the player could choose a Drone speed', () => {
-  // Every Run now moves at one speed, so a Save no longer has a speed setting.
-  // The old field is simply left behind: whatever it says, the Save loads.
-  it.each([
-    ...OLD_DRONE_SPEEDS,
-    'WARP', // not a speed the game ever had; nothing reads the field now
-  ])(
-    'with %s loads with its progress and settings, and saves without the speed',
-    (speed) => {
-      const { game, storage } = load(withOldDroneSpeed(completeSave(), speed));
-
-      const profile = game.getState().profile;
-      expect(game.getState().loadNotice).toBeNull();
-      expect(storage.movedAside).toEqual([]);
-      expect(profile.totalStars).toBe(5);
-      expect(profile.totalCredits).toBe(1234);
-      expect(profile.stagesProgress['s1-l1'].starsEarned).toBe(3);
-      expect(profile.upgrades.deflectorShields).toBe(1);
-      expect(profile.globalMuted).toBe(true);
-      expect(profile).not.toHaveProperty('highwaySpeed');
-
-      // Saving again writes the Save back without the speed.
-      game.buy('sensors');
-      expect(totalStarsOf(storage.saved?.stagesProgress ?? {})).toBe(5);
-      expect(storage.saved).not.toHaveProperty('highwaySpeed');
-    },
-  );
-});
-
-describe('a Save that keeps the Overdrive Reactor under its old key', () => {
-  // The Reactor's level used to be saved as `hyperdriveReactor`. Saves made
-  // then keep loading with the level intact, and the next write uses only the
-  // new key, `overdriveReactor`. The Save's version stays 1.
-  it('loads with the Reactor’s level and the rest of the Save intact, without a notice', () => {
-    const { game, storage } = load(withLegacyReactorKey(completeSave(), 3));
-
-    const profile = game.getState().profile;
-    expect(game.getState().loadNotice).toBeNull();
-    expect(storage.movedAside).toEqual([]);
-    expect(profile.upgrades.overdriveReactor).toBe(3);
-    expect(profile.upgrades.deflectorShields).toBe(1);
-    expect(profile.totalStars).toBe(5);
-    expect(profile.totalCredits).toBe(1234);
-  });
-
-  it('writes the level under the new key and no longer writes the old one', () => {
-    const { game, storage } = load(withLegacyReactorKey(completeSave(), 3));
-
-    game.buy('sensors'); // 200 Credits, and the game saves
-
-    expect(storage.saved?.version).toBe(1);
-    expect(storage.saved?.upgrades.overdriveReactor).toBe(3);
-    expect(storage.saved?.upgrades).not.toHaveProperty('hyperdriveReactor');
-    expect(game.getState().profile.upgrades).not.toHaveProperty(
-      'hyperdriveReactor',
-    );
-  });
-
-  it('takes the new key’s level when the Save has both keys', () => {
-    const save = completeSave();
-    const { game, storage } = load({
-      ...save,
-      upgrades: { ...save.upgrades, overdriveReactor: 3, hyperdriveReactor: 1 },
-    });
-
-    expect(game.getState().loadNotice).toBeNull();
-    expect(game.getState().profile.upgrades.overdriveReactor).toBe(3);
-
-    game.buy('sensors');
-    expect(storage.saved?.upgrades.overdriveReactor).toBe(3);
-    expect(storage.saved?.upgrades).not.toHaveProperty('hyperdriveReactor');
-  });
-});
-
-describe('a Save with every key the game has since retired', () => {
-  // Saves from before: a stored `totalStars` (here one that is wrong),
-  // `ambientMusicVolume`, the Drone speed and the old Upgrade key names. None
-  // of them may cost the player their progress, Credits, Upgrades or settings.
-  const SETTINGS = [
-    'soundEnabled',
-    'soundVolume',
-    'keyboardVisible',
-    'handsVisible',
-    'musicEnabled',
-    'musicVolume',
-    'beatTheme',
-    'globalMuted',
-  ] as const;
-
-  it('loads with progress, Credits, Upgrades and settings intact, and keeps them through the next write', () => {
-    const save = withOldDroneSpeed(
-      { ...completeSave(), totalStars: 99, ambientMusicVolume: 0.9 },
-      'HYPER',
-    );
-    const { game, storage } = load(save);
-
-    const expectIntact = (
-      profile: Profile | null | undefined,
-      credits: number,
-    ) => {
-      expect(profile?.totalCredits).toBe(credits);
-      expect(profile?.stagesProgress).toEqual(save.stagesProgress);
-      expect(profile?.keyAnalytics).toEqual(save.keyAnalytics);
-      expect(profile?.totalCharactersTyped).toBe(save.totalCharactersTyped);
-      expect(profile?.totalMissMarks).toBe(save.totalMissMarks);
-      expect(profile?.upgrades.deflectorShields).toBe(
-        save.upgrades.deflectorShields,
-      );
-      expect(profile?.upgrades.overdriveReactor).toBe(
-        save.upgrades.overdriveReactor,
-      );
-      for (const field of SETTINGS) {
-        expect(profile?.[field], field).toEqual(save[field]);
-      }
-    };
-
-    expect(game.getState().loadNotice).toBeNull();
-    expect(storage.movedAside).toEqual([]);
-    expectIntact(game.getState().profile, save.totalCredits);
-
-    game.buy('sensors'); // 200 Credits, and the game saves
-    expectIntact(storage.saved, save.totalCredits - 200);
   });
 });
 
@@ -429,11 +265,6 @@ describe('a Save with a wrong field', () => {
       withUpgrades(save, { overdriveReactor: MAX_UPGRADE_LEVEL }),
     ],
     [
-      'a reactor Upgrade far above the maximum, under its old key',
-      withLegacyReactorKey(save, 7),
-      withUpgrades(save, { overdriveReactor: MAX_UPGRADE_LEVEL }),
-    ],
-    [
       'a sensors Upgrade below 0',
       withUpgrades(save, { precisionSensors: -1 }),
       withUpgrades(save, { precisionSensors: 0 }),
@@ -565,7 +396,7 @@ describe('a Save with a wrong field', () => {
   });
 
   it('caps a reactor Upgrade above the maximum at the maximum, in the Save the game writes next', () => {
-    const { game, storage } = load(withLegacyReactorKey(save, 7));
+    const { game, storage } = load(withUpgrades(save, { overdriveReactor: 7 }));
 
     expect(game.getState().profile.upgrades.overdriveReactor).toBe(
       MAX_UPGRADE_LEVEL,
@@ -643,15 +474,79 @@ describe('a Save with a wrong field', () => {
   });
 });
 
+describe('a Save from before the game’s rules changed', () => {
+  // An older Save (a lower version, or none) is not trusted to mean what its
+  // numbers say now, so it is discarded: a fresh Profile, silently. Nothing is
+  // moved aside, and the old value stays in storage until the next write
+  // replaces it. The raw Save is built on the storage here, as no seeding
+  // helper would write it.
+  const save = completeSave();
+  const older: Array<[string, unknown]> = [
+    ['version 1', { ...save, version: 1 }],
+    ['version 0', { ...save, version: 0 }],
+    ['a fractional version below the current one', { ...save, version: 1.5 }],
+    ['no version', without(save, 'version')],
+    ['no version and nothing else', {}],
+  ];
+
+  it.each(older)(
+    'with %s: starts fresh, with no notice, and writes nothing at load',
+    (_what, raw) => {
+      const storage = createMemoryStorage(raw);
+
+      const game = createGame({ storage });
+
+      expectFreshProfile(game);
+      expect(game.getState().loadNotice).toBeNull();
+      expect(storage.movedAside).toEqual([]);
+      expect(storage.noticeFlagged).toBe(false);
+      expect(storage.saved).toBeNull();
+      expect(storage.read()).toEqual({ kind: 'found', value: raw });
+    },
+  );
+
+  it('is replaced by the current Save on the next write, and the next visit reads that', () => {
+    const storage = createMemoryStorage({ ...save, version: 1 });
+    const game = createGame({ storage });
+
+    startStage(game, STAGE_ID);
+    clearStage(game, { seconds: 60 });
+
+    expect(storage.saved?.version).toBe(SAVE_VERSION);
+    // Nothing of the old Save came along: it had a Shields level of 1.
+    expect(storage.saved?.upgrades.deflectorShields).toBe(0);
+    expect(storage.movedAside).toEqual([]);
+    const nextVisit = createGame({ storage });
+    expect(nextVisit.getState().loadNotice).toBeNull();
+    expect(nextVisit.getState().profile.totalStars).toBe(3);
+    expect(nextVisit.getState().profile).toEqual(game.getState().profile);
+  });
+
+  it('is not counted as a Save that cannot be read: a stored JSON null is nothing stored', () => {
+    const { game, storage } = load(null);
+
+    expectFreshProfile(game);
+    expect(game.getState().loadNotice).toBeNull();
+    expect(storage.movedAside).toEqual([]);
+  });
+});
+
 describe('a Save that cannot be read at all', () => {
-  // Not an object, or from a version this game does not know: nothing in it
-  // can be trusted, so it is set aside whole and the player starts fresh. (Text
-  // that is not JSON is the localStorage adapter's case: the Save module is
-  // handed parsed values here. See localStorageSave.test.ts.)
+  // Not an object, a version that is not a number, or a version higher than
+  // this game's: nothing in it can be trusted, so it is set aside whole and the
+  // player starts fresh. (Text that is not JSON is the localStorage adapter's
+  // case: the Save module is handed parsed values here. See
+  // localStorageSave.test.ts.) An older version is not here: it is discarded
+  // without a fuss, below.
+  const newer = { ...completeSave(), version: SAVE_VERSION + 1 };
   const unreadable: Array<[string, unknown]> = [
-    ['an unknown version', { ...completeSave(), version: 2 }],
-    ['version 0', { ...completeSave(), version: 0 }],
-    ['a version that is text', { ...completeSave(), version: '1' }],
+    ['a version this game does not know yet', newer],
+    ['a far newer version', { ...completeSave(), version: 99 }],
+    [
+      'a version that is the right number as text',
+      { ...completeSave(), version: String(SAVE_VERSION) },
+    ],
+    ['a version that is null', { ...completeSave(), version: null }],
     ['a list instead of a Save', []],
     ['text instead of a Save', 'my progress'],
     ['a number instead of a Save', 42],
@@ -669,7 +564,7 @@ describe('a Save that cannot be read at all', () => {
   );
 
   it('still plays from the fresh start, and keeps the bad Save as it was found', () => {
-    const bad = { ...completeSave(), version: 2 };
+    const bad = { ...completeSave(), version: SAVE_VERSION + 1 };
     const { game, storage } = load(bad);
 
     startStage(game, STAGE_ID);
@@ -687,7 +582,7 @@ describe('a Save that cannot be read at all', () => {
     const clock = createSteppedClock(1_800_000_000_000);
     clock.step(3600);
     const { storage } = loadGame(
-      { ...completeSave(), version: 2 },
+      { ...completeSave(), version: SAVE_VERSION + 1 },
       undefined,
       clock,
     );
@@ -699,7 +594,7 @@ describe('a Save that cannot be read at all', () => {
 });
 
 describe('the notice for a Save that could not be read', () => {
-  const bad = { ...completeSave(), version: 2 };
+  const bad = { ...completeSave(), version: SAVE_VERSION + 1 };
 
   it('shows again on the next load, when the player has not played on', () => {
     const { storage } = loadGame(bad);

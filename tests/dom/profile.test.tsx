@@ -1,12 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import {
   NOT_A_BACKUP_MESSAGE,
+  OLDER_BACKUP_MESSAGE,
   UNREADABLE_SAVE_NOTICE,
 } from '../../src/game/save';
+import { SAVE_VERSION } from '../../src/game/schemas';
 import { BEGIN_HOME_ROW, PAUSE_FLIGHT, START_STAGE } from '../shared/screens';
 import { type Player, renderGame, screen } from './harness';
 import {
-  FREE_FLIGHT_SAVE,
+  asCurrentSave,
   OLD_LIVE_EXPORT,
   RETURNING_PLAYER,
 } from '../shared/saves';
@@ -45,19 +47,6 @@ describe('a returning player', () => {
     expect(stars(5)).toBeTruthy();
     player.openHeader('Galaxy Map');
     // Sector 02 needs 6 Stars; the Save's claim of 40 does not count.
-    expect(
-      screen.getByRole('button', { name: /Sector 02.*Needs 6★/ }),
-    ).toBeTruthy();
-  });
-
-  it("does not count a Save's old Free Flight Stars, and a Sector they alone opened is locked again", () => {
-    // FREE_FLIGHT_SAVE: 5 Stars from the Stages and 5 more from Free Flight.
-    const player = renderGame({ profile: FREE_FLIGHT_SAVE });
-
-    expect(stars(5)).toBeTruthy();
-    expect(credits('1,234')).toBeTruthy();
-    player.openHeader('Galaxy Map');
-    // Sector 02 needs 6 Stars; 10 would have opened it.
     expect(
       screen.getByRole('button', { name: /Sector 02.*Needs 6★/ }),
     ).toBeTruthy();
@@ -113,7 +102,7 @@ describe('a first visit and a Save that cannot be read', () => {
 
   it('starts fresh with a notice when the Save is not one the game can read', () => {
     const player = renderGame({
-      profile: { ...RETURNING_PLAYER, version: 2 },
+      profile: { ...RETURNING_PLAYER, version: SAVE_VERSION + 1 },
     });
 
     expect(screen.getByText(UNREADABLE_SAVE_NOTICE)).toBeTruthy();
@@ -128,7 +117,9 @@ describe('a first visit and a Save that cannot be read', () => {
   });
 
   it('keeps showing the notice after a reload, until the player dismisses it', () => {
-    const player = renderGame({ profile: { ...RETURNING_PLAYER, version: 2 } });
+    const player = renderGame({
+      profile: { ...RETURNING_PLAYER, version: SAVE_VERSION + 1 },
+    });
     expect(screen.getByText(UNREADABLE_SAVE_NOTICE)).toBeTruthy();
 
     player.reload();
@@ -138,7 +129,9 @@ describe('a first visit and a Save that cannot be read', () => {
   });
 
   it('removes the notice for good when the player dismisses it', () => {
-    const player = renderGame({ profile: { ...RETURNING_PLAYER, version: 2 } });
+    const player = renderGame({
+      profile: { ...RETURNING_PLAYER, version: SAVE_VERSION + 1 },
+    });
 
     player.click(DISMISS_NOTICE_LABEL);
 
@@ -149,28 +142,32 @@ describe('a first visit and a Save that cannot be read', () => {
 });
 
 describe('Import Backup and Factory Reset', () => {
-  it('replaces the Profile with an old Backup that has no version', async () => {
+  it('refuses a Backup made before the rules changed, with its own message, and changes nothing', async () => {
     const player = renderGame({ profile: RETURNING_PLAYER });
     player.openHeader('Analytics');
 
     player.importBackup(JSON.stringify(OLD_LIVE_EXPORT));
 
-    expect(await screen.findByRole('button', { name: /^3\s*★$/ })).toBeTruthy();
-    expect(credits('491')).toBeTruthy();
-    expect(screen.queryByRole('alert')).toBeNull();
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      OLDER_BACKUP_MESSAGE,
+    );
+    expect(stars(5)).toBeTruthy();
+    expect(credits('1,234')).toBeTruthy();
     player.click(closeLabel('academy-home'));
-    expect(sectorOneStars(player)).toContain('3/12');
+    expect(sectorOneStars(player)).toContain('5/12');
   });
 
-  it('shows the Stars the Stages earned when an old Backup claims a different total', async () => {
-    const player = renderGame({ profile: RETURNING_PLAYER });
+  it('shows the Stars the Stages earned when a Backup claims a different total', async () => {
+    const player = renderGame();
     player.openHeader('Analytics');
 
-    player.importBackup(JSON.stringify({ ...OLD_LIVE_EXPORT, totalStars: 99 }));
+    player.importBackup(
+      JSON.stringify(asCurrentSave({ ...RETURNING_PLAYER, totalStars: 99 })),
+    );
 
-    expect(await screen.findByRole('button', { name: /^3\s*★$/ })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: /^5\s*★$/ })).toBeTruthy();
     player.click(closeLabel('academy-home'));
-    expect(sectorOneStars(player)).toContain('3/12');
+    expect(sectorOneStars(player)).toContain('5/12');
   });
 
   it('refuses a file that is not a Backup, with a message, and changes nothing', async () => {
@@ -187,11 +184,11 @@ describe('Import Backup and Factory Reset', () => {
     expect(sectorOneStars(player)).toContain('5/12');
   });
 
-  it('refuses a file with no Profile in it with the exact message', async () => {
+  it('refuses a file that is not an object with the exact message', async () => {
     const player = renderGame({ profile: RETURNING_PLAYER });
     player.openHeader('Analytics');
 
-    player.importBackup('{}');
+    player.importBackup('[]');
 
     expect((await screen.findByRole('alert')).textContent).toBe(
       NOT_A_BACKUP_MESSAGE,
@@ -210,7 +207,7 @@ describe('Import Backup and Factory Reset', () => {
     expect(stars(0)).toBeTruthy();
     expect(credits('0')).toBeTruthy();
 
-    player.importBackup(JSON.stringify({ version: 1, ...RETURNING_PLAYER }));
+    player.importBackup(JSON.stringify(asCurrentSave(RETURNING_PLAYER)));
 
     expect(await screen.findByRole('button', { name: /^5\s*★$/ })).toBeTruthy();
     expect(credits('1,234')).toBeTruthy();

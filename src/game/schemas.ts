@@ -83,8 +83,9 @@ function entriesOf<T>(entry: z.ZodType<T>) {
 const upgradeLevel = () =>
   numberField({ min: 0, max: MAX_UPGRADE_LEVEL, integer: true, fallback: 0 });
 
-// The fields keep the names a Save was first written with (a Trail was a
-// "theme", a Sound Kit an "audio core"), so every Save in the wild still loads.
+// The fields keep the names they were first written with (a Trail was a
+// "theme", a Sound Kit an "audio core"). Renaming one is a change to what the
+// Save holds, so it raises `SAVE_VERSION`.
 export const UpgradesSchema = z.object({
   deflectorShields: upgradeLevel(),
   overdriveReactor: upgradeLevel(),
@@ -142,33 +143,31 @@ export const SettingsSchema = z.object({
   globalMuted: booleanField(false),
 });
 
+/** The Upgrades as stored: anything that is not an object reads as no Upgrades at all. */
+const readStoredUpgrades = (upgrades: unknown): unknown =>
+  isRecord(upgrades) ? upgrades : {};
+
 /**
- * The Upgrades as stored: anything that is not an object reads as no Upgrades
- * at all. Saves and Backups made before the Reactor was renamed hold its level
- * as `hyperdriveReactor`. It is read as `overdriveReactor` (the new key wins
- * when both are there), so no version bump is needed; the old key is never
- * written.
+ * The Save's format version, which is also the version a Backup carries. A
+ * step that changes what the Save holds, or what its numbers mean, raises it:
+ * the Save module discards an older Save and refuses an older Backup, so no
+ * Profile ever mixes old and new numbers, and no code reads an old format.
  */
-function readStoredUpgrades(upgrades: unknown): unknown {
-  if (!isRecord(upgrades)) return {};
-  const { hyperdriveReactor, ...rest } = upgrades;
-  if (hyperdriveReactor === undefined) return upgrades;
-  return { overdriveReactor: hyperdriveReactor, ...rest };
-}
+export const SAVE_VERSION = 2;
 
 /**
  * The Save: the only definition of what a Profile is. Unknown fields are
  * dropped, and a missing or wrong field takes its default or is clamped into
  * range (see the helpers above), so it loses only that field. The parse fails
- * only for a Save that isn't an object or has an unknown `version`; the Save
- * module then treats the Save as unreadable.
+ * only for a Save that isn't an object or whose `version` isn't `SAVE_VERSION`;
+ * the Save module decides what a Save of another version means before it
+ * parses, so nothing older is ever read as current.
  * `totalStars` is deliberately not a field here: the total of Stars is worked
- * out from the Stages' Stars (`totalStarsOf`), never saved. A Save or Backup
- * from before that still says it, and the field is dropped on read.
+ * out from the Stages' Stars (`totalStarsOf`), never saved.
  * Backups (#25) reuse this schema.
  */
 export const SaveFieldsSchema = z.object({
-  version: z.literal(1).default(1),
+  version: z.literal(SAVE_VERSION),
   totalCredits: numberField({ min: 0, integer: true, fallback: 0 }),
   totalCharactersTyped: numberField({ min: 0, integer: true, fallback: 0 }),
   totalMissMarks: numberField({ min: 0, integer: true, fallback: 0 }),
@@ -192,27 +191,21 @@ export const clearedStagesOf = (
   stagesProgress: Record<string, { completed: boolean }>,
 ): number => Object.values(stagesProgress).filter((sp) => sp.completed).length;
 
-/**
- * Saves and Backups made before Free Flight became practice (#86) hold an
- * entry for each Free Flight, keyed `custom-<launch time>`. They are dropped on
- * read, so their Stars stop counting; the game never writes one.
- */
-const FREE_FLIGHT_ENTRY_PREFIX = 'custom-';
-
-export const PlayerProfileSchema = SaveFieldsSchema.transform((save) => {
-  const stagesProgress = Object.fromEntries(
-    Object.entries(save.stagesProgress)
-      .filter(([id]) => !id.startsWith(FREE_FLIGHT_ENTRY_PREFIX))
-      .map(([id, progress]) => [
-        id,
-        { ...progress, stageId: progress.stageId || id },
-      ]),
-  );
-  return { ...save, stagesProgress };
-});
+/** The Save, with each Stage's progress carrying the id it is keyed by. */
+export const PlayerProfileSchema = SaveFieldsSchema.transform((save) => ({
+  ...save,
+  stagesProgress: Object.fromEntries(
+    Object.entries(save.stagesProgress).map(([id, progress]) => [
+      id,
+      { ...progress, stageId: progress.stageId || id },
+    ]),
+  ),
+}));
 
 /** The Profile a new player starts with: every field at its default. */
-export const DEFAULT_PROFILE: PlayerProfile = PlayerProfileSchema.parse({});
+export const DEFAULT_PROFILE: PlayerProfile = PlayerProfileSchema.parse({
+  version: SAVE_VERSION,
+});
 
 // The Profile and its parts. These are the only definitions of these types.
 export type PlayerProfile = z.output<typeof PlayerProfileSchema>;

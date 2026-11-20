@@ -5,6 +5,7 @@ import {
   NEWER_BACKUP_MESSAGE,
   UNREADABLE_SAVE_NOTICE,
 } from '../../src/game/save';
+import { SAVE_VERSION } from '../../src/game/schemas';
 import { DISMISS_NOTICE_LABEL } from '../../src/screens/dismissLabel';
 import { RETURNING_PLAYER } from '../shared/saves';
 import { DEBRIEF_TITLE, MENU_HEADINGS } from '../shared/screens';
@@ -68,9 +69,6 @@ test('the Save outlives a reload: Stars, a Backup round trip, a Free Flight, and
   });
 
   let backupPath = '';
-  // The version the game writes into a Backup, read from the one it exports
-  // below; the refused-Backup step builds a newer one from it.
-  let backupVersion = 0;
   await test.step('Export Backup downloads a file that says which version it is', async () => {
     await page.getByRole('button', { name: 'Analytics', exact: true }).click();
     await expect(
@@ -81,8 +79,7 @@ test('the Save outlives a reload: Stars, a Backup round trip, a Free Flight, and
     await page.getByRole('button', { name: 'Export Backup' }).click();
     backupPath = await (await download).path();
     const backup = JSON.parse(await readFile(backupPath, 'utf8'));
-    backupVersion = backup.version;
-    expect.soft(backup.version).toBe(1);
+    expect.soft(backup.version).toBe(SAVE_VERSION);
     expect.soft(backup.totalCredits).toBe(1234);
   });
 
@@ -124,7 +121,10 @@ test('the Save outlives a reload: Stars, a Backup round trip, a Free Flight, and
           name: 'astrotype_backup.json',
           mimeType: 'application/json',
           buffer: Buffer.from(
-            JSON.stringify({ ...RETURNING_PLAYER, version: backupVersion + 1 }),
+            JSON.stringify({
+              ...RETURNING_PLAYER,
+              version: SAVE_VERSION + 1,
+            }),
           ),
         });
         const message = tall.getByText(NEWER_BACKUP_MESSAGE, { exact: true });
@@ -223,8 +223,11 @@ test('the Save outlives a reload: Stars, a Backup round trip, a Free Flight, and
   await test.step('a Save the game cannot read starts fresh with a notice, which stays through reloads until it is dismissed', async () => {
     // A second browser context has localStorage of its own.
     await inFreshContext(browser, async (second) => {
-      // A version this game does not know: the whole Save is set aside.
-      await seedSave(second, { ...RETURNING_PLAYER, version: 2 });
+      // A version higher than the game's: the whole Save is set aside.
+      await seedSave(second, {
+        ...RETURNING_PLAYER,
+        version: SAVE_VERSION + 1,
+      });
       await second.goto('/');
 
       await expect(notice(second)).toBeVisible();

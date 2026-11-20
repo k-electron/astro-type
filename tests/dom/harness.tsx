@@ -41,6 +41,7 @@ import {
   type MemorySaveStorage,
 } from '../shared/memoryStorage';
 import { FIRST_STAGE } from '../../src/curriculum/curriculum';
+import { asCurrentSave } from '../shared/saves';
 import { startStage as sendStartStage } from '../shared/testHelpers';
 import { GameProvider } from '../../src/app/useGame';
 import { DEBRIEF_TITLE, START_FREE_FLIGHT } from '../shared/screens';
@@ -58,10 +59,13 @@ export type HeaderButton =
 export interface RenderGameOptions {
   /**
    * The Profile the player already has: the fields to put in the Save before
-   * the game loads. Fields left out take their defaults, as in a real Save.
+   * the game loads, as the current game writes it (a plain object with no
+   * `version` of its own is stamped with `SAVE_VERSION`, `asCurrentSave`).
+   * Fields left out take their defaults, as in a real Save. For a raw Save (an
+   * older, unversioned or garbled one) pass a `storage` instead.
    */
   profile?: Record<string, unknown>;
-  /** A Save storage to start from. Wins over `profile`. */
+  /** A Save storage to start from, taken as it is. Wins over `profile`. */
   storage?: MemorySaveStorage;
   /** Start a Free Flight Run of this text, through the Free Flight screen. */
   text?: string;
@@ -197,7 +201,8 @@ export function expectNoRefusedMove(where: string): void {
  * sound, and a Save in memory. Every call builds a new game.
  */
 export function renderGame(options: RenderGameOptions = {}): Player {
-  const storage = options.storage ?? createMemoryStorage(options.profile);
+  const storage =
+    options.storage ?? createMemoryStorage(asCurrentSave(options.profile));
   let game: Game;
   let unmount: () => void;
   let detachKeyboard: () => void;

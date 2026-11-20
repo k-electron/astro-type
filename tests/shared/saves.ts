@@ -1,12 +1,42 @@
 /**
  * The one place a test builds a Save. Every layer starts from these: the unit
- * tests (`createMemoryStorage(save)`), the DOM tests (`renderGame({ profile })`)
- * and the browser tests (`seedSave`). Fields left out of a Save take their
- * defaults, as they do for a real one. This imports from no test runner, so
- * every layer of tests can use it.
+ * tests (`loadGame(seed)`), the DOM tests (`renderGame({ profile })`) and the
+ * browser tests (`seedSave`). Fields left out of a Save take their defaults, as
+ * they do for a real one. This imports from no test runner, so every layer of
+ * tests can use it.
+ *
+ * These write the current format. A seed is read as "a Save as the current game
+ * writes it": the three seeding seams above pass a plain-object seed that has
+ * no `version` of its own through `asCurrentSave`, which adds `version:
+ * SAVE_VERSION`. So a bare `{ totalCredits: 5 }` is a valid Save. A test that
+ * needs a Save the current game would not have written (an older one, an
+ * unversioned one, a garbled one, one from a newer game) builds the storage
+ * itself and so skips the stamping: `createGame({ storage:
+ * createMemoryStorage(raw) })` for a unit test, `renderGame({ storage })` for a
+ * DOM test (the storage wins over `profile`). A seed that already has a
+ * `version` key is left as it is, so a Save from a newer game can go through a
+ * seam with its `version` spelled out.
  */
 import { CURRICULUM_SECTORS } from '../../src/curriculum/curriculum';
-import { SoundKitSchema, type TrailId } from '../../src/game/schemas';
+import {
+  SAVE_VERSION,
+  SoundKitSchema,
+  type TrailId,
+} from '../../src/game/schemas';
+
+/**
+ * A seed as the current game would have written it: a plain object with no
+ * `version` of its own gets `version: SAVE_VERSION`. Anything else (an object
+ * that has a `version`, a list, text, a number, `null`, `undefined`) is
+ * returned untouched, so a test can still seed what the game must refuse.
+ */
+export function asCurrentSave(seed: unknown): unknown {
+  if (typeof seed !== 'object' || seed === null || Array.isArray(seed)) {
+    return seed;
+  }
+  if (Object.hasOwn(seed, 'version')) return seed;
+  return { ...seed, version: SAVE_VERSION };
+}
 
 /** One Stage's progress, cleared with `stars` Stars. `overrides` change any field. */
 export function stageProgress(
@@ -93,12 +123,13 @@ export function trailEquipped(id: TrailId) {
 }
 
 /**
- * A complete Save in today's format (no `version`): RETURNING_PLAYER's 5 Stars
- * and 1,234 Credits, plus every other field, each set to something other than
- * its default so a load that dropped it would show.
+ * A complete Save in today's format, `version: SAVE_VERSION` and all:
+ * RETURNING_PLAYER's 5 Stars and 1,234 Credits, plus every other field, each
+ * set to something other than its default so a load that dropped it would show.
  */
 export function completeSave() {
   return {
+    version: SAVE_VERSION,
     ...RETURNING_PLAYER,
     totalStars: 5,
     totalCharactersTyped: 154,
@@ -159,73 +190,12 @@ export function keyStats(
 }
 
 /**
- * A returning player's Save from before Free Flight became practice (#86), with
- * its results in it as production wrote them: Stage progress keyed
- * `custom-<launch time>`, beside the curriculum Stages and every other field of
- * `completeSave()`. It claims 10 Stars, 5 from the curriculum and 5 from Free
- * Flight, which is enough to open Sector 02 (6); once the `custom-` entries are
- * dropped on reading, 5 are left and Sector 02 is locked again.
- */
-export const FREE_FLIGHT_SAVE = (() => {
-  const save = completeSave();
-  return {
-    ...save,
-    totalStars: 10,
-    stagesProgress: {
-      ...save.stagesProgress,
-      'custom-1792904921385': stageProgress('custom-1792904921385', 2, {
-        highScore: 9100,
-        bestWpm: 44,
-        timesPlayed: 3,
-      }),
-      'custom-1792905000123': stageProgress('custom-1792905000123', 3, {
-        highScore: 15200,
-        bestWpm: 61,
-        bestStreak: 25,
-        timesPlayed: 1,
-      }),
-    },
-  };
-})();
-
-/**
- * The Drone speeds the game once let a player choose. Every Run now moves at
- * one speed (FAST), but Saves and Backups made before that still carry the
- * choice in a `highwaySpeed` field, which must load and then be left behind.
- */
-export const OLD_DRONE_SPEEDS = ['SLOW', 'NORMAL', 'FAST', 'HYPER'] as const;
-
-/** A Save or Backup as it was before the speed choice went: carrying `highwaySpeed`. */
-export function withOldDroneSpeed<T extends object>(
-  save: T,
-  speed: string,
-): T & { highwaySpeed: string } {
-  return { ...save, highwaySpeed: speed };
-}
-
-/**
- * A Save or Backup as production wrote it before the Overdrive Reactor's level
- * was saved as `overdriveReactor`: the same Save with that level under the old
- * key, `hyperdriveReactor`, and no new key. The old key is spelled out here on
- * purpose, as it is the oracle for reading such a file. Returns raw JSON, not a
- * typed Save.
- */
-export function withLegacyReactorKey<T extends { upgrades: object }>(
-  save: T,
-  level: number,
-) {
-  const upgrades = Object.fromEntries(
-    Object.entries(save.upgrades).filter(([key]) => key !== 'overdriveReactor'),
-  );
-  return { ...save, upgrades: { ...upgrades, hyperdriveReactor: level } };
-}
-
-/**
- * A Backup exactly as the live game exported it before versions existed: the
- * file from Analytics after clearing Stage 1 with 3 Stars (trimmed to the
- * parts the tests look at). It has no `version`, and it carries a stored
- * `totalStars`, which the game now computes instead. This is a fixture on
- * purpose, not a builder: its historical shape is what is under test.
+ * A Backup exported before versions existed; today it is refused. The file
+ * from Analytics after clearing Stage 1 with 3 Stars (trimmed to the parts the
+ * tests look at). It has no `version`, and it keeps its old shape on purpose
+ * (`totalKeystrokes` and `totalErrors`, the Reactor under `hyperdriveReactor`,
+ * a `highwaySpeed`): it is a fixture, not a builder. What makes it refused is
+ * the missing `version`; the rest is how a real one looked.
  */
 export const OLD_LIVE_EXPORT = {
   totalCredits: 491,

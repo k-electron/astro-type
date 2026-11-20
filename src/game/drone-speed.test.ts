@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { OLD_DRONE_SPEEDS, withOldDroneSpeed } from '../../tests/shared/saves';
 import {
   type Game,
   newGame,
@@ -15,22 +14,10 @@ import {
  * falls 2.2 a step, a step being 1/60 s. So it is 17.6 away after 2 steps,
  * 15.4 after 3, 8.8 after 6, 6.6 after 7, and waits on the line from step 10.
  * The Perfect window is 8 and the Great window 16 (Judgement, GLOSSARY.md).
- *
- * The player used to choose a speed, and Saves and Backups made then still
- * carry the choice in `highwaySpeed`. It must change nothing now.
  */
 const PERFECT = 100;
 const GREAT = 75;
 const GOOD = 50;
-
-/** Each Save a player might arrive with, and the seed that builds it. */
-const SAVES: Array<[string, unknown]> = [
-  ['a fresh Save', undefined],
-  ...OLD_DRONE_SPEEDS.map((speed): [string, unknown] => [
-    `a Save made at the ${speed} speed`,
-    withOldDroneSpeed({}, speed),
-  ]),
-];
 
 /** The first key of a Run, pressed `steps` steps in, and the points it scored. */
 function firstKeyScores(game: Game, key: string, steps: number): number {
@@ -49,9 +36,9 @@ const FIRST_KEY_AT_FAST = [
 ] as const;
 
 describe('a Stage Run moves at one Drone speed', () => {
-  it.each(SAVES)('from %s', (_what, seed) => {
+  it('scores the first key by how far the lead Drone has fallen', () => {
     for (const [steps, points] of FIRST_KEY_AT_FAST) {
-      const game = newGame(seed);
+      const game = newGame();
       startStage(game, STAGE_ID);
       expect(
         firstKeyScores(game, targetKey(game), steps),
@@ -62,9 +49,9 @@ describe('a Stage Run moves at one Drone speed', () => {
 });
 
 describe('a Free Flight Run moves at the same Drone speed', () => {
-  it.each(SAVES)('from %s', (_what, seed) => {
+  it('scores the first key by how far the lead Drone has fallen', () => {
     for (const [steps, points] of FIRST_KEY_AT_FAST) {
-      const game = newGame(seed);
+      const game = newGame();
       startFreeFlight(game, 'ff jj ff jj');
       expect(
         firstKeyScores(game, 'f', steps),
@@ -77,25 +64,22 @@ describe('a Free Flight Run moves at the same Drone speed', () => {
 describe('the Drones move the same way in every Run', () => {
   const leadHeight = (game: Game) => game.getState().run.drones[0].yPercent;
 
-  it.each(SAVES)(
-    'from %s, the lead Drone falls 2.2 a step to the Strike Line and waits there',
-    (_what, seed) => {
-      const game = newGame(seed);
-      startStage(game, STAGE_ID);
-      expect(leadHeight(game)).toBe(62);
+  it('the lead Drone falls 2.2 a step to the Strike Line and waits there', () => {
+    const game = newGame();
+    startStage(game, STAGE_ID);
+    expect(leadHeight(game)).toBe(62);
 
-      for (const steps of [1, 2, 3]) {
-        const fresh = newGame(seed);
-        startStage(fresh, STAGE_ID);
-        fresh.step(steps);
-        expect(leadHeight(fresh)).toBeCloseTo(62 + 2.2 * steps, 6);
-      }
+    for (const steps of [1, 2, 3]) {
+      const fresh = newGame();
+      startStage(fresh, STAGE_ID);
+      fresh.step(steps);
+      expect(leadHeight(fresh)).toBeCloseTo(62 + 2.2 * steps, 6);
+    }
 
-      // It never falls past the line, however long it waits.
-      game.step(600);
-      expect(leadHeight(game)).toBe(84);
-    },
-  );
+    // It never falls past the line, however long it waits.
+    game.step(600);
+    expect(leadHeight(game)).toBe(84);
+  });
 
   it('the Drone behind eases down toward its slot and settles there', () => {
     const game = newGame();
@@ -110,24 +94,6 @@ describe('the Drones move the same way in every Run', () => {
     game.step(600);
     expect(game.getState().run.drones[1].yPercent).toBeCloseTo(68, 3);
   });
-
-  it.each(OLD_DRONE_SPEEDS)(
-    'the Drone behind eases down just as it does in a fresh Save, whatever the old %s speed',
-    (speed) => {
-      const path = (seed: unknown) => {
-        const game = newGame(seed);
-        startStage(game, STAGE_ID);
-        let done = 0;
-        return [1, 2, 3, 5, 8, 13, 21, 60].map((at) => {
-          game.step(at - done);
-          done = at;
-          return game.getState().run.drones[1].yPercent;
-        });
-      };
-
-      expect(path(withOldDroneSpeed({}, speed))).toEqual(path(undefined));
-    },
-  );
 });
 
 describe('Perfect stays reachable at high WPM', () => {

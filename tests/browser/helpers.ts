@@ -1,5 +1,6 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 import { SAVE_KEY } from '../../src/game/save';
+import { asCurrentSave } from '../shared/saves';
 import {
   BEGIN_HOME_ROW,
   DEBRIEF_TITLE,
@@ -136,10 +137,12 @@ export const pauseMenu = (page: Page): Locator =>
   page.getByRole('heading', { name: PAUSE_MENU_NAME });
 
 /**
- * Starts the game with a Save the player already has (see
- * `tests/shared/saves.ts` for ready-made ones; fields left out take their
- * defaults). It is put in localStorage once, before the page loads, so a
- * reload sees whatever the game left behind. Call it before `page.goto`.
+ * Starts the game with a Save the player already has, as the current game
+ * writes it (see `tests/shared/saves.ts` for ready-made ones; fields left out
+ * take their defaults, and a plain object with no `version` of its own is
+ * stamped with `SAVE_VERSION`, `asCurrentSave`). It is put in localStorage
+ * once, before the page loads, so a reload sees whatever the game left behind.
+ * Call it before `page.goto`.
  */
 export async function seedSave(page: Page, save: unknown): Promise<void> {
   await page.addInitScript(
@@ -148,7 +151,7 @@ export async function seedSave(page: Page, save: unknown): Promise<void> {
       sessionStorage.setItem('seeded', 'yes');
       localStorage.setItem(key, value);
     },
-    { key: SAVE_KEY, value: JSON.stringify(save) },
+    { key: SAVE_KEY, value: JSON.stringify(asCurrentSave(save)) },
   );
 }
 

@@ -23,7 +23,7 @@ A browser typing game; `README.md` says what it is and what it's built with. Use
 ## Ground rules
 
 - **Game rules stay as they are.** A change that gives the player a different rule (scoring, Stars, unlocks, timing) is the project owner's call, so raise it on the ticket. `docs/PHILOSOPHY.md` says what the rules are for; its Known departures are the rules expected to change.
-- **Player data stays in the player's browser, in localStorage.** No accounts, no analytics.
+- **Player data stays in the player's browser, in localStorage.** No accounts, no analytics. A change to what the Save holds, or to what its numbers mean, raises `SAVE_VERSION` (`src/game/schemas.ts`): an older Save is discarded and an older Backup refused, so no Profile mixes old and new numbers.
 
 ## Shipping
 

@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type Clock, createSteppedClock } from '../game/clock';
 import { createGame } from '../game/game';
+import { SAVE_VERSION } from '../game/schemas';
 import {
   SAVE_KEY,
   UNREADABLE_NOTICE_KEY,
@@ -56,8 +57,8 @@ describe('a Save that cannot be read', () => {
   it.each([
     ['is not text this game can parse', 'not json at all {{{'],
     [
-      'is from a version this game does not know',
-      '{ "version": 2,\n  "totalCredits": 5 }',
+      'is from a newer version than this game knows',
+      `{ "version": ${SAVE_VERSION + 1},\n  "totalCredits": 5 }`,
     ],
     ['is JSON but not a Save', '[1, 2,   3]'],
   ])('is moved aside exactly as it was, when it %s', (_why, raw) => {
@@ -74,7 +75,7 @@ describe('a Save that cannot be read', () => {
   });
 
   it('is not moved aside when only a field is wrong: it loads, and nothing is set aside', () => {
-    const raw = '{ "totalCredits": "lots",\n  "stagesProgress": {} }';
+    const raw = `{ "version": ${SAVE_VERSION},\n  "totalCredits": "lots",\n  "stagesProgress": {} }`;
     browserStorage.setItem(SAVE_KEY, raw);
     const clock = createSteppedClock();
 
@@ -174,6 +175,59 @@ describe('a Save that cannot be read', () => {
     const nextVisit = openGame(createSteppedClock());
     expect(nextVisit.getState().loadNotice).toBeNull();
     expect(browserStorage.getItem(copyKey(clock))).toBe(raw);
+  });
+});
+
+describe('a Save from before the game’s rules changed', () => {
+  // An older Save (a lower version, or none) is discarded without a fuss: no
+  // notice, nothing set aside, and the old text stays where it is until the
+  // next write replaces it.
+  const OLDER_SAVES = [
+    ['has version 1', '{ "version": 1,\n  "totalCredits": 5 }'],
+    ['has no version', '{ "totalCredits": 5 }'],
+  ];
+
+  it.each(OLDER_SAVES)(
+    'starts fresh, with no notice and nothing set aside, when it %s',
+    (_why, raw) => {
+      browserStorage.setItem(SAVE_KEY, raw);
+
+      const game = openGame();
+
+      expect(game.getState().loadNotice).toBeNull();
+      expect(game.getState().profile.totalCredits).toBe(0);
+      expect(browserStorage.getItem(SAVE_KEY)).toBe(raw);
+      expect(browserStorage.getItem(UNREADABLE_NOTICE_KEY)).toBeNull();
+      expect([...browserStorage.items.keys()]).toEqual([SAVE_KEY]);
+    },
+  );
+
+  it('is replaced by the current Save on the next write, and the next visit reads that one', () => {
+    browserStorage.setItem(SAVE_KEY, '{ "version": 1,\n  "totalCredits": 5 }');
+    const game = openGame();
+
+    startStage(game, STAGE_ID);
+    clearStage(game, { seconds: 60 });
+
+    const stored = JSON.parse(browserStorage.getItem(SAVE_KEY) ?? 'null');
+    expect(stored.version).toBe(SAVE_VERSION);
+    expect([...browserStorage.items.keys()]).toEqual([SAVE_KEY]);
+    const nextVisit = openGame();
+    expect(nextVisit.getState().loadNotice).toBeNull();
+    expect(nextVisit.getState().profile.totalStars).toBe(3);
+  });
+
+  it('still shows a notice that an earlier unreadable Save left pending, and sets no new copy aside', () => {
+    browserStorage.setItem(UNREADABLE_NOTICE_KEY, '1');
+    browserStorage.setItem(SAVE_KEY, '{ "version": 1,\n  "totalCredits": 5 }');
+
+    const game = openGame();
+
+    expect(game.getState().loadNotice).toBe(UNREADABLE_SAVE_NOTICE);
+    expect(game.getState().profile.totalCredits).toBe(0);
+    expect([...browserStorage.items.keys()].sort()).toEqual(
+      [SAVE_KEY, UNREADABLE_NOTICE_KEY].sort(),
+    );
   });
 });
 

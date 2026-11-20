@@ -1,12 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import {
-  completeSave,
-  OLD_LIVE_EXPORT,
-  RETURNING_PLAYER,
-} from '../../tests/shared/saves';
+import { completeSave, RETURNING_PLAYER } from '../../tests/shared/saves';
 import type { UpgradesSchema } from './schemas';
 import type { Game } from './game';
-import { DEFAULT_PROFILE } from './schemas';
+import { DEFAULT_PROFILE, SAVE_VERSION } from './schemas';
 import {
   hitPerfect,
   loadGame,
@@ -263,11 +259,8 @@ describe.each(COSMETICS)('buy, for a $kind', (cosmetic) => {
 });
 
 describe('a purchase and the Save', () => {
-  // Saves made before the catalog keep loading, and a purchase writes the
-  // Save back under the same keys it was read from: the Upgrade levels, the
-  // owned and equipped Cosmetics, and every setting. Not looked at here, as
-  // other tickets move them: `totalStars`, `ambientMusicVolume` and the
-  // retired speed field, which are leaving the Save.
+  // A purchase writes the Save back under the same keys it was read from: the
+  // Upgrade levels, the owned and equipped Cosmetics, and every setting.
   const SETTINGS = [
     'soundEnabled',
     'soundVolume',
@@ -279,44 +272,31 @@ describe('a purchase and the Save', () => {
     'globalMuted',
   ] as const;
 
-  it.each([
-    [
-      'a complete Save',
-      completeSave(),
-      completeSave().upgrades.overdriveReactor,
-    ],
-    [
-      'an export of the live game from before versions existed',
-      OLD_LIVE_EXPORT,
-      OLD_LIVE_EXPORT.upgrades.hyperdriveReactor,
-    ],
-  ])(
-    're-saves %s under today’s keys after each kind of purchase',
-    (_, save, reactor) => {
-      const { game, storage } = loadGame({ ...save, totalCredits: 5000 });
-      expect(game.getState().loadNotice).toBeNull();
+  it('re-saves a complete Save under the same keys after each kind of purchase', () => {
+    const save = completeSave();
+    const { game, storage } = loadGame({ ...save, totalCredits: 5000 });
+    expect(game.getState().loadNotice).toBeNull();
 
-      game.buy('sensors');
-      game.buy('AMBER');
-      game.buy('RETRO_8BIT');
+    game.buy('sensors');
+    game.buy('AMBER');
+    game.buy('RETRO_8BIT');
 
-      expect(storage.saved?.version).toBe(1);
-      expect(storage.saved?.totalCredits).toBe(5000 - 200 - 350 - 300);
-      expect(storage.saved?.upgrades).toEqual({
-        deflectorShields: save.upgrades.deflectorShields,
-        overdriveReactor: reactor,
-        precisionSensors: 1,
-        equippedTrailTheme: 'AMBER',
-        equippedAudioCore: 'RETRO_8BIT',
-        unlockedThemes: ['CYAN', 'AMBER'],
-        unlockedAudioCores: ['CYBER_SYNTH', 'RETRO_8BIT'],
-      });
-      for (const field of SETTINGS) {
-        expect(storage.saved?.[field], field).toEqual(save[field]);
-      }
-      expect(storage.saved?.stagesProgress).toEqual(save.stagesProgress);
-    },
-  );
+    expect(storage.saved?.version).toBe(SAVE_VERSION);
+    expect(storage.saved?.totalCredits).toBe(5000 - 200 - 350 - 300);
+    expect(storage.saved?.upgrades).toEqual({
+      deflectorShields: save.upgrades.deflectorShields,
+      overdriveReactor: save.upgrades.overdriveReactor,
+      precisionSensors: 1,
+      equippedTrailTheme: 'AMBER',
+      equippedAudioCore: 'RETRO_8BIT',
+      unlockedThemes: ['CYAN', 'AMBER'],
+      unlockedAudioCores: ['CYBER_SYNTH', 'RETRO_8BIT'],
+    });
+    for (const field of SETTINGS) {
+      expect(storage.saved?.[field], field).toEqual(save[field]);
+    }
+    expect(storage.saved?.stagesProgress).toEqual(save.stagesProgress);
+  });
 });
 
 describe('a purchase during a Run', () => {

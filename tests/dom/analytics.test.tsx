@@ -4,9 +4,15 @@ import {
   NEWER_BACKUP_MESSAGE,
   NOT_A_BACKUP_MESSAGE,
 } from '../../src/game/save';
+import { SAVE_VERSION } from '../../src/game/schemas';
 import { closeLabel } from '../../src/screens/closeLabel';
 import { DISMISS_NOTICE_LABEL } from '../../src/screens/dismissLabel';
-import { keyStats, lifetimeTotals, RETURNING_PLAYER } from '../shared/saves';
+import {
+  asCurrentSave,
+  keyStats,
+  lifetimeTotals,
+  RETURNING_PLAYER,
+} from '../shared/saves';
 import { renderGame, screen } from './harness';
 
 // What Analytics tells the player about their keys: the hand balance, the
@@ -165,7 +171,9 @@ describe('Analytics refusing a Backup', () => {
       screen.queryByRole('button', { name: DISMISS_NOTICE_LABEL }),
     ).toBeNull();
 
-    player.importBackup(JSON.stringify({ version: 2, totalCredits: 5 }));
+    player.importBackup(
+      JSON.stringify({ version: SAVE_VERSION + 1, totalCredits: 5 }),
+    );
 
     expect((await screen.findByRole('alert')).textContent).toBe(
       NEWER_BACKUP_MESSAGE,
@@ -192,7 +200,7 @@ describe('Analytics refusing a Backup', () => {
     player.importBackup('this is not a Backup at all');
     await screen.findByRole('alert');
 
-    player.importBackup(JSON.stringify({ version: 1, ...RETURNING_PLAYER }));
+    player.importBackup(JSON.stringify(asCurrentSave(RETURNING_PLAYER)));
 
     // The imported Profile is on show (5 Stars), so the import has finished.
     await screen.findByRole('button', { name: /^5\s*★$/ });

@@ -2,6 +2,7 @@ import type { Clock } from './clock';
 import {
   DEFAULT_PROFILE,
   PlayerProfileSchema,
+  SAVE_VERSION,
   SaveFieldsSchema,
   type PlayerProfile,
 } from './schemas';
@@ -70,51 +71,59 @@ export const NOT_A_BACKUP_MESSAGE =
 export const NEWER_BACKUP_MESSAGE =
   'That Backup was made by a newer version of the game, so your progress was left as it was.';
 
+/**
+ * Why a Backup was refused: its `version` is missing or a number below the one
+ * this game writes. What it holds was measured by older rules, so none of it is
+ * read.
+ */
+export const OLDER_BACKUP_MESSAGE =
+  "That Backup was made before the game's rules changed, so your progress was left as it was.";
+
 /** What importing a Backup comes to: the new Profile, or a refusal. */
 export type BackupImport =
   | { ok: true; profile: PlayerProfile }
   | { ok: false; message: string };
 
 /**
+ * What a stored value's `version` says about it, before anything else is read:
+ * one rule for the Save and for a Backup, so the two cannot disagree.
+ * - `current`: an object at `SAVE_VERSION`, read field by field.
+ * - `older`: an object with no `version`, or a number below `SAVE_VERSION`.
+ * - `newer`: an object whose `version` is a number above `SAVE_VERSION`.
+ * - `unknown`: anything else, which can't be told from a damaged Save.
+ */
+type StoredVersion = 'current' | 'older' | 'newer' | 'unknown';
+
+function storedVersionOf(value: unknown): StoredVersion {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    return 'unknown';
+  }
+  const version: unknown = 'version' in value ? value.version : undefined;
+  if (version === undefined) return 'older';
+  if (typeof version !== 'number') return 'unknown';
+  if (version < SAVE_VERSION) return 'older';
+  return version > SAVE_VERSION ? 'newer' : 'current';
+}
+
+/**
  * A Backup file for the Profile: its JSON text. It is the Save's own fields,
- * so it carries `version: 1`, and the same schema checks it on the way back.
+ * so it carries `version: SAVE_VERSION`, and the same schema checks it on the
+ * way back.
  */
 export function exportBackup(profile: PlayerProfile): string {
   // The schema keeps only the Save's own fields, so a Profile that carries
   // more (the total of Stars a screen reads) exports as the Save would.
-  return JSON.stringify(
-    { ...SaveFieldsSchema.parse(profile), version: 1 },
-    null,
-    2,
-  );
+  return JSON.stringify(SaveFieldsSchema.parse(profile), null, 2);
 }
 
 /**
- * The names of the Profile's own fields. A Backup exported before versions
- * existed is the whole Profile as JSON, so it carries these (`totalStars`
- * included, which the game no longer saves but old exports wrote out).
- */
-const PROFILE_FIELDS: ReadonlySet<string> = new Set([
-  ...Object.keys(SaveFieldsSchema.shape).filter((field) => field !== 'version'),
-  'totalStars',
-]);
-
-/** Whether an unversioned object holds at least one field of a Profile. */
-const hasProfileContent = (value: unknown): boolean =>
-  typeof value === 'object' &&
-  value !== null &&
-  Object.keys(value).some((field) => PROFILE_FIELDS.has(field));
-
-/**
- * Checks a Backup file's text with the Save's schema. Text that isn't JSON or a
- * `version` that isn't 1 is refused (with the "newer version" message when the
- * `version` is a number above 1, the "isn't a Backup" one otherwise); a wrong field is read the way a Save's is, so
- * that field is defaulted or clamped and the rest imported. A Backup exported before
- * versions existed is read as version 1, but only when it holds real Profile
- * content: `{}` or unrelated JSON is refused instead of becoming a fresh
- * Profile. A Backup that says `version: 1` is accepted even when sparse, since
- * a missing field takes its default. Nothing is stored or changed here: the
- * caller replaces the Profile only on `ok`.
+ * Checks a Backup file's text. Text that isn't JSON, isn't an object or has a
+ * `version` that isn't a number is refused as "not a Backup". A number above
+ * `SAVE_VERSION` is refused as made by a newer game, and a missing `version` or
+ * a number below it as made before the rules changed. Only a Backup at
+ * `SAVE_VERSION` is read, the way a Save is: a wrong field is defaulted or
+ * clamped and the rest imported. Nothing is stored or changed here: the caller
+ * replaces the Profile only on `ok`.
  */
 export function parseBackup(text: string): BackupImport {
   let value: unknown;
@@ -123,15 +132,14 @@ export function parseBackup(text: string): BackupImport {
   } catch {
     return { ok: false, message: NOT_A_BACKUP_MESSAGE };
   }
-  const version =
-    typeof value === 'object' && value !== null && 'version' in value
-      ? value.version
-      : undefined;
-  if (typeof version === 'number' && version > 1) {
+  const version = storedVersionOf(value);
+  if (version === 'older') {
+    return { ok: false, message: OLDER_BACKUP_MESSAGE };
+  }
+  if (version === 'newer') {
     return { ok: false, message: NEWER_BACKUP_MESSAGE };
   }
-  const versioned = version !== undefined;
-  if (!versioned && !hasProfileContent(value)) {
+  if (version === 'unknown') {
     return { ok: false, message: NOT_A_BACKUP_MESSAGE };
   }
   const result = PlayerProfileSchema.safeParse(value);
@@ -148,12 +156,14 @@ export interface LoadedSave {
 
 export interface Save {
   /**
-   * Reads the Save. Nothing stored gives a fresh Profile. A wrong field loses
-   * only that field (see the schema); a missing field takes its default, and
-   * an unversioned Save is read as version 1. Text that isn't JSON, JSON that
-   * isn't an object and an unknown version are moved aside, and the player
-   * starts fresh. The notice shows when a Save was moved aside now, or an
-   * earlier one was and the player has not dismissed the notice.
+   * Reads the Save. Nothing stored gives a fresh Profile, and so does a Save
+   * of an older version (none, or a number below the current one): it is
+   * left where it is without a notice, and the next write replaces it. A wrong
+   * field loses only that field (see the schema); a missing field takes its
+   * default. Text that isn't JSON, JSON that isn't an object, a version that
+   * isn't a number and a version above the current one are moved aside, and the
+   * player starts fresh. The notice shows when a Save was moved aside now, or
+   * an earlier one was and the player has not dismissed the notice.
    */
   load(): LoadedSave;
   write(profile: PlayerProfile): void;
@@ -172,6 +182,9 @@ export function createSave(storage: SaveStorage, clock: Clock): Save {
     if (stored.kind === 'garbled') return 'unreadable';
     // A stored JSON `null` is the same as nothing stored.
     if (stored.value === null) return DEFAULT_PROFILE;
+    const version = storedVersionOf(stored.value);
+    if (version === 'older') return DEFAULT_PROFILE;
+    if (version !== 'current') return 'unreadable';
     const result = PlayerProfileSchema.safeParse(stored.value);
     return result.success ? result.data : 'unreadable';
   };
