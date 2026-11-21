@@ -15,6 +15,9 @@ export const starBarLabel = (bar: StarBar): string =>
 export const starBarEarnedLabel = (bar: StarBar): string =>
   `${starBarLabel(bar)} (earned)`;
 
-/** The Run header's one goal: the next Star the player hasn't earned on the Stage. */
+/** The Run header's one target: the next Star the player hasn't earned on the Stage. */
 export const nextStarLabel = (bar: StarBar): string =>
   `Next ${'★'.repeat(bar.star)}: ${asks(bar)}`;
+
+/** The accessible name of the row of a Stage card's three Star bars. */
+export const STAR_BARS_LIST = 'Star bars';

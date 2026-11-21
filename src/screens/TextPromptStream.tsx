@@ -32,7 +32,7 @@ export const TextPromptStream: React.FC = () => {
   );
   const fullText = stage.sampleText;
   const { techniqueTip, focusFingers } = stage;
-  // One goal at a time: the next Star not yet earned. None for a Free Flight,
+  // One bar at a time: the next Star not yet earned. None for a Free Flight,
   // or a Stage with all its Stars.
   const nextBar =
     stage.origin === 'sector'

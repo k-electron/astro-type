@@ -348,7 +348,7 @@ describe('the Run header names the next Star bar', () => {
   const promptText = () =>
     screen.getByLabelText('Text prompt').textContent ?? '';
 
-  /** The "Next ★..." goal each Star bar of a Stage would give, by Star. */
+  /** The "Next ★..." label each Star bar of a Stage would give, by Star. */
   const nextLabels = (stage: typeof FIRST_STAGE) =>
     barsOf(stage).map(nextStarLabel);
 
@@ -378,7 +378,7 @@ describe('the Run header names the next Star bar', () => {
     },
   );
 
-  it('shows no goal for a Stage that already has 3 Stars', () => {
+  it('shows no Star bar for a Stage that already has 3 Stars', () => {
     const player = renderGame({
       profile: {
         stagesProgress: {
@@ -419,7 +419,7 @@ describe('the Run header names the next Star bar', () => {
     expect(promptText()).not.toContain(nextLabels(FIRST_STAGE)[0]);
   });
 
-  it('shows no goal in a Free Flight, not even for a player with no Stars', () => {
+  it('shows no Star bar in a Free Flight, not even for a player with no Stars', () => {
     renderGame({ text: TEXT });
 
     // The 1-Star bar is the same on every Stage, and is what a fresh Save

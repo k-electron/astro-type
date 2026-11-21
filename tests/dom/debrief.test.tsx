@@ -252,12 +252,8 @@ describe('the Star bars the Debrief shows', () => {
 
   /** Whether the Debrief marks the row that says `label` as met or not. */
   function statusOfRow(label: string): string {
-    const status = /ACHIEVED|INCOMPLETE/;
-    let row: HTMLElement | null = within(debriefCard()).getByText(label);
-    while (row && !status.test(row.textContent ?? '')) row = row.parentElement;
-    const found = row?.textContent?.match(status)?.[0];
-    if (!found) throw new Error(`The row of "${label}" has no status`);
-    return found;
+    const row = within(debriefCard()).getByText(label).parentElement;
+    return (row?.textContent ?? '').replace(label, '').trim();
   }
 
   /** A pace, in steps a key, one step under the 3-Star WPM and so over the 2-Star's. */

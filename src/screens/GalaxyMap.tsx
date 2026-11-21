@@ -14,7 +14,11 @@ import { useGame } from '../app/useGame';
 import { useGameState } from '../app/useGameState';
 import { starBars } from '../game/rules';
 import { roundDown } from './roundDown';
-import { starBarEarnedLabel, starBarLabel } from './starBarLabels';
+import {
+  STAR_BARS_LIST,
+  starBarEarnedLabel,
+  starBarLabel,
+} from './starBarLabels';
 import {
   OverlayCloseButton,
   OverlayFlightDeckButton,
@@ -386,7 +390,7 @@ export const GalaxyMap: React.FC = () => {
 
                     {/* The Star bars: the ones the best Run has met are lit */}
                     <ul
-                      aria-label="Star bars"
+                      aria-label={STAR_BARS_LIST}
                       className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-3 text-[11px] font-mono"
                     >
                       {starBars(stage).map((bar) => {

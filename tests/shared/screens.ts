@@ -83,13 +83,11 @@ export const GALAXY_MAP = 'Galaxy Map';
  */
 export { NEW_SECTOR_UNLOCKED, REPLAY } from '../../src/screens/debriefLabels';
 
-/**
- * The status the Debrief's Star bar rows end in, for a bar the Run met and one
- * it did not. Written inline in the Debrief (a gap to close if the source
- * exports them).
- */
-export const BAR_ACHIEVED = 'ACHIEVED';
-export const BAR_INCOMPLETE = 'INCOMPLETE';
+/** The status a Debrief Star bar row ends in, for a bar the Run met and one it did not. */
+export {
+  BAR_ACHIEVED,
+  BAR_INCOMPLETE,
+} from '../../src/screens/debriefLabels';
 
 /** The Debrief's button for the next Stage in the curriculum. */
 export const NEXT_STAGE = 'Next Stage';
@@ -113,12 +111,8 @@ export function viewGalaxyMap(sectors: number): string {
 /** The Galaxy Map's subheading over the list of Sectors. */
 export const GALAXY_MAP_SUBHEADING = 'Sectors';
 
-/**
- * The accessible name of the list of three Star bars on a Stage's card. The
- * words on the bars themselves come from `src/screens/starBarLabels.ts`; this
- * name is written inline in the card (a gap to close if the source exports it).
- */
-export const STAR_BARS_LIST = 'Star bars';
+/** The accessible name of the list of three Star bars on a Stage's card. */
+export { STAR_BARS_LIST } from '../../src/screens/starBarLabels';
 
 // ---- Hangar ----------------------------------------------------------------
 

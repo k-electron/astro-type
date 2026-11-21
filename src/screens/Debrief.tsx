@@ -17,7 +17,12 @@ import { useGame } from '../app/useGame';
 import { useGameState } from '../app/useGameState';
 import { roundDown } from './roundDown';
 import { starBarLabel } from './starBarLabels';
-import { NEW_SECTOR_UNLOCKED, REPLAY } from './debriefLabels';
+import {
+  BAR_ACHIEVED,
+  BAR_INCOMPLETE,
+  NEW_SECTOR_UNLOCKED,
+  REPLAY,
+} from './debriefLabels';
 import { OverlayShell } from './OverlayShell';
 
 /** The Rhythm pill's colours, by band. */
@@ -199,16 +204,10 @@ export const Debrief: React.FC = () => {
                       className={
                         achieved
                           ? 'text-emerald-400 font-bold'
-                          : bar.star === 1
-                            ? 'text-rose-400'
-                            : 'text-slate-500'
+                          : 'text-slate-500'
                       }
                     >
-                      {achieved
-                        ? 'ACHIEVED'
-                        : bar.star === 1
-                          ? 'MISSED'
-                          : 'INCOMPLETE'}
+                      {achieved ? BAR_ACHIEVED : BAR_INCOMPLETE}
                     </span>
                   </div>
                 );
