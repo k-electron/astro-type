@@ -12,10 +12,11 @@ import {
 import confetti from 'canvas-confetti';
 import { MAX_STARS_PER_STAGE, STAR_NUMBERS } from '../curriculum/curriculum';
 import type { GameState } from '../game/game';
-import { type RhythmBand, rhythmBand } from '../game/rules';
+import { type RhythmBand, rhythmBand, starBars } from '../game/rules';
 import { useGame } from '../app/useGame';
 import { useGameState } from '../app/useGameState';
 import { roundDown } from './roundDown';
+import { starBarLabel } from './starBarLabels';
 import { NEW_SECTOR_UNLOCKED, REPLAY } from './debriefLabels';
 import { OverlayShell } from './OverlayShell';
 
@@ -48,7 +49,7 @@ export const Debrief: React.FC = () => {
   const onOpenGalaxyMap = () => send({ type: 'OPEN_GALAXY_MAP' });
   const onReturnHome = () => send({ type: 'PRESS_HOME' });
   // A Free Flight is practice: it has no Stars to show.
-  const thresholds = stage.origin === 'sector' ? stage.starThresholds : null;
+  const bars = stage.origin === 'sector' ? starBars(stage) : null;
 
   useEffect(() => {
     if (
@@ -105,7 +106,7 @@ export const Debrief: React.FC = () => {
           {stage.subtitle}
         </p>
 
-        {thresholds && (
+        {bars && (
           <>
             {/* Stars earned animation */}
             <div className="flex items-center justify-center gap-3 mb-5">
@@ -180,88 +181,38 @@ export const Debrief: React.FC = () => {
               </div>
             </div>
 
-            {/* Star Objectives Breakdown */}
+            {/* The Star bars, worded as on the Galaxy Map */}
             <div className="w-full bg-slate-950/60 border border-slate-800 rounded-xl p-3 mb-5 text-xs font-mono text-left space-y-1.5">
-              <div className="flex items-center justify-between text-slate-300">
-                <span className="flex items-center gap-2">
-                  <span
-                    className={
-                      starsEarned >= 1
-                        ? 'text-amber-400 font-bold'
-                        : 'text-slate-600'
-                    }
+              {bars.map((bar) => {
+                const achieved = starsEarned >= bar.star;
+                return (
+                  <div
+                    key={bar.star}
+                    className="flex items-center justify-between text-slate-300"
                   >
-                    ★ 1
-                  </span>
-                  <span>
-                    Baseline Touch Form (Acc &ge; {thresholds.oneStarAccuracy}%)
-                  </span>
-                </span>
-                <span
-                  className={
-                    starsEarned >= 1
-                      ? 'text-emerald-400 font-bold'
-                      : 'text-rose-400'
-                  }
-                >
-                  {starsEarned >= 1 ? 'ACHIEVED' : 'MISSED'}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between text-slate-300">
-                <span className="flex items-center gap-2">
-                  <span
-                    className={
-                      starsEarned >= 2
-                        ? 'text-amber-400 font-bold'
-                        : 'text-slate-600'
-                    }
-                  >
-                    ★ 2
-                  </span>
-                  <span>
-                    Speed &ge; {thresholds.twoStarWpm} WPM &amp; Accuracy &ge;{' '}
-                    {thresholds.twoStarAccuracy}%
-                  </span>
-                </span>
-                <span
-                  className={
-                    starsEarned >= 2
-                      ? 'text-emerald-400 font-bold'
-                      : 'text-slate-500'
-                  }
-                >
-                  {starsEarned >= 2 ? 'ACHIEVED' : 'INCOMPLETE'}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between text-slate-300">
-                <span className="flex items-center gap-2">
-                  <span
-                    className={
-                      starsEarned >= 3
-                        ? 'text-amber-400 font-bold'
-                        : 'text-slate-600'
-                    }
-                  >
-                    ★ 3
-                  </span>
-                  <span>
-                    Finger Form Mastery (Speed &ge; {thresholds.threeStarWpm}{' '}
-                    WPM, Acc &ge; {thresholds.threeStarAccuracy}%, Streak &ge;{' '}
-                    {thresholds.threeStarMinStreak})
-                  </span>
-                </span>
-                <span
-                  className={
-                    starsEarned >= 3
-                      ? 'text-emerald-400 font-bold'
-                      : 'text-slate-500'
-                  }
-                >
-                  {starsEarned >= 3 ? 'ACHIEVED' : 'INCOMPLETE'}
-                </span>
-              </div>
+                    <span
+                      className={achieved ? 'text-amber-400 font-bold' : ''}
+                    >
+                      {starBarLabel(bar)}
+                    </span>
+                    <span
+                      className={
+                        achieved
+                          ? 'text-emerald-400 font-bold'
+                          : bar.star === 1
+                            ? 'text-rose-400'
+                            : 'text-slate-500'
+                      }
+                    >
+                      {achieved
+                        ? 'ACHIEVED'
+                        : bar.star === 1
+                          ? 'MISSED'
+                          : 'INCOMPLETE'}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           </>
         )}

@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { clearedStages } from '../../tests/shared/saves';
+import { clearedStages, saveWithStars } from '../../tests/shared/saves';
 import {
   clearStage,
   newGame,
+  SAMPLE_TEXT,
   STAGE_ID,
   startFreeFlight,
   startStage,
@@ -12,7 +13,8 @@ import {
 /**
  * The Debrief says "New Sector Unlocked!" only when the Run just cleared is
  * what opened a Sector (decided in #35). Sectors open on the fleet's total
- * Stars: Sector 02 needs 6. Only a Sector Stage's Stars count; a Free Flight
+ * Stars: Sector 02 needs 6, and Sectors 03 to 07 need 14, 24, 32, 40 and 48
+ * (#134: no gate asks for more than 2 Stars per Stage before it). Only a Sector Stage's Stars count; a Free Flight
  * earns none (#86), so it can never open one.
  */
 
@@ -66,4 +68,40 @@ describe('the Sector unlock notice in the Debrief', () => {
     expect(game.getState().profile.totalStars).toBe(5);
     expect(game.getState().debrief?.unlockedSector).toBe(false);
   });
+});
+
+/** Sector 02 to 07 and the fleet's Stars each opens at, restated: they are the rule. */
+const GATES = [
+  { sector: 2, stars: 6 },
+  { sector: 3, stars: 14 },
+  { sector: 4, stars: 24 },
+  { sector: 5, stars: 32 },
+  { sector: 6, stars: 40 },
+  { sector: 7, stars: 48 },
+];
+
+/** A pace of 48 WPM: Stage 1 is cleared for 3 Stars. */
+const FAST_STEPS_PER_KEY = 15;
+
+describe('each Sector opens at its own total of Stars', () => {
+  /**
+   * Clear Stage 1 for 3 Stars on a Save whose other Stages hold `before`
+   * Stars, and say whether the clear opened a Sector.
+   */
+  function clearOpens(before: number): boolean {
+    const game = newGame(saveWithStars(before, STAGE_ID));
+    startStage(game, STAGE_ID);
+    typeText(game, SAMPLE_TEXT, FAST_STEPS_PER_KEY);
+    expect(game.getState().debrief?.starsEarned).toBe(3);
+    expect(game.getState().profile.totalStars).toBe(before + 3);
+    return game.getState().debrief?.unlockedSector ?? false;
+  }
+
+  it.each(GATES)(
+    'Sector 0$sector opens when the clear takes the fleet to $stars Stars, and not one Star short',
+    ({ stars }) => {
+      expect(clearOpens(stars - 3), 'at the gate').toBe(true);
+      expect(clearOpens(stars - 4), 'one Star short').toBe(false);
+    },
+  );
 });

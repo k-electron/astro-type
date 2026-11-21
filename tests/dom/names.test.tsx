@@ -99,6 +99,13 @@ describe('BANNED_NAME', () => {
     expect(BANNED_NAME.test('Make a note of it')).toBe(false);
     expect(BANNED_NAME.test('Stage notes')).toBe(false);
   });
+
+  it('flags the retired Target WPM, but not a target on its own', () => {
+    expect(BANNED_NAME.test('Target WPM: 30')).toBe(true);
+    expect(BANNED_NAME.test('target-wpm')).toBe(true);
+    expect(BANNED_NAME.test('Hit the target')).toBe(false);
+    expect(BANNED_NAME.test('★★ 95% · 18 WPM')).toBe(false);
+  });
 });
 
 describe('the glossary names', () => {

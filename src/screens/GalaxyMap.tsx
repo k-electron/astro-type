@@ -12,7 +12,9 @@ import {
 } from 'lucide-react';
 import { useGame } from '../app/useGame';
 import { useGameState } from '../app/useGameState';
+import { starBars } from '../game/rules';
 import { roundDown } from './roundDown';
+import { starBarEarnedLabel, starBarLabel } from './starBarLabels';
 import {
   OverlayCloseButton,
   OverlayFlightDeckButton,
@@ -291,8 +293,9 @@ export const GalaxyMap: React.FC = () => {
               const isCompleted = progress?.completed;
 
               return (
-                <div
+                <article
                   key={stage.id}
+                  aria-labelledby={`${stage.id}-title`}
                   className={`rounded-xl border p-4 sm:p-5 flex flex-col justify-between transition-all ${
                     !isCurrentUnlocked
                       ? 'border-slate-800/40 bg-slate-950/30 opacity-60'
@@ -328,7 +331,10 @@ export const GalaxyMap: React.FC = () => {
                     </div>
 
                     <div className="flex items-center justify-between gap-2 mb-0.5">
-                      <h4 className="text-base sm:text-lg font-bold text-white">
+                      <h4
+                        id={`${stage.id}-title`}
+                        className="text-base sm:text-lg font-bold text-white"
+                      >
                         {stage.title}
                       </h4>
                       {isCompleted && (
@@ -363,7 +369,7 @@ export const GalaxyMap: React.FC = () => {
                       </div>
                     )}
 
-                    {/* Keys Trained & Target WPM */}
+                    {/* Keys Trained */}
                     <div className="flex flex-wrap items-center justify-between gap-2 mb-3 text-[11px] font-mono">
                       <div className="flex flex-wrap items-center gap-1">
                         <span className="text-slate-500 mr-0.5">Keys:</span>
@@ -376,11 +382,32 @@ export const GalaxyMap: React.FC = () => {
                           </span>
                         ))}
                       </div>
-                      <span className="text-cyan-400/90 font-semibold bg-cyan-950/40 px-2 py-0.5 rounded border border-cyan-800/40">
-                        Target WPM: {stage.targetWpm} (Acc &ge;{' '}
-                        {stage.starThresholds.threeStarAccuracy}%)
-                      </span>
                     </div>
+
+                    {/* The Star bars: the ones the best Run has met are lit */}
+                    <ul
+                      aria-label="Star bars"
+                      className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-3 text-[11px] font-mono"
+                    >
+                      {starBars(stage).map((bar) => {
+                        const met = bar.star <= stars;
+                        return (
+                          <li
+                            key={bar.star}
+                            aria-label={
+                              met ? starBarEarnedLabel(bar) : undefined
+                            }
+                            className={
+                              met
+                                ? 'text-amber-300 font-semibold'
+                                : 'text-slate-500'
+                            }
+                          >
+                            {starBarLabel(bar)}
+                          </li>
+                        );
+                      })}
+                    </ul>
 
                     {/* Personal Best Telemetry */}
                     {progress && (
@@ -427,7 +454,7 @@ export const GalaxyMap: React.FC = () => {
                     <Play className="w-3.5 h-3.5 fill-current" />
                     <span>{isCompleted ? 'Replay Stage' : 'Launch Stage'}</span>
                   </button>
-                </div>
+                </article>
               );
             })}
           </div>

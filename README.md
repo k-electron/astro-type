@@ -8,7 +8,7 @@ The capitalised terms are defined in [`GLOSSARY.md`](GLOSSARY.md).
 
 ## What the game does
 
-- **Curriculum:** 7 Sectors of 4 Stages each, 28 Stages in all. Each Stage is a fixed text with its own goal. A cleared Run earns the Stage 0 to 3 Stars, from accuracy, WPM and Streak, and a Stage keeps its best. The 28 Stages give at most 84 Stars, and Stars open new Sectors.
+- **Curriculum:** 7 Sectors of 4 Stages each, 28 Stages in all. Each Stage is a fixed text. A cleared Run earns the Stage 0 to 3 Stars, from accuracy and WPM, and a Stage keeps its best. The 28 Stages give at most 84 Stars, and Stars open new Sectors.
 - **Galaxy Map:** where you pick a Stage from the Sectors.
 - **Flight Deck:** where a Run is played. It shows the HUD (score, Multiplier, WPM, accuracy, Streak, shields), the text prompt and the Action Deck, with the lanes, Drones, keyboard and the hands showing which finger to use.
 - **Judgement:** each keystroke is a Perfect, Great or Good hit by how close the Drone was to the Strike Line, or a Miss for a wrong key.
@@ -16,7 +16,7 @@ The capitalised terms are defined in [`GLOSSARY.md`](GLOSSARY.md).
 - **Debrief:** when a Run is cleared, it shows the result, the Stars earned and the Credits paid.
 - **Hangar:** spend Credits on Upgrades (shields, reactor, sensors) and Cosmetics (a Trail or a Sound Kit).
 - **Analytics:** lifetime totals (highest speed, accuracy, words typed, practice time), hand balance and a per-key accuracy heatmap, with exporting and importing a Backup.
-- **Free Flight:** set up a Stage from your own text and a target WPM.
+- **Free Flight:** set up a Stage from your own text.
 - **Sound:** sound effects and the beat are synthesized with the Web Audio API. There are no audio files.
 - **Your data:** your Profile is saved in this browser's localStorage. There are no accounts and no analytics.
 

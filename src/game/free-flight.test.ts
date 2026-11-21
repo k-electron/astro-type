@@ -14,7 +14,7 @@ import {
 
 /**
  * Free Flight is a curriculum concept (#73): the Game builds the Stage from
- * what the player sent, `{ text, targetWpm }`, and no screen builds one.
+ * what the player sent, `{ text }` alone, and no screen builds one.
  * Free Flight is practice (#86): it earns no Stars and leaves no Stage entry,
  * it pays only the score part of the Credits, and its characters still count
  * in Analytics and the lifetime stats (#140). What the Debrief shows for it is
@@ -23,16 +23,15 @@ import {
 
 const TEXT = 'ab ba';
 
-describe('launching a Free Flight from { text, targetWpm }', () => {
+describe('launching a Free Flight from text alone', () => {
   it('starts a Run of exactly that text, on a Free Flight Stage', () => {
     const game = newGame();
-    game.send({ type: 'LAUNCH_FREE_FLIGHT', text: TEXT, targetWpm: 30 });
+    game.send({ type: 'LAUNCH_FREE_FLIGHT', text: TEXT });
 
     const state = game.getState();
     expect(state.screen).toBe('flight-deck');
     expect(state.run.stage.sampleText).toBe(TEXT);
     expect(state.run.stage.origin).toBe('free-flight');
-    expect(state.run.stage.targetWpm).toBe(30);
   });
 });
 

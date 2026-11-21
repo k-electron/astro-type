@@ -72,6 +72,24 @@ export function clearedStages(stars: Record<string, number>): {
   };
 }
 
+/**
+ * A Profile with exactly `total` Stars, from Stages cleared in curriculum
+ * order with 3 Stars each (the last with what is left), leaving out the Stage
+ * `skip` so a test can clear that one itself.
+ */
+export function saveWithStars(total: number, skip?: string) {
+  const stars: Record<string, number> = {};
+  let left = total;
+  for (const stage of CURRICULUM_SECTORS.flatMap((sector) => sector.stages)) {
+    if (left === 0) break;
+    if (stage.id === skip) continue;
+    stars[stage.id] = Math.min(3, left);
+    left -= stars[stage.id];
+  }
+  if (left > 0) throw new Error(`No Profile can hold ${total} Stars`);
+  return clearedStages(stars);
+}
+
 /** Every Stage in the game cleared with 3 Stars, so no Sector is locked. */
 export const EVERY_STAGE_CLEARED = clearedStages(
   Object.fromEntries(

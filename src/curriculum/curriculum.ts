@@ -16,13 +16,14 @@ export interface FingerLaneInfo {
   color: string;
 }
 
+/**
+ * A Sector Stage's own Star bars: the speed its 2nd and 3rd Star ask for. The
+ * accuracy bars are the same on every Stage and are rules (`STAR_ACCURACY_BARS`
+ * in `src/game/rules.ts`), so a Stage can't set its own.
+ */
 export interface StarThresholds {
-  oneStarAccuracy: number; // e.g. 75
-  twoStarWpm: number; // e.g. 25
-  twoStarAccuracy: number; // e.g. 90
-  threeStarWpm: number; // e.g. 40
-  threeStarAccuracy: number; // e.g. 95
-  threeStarMinStreak: number; // e.g. 25
+  twoStarWpm: number; // e.g. 18
+  threeStarWpm: number; // e.g. 25
 }
 
 /** What every Stage has, wherever it comes from: the text to type and how to show it. */
@@ -32,14 +33,13 @@ interface StageBase {
   subtitle: string;
   targetKeys: string[];
   sampleText: string;
-  targetWpm: number;
   techniqueTip?: string; // e.g. "Rest index fingers on F and J bumps. Keep palms level."
   focusFingers?: string; // e.g. "Left Index (F) & Right Index (J)"
 }
 
 /**
- * A Stage of a Sector: it has a goal, Star thresholds and a place in the
- * Galaxy Map, and its Stars count (Free Flight earns none).
+ * A Stage of a Sector: it has Star bars and a place in the Galaxy Map, and its
+ * Stars count (Free Flight earns none).
  */
 export interface SectorStage extends StageBase {
   origin: 'sector';
@@ -50,7 +50,7 @@ export interface SectorStage extends StageBase {
   starThresholds: StarThresholds;
 }
 
-/** The Stage of a Free Flight Run: the player's own text, with no goal to reach. */
+/** The Stage of a Free Flight Run: the player's own text, with no Star bars. */
 export interface FreeFlightStage extends StageBase {
   origin: 'free-flight';
 }
@@ -236,17 +236,12 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         sampleText:
           'f j f j ff jj fff jjj fj jf f j f j ff jj fj jf f f j j f j fj jf ff jj fj jf',
         difficulty: 'Beginner',
-        targetWpm: 12,
         focusFingers: 'Left Index (F) & Right Index (J)',
         techniqueTip:
           'Feel the small raised bump on F and J. Rest your thumbs gently over the spacebar. Focus on relaxed, alternating rhythm.',
         starThresholds: {
-          oneStarAccuracy: 85,
           twoStarWpm: 10,
-          twoStarAccuracy: 92,
           threeStarWpm: 14,
-          threeStarAccuracy: 97,
-          threeStarMinStreak: 14,
         },
       },
       {
@@ -261,17 +256,12 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         sampleText:
           'd k d k dd kk f d f d j k j k df jk df jk d d k k f d k j d k f j f d d f j k k j df jk',
         difficulty: 'Beginner',
-        targetWpm: 14,
         focusFingers: 'Left Middle (D) & Right Middle (K)',
         techniqueTip:
           'Keep index fingers anchored on F and J while middle fingers rest on D and K. Move only the striking finger.',
         starThresholds: {
-          oneStarAccuracy: 85,
-          twoStarWpm: 12,
-          twoStarAccuracy: 92,
-          threeStarWpm: 16,
-          threeStarAccuracy: 97,
-          threeStarMinStreak: 16,
+          twoStarWpm: 11,
+          threeStarWpm: 15,
         },
       },
       {
@@ -286,17 +276,12 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         sampleText:
           's l s l a ; a ; asdf jkl; fdsa ;lkj asdf jkl; ask all dad fad lad fall flask salad alas',
         difficulty: 'Beginner',
-        targetWpm: 16,
         focusFingers: 'Ring Fingers (S, L) & Pinkies (A, ;)',
         techniqueTip:
           'Ring and pinky fingers are naturally weaker. Resist reaching with your index finger—let each finger strike its dedicated home key.',
         starThresholds: {
-          oneStarAccuracy: 85,
-          twoStarWpm: 14,
-          twoStarAccuracy: 92,
-          threeStarWpm: 18,
-          threeStarAccuracy: 97,
-          threeStarMinStreak: 18,
+          twoStarWpm: 12,
+          threeStarWpm: 16,
         },
       },
       {
@@ -311,17 +296,12 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         sampleText:
           'fgf jhj fgf jhj fgf jhj had half glad flag dash flash glass shall salad fall dad ask has',
         difficulty: 'Beginner',
-        targetWpm: 18,
         focusFingers: 'Index Reaches: L.Index (G) & R.Index (H)',
         techniqueTip:
           'Touch-Typing Law: Anchor, Reach, Return! Strike G with your left index finger, then immediately return to the F bump.',
         starThresholds: {
-          oneStarAccuracy: 85,
-          twoStarWpm: 16,
-          twoStarAccuracy: 92,
-          threeStarWpm: 20,
-          threeStarAccuracy: 97,
-          threeStarMinStreak: 20,
+          twoStarWpm: 13,
+          threeStarWpm: 17,
         },
       },
     ],
@@ -348,17 +328,12 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         sampleText:
           'ded kik ded kik ded kik did led kid like side see feel slide hide life deed side file fell kill',
         difficulty: 'Intermediate',
-        targetWpm: 20,
         focusFingers: 'L.Middle (E) & R.Middle (I)',
         techniqueTip:
           'Reach upward from D to E with left middle finger. Reach from K to I with right middle finger. Keep wrists elevated.',
         starThresholds: {
-          oneStarAccuracy: 85,
-          twoStarWpm: 18,
-          twoStarAccuracy: 92,
-          threeStarWpm: 22,
-          threeStarAccuracy: 97,
-          threeStarMinStreak: 22,
+          twoStarWpm: 13,
+          threeStarWpm: 18,
         },
       },
       {
@@ -386,17 +361,12 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         sampleText:
           'frf juj frf juj frf juj fur run red user sure rule fire ride surf dark fuel true drum',
         difficulty: 'Intermediate',
-        targetWpm: 22,
         focusFingers: 'L.Index (R) & R.Index (U)',
         techniqueTip:
           'Extend your index finger forward to strike R or U, then immediately return to the home bump. Never let your hands drift forward.',
         starThresholds: {
-          oneStarAccuracy: 85,
-          twoStarWpm: 20,
-          twoStarAccuracy: 92,
-          threeStarWpm: 25,
-          threeStarAccuracy: 97,
-          threeStarMinStreak: 24,
+          twoStarWpm: 14,
+          threeStarWpm: 19,
         },
       },
       {
@@ -428,17 +398,12 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         sampleText:
           'ftf jyj ftf jyj ftf jyj the that they try year just stay duty fruit trail yield rhythm today',
         difficulty: 'Intermediate',
-        targetWpm: 24,
         focusFingers: 'L.Index (T) & R.Index (Y)',
         techniqueTip:
           'Diagonal reaches require light touches. Keep the opposite hand resting comfortably on home row to preserve spatial orientation.',
         starThresholds: {
-          oneStarAccuracy: 86,
-          twoStarWpm: 22,
-          twoStarAccuracy: 93,
-          threeStarWpm: 28,
-          threeStarAccuracy: 97,
-          threeStarMinStreak: 26,
+          twoStarWpm: 15,
+          threeStarWpm: 21,
         },
       },
       {
@@ -472,17 +437,12 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         sampleText:
           'sws lol aqa ;p; two flow slow wood look quiet quote power play troop polar equip swoop proud',
         difficulty: 'Intermediate',
-        targetWpm: 26,
         focusFingers: 'Ring (W, O) & Pinkies (Q, P)',
         techniqueTip:
           'Ring and pinky upward reaches are easiest when your palms are floating slightly above the desk, not pinned down.',
         starThresholds: {
-          oneStarAccuracy: 86,
-          twoStarWpm: 24,
-          twoStarAccuracy: 93,
-          threeStarWpm: 30,
-          threeStarAccuracy: 97,
-          threeStarMinStreak: 28,
+          twoStarWpm: 16,
+          threeStarWpm: 22,
         },
       },
     ],
@@ -509,17 +469,12 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         sampleText:
           'fvf jmj dcd k,k fvf jmj cave move came, calm, much, voice, come, dive, music, cover, movie',
         difficulty: 'Intermediate',
-        targetWpm: 24,
         focusFingers: 'Index Down (V, M) & Middle Down (C, Comma)',
         techniqueTip:
           'Curl your fingers inward rather than dropping your whole wrist. Snap right back to the home row baseline.',
         starThresholds: {
-          oneStarAccuracy: 86,
-          twoStarWpm: 22,
-          twoStarAccuracy: 93,
-          threeStarWpm: 28,
-          threeStarAccuracy: 97,
-          threeStarMinStreak: 24,
+          twoStarWpm: 15,
+          threeStarWpm: 21,
         },
       },
       {
@@ -534,17 +489,12 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         sampleText:
           'fbf jnj sxs l.l box next orbit. plan. beacon open nine born flux. balance planet nebula.',
         difficulty: 'Intermediate',
-        targetWpm: 26,
         focusFingers: 'Index Extension (B, N) & Ring Down (X, Period)',
         techniqueTip:
           'The B and N reaches are center-bottom. Always return to F and J bumps so your hands remain properly calibrated.',
         starThresholds: {
-          oneStarAccuracy: 86,
-          twoStarWpm: 24,
-          twoStarAccuracy: 93,
-          threeStarWpm: 30,
-          threeStarAccuracy: 97,
-          threeStarMinStreak: 26,
+          twoStarWpm: 16,
+          threeStarWpm: 22,
         },
       },
       {
@@ -559,17 +509,12 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         sampleText:
           'aza ;/; aza ;/; zero zone size maze frozen zoom hazard and/or size crazy horizon zeal',
         difficulty: 'Intermediate',
-        targetWpm: 28,
         focusFingers: 'Pinkies Down: L.Pinky (Z) & R.Pinky (Slash)',
         techniqueTip:
           'Do not twist your wrist outward to reach Z or Slash. Curl your pinky downward under the ring finger.',
         starThresholds: {
-          oneStarAccuracy: 87,
-          twoStarWpm: 26,
-          twoStarAccuracy: 93,
-          threeStarWpm: 32,
-          threeStarAccuracy: 97,
-          threeStarMinStreak: 28,
+          twoStarWpm: 17,
+          threeStarWpm: 23,
         },
       },
       {
@@ -614,17 +559,12 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         sampleText:
           'the quick brown fox jumps over the lazy dog. pack my box with five dozen liquor jugs. sphinx of black quartz, judge my vow.',
         difficulty: 'Advanced',
-        targetWpm: 30,
         focusFingers: 'Full 10-Finger Matrix Coordination',
         techniqueTip:
           'Do not look down at the keyboard. Trust the small hand visualizer on screen and let muscle memory guide your strokes.',
         starThresholds: {
-          oneStarAccuracy: 87,
-          twoStarWpm: 28,
-          twoStarAccuracy: 94,
-          threeStarWpm: 35,
-          threeStarAccuracy: 98,
-          threeStarMinStreak: 30,
+          twoStarWpm: 18,
+          threeStarWpm: 24,
         },
       },
     ],
@@ -679,17 +619,12 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         sampleText:
           'hand form city sign work lake planet visual island dismantled sorrow rocket formal panel visual ivory',
         difficulty: 'Intermediate',
-        targetWpm: 30,
         focusFingers: 'Left-Right Hand Alternation',
         techniqueTip:
           'Feel the rhythm like walking: left, right, left, right. Hand alternation builds effortless speed without pecking.',
         starThresholds: {
-          oneStarAccuracy: 88,
-          twoStarWpm: 28,
-          twoStarAccuracy: 94,
-          threeStarWpm: 36,
-          threeStarAccuracy: 98,
-          threeStarMinStreak: 30,
+          twoStarWpm: 18,
+          threeStarWpm: 25,
         },
       },
       {
@@ -732,17 +667,12 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         sampleText:
           'the of and to a in is you that it he was for on are as with his they at be this have from or one had by word but not what all were we when your can said there',
         difficulty: 'Intermediate',
-        targetWpm: 32,
         focusFingers: 'Word Level Chunking',
         techniqueTip:
           'Read one word ahead. Think of words as single finger sequences rather than individual separate letters.',
         starThresholds: {
-          oneStarAccuracy: 88,
-          twoStarWpm: 30,
-          twoStarAccuracy: 94,
-          threeStarWpm: 38,
-          threeStarAccuracy: 98,
-          threeStarMinStreak: 32,
+          twoStarWpm: 18,
+          threeStarWpm: 25,
         },
       },
       {
@@ -785,17 +715,12 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         sampleText:
           'there with after another standard different important interest against under system without between',
         difficulty: 'Advanced',
-        targetWpm: 34,
         focusFingers: 'Multi-Finger Rolling Transitions',
         techniqueTip:
           'Let your fingers roll smoothly through syllables like playing a piano chord progression.',
         starThresholds: {
-          oneStarAccuracy: 88,
-          twoStarWpm: 32,
-          twoStarAccuracy: 94,
-          threeStarWpm: 40,
-          threeStarAccuracy: 98,
-          threeStarMinStreak: 34,
+          twoStarWpm: 19,
+          threeStarWpm: 26,
         },
       },
       {
@@ -840,17 +765,12 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         sampleText:
           'true speed is born of precision and relaxed shoulders. breathe evenly and let each letter flow from finger to key like water down a quiet stream.',
         difficulty: 'Advanced',
-        targetWpm: 36,
         focusFingers: 'Unbroken Rhythm Flow',
         techniqueTip:
           'Avoid sprinting and pausing. A steady, unhurried rhythm achieves higher final WPM and near-perfect accuracy.',
         starThresholds: {
-          oneStarAccuracy: 88,
-          twoStarWpm: 34,
-          twoStarAccuracy: 95,
-          threeStarWpm: 42,
-          threeStarAccuracy: 98,
-          threeStarMinStreak: 36,
+          twoStarWpm: 20,
+          threeStarWpm: 27,
         },
       },
     ],
@@ -862,7 +782,7 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
     curriculumCategory: 'Astral Numbers Row (Ergonomic Phase 5)',
     description:
       'Master the top numeric row without looking away from your screen. Progressive center, middle/ring, pinky reaches, and telemetry codes.',
-    requiredStarsToUnlock: 36,
+    requiredStarsToUnlock: 32,
     themeSymbol: '⬢',
     stages: [
       {
@@ -876,17 +796,12 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         targetKeys: ['4', '5', '6', '7', ' '],
         sampleText: '45 67 47 56 456 765 745 654 4455 6677 7546 6457 4756 7645',
         difficulty: 'Advanced',
-        targetWpm: 24,
         focusFingers: 'L.Index (4, 5) & R.Index (6, 7)',
         techniqueTip:
           'F reaches up to 4 and 5; J reaches up to 6 and 7. Keep your remaining fingers resting on the home row.',
         starThresholds: {
-          oneStarAccuracy: 82,
-          twoStarWpm: 22,
-          twoStarAccuracy: 91,
-          threeStarWpm: 28,
-          threeStarAccuracy: 96,
-          threeStarMinStreak: 20,
+          twoStarWpm: 15,
+          threeStarWpm: 21,
         },
       },
       {
@@ -900,17 +815,12 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         targetKeys: ['2', '3', '8', '9', ' '],
         sampleText: '23 89 28 39 2389 9832 2893 3982 2233 8899 3829 9382 8293',
         difficulty: 'Advanced',
-        targetWpm: 26,
         focusFingers: 'Middle (3, 8) & Ring (2, 9)',
         techniqueTip:
           'Maintain your index finger anchors on F and J while middle and ring fingers reach upward.',
         starThresholds: {
-          oneStarAccuracy: 82,
-          twoStarWpm: 24,
-          twoStarAccuracy: 92,
-          threeStarWpm: 30,
-          threeStarAccuracy: 96,
-          threeStarMinStreak: 22,
+          twoStarWpm: 16,
+          threeStarWpm: 22,
         },
       },
       {
@@ -924,17 +834,12 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         targetKeys: ['1', '0', ' '],
         sampleText: '10 100 1010 1100 1001 0110 1000 10101 10010 01010 111000',
         difficulty: 'Advanced',
-        targetWpm: 28,
         focusFingers: 'Pinkies: L.Pinky (1) & R.Pinky (0)',
         techniqueTip:
           'Pinky reaches to the number row require a slight forearm shift. Keep your index finger anchored.',
         starThresholds: {
-          oneStarAccuracy: 82,
-          twoStarWpm: 26,
-          twoStarAccuracy: 92,
-          threeStarWpm: 32,
-          threeStarAccuracy: 97,
-          threeStarMinStreak: 24,
+          twoStarWpm: 17,
+          threeStarWpm: 23,
         },
       },
       {
@@ -987,17 +892,12 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         sampleText:
           'apollo 11 launched in 1969. voyager 1 travels at 61000 kilometers per hour. sector 42 vector 360 bearing 98.',
         difficulty: 'Expert',
-        targetWpm: 30,
         focusFingers: 'Seamless Letter-to-Number Transitions',
         techniqueTip:
           'Transition smoothly between the home row and top number row without looking down.',
         starThresholds: {
-          oneStarAccuracy: 84,
-          twoStarWpm: 28,
-          twoStarAccuracy: 93,
-          threeStarWpm: 36,
-          threeStarAccuracy: 97,
-          threeStarMinStreak: 26,
+          twoStarWpm: 18,
+          threeStarWpm: 25,
         },
       },
     ],
@@ -1009,7 +909,7 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
     curriculumCategory: 'Symbols & Shift Key Mastery (Ergonomic Phase 6)',
     description:
       'Master the cardinal rule of touch typing: Opposite-hand Shift key discipline, punctuation, and code syntax.',
-    requiredStarsToUnlock: 48,
+    requiredStarsToUnlock: 40,
     themeSymbol: '⬡',
     stages: [
       {
@@ -1052,17 +952,12 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         sampleText:
           'Houston Discovery Saturn Jupiter Orion Neptune Mars Apollo Polaris Andromeda Earth',
         difficulty: 'Advanced',
-        targetWpm: 26,
         focusFingers: 'Opposite-Hand Shift Pinkies',
         techniqueTip:
           'Cardinal Touch-Typing Rule: Hold Shift with the pinky of the opposite hand from the key you are striking.',
         starThresholds: {
-          oneStarAccuracy: 84,
-          twoStarWpm: 24,
-          twoStarAccuracy: 92,
-          threeStarWpm: 32,
-          threeStarAccuracy: 97,
-          threeStarMinStreak: 24,
+          twoStarWpm: 16,
+          threeStarWpm: 23,
         },
       },
       {
@@ -1077,17 +972,12 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         sampleText:
           '"Signal detected!" whispered Maya: "Could it be alien?" Yes, indeed; verify it immediately!',
         difficulty: 'Expert',
-        targetWpm: 28,
         focusFingers: 'Right Pinky Punctuation + Shift Pairs',
         techniqueTip:
           'Notice the dotted modifier highlight for Shift keys. Hold Shift firmly before striking the target symbol.',
         starThresholds: {
-          oneStarAccuracy: 85,
-          twoStarWpm: 26,
-          twoStarAccuracy: 93,
-          threeStarWpm: 34,
-          threeStarAccuracy: 97,
-          threeStarMinStreak: 26,
+          twoStarWpm: 17,
+          threeStarWpm: 24,
         },
       },
       {
@@ -1118,17 +1008,12 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         sampleText:
           'const ship = { shields: 100, jump: true, coords: [42, 98] }; if (speed > max && power >= 90) { return true; }',
         difficulty: 'Expert',
-        targetWpm: 30,
         focusFingers: 'Symbol Matrix Reaches',
         techniqueTip:
           'Do not hurry through code syntax. Accuracy is far more important than speed when typing code tokens.',
         starThresholds: {
-          oneStarAccuracy: 85,
-          twoStarWpm: 28,
-          twoStarAccuracy: 93,
-          threeStarWpm: 36,
-          threeStarAccuracy: 97,
-          threeStarMinStreak: 28,
+          twoStarWpm: 18,
+          threeStarWpm: 25,
         },
       },
       {
@@ -1165,17 +1050,12 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
           // biome-ignore lint/suspicious/noTemplateCurlyInString: the sample text is typed as written; the ${id} is meant literally.
           'import { Container } from "pixi.js"; function launch(id: number = 7) { return `Beacon#${id} launched @ 100%`; }',
         difficulty: 'Expert',
-        targetWpm: 34,
         focusFingers: 'Total Keyboard Matrix Mastery',
         techniqueTip:
           'Stay calm. Breathe evenly and trust the hand visualizers.',
         starThresholds: {
-          oneStarAccuracy: 86,
-          twoStarWpm: 30,
-          twoStarAccuracy: 94,
-          threeStarWpm: 40,
-          threeStarAccuracy: 98,
-          threeStarMinStreak: 30,
+          twoStarWpm: 18,
+          threeStarWpm: 26,
         },
       },
     ],
@@ -1187,7 +1067,7 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
     curriculumCategory: 'Grandmaster Prose & Fluidity (Ergonomic Phase 7)',
     description:
       'The pinnacle of touch typing mastery. Flawless finger selection, unwavering rhythm, and inspiring astronomical literature.',
-    requiredStarsToUnlock: 60,
+    requiredStarsToUnlock: 48,
     themeSymbol: '★',
     stages: [
       {
@@ -1232,17 +1112,12 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         sampleText:
           'Look again at that dot. That is here. That is home. That is us. On it everyone you love, everyone you know, everyone you ever heard of, every human being who ever was, lived out their lives.',
         difficulty: 'Expert',
-        targetWpm: 36,
         focusFingers: 'Continuous Expressive Prose Flow',
         techniqueTip:
           'Read ahead by full clauses. Allow your subconscious muscle memory to handle the physical key strikes.',
         starThresholds: {
-          oneStarAccuracy: 88,
-          twoStarWpm: 34,
-          twoStarAccuracy: 95,
-          threeStarWpm: 44,
-          threeStarAccuracy: 98,
-          threeStarMinStreak: 36,
+          twoStarWpm: 20,
+          threeStarWpm: 28,
         },
       },
       {
@@ -1289,17 +1164,12 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         sampleText:
           'Gravity is the cosmic architect of our universe; it binds stellar clusters, collapses dying stars into neutron remnants, and sculpts the spiral arms of distant galaxies.',
         difficulty: 'Expert',
-        targetWpm: 40,
         focusFingers: 'Complex Scientific Polysyllables',
         techniqueTip:
           'Keep your palms floating lightly. Do not press hard on the keys—touch typing is a light, swift tap.',
         starThresholds: {
-          oneStarAccuracy: 89,
-          twoStarWpm: 38,
-          twoStarAccuracy: 95,
-          threeStarWpm: 48,
-          threeStarAccuracy: 98,
-          threeStarMinStreak: 40,
+          twoStarWpm: 22,
+          threeStarWpm: 30,
         },
       },
       {
@@ -1344,17 +1214,12 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         sampleText:
           'We choose to go to the moon and do the other things, not because they are easy, but because they are hard, because that goal will serve to organize and measure the best of our energies and skills.',
         difficulty: 'Expert',
-        targetWpm: 45,
         focusFingers: 'Sustained Flow & Rhythm Endurance',
         techniqueTip:
           'Notice how a steady rhythm creates speed naturally. Never rush—let the words flow effortlessly.',
         starThresholds: {
-          oneStarAccuracy: 90,
-          twoStarWpm: 42,
-          twoStarAccuracy: 96,
-          threeStarWpm: 52,
-          threeStarAccuracy: 98,
-          threeStarMinStreak: 44,
+          twoStarWpm: 23,
+          threeStarWpm: 32,
         },
       },
       {
@@ -1411,17 +1276,12 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         sampleText:
           'The cosmos is within us. We are made of star-stuff. We are a way for the cosmos to know itself. 100 billion galaxies, each with 100 billion stars: our journey has only just begun!',
         difficulty: 'Expert',
-        targetWpm: 50,
         focusFingers: 'Supreme 10-Finger Touch Typing Fluency',
         techniqueTip:
           'You have mastered the complete keyboard. Flawless finger selection, perfect posture, and cosmic speed.',
         starThresholds: {
-          oneStarAccuracy: 92,
-          twoStarWpm: 46,
-          twoStarAccuracy: 97,
-          threeStarWpm: 58,
-          threeStarAccuracy: 99,
-          threeStarMinStreak: 50,
+          twoStarWpm: 25,
+          threeStarWpm: 35,
         },
       },
     ],
@@ -1555,33 +1415,26 @@ export function stageAheadOf(stage: Stage, totalStars: number): StageAhead {
 }
 
 // ---------------------------------------------------------------------------
-// Free Flight: the player's own text, at the Target WPM they choose
+// Free Flight: the player's own text
 // ---------------------------------------------------------------------------
 
-/** The Target WPM the Free Flight screen opens on. */
-export const DEFAULT_FREE_FLIGHT_WPM = 40;
-
-/** Text the Free Flight screen offers to load, with the Target WPM that suits it. */
+/** Text the Free Flight screen offers to load. */
 export const FREE_FLIGHT_PRESETS = [
   {
     name: 'Cosmic Exploration Quotes',
     text: 'Across the sea of space, the stars are other suns. We have entered the cosmic ocean, and the journey of discovery has only just begun.',
-    wpm: 40,
   },
   {
     name: 'JavaScript / Web Tech Code',
     text: 'const canvas = document.createElement("canvas"); const ctx = canvas.getContext("2d"); function animate() { requestAnimationFrame(animate); }',
-    wpm: 35,
   },
   {
     name: 'Astral Number Coordinates',
     text: 'Coordinate 398.24 bearing 072 sector 44 azimuth 189 velocity 24500 telemetry 8891 status nominal.',
-    wpm: 30,
   },
   {
     name: 'Classic Pangram Marathon',
     text: 'The quick brown fox jumps over the lazy dog. Sphinx of black quartz, judge my vow. How vexingly quick daft zebras jump!',
-    wpm: 45,
   },
 ];
 
@@ -1675,13 +1528,10 @@ export const FREE_FLIGHT_SUBTITLE = 'Your own text, at your own speed.';
 
 /**
  * The Stage a Free Flight Run flies: the player's own `text` (already checked
- * as typeable) and Target WPM. It has no goal: a Free Flight earns no
- * Stars and leaves no Stage entry in the Save, so every one is the same Stage.
+ * as typeable). It has no Star bars: a Free Flight earns no Stars and leaves
+ * no Stage entry in the Save, so every one is the same Stage.
  */
-export function freeFlightStage(
-  text: string,
-  targetWpm: number,
-): FreeFlightStage {
+export function freeFlightStage(text: string): FreeFlightStage {
   return {
     id: 'free-flight',
     origin: 'free-flight',
@@ -1689,7 +1539,6 @@ export function freeFlightStage(
     subtitle: FREE_FLIGHT_SUBTITLE,
     targetKeys: Array.from(new Set(text.toLowerCase().split(''))),
     sampleText: text,
-    targetWpm,
     techniqueTip:
       'Maintain relaxed posture and a steady keystroke rhythm across your text.',
   };

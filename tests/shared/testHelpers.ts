@@ -4,10 +4,7 @@
  * It imports from no test runner and no React, so a headless test and the DOM
  * harness both use it.
  */
-import {
-  DEFAULT_FREE_FLIGHT_WPM,
-  getStageById,
-} from '../../src/curriculum/curriculum';
+import { getStageById } from '../../src/curriculum/curriculum';
 import type { Clock } from '../../src/game/clock';
 import { createGame, type Game, type Sound } from '../../src/game/game';
 import { createMemoryStorage, type MemorySaveStorage } from './memoryStorage';
@@ -15,7 +12,7 @@ import { asCurrentSave } from './saves';
 
 export type { Game } from '../../src/game/game';
 
-/** Stage 1 of Sector 1. Its Stars thresholds: 85% / 10 WPM + 92% / 14 WPM + 97% + Streak 14. */
+/** Stage 1 of Sector 1. Its Star bars are 90% (1 Star), 95% and its 2-Star WPM (2 Stars), 98% and its 3-Star WPM (3 Stars): the WPM bars are in its `starThresholds`. */
 export const STAGE_ID = 's1-l1';
 
 /** The Stage's sample text (77 characters). The tests type it key by key. */
@@ -74,11 +71,7 @@ export function startStage(game: Game, stageId: string): void {
 
 /** Begin a Free Flight Run of the player's own text, as Start Free Flight does. */
 export function startFreeFlight(game: Game, text: string): void {
-  game.send({
-    type: 'LAUNCH_FREE_FLIGHT',
-    text,
-    targetWpm: DEFAULT_FREE_FLIGHT_WPM,
-  });
+  game.send({ type: 'LAUNCH_FREE_FLIGHT', text });
 }
 
 /** A fresh game with the given Upgrade levels, with Stage 1 started. */

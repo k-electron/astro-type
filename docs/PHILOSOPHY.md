@@ -115,10 +115,9 @@ Rules the game has today that conflict with the principles above. They stay unti
 | Today                                                                                                                                         | Conflicts with        |
 | :-------------------------------------------------------------------------------------------------------------------------------------------- | :-------------------- |
 | Judgements grade a hit Perfect, Great or Good by how close its Drone was to the Strike Line                                                   | P1                    |
-| Credits buy Upgrades (shields, reactor, sensors) that change play, and shields keep the Streak the 3-Star bar needs                           | P1, P5                |
+| Credits buy Upgrades (shields, reactor, sensors) that change play                                                                             | P1, P5                |
 | Overdrive fills on every correct keystroke, not from steady Rhythm                                                                            | P1                    |
 | Drones fall at one speed and wait at the Strike Line, so Drone pressure isn't the Stage's target speed                                        | P1                    |
-| 1-Star accuracy bars run from 82% to 92%                                                                                                      | P2                    |
 | Every Stage is one fixed text, so practice can't target the player's weak keys and a replay can earn Stars on a text the player has memorised | P4, P10               |
 | The Action Deck shows the full keyboard from the first Stage                                                                                  | P3                    |
 | The lit keycap and the hands stay the same however well a key is known                                                                        | P3                    |

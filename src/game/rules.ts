@@ -11,7 +11,11 @@
  * The numbers and windows are the original game's, except that every Run now
  * falls at one Drone speed (`DRONE_SPEED`).
  */
-import { keyForCharacter, type Stage } from '../curriculum/curriculum';
+import {
+  keyForCharacter,
+  type SectorStage,
+  type Stage,
+} from '../curriculum/curriculum';
 import type { FingerZone } from '../curriculum/keyboardLayout';
 import { STEP_MS } from './clock';
 import type { Moment } from './moments';
@@ -595,6 +599,37 @@ function typingStepsOf(run: Run): number {
   return run.lastKeystrokeStep - run.firstKeystrokeStep;
 }
 
+/** The accuracy each Star asks for, the same on every Sector Stage: 90, 95 and 98%. */
+export const STAR_ACCURACY_BARS: readonly [number, number, number] = [
+  90, 95, 98,
+];
+
+/** One Star's bar on a Stage: the accuracy it asks for and, from the 2nd Star, the WPM. */
+export interface StarBar {
+  star: number;
+  accuracy: number;
+  wpm: number | null;
+}
+
+/**
+ * The three Star bars of a Sector Stage, 1 Star first: the rules' accuracy
+ * bars, and the Stage's own WPM for the 2nd and 3rd Star. The 1st Star has no
+ * speed bar. The one place the bars are put together: scoring and every
+ * screen that shows them read it.
+ */
+export function starBars(stage: SectorStage): readonly StarBar[] {
+  const [one, two, three] = STAR_ACCURACY_BARS;
+  return [
+    { star: 1, accuracy: one, wpm: null },
+    { star: 2, accuracy: two, wpm: stage.starThresholds.twoStarWpm },
+    { star: 3, accuracy: three, wpm: stage.starThresholds.threeStarWpm },
+  ];
+}
+
+/** Whether a result reaches a bar: the exact accuracy, and the WPM when the bar has one. */
+const meetsBar = (bar: StarBar, accuracy: number, wpm: number): boolean =>
+  accuracy >= bar.accuracy && (bar.wpm === null || wpm >= bar.wpm);
+
 /** What scoring a cleared Run gives: the part of a Stage's result the rules work out. */
 export type RunOutcome = Pick<
   StageResult,
@@ -616,24 +651,11 @@ export function scoreRun(run: Run, stage: Stage): RunOutcome {
     return { wpm, accuracy, starsEarned: 0, creditsEarned: scoreCredits };
   }
 
-  const thresholds = stage.starThresholds;
+  const [oneStar, twoStar, threeStar] = starBars(stage);
   let starsEarned = 0;
-  if (accuracy >= thresholds.oneStarAccuracy) starsEarned = 1;
-  if (
-    starsEarned >= 1 &&
-    wpm >= thresholds.twoStarWpm &&
-    accuracy >= thresholds.twoStarAccuracy
-  ) {
-    starsEarned = 2;
-  }
-  if (
-    starsEarned >= 2 &&
-    wpm >= thresholds.threeStarWpm &&
-    accuracy >= thresholds.threeStarAccuracy &&
-    run.maxStreak >= thresholds.threeStarMinStreak
-  ) {
-    starsEarned = 3;
-  }
+  if (accuracy >= oneStar.accuracy) starsEarned = 1;
+  if (starsEarned >= 1 && meetsBar(twoStar, accuracy, wpm)) starsEarned = 2;
+  if (starsEarned >= 2 && meetsBar(threeStar, accuracy, wpm)) starsEarned = 3;
 
   const creditsEarned = 100 + starsEarned * 75 + scoreCredits;
   return { wpm, accuracy, starsEarned, creditsEarned };

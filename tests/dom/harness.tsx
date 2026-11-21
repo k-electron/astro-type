@@ -136,7 +136,7 @@ export interface Player {
   /**
    * Begin a Run of a curriculum Stage by id, through the game, as the Galaxy
    * Map's Launch Stage button does. It does not click through the Galaxy
-   * Map (a Stage's card has no name of its own to find it by), and it does not
+   * Map (`stageCard` finds a Stage's card there), and it does not
    * check that the Stage's Sector is open: a test that needs to see the
    * Launch button work clicks it. An id that is no Stage is a refused move,
    * which fails the test.
@@ -356,6 +356,15 @@ export function toDebrief(): Player {
 /** The card the Debrief shows over the Flight Deck. */
 export function debriefCard(): HTMLElement {
   return screen.getByRole('dialog', { name: DEBRIEF_TITLE });
+}
+
+/**
+ * A Stage's card on the Galaxy Map, found by the Stage's title as the player
+ * reads it. The card is an article named by its title; the Sector on show
+ * lists its Stages, so open the map first.
+ */
+export function stageCard(title: string): HTMLElement {
+  return screen.getByRole('article', { name: title });
 }
 
 /** True when the element, or anything around it, is inert. */

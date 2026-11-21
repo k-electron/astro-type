@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { FINGER_DISPLAY_NAMES } from '../../src/curriculum/curriculum';
+import {
+  CURRICULUM_SECTORS,
+  FINGER_DISPLAY_NAMES,
+  FIRST_STAGE,
+} from '../../src/curriculum/curriculum';
+import { nextStarLabel } from '../../src/screens/starBarLabels';
 import { multiplierAt } from '../shared/multiplier';
-import { HUD_NAME } from '../shared/screens';
+import { stageProgress } from '../shared/saves';
+import { DEBRIEF_TITLE, HUD_NAME, REPLAY } from '../shared/screens';
+import { barsOf } from '../shared/starBars';
 import { type Player, renderGame, screen, within } from './harness';
 
 // The Flight Deck as the player reads it: the HUD, the text prompt and its
@@ -334,4 +341,91 @@ describe('the text prompt names the reach for the character to type next', () =>
       }
     },
   );
+});
+
+describe('the Run header names the next Star bar', () => {
+  /** The text prompt's header and the rest of the prompt, as the player reads them. */
+  const promptText = () =>
+    screen.getByLabelText('Text prompt').textContent ?? '';
+
+  /** The "Next ★..." goal each Star bar of a Stage would give, by Star. */
+  const nextLabels = (stage: typeof FIRST_STAGE) =>
+    barsOf(stage).map(nextStarLabel);
+
+  const [, SECOND_STAGE] = CURRICULUM_SECTORS[0].stages;
+
+  it.each([
+    { saved: 0, next: 1 },
+    { saved: 1, next: 2 },
+    { saved: 2, next: 3 },
+  ])(
+    'asks for the $next-Star bar of a Stage whose best result is $saved Stars, and no other',
+    ({ saved, next }) => {
+      const player = renderGame({
+        profile: {
+          stagesProgress: {
+            [FIRST_STAGE.id]: stageProgress(FIRST_STAGE.id, saved),
+          },
+        },
+      });
+      player.startStage(FIRST_STAGE.id);
+
+      const labels = nextLabels(FIRST_STAGE);
+      expect(promptText()).toContain(labels[next - 1]);
+      for (const [index, label] of labels.entries()) {
+        if (index !== next - 1) expect(promptText()).not.toContain(label);
+      }
+    },
+  );
+
+  it('shows no goal for a Stage that already has 3 Stars', () => {
+    const player = renderGame({
+      profile: {
+        stagesProgress: {
+          [FIRST_STAGE.id]: stageProgress(FIRST_STAGE.id, 3),
+        },
+      },
+    });
+    player.startStage(FIRST_STAGE.id);
+
+    for (const label of nextLabels(FIRST_STAGE)) {
+      expect(promptText()).not.toContain(label);
+    }
+  });
+
+  it("goes by the Stage's own Stars, not another Stage's", () => {
+    const player = renderGame({
+      profile: {
+        stagesProgress: {
+          [SECOND_STAGE.id]: stageProgress(SECOND_STAGE.id, 2),
+        },
+      },
+    });
+    player.startStage(FIRST_STAGE.id);
+
+    expect(promptText()).toContain(nextLabels(FIRST_STAGE)[0]);
+  });
+
+  it('moves on to the next bar when a clear has just earned the Star before it', () => {
+    const player = renderGame();
+    player.startStage(FIRST_STAGE.id);
+    // 3.6 WPM is under every WPM bar: the clean clear earns 1 Star.
+    player.typePrompt({ stepsPerKey: 200 });
+    expect(screen.getByText(DEBRIEF_TITLE)).toBeTruthy();
+
+    player.click(REPLAY);
+
+    expect(promptText()).toContain(nextLabels(FIRST_STAGE)[1]);
+    expect(promptText()).not.toContain(nextLabels(FIRST_STAGE)[0]);
+  });
+
+  it('shows no goal in a Free Flight, not even for a player with no Stars', () => {
+    renderGame({ text: TEXT });
+
+    // The 1-Star bar is the same on every Stage, and is what a fresh Save
+    // would be shown on a Sector Stage.
+    for (const label of nextLabels(FIRST_STAGE)) {
+      expect(promptText()).not.toContain(label);
+    }
+  });
 });

@@ -11,7 +11,7 @@ A themed group of Stages that forms one step of the curriculum.
 _Avoid_: Zone, world, chapter
 
 **Stage**:
-A fixed text to type, either from a Sector or set up by the player in Free Flight. Only a Sector Stage has its own goal and Star bars.
+A fixed text to type, either from a Sector or set up by the player in Free Flight. Only a Sector Stage has Star bars.
 _Avoid_: Level, mission, lesson
 
 ### Play
@@ -87,8 +87,8 @@ The 0–3 result a Sector Stage earns from a cleared Run; a Stage keeps its best
 _Avoid_: Rating, score
 
 **Star bar**:
-The accuracy, WPM or Streak a cleared Run must reach for a Star. Each Sector Stage sets its own for 1, 2 and 3 Stars.
-_Avoid_: Threshold, star threshold
+The accuracy and WPM a cleared Run must reach for a Star: 1 Star needs 90% accuracy and no speed, 2 Stars 95% and the Stage's 2-Star WPM, 3 Stars 98% and its 3-Star WPM. The accuracy bars are the same on every Stage; the WPM bars are each Stage's own.
+_Avoid_: Threshold, star threshold, Goal, Target WPM
 
 **Credits**:
 Currency earned on each Debrief and spent in the Hangar.
@@ -133,7 +133,7 @@ The screen showing the player's lifetime totals, hand balance and per-key stats.
 _Avoid_: Telemetry, stats screen, Report
 
 **Free Flight**:
-The screen where the player sets up a Stage from their own text and a target WPM. A Free Flight is practice: it earns no Stars and leaves no record, and pays Credits for its score alone.
+The screen where the player sets up a Stage from their own text. A Free Flight is practice: it earns no Stars and leaves no record, and pays Credits for its score alone.
 _Avoid_: Custom practice, free flight drill, custom flight
 
 **Debrief**:

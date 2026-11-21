@@ -51,8 +51,8 @@ export type PlayerEvent =
   | { type: 'PRESS_FLIGHT_DECK' }
   | { type: 'PRESS_HOME' }
   | { type: 'PICK_STAGE'; stageId: string }
-  /** The player's own text (already checked as typeable) at a Target WPM. */
-  | { type: 'LAUNCH_FREE_FLIGHT'; text: string; targetWpm: number }
+  /** The player's own text (already checked as typeable). */
+  | { type: 'LAUNCH_FREE_FLIGHT'; text: string }
   | { type: 'PRESS_REPLAY' }
   | { type: 'PRESS_NEXT_STAGE' }
   | { type: 'LOST_FOCUS' };
@@ -104,11 +104,8 @@ const { createMachine } = setup({
     // ---- Effects: named here, provided by the Game ----
     /** Set up a fresh Run of `stage`, whatever Run was there. */
     beginRun: unprovided<{ stage: Stage }>('beginRun'),
-    /** Set up a fresh Run of a Free Flight of `text` at `targetWpm`; the Game builds its Stage. */
-    beginFreeFlight: unprovided<{
-      text: string;
-      targetWpm: number;
-    }>('beginFreeFlight'),
+    /** Set up a fresh Run of a Free Flight of `text`; the Game builds its Stage. */
+    beginFreeFlight: unprovided<{ text: string }>('beginFreeFlight'),
     /** Set up a fresh Run of the Stage the last Run was of. */
     beginCurrentStage: unprovided('beginCurrentStage'),
     /** Set up a fresh Run of the Stage after the current one. */
@@ -204,11 +201,11 @@ const freeFlightToBegin = ({
   event,
 }: {
   event: GameMachineEvent;
-}): { text: string; targetWpm: number } => {
+}): { text: string } => {
   if (event.type !== 'LAUNCH_FREE_FLIGHT') {
     throw new Error(`${event.type} is no Free Flight launch`);
   }
-  return { text: event.text, targetWpm: event.targetWpm };
+  return { text: event.text };
 };
 
 const ignore: Move = { actions: ['ignore'] };

@@ -6,6 +6,8 @@ import {
   FINGER_DISPLAY_NAMES,
 } from '../curriculum/curriculum';
 import { useGameState } from '../app/useGameState';
+import { starBars } from '../game/rules';
+import { nextStarLabel } from './starBarLabels';
 
 /**
  * The text cut into words, each with the spaces after it, so the prompt can
@@ -23,8 +25,19 @@ export const TextPromptStream: React.FC = () => {
   const stage = useGameState((state) => state.run.stage);
   const currentIndex = useGameState((state) => state.run.currentCharIndex);
   const errorIndices = useGameState((state) => state.run.errorIndices);
+  // The Stars the player already holds on this Stage (a Free Flight has none).
+  const starsHeld = useGameState(
+    (state) =>
+      state.profile.stagesProgress[state.run.stage.id]?.starsEarned ?? 0,
+  );
   const fullText = stage.sampleText;
-  const { targetWpm, techniqueTip, focusFingers } = stage;
+  const { techniqueTip, focusFingers } = stage;
+  // One goal at a time: the next Star not yet earned. None for a Free Flight,
+  // or a Stage with all its Stars.
+  const nextBar =
+    stage.origin === 'sector'
+      ? starBars(stage).find((bar) => bar.star > starsHeld)
+      : undefined;
   const stageTitle = `${stage.title} · ${stage.subtitle}`;
   const activeCharRef = useRef<HTMLSpanElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -126,13 +139,19 @@ export const TextPromptStream: React.FC = () => {
           <span className="font-semibold text-slate-200 truncate">
             {stageTitle}
           </span>
-          <span className="text-slate-500 hidden sm:inline" aria-hidden="true">
-            ·
-          </span>
-          <span className="text-slate-400 hidden sm:inline whitespace-nowrap">
-            Target WPM:{' '}
-            <strong className="text-cyan-400 font-mono">{targetWpm}</strong>
-          </span>
+          {nextBar && (
+            <>
+              <span
+                className="text-slate-500 hidden sm:inline"
+                aria-hidden="true"
+              >
+                ·
+              </span>
+              <span className="text-slate-400 hidden sm:inline whitespace-nowrap font-mono">
+                {nextStarLabel(nextBar)}
+              </span>
+            </>
+          )}
         </div>
 
         {/* Live Finger Guidance Pill (Fixed h-7) */}

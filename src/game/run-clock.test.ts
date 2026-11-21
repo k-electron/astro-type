@@ -267,7 +267,7 @@ describe('a pause in the middle of a Run leaves WPM, accuracy and Rhythm unchang
   });
 
   it('does not cost a Star when the pause would have pushed the WPM under a threshold', () => {
-    // 77 keys in 60 s is 15.3 WPM, over the 14 WPM of the third Star. Counting
+    // 77 keys in 60 s is 15.3 WPM, over the Stage's 3-Star WPM. Counting
     // ten minutes of pause it would be about 1 WPM and no second Star.
     // The wall clock moving on during the pause must not matter either.
     vi.useFakeTimers({ toFake: ['Date'] });

@@ -2,7 +2,6 @@ import type React from 'react';
 import { useState } from 'react';
 import { Play } from 'lucide-react';
 import {
-  DEFAULT_FREE_FLIGHT_WPM,
   FREE_FLIGHT_SUBTITLE,
   FREE_FLIGHT_TITLE,
   FREE_FLIGHT_PRESETS,
@@ -25,7 +24,6 @@ export const FreeFlight: React.FC = () => {
   const [customText, setCustomText] = useState<string>(
     FREE_FLIGHT_PRESETS[0].text,
   );
-  const [targetWpm, setTargetWpm] = useState<number>(DEFAULT_FREE_FLIGHT_WPM);
 
   // Free Flight text is checked as it is typed, so Launch is disabled (with
   // the reason) before the player can start a Run that would get stuck.
@@ -40,7 +38,7 @@ export const FreeFlight: React.FC = () => {
 
   const handleLaunch = () => {
     if (!checked.success) return;
-    send({ type: 'LAUNCH_FREE_FLIGHT', text: checked.data, targetWpm });
+    send({ type: 'LAUNCH_FREE_FLIGHT', text: checked.data });
   };
 
   return (
@@ -77,7 +75,6 @@ export const FreeFlight: React.FC = () => {
               key={preset.name}
               onClick={() => {
                 setCustomText(preset.text);
-                setTargetWpm(preset.wpm);
               }}
               className="text-left p-2.5 rounded-lg border border-slate-800 bg-slate-950/60 hover:border-cyan-500/50 hover:bg-slate-800/60 transition-all text-xs"
             >
@@ -116,29 +113,6 @@ export const FreeFlight: React.FC = () => {
         <div className="flex justify-between text-[11px] text-slate-500 font-mono mt-1">
           <span>{characterCount} characters</span>
           <span>Approx. {wordCount} words</span>
-        </div>
-      </div>
-
-      {/* Flight Parameters (Target WPM) */}
-      <div className="mb-6">
-        <div className="p-3.5 rounded-xl border border-slate-800 bg-slate-950/60">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-xs font-mono uppercase text-slate-400">
-              Target WPM
-            </span>
-            <span className="text-sm font-bold font-mono text-cyan-400">
-              {targetWpm} WPM
-            </span>
-          </div>
-          <input
-            type="range"
-            min={15}
-            max={100}
-            step={5}
-            value={targetWpm}
-            onChange={(e) => setTargetWpm(Number(e.target.value))}
-            className="w-full accent-cyan-400 cursor-pointer"
-          />
         </div>
       </div>
 

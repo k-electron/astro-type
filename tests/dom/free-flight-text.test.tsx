@@ -4,7 +4,7 @@ import {
   FREE_FLIGHT_EMPTY_TEXT_MESSAGE,
   FreeFlightTextSchema,
 } from '../../src/curriculum/curriculum';
-import { START_FREE_FLIGHT, YOUR_TEXT } from '../shared/screens';
+import { DEBRIEF_TITLE, START_FREE_FLIGHT, YOUR_TEXT } from '../shared/screens';
 import { renderGame, screen } from './harness';
 
 const ROCKET = String.fromCodePoint(0x1f680);
@@ -167,5 +167,22 @@ describe('Free Flight counts words in the text it will fly', () => {
     expect(screen.getByText(/Approx\./).textContent).toMatch(
       /Approx\.\s*2\s*words/,
     );
+  });
+});
+
+describe('Free Flight asks only for the text', () => {
+  it('has no speed to set: no slider on the screen', () => {
+    freeFlightWith('ready to launch');
+
+    expect(screen.queryByRole('slider')).toBeNull();
+  });
+
+  it('launches a Run of the text with nothing else set', () => {
+    const player = freeFlightWith('ready to launch');
+
+    player.click(START_FREE_FLIGHT);
+    player.typePrompt();
+
+    expect(screen.getByText(DEBRIEF_TITLE)).toBeTruthy();
   });
 });

@@ -482,6 +482,9 @@ describe('a Save from before the game’s rules changed', () => {
   // helper would write it.
   const save = completeSave();
   const older: Array<[string, unknown]> = [
+    // Version 2 was the Save before the Stars were honest (#134): its Stars
+    // were earned under other bars, so it starts fresh like any older one.
+    ['version 2', { ...save, version: 2 }],
     ['version 1', { ...save, version: 1 }],
     ['version 0', { ...save, version: 0 }],
     ['a fractional version below the current one', { ...save, version: 1.5 }],
@@ -506,7 +509,7 @@ describe('a Save from before the game’s rules changed', () => {
   );
 
   it('is replaced by the current Save on the next write, and the next visit reads that', () => {
-    const storage = createMemoryStorage({ ...save, version: 1 });
+    const storage = createMemoryStorage({ ...save, version: 2 });
     const game = createGame({ storage });
 
     startStage(game, STAGE_ID);

@@ -7,6 +7,7 @@ import {
   FREE_FLIGHT_TITLE,
 } from '../../src/curriculum/curriculum';
 import { closeLabel } from '../../src/screens/closeLabel';
+import { starBarLabel } from '../../src/screens/starBarLabels';
 import {
   clearedStages,
   EVERY_STAGE_CLEARED,
@@ -15,6 +16,8 @@ import {
 import {
   ACADEMY_HOME,
   ACADEMY_HOME_HEADING,
+  BAR_ACHIEVED,
+  BAR_INCOMPLETE,
   DEBRIEF_TITLE,
   GALAXY_MAP,
   HUD_NAME,
@@ -27,6 +30,7 @@ import {
   NEW_SECTOR_UNLOCKED,
   REPLAY,
 } from '../shared/screens';
+import { barsOf } from '../shared/starBars';
 import { WRONG_KEY } from '../shared/testHelpers';
 import {
   debriefCard,
@@ -243,6 +247,71 @@ describe('the Sector unlock banner', () => {
   });
 });
 
+describe('the Star bars the Debrief shows', () => {
+  // The same three bars, in the same words, as the Galaxy Map's Stage card.
+
+  /** Whether the Debrief marks the row that says `label` as met or not. */
+  function statusOfRow(label: string): string {
+    const status = /ACHIEVED|INCOMPLETE/;
+    let row: HTMLElement | null = within(debriefCard()).getByText(label);
+    while (row && !status.test(row.textContent ?? '')) row = row.parentElement;
+    const found = row?.textContent?.match(status)?.[0];
+    if (!found) throw new Error(`The row of "${label}" has no status`);
+    return found;
+  }
+
+  /** A pace, in steps a key, one step under the 3-Star WPM and so over the 2-Star's. */
+  const justUnderThreeStars =
+    Math.floor(720 / FIRST_STAGE.starThresholds.threeStarWpm) + 1;
+  const CRAWL = 200; // 3.6 WPM, under every WPM bar
+
+  /** Fly the first Stage to its Debrief at a pace, with the first characters missed. */
+  function flyFirstStage({
+    stepsPerKey,
+    missedCharacters = 0,
+  }: {
+    stepsPerKey: number;
+    missedCharacters?: number;
+  }) {
+    const player = renderGame();
+    player.startStage(FIRST_STAGE.id);
+    for (const character of Array.from(FIRST_STAGE.sampleText).slice(
+      0,
+      missedCharacters,
+    )) {
+      player.step(stepsPerKey);
+      player.press(WRONG_KEY);
+      player.press(character);
+    }
+    player.typePrompt({ stepsPerKey });
+    expect(screen.getByText(DEBRIEF_TITLE)).toBeTruthy();
+  }
+
+  it.each([
+    { run: 'a fast, clean Run', stepsPerKey: 15, missed: 0, stars: 3 },
+    {
+      run: 'a clean Run under the 3-Star WPM',
+      stepsPerKey: justUnderThreeStars,
+      missed: 0,
+      stars: 2,
+    },
+    { run: 'a clean, slow Run', stepsPerKey: CRAWL, missed: 0, stars: 1 },
+    // 8 of 77 characters missed is 89.6%, just under the 1-Star bar.
+    { run: 'a fast Run under 90%', stepsPerKey: 15, missed: 8, stars: 0 },
+  ])(
+    'for $run: the three rows read as the card does, and the first $stars are achieved',
+    ({ stepsPerKey, missed, stars }) => {
+      flyFirstStage({ stepsPerKey, missedCharacters: missed });
+
+      for (const bar of barsOf(FIRST_STAGE)) {
+        expect(statusOfRow(starBarLabel(bar)), `bar ${bar.star}`).toBe(
+          bar.star <= stars ? BAR_ACHIEVED : BAR_INCOMPLETE,
+        );
+      }
+    },
+  );
+});
+
 describe('Accuracy', () => {
   it("shows a Sector Stage Run's accuracy rounded down", () => {
     const player = renderGame();
@@ -418,8 +487,9 @@ describe('Free Flight', () => {
         .map((button) => button.textContent),
     ).toEqual([]);
     expect(panel.textContent).not.toMatch(/note speed/i);
-    // What stays: the text and the Target WPM slider are still set here.
-    expect(within(panel).getByRole('slider')).toBeTruthy();
+    // What stays: the text is still set here, and nothing else is asked of the player.
+    expect(within(panel).getByRole('textbox')).toBeTruthy();
+    expect(within(panel).queryByRole('slider')).toBeNull();
   });
 
   it('disables Launch for a character that has no key, and names it', () => {

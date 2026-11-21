@@ -38,31 +38,16 @@ function copyOf(value: unknown, path: string): [string, string][] {
 }
 
 describe('curriculum', () => {
-  it('gives every Sector Stages, and every Stage something to type at a bar a player can reach', () => {
+  it('gives every Sector Stages, and every Stage something to type and WPM bars a player can reach', () => {
     const problems: string[] = [];
     for (const sector of sectors) {
       if (sector.stages.length === 0)
         problems.push(`${sector.id} has no Stages`);
     }
-    for (const { id, sampleText, targetWpm, starThresholds: t } of stages) {
+    for (const { id, sampleText, starThresholds: t } of stages) {
       if (sampleText.length === 0) problems.push(`${id}: no text to type`);
-      if (!(targetWpm > 0)) problems.push(`${id}: target WPM is not positive`);
-      for (const accuracy of [
-        t.oneStarAccuracy,
-        t.twoStarAccuracy,
-        t.threeStarAccuracy,
-      ]) {
-        if (!(accuracy >= 0 && accuracy <= 100)) {
-          problems.push(`${id}: accuracy ${accuracy} is not a percentage`);
-        }
-      }
       if (!(t.twoStarWpm > 0 && t.threeStarWpm > 0)) {
         problems.push(`${id}: a star WPM is not positive`);
-      }
-      if (
-        !(Number.isInteger(t.threeStarMinStreak) && t.threeStarMinStreak > 0)
-      ) {
-        problems.push(`${id}: the 3-star Streak is not a whole number above 0`);
       }
     }
     expect(problems).toEqual([]);
@@ -118,20 +103,10 @@ describe('curriculum', () => {
     expect(problems).toEqual([]);
   });
 
-  it('asks for more at each star level', () => {
-    const problems = stages.flatMap(({ id, starThresholds: t }) => {
-      const found: string[] = [];
-      if (!(t.oneStarAccuracy < t.twoStarAccuracy)) {
-        found.push(`${id}: 2-star accuracy is not above 1-star`);
-      }
-      if (!(t.twoStarAccuracy < t.threeStarAccuracy)) {
-        found.push(`${id}: 3-star accuracy is not above 2-star`);
-      }
-      if (!(t.twoStarWpm < t.threeStarWpm)) {
-        found.push(`${id}: 3-star WPM is not above 2-star`);
-      }
-      return found;
-    });
+  it('asks for more speed at the 3rd Star than at the 2nd, on every Stage', () => {
+    const problems = stages
+      .filter(({ starThresholds: t }) => !(t.twoStarWpm < t.threeStarWpm))
+      .map(({ id }) => `${id}: 3-star WPM is not above 2-star`);
     expect(problems).toEqual([]);
   });
 
@@ -143,6 +118,24 @@ describe('curriculum', () => {
         ? [`${sector.id} asks for fewer Stars than ${sectors[i - 1].id}`]
         : [],
     );
+    expect(problems).toEqual([]);
+  });
+
+  it('asks for no more than 2 Stars per Stage of the Sectors before it', () => {
+    // A rule of the gates (#134): 3 Stars is mastery, never compulsory, so a
+    // player who earns 2 on every earlier Stage can always go on.
+    const MOST_STARS_ASKED_PER_EARLIER_STAGE = 2;
+    const problems = sectors.flatMap((sector, i) => {
+      const earlierStages = sectors
+        .slice(0, i)
+        .reduce((total, earlier) => total + earlier.stages.length, 0);
+      const allowed = MOST_STARS_ASKED_PER_EARLIER_STAGE * earlierStages;
+      return sector.requiredStarsToUnlock > allowed
+        ? [
+            `${sector.id} asks for ${sector.requiredStarsToUnlock} Stars, more than ${allowed}`,
+          ]
+        : [];
+    });
     expect(problems).toEqual([]);
   });
 });
@@ -197,11 +190,11 @@ describe('the key for a character', () => {
 });
 
 // Free Flight is part of the curriculum (#73): the Stage it flies is built
-// here, from the player's text and Target WPM, and judged by the same
-// rules as a Sector's.
+// here, from the player's text alone, and judged by the same rules as a
+// Sector's (it earns no Stars).
 describe('a Free Flight Stage', () => {
   it('names itself as the Glossary does', () => {
-    const stage = freeFlightStage('abc', 30);
+    const stage = freeFlightStage('abc');
     const offenders = copyOf(stage, 'stage')
       .filter(([, text]) => BANNED_NAME.test(text))
       .map(([path, text]) => `${path}: ${text}`);
@@ -212,14 +205,13 @@ describe('a Free Flight Stage', () => {
   const text = 'the quick fox';
 
   it('is a Stage of the text it was built from, marked as Free Flight', () => {
-    const stage = freeFlightStage(text, 30);
+    const stage = freeFlightStage(text);
     expect(stage.sampleText).toBe(text);
-    expect(stage.targetWpm).toBe(30);
     expect(stage.origin).toBe('free-flight');
   });
 
   it('has a lane and a finger for every character of the text, as a Sector Stage does', () => {
-    const stage = freeFlightStage(text, 30);
+    const stage = freeFlightStage(text);
     const chars = new Set([...stage.sampleText, ...stage.targetKeys]);
     const problems = [...chars].filter((char) => !keyForCharacter(char));
     expect(problems).toEqual([]);
@@ -230,9 +222,7 @@ describe('a Free Flight Stage', () => {
     for (const preset of FREE_FLIGHT_PRESETS) {
       const checked = FreeFlightTextSchema.safeParse(preset.text);
       expect(checked.success, preset.name).toBe(true);
-      expect(freeFlightStage(preset.text, preset.wpm).sampleText).toBe(
-        preset.text,
-      );
+      expect(freeFlightStage(preset.text).sampleText).toBe(preset.text);
     }
   });
 });

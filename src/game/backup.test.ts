@@ -174,6 +174,7 @@ describe('importing a Backup', () => {
   const refusals: Array<[string, string, string]> = [
     ...[
       ['a Backup exported before versions existed', OLD_LIVE_EXPORT],
+      ['version 2', { ...completeSave(), version: 2 }],
       ['version 1', { ...completeSave(), version: 1 }],
       ['version 0', { ...completeSave(), version: 0 }],
       ['a fractional version below the current one', { version: 1.5 }],

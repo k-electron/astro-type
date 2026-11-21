@@ -4,7 +4,11 @@ import {
   CURRICULUM_SECTORS,
   FIRST_STAGE,
 } from '../../src/curriculum/curriculum';
-import { clearedStages, stageProgress } from '../shared/saves';
+import {
+  starBarEarnedLabel,
+  starBarLabel,
+} from '../../src/screens/starBarLabels';
+import { saveWithStars, stageProgress } from '../shared/saves';
 import {
   DEBRIEF_TITLE,
   GALAXY_MAP,
@@ -12,14 +16,17 @@ import {
   NEXT_STAGE,
   PAUSE_FLIGHT,
   PAUSE_MENU_NAME,
+  STAR_BARS_LIST,
   viewGalaxyMap,
   NEW_SECTOR_UNLOCKED,
 } from '../shared/screens';
+import { barsOf } from '../shared/starBars';
 import {
   debriefCard,
   type Player,
   renderGame,
   screen,
+  stageCard,
   within,
 } from './harness';
 
@@ -31,22 +38,6 @@ import {
 const MOST_STARS_A_STAGE_GIVES = 3;
 
 const [SECTOR_ONE, SECTOR_TWO, SECTOR_THREE, SECTOR_FOUR] = CURRICULUM_SECTORS;
-
-/**
- * A Save with exactly `total` Stars, from Stages cleared in curriculum order
- * with the most Stars each, leaving out `skip` so a test can clear it itself.
- */
-function saveWithStars(total: number, skip?: string) {
-  const stars: Record<string, number> = {};
-  let left = total;
-  for (const stage of CURRICULUM_SECTORS.flatMap((sector) => sector.stages)) {
-    if (left === 0) break;
-    if (stage.id === skip) continue;
-    stars[stage.id] = Math.min(MOST_STARS_A_STAGE_GIVES, left);
-    left -= stars[stage.id];
-  }
-  return clearedStages(stars);
-}
 
 /** Stars that open Sector 03 and not Sector 04. */
 const UNLOCKS_SECTOR_THREE = SECTOR_THREE.requiredStarsToUnlock;
@@ -226,5 +217,75 @@ describe("a Stage's best WPM", () => {
     });
     expect(map.textContent).toMatch(/\b37\s*WPM/);
     expect(map.textContent).not.toMatch(/\b38\s*WPM/);
+  });
+});
+
+describe("a Stage's Star bars on its card", () => {
+  /** The words on the three bars of a Stage's card, in order. */
+  function barsOnCard(title: string): (string | null)[] {
+    const list = within(stageCard(title)).getByRole('list', {
+      name: STAR_BARS_LIST,
+    });
+    return within(list)
+      .getAllByRole('listitem')
+      .map((item) => item.textContent);
+  }
+
+  it("shows every Stage of the Sector its three bars, with the Stage's own WPM bars and none lit before it is cleared", () => {
+    const player = renderGame();
+    player.openHeader('Galaxy Map');
+
+    for (const stage of SECTOR_ONE.stages) {
+      const bars = barsOf(stage);
+      expect(barsOnCard(stage.title), stage.id).toEqual(bars.map(starBarLabel));
+      for (const bar of bars) {
+        expect(
+          within(stageCard(stage.title)).queryByLabelText(
+            starBarEarnedLabel(bar),
+          ),
+          `${stage.id} bar ${bar.star}`,
+        ).toBeNull();
+      }
+    }
+  });
+
+  it.each([0, 1, 2, 3])(
+    'lights the bars a best result of %i Stars has met, and only those',
+    (stars) => {
+      const [stage, other] = SECTOR_ONE.stages;
+      const player = renderGame({
+        profile: {
+          stagesProgress: { [stage.id]: stageProgress(stage.id, stars) },
+        },
+      });
+      player.openHeader('Galaxy Map');
+
+      for (const bar of barsOf(stage)) {
+        const lit = within(stageCard(stage.title)).queryByLabelText(
+          starBarEarnedLabel(bar),
+        );
+        expect(lit !== null, `bar ${bar.star}`).toBe(bar.star <= stars);
+      }
+      // Lit by this Stage's own best result: the next Stage, never cleared, has none.
+      for (const bar of barsOf(other)) {
+        expect(
+          within(stageCard(other.title)).queryByLabelText(
+            starBarEarnedLabel(bar),
+          ),
+        ).toBeNull();
+      }
+    },
+  );
+
+  it('keeps the same words on a bar when it is lit', () => {
+    const stage = FIRST_STAGE;
+    const player = renderGame({
+      profile: {
+        stagesProgress: { [stage.id]: stageProgress(stage.id, 2) },
+      },
+    });
+    player.openHeader('Galaxy Map');
+
+    expect(barsOnCard(stage.title)).toEqual(barsOf(stage).map(starBarLabel));
   });
 });
