@@ -66,8 +66,10 @@ export interface TrailEntry {
   /** As the Hangar describes it. */
   description: string;
   price: number;
-  /** The colour of the laser trail, and of the Action Deck's beam. */
+  /** The colour of the laser trail. */
   color: string;
+  /** A trail that changes colour with every hit, round the spectrum from `color`. */
+  spectrum?: true;
 }
 
 export interface SoundKitEntry {
@@ -230,6 +232,7 @@ export const CATALOG: readonly CatalogEntry[] = [
     description: 'Magenta lasers that outshine the rest.',
     price: 3200,
     color: '#e879f9',
+    spectrum: true,
   },
   {
     kind: 'soundKit',
@@ -414,6 +417,25 @@ export function entriesOf<Kind extends CatalogKind>(
     (entry): entry is Extract<CatalogEntry, { kind: Kind }> =>
       entry.kind === kind,
   );
+}
+
+/**
+ * The colour of the lasers for the `hit`th hit of a Run: a Trail's colour, or,
+ * for a spectrum Trail, one step further round the colour wheel each hit.
+ */
+export function laserColor(id: TrailId, hit: number): string {
+  const entry = catalogEntry(id);
+  if (entry.kind !== 'trail') throw new Error(`${id} is not a Trail`);
+  if (!entry.spectrum) return entry.color;
+  const hue = (300 + 50 * hit) % 360;
+  const channel = (n: number) => {
+    const k = (n + hue / 30) % 12;
+    const value = 0.5 - 0.5 * Math.max(-1, Math.min(k - 3, 9 - k, 1));
+    return Math.round(value * 255)
+      .toString(16)
+      .padStart(2, '0');
+  };
+  return `#${channel(0)}${channel(8)}${channel(4)}`;
 }
 
 /** The colour of a Trail, for the lasers the Action Deck fires on each hit. */

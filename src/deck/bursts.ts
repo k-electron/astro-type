@@ -71,20 +71,20 @@ const sparks: BurstFn = (paint, x, y, w, isSpace, perfect, hitColor) => {
 /** Sparks in eight tight streaks, like petals, that fade slowly. */
 const starflower: BurstFn = (paint, x, y, _w, isSpace, perfect, hitColor) => {
   const petals = 8;
-  const perPetal = perfect ? (isSpace ? 7 : 5) : 3;
+  const perPetal = perfect ? (isSpace ? 8 : 6) : 4;
   for (let petal = 0; petal < petals; petal++) {
     const angle = (petal / petals) * Math.PI * 2 - Math.PI / 2;
     for (let i = 0; i < perPetal; i++) {
-      const spread = (Math.random() - 0.5) * 0.16;
-      const speed = 4 + (i / perPetal) * 8;
+      const spread = (Math.random() - 0.5) * 0.08;
+      const speed = 3 + (i / perPetal) * 9;
       paint.spark(
         x,
         y,
         Math.cos(angle + spread) * speed,
         Math.sin(angle + spread) * speed,
-        i % 2 === 0 ? hitColor : '#ffffff',
-        3 + Math.random() * 2.5,
-        36 + Math.random() * 12,
+        i % 3 === 0 ? '#ffffff' : hitColor,
+        4.5 + Math.random() * 2.5,
+        40 + Math.random() * 12,
       );
     }
   }
@@ -92,7 +92,7 @@ const starflower: BurstFn = (paint, x, y, _w, isSpace, perfect, hitColor) => {
 
 /** Square pixels that fly only along the eight compass lines. */
 const pixelShards: BurstFn = (paint, x, y, w, isSpace, perfect, hitColor) => {
-  const count = perfect ? (isSpace ? 40 : 28) : 18;
+  const count = perfect ? (isSpace ? 44 : 32) : 20;
   for (let i = 0; i < count; i++) {
     const direction = Math.floor(Math.random() * 8);
     const angle = (direction * Math.PI) / 4;
@@ -103,8 +103,8 @@ const pixelShards: BurstFn = (paint, x, y, w, isSpace, perfect, hitColor) => {
       Math.cos(angle) * speed,
       Math.sin(angle) * speed - 1.5,
       i % 3 === 0 ? '#ffffff' : hitColor,
-      1.5 + Math.floor(Math.random() * 3),
-      26 + Math.random() * 14,
+      3 + Math.floor(Math.random() * 3) * 1.5,
+      30 + Math.random() * 14,
     );
   }
 };

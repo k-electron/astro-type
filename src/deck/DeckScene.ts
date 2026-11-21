@@ -5,7 +5,11 @@ import {
   keyForCharacter,
 } from '../curriculum/curriculum';
 import type { KeySpec } from '../curriculum/keyboardLayout';
-import { DEFAULT_TRAIL, trailColor } from '../game/catalog';
+import {
+  DEFAULT_TRAIL,
+  laserColor as trailLaserColor,
+  trailColor,
+} from '../game/catalog';
 import { STEP_MS } from '../game/clock';
 import type { JudgementMoment } from '../game/moments';
 import { STRIKE_LINE_Y } from '../game/rules';
@@ -71,6 +75,8 @@ export class DeckScene {
   private readonly keys = new Map<string, KeyView>();
   private readonly drones = new Map<string, DroneView>();
   private readonly ship = new ShipView();
+  /** Hits fired so far, for a Trail that changes colour with each. */
+  private hitsFired = 0;
   private readonly effects: DeckEffects;
   private layout: Layout | null = null;
   /** Effect time, in milliseconds: what the looping decoration is a function of. */
@@ -311,7 +317,10 @@ export class DeckScene {
         : droneTop(0, STRIKE_LINE_Y, layout.deckY);
       const laneColor = FINGER_COLOR_MAP[judgement.finger];
       // The lasers take the equipped Trail; the Drone keeps its finger colour.
-      const laserColor = trailColor(state.profile.upgrades.equippedTrailTheme);
+      const laserColor = trailLaserColor(
+        state.profile.upgrades.equippedTrailTheme,
+        this.hitsFired++,
+      );
       const grade = judgement.grade;
       const hitColor = hitPopupColor({
         grade,
@@ -334,6 +343,7 @@ export class DeckScene {
         laserColor,
         hitColor,
         burst: state.profile.upgrades.equippedBurst,
+        hull: state.profile.upgrades.equippedHull,
       });
       return;
     }

@@ -61,7 +61,7 @@ const nebula: BackdropStyle['ambient'] = (ctx, width, height, frame) => {
       (c.y + dy) * height,
       c.r * Math.max(width, height),
       c.rgb,
-      0.16,
+      0.26,
     );
   }
 };
@@ -77,7 +77,7 @@ const aurora: BackdropStyle['ambient'] = (ctx, width, height, frame) => {
     const baseY = ribbon.y * height;
     const gradient = ctx.createLinearGradient(0, baseY - 90, 0, baseY + 130);
     gradient.addColorStop(0, `rgba(${ribbon.rgb}, 0)`);
-    gradient.addColorStop(0.35, `rgba(${ribbon.rgb}, 0.12)`);
+    gradient.addColorStop(0.35, `rgba(${ribbon.rgb}, 0.22)`);
     gradient.addColorStop(1, `rgba(${ribbon.rgb}, 0)`);
     ctx.fillStyle = gradient;
     ctx.beginPath();

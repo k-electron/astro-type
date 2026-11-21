@@ -66,12 +66,12 @@ const HULLS: Record<HullId, HullStyle> = {
         w - 2 * inset,
         h - 2 * inset,
         2,
-      ).stroke({ width: 1, color: rgba(laneColor, first ? 0.45 : 0.25) });
+      ).stroke({ width: 1.5, color: rgba(laneColor, first ? 0.7 : 0.45) });
       for (const sx of [-1, 1]) {
         for (const sy of [-1, 1]) {
-          g.circle(sx * (w / 2 - 6.5), sy * (h / 2 - 6.5), 1.4).fill({
+          g.circle(sx * (w / 2 - 6.5), sy * (h / 2 - 6.5), 2).fill({
             color: '#cbd5e1',
-            alpha: first ? 0.8 : 0.5,
+            alpha: first ? 0.95 : 0.7,
           });
         }
       }
@@ -103,7 +103,7 @@ const HULLS: Record<HullId, HullStyle> = {
     radius: 0,
     detail: (g, { w, h, first }) => {
       const c = Math.min(10, h * 0.32);
-      const alpha = first ? 0.35 : 0.15;
+      const alpha = first ? 0.55 : 0.3;
       for (const sx of [-1, 1]) {
         g.moveTo(sx * (w / 2 - c), -h / 2)
           .lineTo(sx * (w / 2 - c - 6), -h / 2 + c + 2)
@@ -115,6 +115,35 @@ const HULLS: Record<HullId, HullStyle> = {
     },
   },
 };
+
+/**
+ * The path of a Hull's outline centred on (`cx`, `cy`), for a caller that fills
+ * and edges it itself (the Drone a laser is locked on). `standardRadius` is the
+ * corner radius the caller draws the Standard hull with.
+ */
+export function hullShape(
+  g: Graphics,
+  hull: HullId,
+  cx: number,
+  cy: number,
+  w: number,
+  h: number,
+  standardRadius: number,
+): Graphics {
+  const style = HULLS[hull];
+  if (style.outline) {
+    return g.poly(
+      style.outline(w, h).map((value, i) => value + (i % 2 === 0 ? cx : cy)),
+    );
+  }
+  return g.roundRect(
+    cx - w / 2,
+    cy - h / 2,
+    w,
+    h,
+    hull === 'STANDARD' ? standardRadius : style.radius,
+  );
+}
 
 /** The Drone's body: the lip beneath it, the hull filled and edged in the finger colour, and its Hull's marks. */
 export function drawHullBody(g: Graphics, hull: HullId, spec: HullSpec): void {

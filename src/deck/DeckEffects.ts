@@ -1,10 +1,11 @@
 import { Container, Graphics, Rectangle, Sprite, Text } from 'pixi.js';
 import type { Grade } from '../game/rules';
 import { hitPopupLabel, hitPopupsToPrepare, hitPopupStems } from './hitPopups';
-import { DEFAULT_BURST } from '../game/catalog';
-import type { BurstId } from '../game/schemas';
+import { DEFAULT_BURST, DEFAULT_HULL } from '../game/catalog';
+import type { BurstId, HullId } from '../game/schemas';
 import { Pool } from './pool';
 import { BURSTS, type BurstPainter } from './bursts';
+import { hullShape } from './hulls';
 import {
   CRYSTAL_SIZE,
   DOT_RADIUS,
@@ -60,6 +61,8 @@ export interface HitShot {
   hitColor: string;
   /** The equipped Burst: how the explosion scatters its particles. */
   burst: BurstId;
+  /** The equipped Hull: the shape of the Drone the laser is locked on. */
+  hull: HullId;
 }
 
 /** The wrong key was struck. */
@@ -104,6 +107,7 @@ interface Bolt {
   color: string;
   hitColor: string;
   burst: BurstId;
+  hull: HullId;
   isSpace: boolean;
   /** Hit grade, or null for the red laser of a wrong key. */
   grade: Grade | null;
@@ -345,6 +349,7 @@ export class DeckEffects {
       color: '#fff',
       hitColor: '#fff',
       burst: DEFAULT_BURST,
+      hull: DEFAULT_HULL,
       isSpace: false,
       grade: null,
       points: 0,
@@ -524,6 +529,7 @@ export class DeckEffects {
     bolt.color = shot.laserColor;
     bolt.hitColor = shot.hitColor;
     bolt.burst = shot.burst;
+    bolt.hull = shot.hull;
     bolt.isSpace = shot.isSpace;
     bolt.grade = shot.grade;
     bolt.points = shot.points;
@@ -1119,7 +1125,7 @@ export class DeckEffects {
       g.stroke({ width, color: bolt.color, alpha });
     }
     // The hostile hull, as the laser sees it.
-    g.roundRect(x - hw, y - hh, bolt.w, bolt.h, 6)
+    hullShape(g, bolt.hull, x, y, bolt.w, bolt.h, 6)
       .fill('#020617')
       .stroke({ width: 2, color });
     g.circle(x - hw + 8, y - hh - 2, 2.5).fill(color);
