@@ -208,6 +208,24 @@ describe('Analytics refusing a Backup', () => {
     expect(screen.queryByText(NOT_A_BACKUP_MESSAGE)).toBeNull();
   });
 
+  it.each([
+    ['Factory Reset', 'Confirm Reset'],
+    ['Wipe Stars', 'Confirm Wipe'],
+  ])(
+    'forgets the message once the player confirms %s',
+    async (open, confirm) => {
+      const player = renderGame({ profile: RETURNING_PLAYER });
+      player.openHeader('Analytics');
+      player.importBackup('this is not a Backup at all');
+      await screen.findByRole('alert');
+
+      player.click(open);
+      player.click(confirm);
+
+      expect(screen.queryByRole('alert')).toBeNull();
+    },
+  );
+
   it('forgets the message when the player leaves Analytics and comes back', async () => {
     const player = renderGame({ profile: RETURNING_PLAYER });
     player.openHeader('Analytics');

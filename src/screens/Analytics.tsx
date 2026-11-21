@@ -53,7 +53,9 @@ export const Analytics: React.FC = () => {
     'NONE' | 'WIPE_ACHIEVEMENTS' | 'FULL_RESET'
   >('NONE');
   // Why the last import was refused, shown beside the import control. A good
-  // import clears it: the header's Stars and Credits are the player's proof.
+  // import clears it (the header's Stars and Credits are the player's proof),
+  // and so does a Wipe Stars or a Factory Reset: they replace the Profile the
+  // refusal said was left as it was.
   const [refusal, setRefusal] = useState<string | null>(null);
   // The Backup card is the last block of a scrolling panel, so a refusal that
   // appears inside it can land below the fold. Bring the whole card into view,
@@ -516,6 +518,7 @@ export const Analytics: React.FC = () => {
             } else {
               resetProgress();
             }
+            setRefusal(null);
             setConfirmMode('NONE');
           }}
           onCancel={() => setConfirmMode('NONE')}
