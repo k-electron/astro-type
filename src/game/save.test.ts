@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  COSMETIC_FIELDS,
   completeSave,
   RETURNING_PLAYER,
   stageProgress,
@@ -64,6 +65,13 @@ describe('a Save that is readable', () => {
     expect(profile.globalMuted).toBe(true);
     expect(game.getState().loadNotice).toBeNull();
     expect(storage.movedAside).toEqual([]);
+  });
+
+  it('keeps what a player owns and wears of every kind of Cosmetic', () => {
+    const save = completeSave();
+    const { game } = load(save);
+
+    expect(game.getState().profile.upgrades).toEqual(save.upgrades);
   });
 
   it('starts a player with no Save fresh, without a notice', () => {
@@ -678,5 +686,102 @@ describe('clearedStagesOf', () => {
         c: { completed: false },
       }),
     ).toBe(2);
+  });
+});
+
+describe('a Save from before the newer Cosmetics', () => {
+  // A Burst, a Backdrop, a Ship and a Hull each have an owned list and an
+  // equipped id beside the Trail's and the Sound Kit's. A Save without them is
+  // still a Save of today's format (the version did not move): the player owns
+  // and wears each kind's free default, and nothing else is lost.
+  const NEWER_KINDS = ['burst', 'backdrop', 'ship', 'hull'] as const;
+  const fieldsOf = (kind: (typeof NEWER_KINDS)[number]) => [
+    COSMETIC_FIELDS[kind].owned,
+    COSMETIC_FIELDS[kind].equipped,
+  ];
+  const otherThanFree = (kind: (typeof NEWER_KINDS)[number]) => {
+    const entry = entriesOf(kind).find(
+      (candidate) => candidate.id !== COSMETIC_FIELDS[kind].free,
+    );
+    if (!entry) throw new Error(`The catalog has no spare ${kind}`);
+    return entry.id;
+  };
+  const withoutFields = (save: ReturningSave, fields: string[]) => ({
+    ...save,
+    upgrades: Object.fromEntries(
+      Object.entries(save.upgrades).filter(([key]) => !fields.includes(key)),
+    ),
+  });
+
+  it('loads with the free default of every newer kind owned and equipped, and loses nothing else', () => {
+    const save = completeSave();
+    const { game, storage } = load(
+      withoutFields(save, NEWER_KINDS.flatMap(fieldsOf)),
+    );
+
+    const { profile } = game.getState();
+    expect(game.getState().loadNotice).toBeNull();
+    expect(storage.movedAside).toEqual([]);
+    for (const kind of NEWER_KINDS) {
+      const { owned, equipped, free } = COSMETIC_FIELDS[kind];
+      expect(profile.upgrades[equipped], equipped).toBe(free);
+      expect(profile.upgrades[owned], owned).toEqual([free]);
+    }
+    expect(profile.totalCredits).toBe(1234);
+    expect(profile.totalStars).toBe(5);
+    expect(profile.upgrades.overdriveReactor).toBe(2);
+  });
+
+  describe.each(NEWER_KINDS)('for a %s', (kind) => {
+    const { owned, equipped, free } = COSMETIC_FIELDS[kind];
+    const other = otherThanFree(kind);
+    const save = completeSave();
+    const owning = withUpgrades(save, {
+      [equipped]: other,
+      [owned]: [free, other],
+    });
+
+    it('wears the free default when the equipped id is missing, and keeps what is owned', () => {
+      const { game } = load(withoutFields(owning, [equipped]));
+
+      const { upgrades } = game.getState().profile;
+      expect(game.getState().loadNotice).toBeNull();
+      expect(upgrades[equipped]).toBe(free);
+      expect(upgrades[owned]).toEqual([free, other]);
+    });
+
+    it('falls back to the free default for an equipped id the game does not have, and keeps the rest', () => {
+      const { game } = load(withUpgrades(owning, { [equipped]: 'GONE' }));
+
+      const { profile } = game.getState();
+      expect(game.getState().loadNotice).toBeNull();
+      expect(profile.upgrades[equipped]).toBe(free);
+      expect(profile.upgrades[owned]).toEqual([free, other]);
+      expect(profile.totalCredits).toBe(1234);
+    });
+
+    it('drops an owned id the game does not have, and keeps the others', () => {
+      const { game } = load(
+        withUpgrades(owning, { [owned]: [free, 'GONE', other] }),
+      );
+
+      expect(game.getState().loadNotice).toBeNull();
+      expect(game.getState().profile.upgrades[owned]).toEqual([free, other]);
+    });
+
+    it('always owns the free default, even when the list leaves it out', () => {
+      const { game } = load(withUpgrades(owning, { [owned]: [other] }));
+
+      expect([...game.getState().profile.upgrades[owned]].sort()).toEqual(
+        [free, other].sort(),
+      );
+    });
+
+    it('owns only the free default when the list is not a list', () => {
+      const { game } = load(withUpgrades(owning, { [owned]: 'all' as never }));
+
+      expect(game.getState().loadNotice).toBeNull();
+      expect(game.getState().profile.upgrades[owned]).toEqual([free]);
+    });
   });
 });

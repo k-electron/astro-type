@@ -8,7 +8,9 @@ import {
 } from 'pixi.js';
 import type { KeySpec } from '../curriculum/keyboardLayout';
 import { ping, pulseOpacity } from './animation';
+import type { HullId } from '../game/schemas';
 import { makeText, rgba } from './draw';
+import { drawHullBody } from './hulls';
 import { boxGlow, GlowSprite } from './textures';
 
 /** The plume of an ion thruster: white at its root, the lane colour, then nothing. */
@@ -201,9 +203,15 @@ export class DroneView {
   }
 
   /** Match the keycap beneath it and the Drone's place in the queue. */
-  update(w: number, h: number, queueIndex: number, laneColor: string): void {
+  update(
+    w: number,
+    h: number,
+    queueIndex: number,
+    laneColor: string,
+    hullId: HullId,
+  ): void {
     const first = queueIndex === 0;
-    const signature = `${w}|${h}|${first}|${laneColor}`;
+    const signature = `${w}|${h}|${first}|${laneColor}|${hullId}`;
     if (signature === this.signature) return;
     this.signature = signature;
 
@@ -212,8 +220,6 @@ export class DroneView {
     const { isSpace } = this;
     const g = this.body;
     g.clear();
-    // The lip under the hull (0 4px 0 #020617).
-    g.roundRect(-w / 2, -h / 2 + (first ? 4 : 3), w, h, 8).fill('#020617');
     // The lead glows (0 0 24px in its lane colour).
     if (!first) this.glow.release();
     if (first) {
@@ -221,19 +227,8 @@ export class DroneView {
       this.glow.tint = laneColor;
       this.glow.alpha = 0.56;
     }
-    g.roundRect(-w / 2, -h / 2, w, h, 8)
-      .fill({
-        color: first ? '#020617' : '#0f172a',
-        alpha: first ? 0.95 : 0.9,
-      })
-      .stroke({
-        width: first ? 2 : 1,
-        color: first ? laneColor : rgba(laneColor, 0.5),
-        alignment: 1,
-      });
-    g.moveTo(-w / 2 + 6, -h / 2 + 1.5)
-      .lineTo(w / 2 - 6, -h / 2 + 1.5)
-      .stroke({ width: 1, color: '#ffffff', alpha: first ? 0.4 : 0.1 });
+    // The body takes the equipped Hull's shape inside the same box.
+    drawHullBody(g, hullId, { w, h, first, laneColor });
     // The wings: brackets that open onto the hull. Their open side sits on
     // the hull's inner edge, so the hull's own border closes each one and the
     // wing looks tucked behind the body.

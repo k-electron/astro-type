@@ -660,6 +660,41 @@ class SoundEngine {
         gain.connect(this.sfxGain);
         osc.start(now);
         osc.stop(now + 0.2);
+      } else if (this.currentSoundKit === 'ORBITAL_CHOIR') {
+        // A soft vowel pad: three slightly detuned voices swell and fade
+        const swell = decayDuration + 0.2;
+        const filter = this.ctx.createBiquadFilter();
+        const gain = this.ctx.createGain();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(1400, now);
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(targetGain * 0.6, now + 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + swell);
+        filter.connect(gain);
+        gain.connect(this.sfxGain);
+        for (const detune of [-7, 0, 7]) {
+          const voice = this.ctx.createOscillator();
+          voice.type = 'triangle';
+          voice.frequency.setValueAtTime(baseFreq, now);
+          voice.detune.setValueAtTime(detune, now);
+          voice.connect(filter);
+          voice.start(now);
+          voice.stop(now + swell + 0.02);
+        }
+      } else if (this.currentSoundKit === 'PULSE_DRUMS') {
+        // A tuned electronic drum: a sine that dives from the lane's pitch to a low thump
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(baseFreq * 0.55, now);
+        osc.frequency.exponentialRampToValueAtTime(60, now + 0.11);
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(targetGain * 1.5, now + 0.003);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.16);
+        osc.connect(gain);
+        gain.connect(this.sfxGain);
+        osc.start(now);
+        osc.stop(now + 0.18);
       } else {
         // CYBER_SYNTH default - Smooth, crystalline celestial chime
         const oscMain = this.ctx.createOscillator();

@@ -1,6 +1,8 @@
 import { Container, Graphics, Sprite } from 'pixi.js';
 import { pulseOpacity } from './animation';
 import { STEP_MS } from '../game/clock';
+import type { ShipId } from '../game/schemas';
+import { SHIPS } from './ships';
 import {
   BEAM_AURA_WIDTH,
   beamAuraTexture,
@@ -31,6 +33,8 @@ export interface ShipFrame {
   targetX: number | null;
   /** The lane colour of the target. */
   color: string;
+  /** The equipped Ship: a shape only, which keeps the finger colour. */
+  ship: ShipId;
   shipY: number;
   /** How long this frame lasts, in steps of 1/60 s. */
   d: number;
@@ -59,6 +63,7 @@ export class ShipView {
   private shipX = 0;
   private visibleBefore = false;
   private drawnColor = '';
+  private drawnShip: ShipId | null = null;
   private drawnBeamHeight = -1;
   private aim = 0;
   private aimTarget = 0;
@@ -82,7 +87,7 @@ export class ShipView {
     this.beam.addChild(this.aura, ...this.shadows, this.core);
 
     this.inner.addChild(this.engine, this.hull);
-    for (const x of [7, 35]) {
+    for (const x of SHIPS.INTERCEPTOR.guns) {
       const root = new Container();
       const glow = new Sprite(softDotTexture());
       glow.anchor.set(0.5);
@@ -133,7 +138,7 @@ export class ShipView {
 
   /** Bring the beam and ship up to date, `frame.d` steps on. */
   update(frame: ShipFrame): void {
-    const { targetX, color, shipY, d } = frame;
+    const { targetX, color, ship, shipY, d } = frame;
     const dtMs = d * STEP_MS;
     this.time += dtMs;
     const show = targetX !== null;
@@ -163,7 +168,7 @@ export class ShipView {
     }
 
     this.drawBeam(color, shipY);
-    this.drawShip(color);
+    this.drawShip(color, ship);
 
     this.ship.position.set(this.shipX, shipY - 26 + 23.8);
     this.ship.rotation = (this.aim * Math.PI) / 180;
@@ -207,30 +212,18 @@ export class ShipView {
     this.core.tint = color;
   }
 
-  private drawShip(color: string): void {
-    if (this.drawnColor === color) return;
+  private drawShip(color: string, id: ShipId): void {
+    if (this.drawnColor === color && this.drawnShip === id) return;
     this.drawnColor = color;
-    const e = this.engine;
-    e.clear();
-    e.ellipse(21, 24, 5.5, 3).fill(color);
-    const h = this.hull;
-    h.clear();
-    h.ellipse(21, 25, 3, 1.5).fill('#ffffff');
-    h.poly([
-      21, 2, 25, 11, 38, 17, 41, 23, 30, 21, 24, 24, 21, 21, 18, 24, 12, 21, 1,
-      23, 4, 17, 17, 11,
-    ])
-      .fill('#090d16')
-      .stroke({ width: 1.6, color });
-    h.poly([21, 6, 23.5, 14, 21, 17, 18.5, 14]).fill({
-      color: '#38bdf8',
-      alpha: 0.95,
+    this.drawnShip = id;
+    const style = SHIPS[id];
+    this.engine.clear();
+    style.engine(this.engine, color);
+    this.hull.clear();
+    style.hull(this.hull, color);
+    // The muzzle flares sit on this Ship's guns.
+    this.flares.forEach((flare, i) => {
+      flare.root.position.x = style.guns[i];
     });
-    h.roundRect(13, 2, 2.5, 9, 1)
-      .fill('#f8fafc')
-      .stroke({ width: 0.5, color: '#334155' });
-    h.roundRect(26.5, 2, 2.5, 9, 1)
-      .fill('#f8fafc')
-      .stroke({ width: 0.5, color: '#334155' });
   }
 }

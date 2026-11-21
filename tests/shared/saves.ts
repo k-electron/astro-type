@@ -19,10 +19,62 @@
  */
 import { CURRICULUM_SECTORS } from '../../src/curriculum/curriculum';
 import {
+  type CosmeticKind,
+  DEFAULT_BACKDROP,
+  DEFAULT_BURST,
+  DEFAULT_HULL,
+  DEFAULT_SHIP,
+  DEFAULT_SOUND_KIT,
+  DEFAULT_TRAIL,
+} from '../../src/game/catalog';
+import {
   SAVE_VERSION,
   SoundKitSchema,
   type TrailId,
 } from '../../src/game/schemas';
+
+/**
+ * Where each kind of Cosmetic lives in a Save's `upgrades`: the list of owned
+ * ids, the id equipped, and the free default every player owns and wears from
+ * the start. A Trail and a Sound Kit keep the names they were first saved with
+ * (`unlockedThemes`, `unlockedAudioCores`). The one place a test names these
+ * fields, so a seventh kind fails the typecheck here.
+ */
+export const COSMETIC_FIELDS = {
+  trail: {
+    owned: 'unlockedThemes',
+    equipped: 'equippedTrailTheme',
+    free: DEFAULT_TRAIL,
+  },
+  soundKit: {
+    owned: 'unlockedAudioCores',
+    equipped: 'equippedAudioCore',
+    free: DEFAULT_SOUND_KIT,
+  },
+  burst: {
+    owned: 'unlockedBursts',
+    equipped: 'equippedBurst',
+    free: DEFAULT_BURST,
+  },
+  backdrop: {
+    owned: 'unlockedBackdrops',
+    equipped: 'equippedBackdrop',
+    free: DEFAULT_BACKDROP,
+  },
+  ship: {
+    owned: 'unlockedShips',
+    equipped: 'equippedShip',
+    free: DEFAULT_SHIP,
+  },
+  hull: {
+    owned: 'unlockedHulls',
+    equipped: 'equippedHull',
+    free: DEFAULT_HULL,
+  },
+} as const satisfies Record<
+  CosmeticKind,
+  { owned: string; equipped: string; free: string }
+>;
 
 /**
  * A seed as the current game would have written it: a plain object with no
@@ -133,17 +185,27 @@ export const OWNS_RETRO_SOUND_KIT = {
   upgrades: { unlockedAudioCores: ['CYBER_SYNTH', 'RETRO_8BIT'] },
 };
 
+/**
+ * A Save that owns the Cosmetic and has it equipped. The kind's free default
+ * is always owned too, as in a real Save. For another kind's Cosmetic, merge
+ * the `upgrades` of two of these.
+ */
+export function cosmeticEquipped(kind: CosmeticKind, id: string) {
+  const { owned, equipped, free } = COSMETIC_FIELDS[kind];
+  return { upgrades: { [equipped]: id, [owned]: [free, id] } };
+}
+
 /** A Save that owns the Trail and has it equipped (Cyan Nebula is always owned). */
 export function trailEquipped(id: TrailId) {
-  return {
-    upgrades: { equippedTrailTheme: id, unlockedThemes: ['CYAN', id] },
-  };
+  return cosmeticEquipped('trail', id);
 }
 
 /**
  * A complete Save in today's format, `version: SAVE_VERSION` and all:
  * RETURNING_PLAYER's 5 Stars and 1,234 Credits, plus every other field, each
- * set to something other than its default so a load that dropped it would show.
+ * set to something other than its default so a load that dropped it would
+ * show. The exceptions are the Trail and the Sound Kit, which stay on their free
+ * defaults (the Upgrades, settings and the four newer Cosmetic kinds are off).
  */
 export function completeSave() {
   return {
@@ -168,6 +230,17 @@ export function completeSave() {
       equippedAudioCore: 'CYBER_SYNTH',
       unlockedThemes: ['CYAN'],
       unlockedAudioCores: ['CYBER_SYNTH'],
+      // The four newer kinds each own and wear something other than their
+      // free default. (The Trail and the Sound Kit above stay on theirs; a
+      // test that needs one off its default seeds it with `cosmeticEquipped`.)
+      unlockedBursts: ['SPARKS', 'STARFLOWER'],
+      equippedBurst: 'STARFLOWER',
+      unlockedBackdrops: ['STARFIELD', 'NEBULA'],
+      equippedBackdrop: 'NEBULA',
+      unlockedShips: ['INTERCEPTOR', 'DART'],
+      equippedShip: 'DART',
+      unlockedHulls: ['STANDARD', 'HEX'],
+      equippedHull: 'HEX',
     },
     soundEnabled: false,
     soundVolume: 0.3,

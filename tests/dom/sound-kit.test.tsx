@@ -4,18 +4,19 @@ import {
   RETURNING_PLAYER,
   trailEquipped,
 } from '../shared/saves';
-import { soundKitName } from '../shared/screens';
-import { renderGame, screen, within } from './harness';
+import { COSMETIC_GROUP_HEADINGS, soundKitName } from '../shared/screens';
+import { cosmeticButtons, renderGame, screen, within } from './harness';
 import { OPEN_AUDIO_PANEL } from '../../src/screens/audioLabels';
 import { EQUIP, EQUIPPED } from '../../src/screens/hangarLabels';
 
 // A Sound Kit is a paid Cosmetic: the Hangar sells it, and the header's
-// audio panel only equips the ones the player owns. The panel still lists all
-// four, and shows the ones not owned locked with their Hangar price. (Once, a
+// audio panel only equips the ones the player owns. The panel still lists them
+// all, and shows the ones not owned locked with their Hangar price. (Once, a
 // click in the panel equipped any Sound Kit for free.)
 //
 // RETURNING_PLAYER has 1,234 Credits and owns only Cyber Synth, so it could
-// afford every other Sound Kit: a click that spent Credits would show.
+// afford the next three Sound Kits (not the two dearest): a click that spent
+// Credits would show.
 
 /** The panel's Sound Kits, as the player reads them, with the Hangar price of each. */
 const VOICES = {
@@ -23,8 +24,15 @@ const VOICES = {
   retro: { name: soundKitName('RETRO_8BIT'), price: 300 },
   deep: { name: soundKitName('DEEP_SPACE'), price: 450 },
   neo: { name: soundKitName('NEO_ACOUSTIC'), price: 600 },
+  choir: { name: soundKitName('ORBITAL_CHOIR'), price: 1800 },
+  drums: { name: soundKitName('PULSE_DRUMS'), price: 2600 },
 } as const;
 const UNOWNED_BY_RETURNING_PLAYER = ['retro', 'deep', 'neo'] as const;
+const EVERY_UNOWNED = [
+  ...UNOWNED_BY_RETURNING_PLAYER,
+  'choir',
+  'drums',
+] as const;
 
 const voice = (which: keyof typeof VOICES) =>
   screen.getByRole('button', { name: VOICES[which].name });
@@ -35,14 +43,8 @@ const showsAPrice = (which: keyof typeof VOICES) =>
   /\d{3}/.test(voice(which).textContent ?? '');
 
 // The Hangar lists the voices in the panel's order and marks the equipped one
-// with an Equipped button; the others read Equip or their price. (The Trails
-// above them have Equipped and Equip buttons too, so take the last four.)
-const hangarKitButtons = () =>
-  screen
-    .getAllByRole('button', {
-      name: new RegExp(`^(${EQUIPPED}|${EQUIP}|[\\d,]+ Cr)$`),
-    })
-    .slice(-4);
+// with an Equipped button; the others read Equip or their price.
+const hangarKitButtons = () => cosmeticButtons('soundKit');
 const equippedKitIndex = () =>
   hangarKitButtons().findIndex((core) => core.textContent === EQUIPPED);
 const credits = (text: string) =>
@@ -55,7 +57,7 @@ describe('the header lists every Sound Kit', () => {
 
     expect(voice('cyber')).toBeTruthy();
     expect(showsAPrice('cyber')).toBe(false);
-    for (const which of UNOWNED_BY_RETURNING_PLAYER) {
+    for (const which of EVERY_UNOWNED) {
       const { price } = VOICES[which];
       expect(hasPrice(which, price), `${which} shows ${price}`).toBe(true);
     }
@@ -85,7 +87,6 @@ describe('a Sound Kit the player does not own', () => {
       player.openHeader('Hangar');
       expect(equippedKitIndex(), 'the equipped voice').toBe(0);
       // The Hangar still sells it.
-      // (Trail colours cost the same, so look only at the voices' four.)
       const index = Object.keys(VOICES).indexOf(which);
       expect(hangarKitButtons()[index]?.textContent).toBe(
         `${VOICES[which].price} Cr`,
@@ -174,13 +175,13 @@ const equippedButtons = () =>
   screen.getAllByRole('button', { name: EQUIPPED }) as HTMLButtonElement[];
 
 describe('the Hangar, for a Cosmetic that is already equipped', () => {
-  it('shows the badge and a disabled Equipped button on the equipped Trail and the equipped Sound Kit', () => {
+  it('shows the badge and a disabled Equipped button on the one equipped in every group', () => {
     const player = renderGame({ profile: RETURNING_PLAYER });
     player.openHeader('Hangar');
 
     const buttons = equippedButtons();
 
-    expect(buttons).toHaveLength(2);
+    expect(buttons).toHaveLength(Object.keys(COSMETIC_GROUP_HEADINGS).length);
     for (const button of buttons) {
       expect(button.disabled).toBe(true);
       expect(badgesIn(cardOf(button))).toHaveLength(1);
@@ -197,8 +198,10 @@ describe('the Hangar, for a Cosmetic that is already equipped', () => {
 
     expect((equip as HTMLButtonElement).disabled).toBe(false);
     expect(badgesIn(cardOf(equip))).toHaveLength(0);
-    // The Trail the player equipped has the badge now: one Trail, one Sound Kit.
-    expect(equippedButtons()).toHaveLength(2);
+    // The Trail the player equipped has the badge now: one in every group.
+    expect(equippedButtons()).toHaveLength(
+      Object.keys(COSMETIC_GROUP_HEADINGS).length,
+    );
   });
 
   it('offers Equip, and no badge, on an owned Sound Kit; equipping it moves the badge and Equipped onto it for free', () => {

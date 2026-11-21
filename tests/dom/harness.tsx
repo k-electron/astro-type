@@ -44,7 +44,13 @@ import { FIRST_STAGE } from '../../src/curriculum/curriculum';
 import { asCurrentSave } from '../shared/saves';
 import { startStage as sendStartStage } from '../shared/testHelpers';
 import { GameProvider } from '../../src/app/useGame';
-import { DEBRIEF_TITLE, START_FREE_FLIGHT } from '../shared/screens';
+import type { CosmeticKind } from '../../src/game/catalog';
+import { EQUIP, EQUIPPED } from '../../src/screens/hangarLabels';
+import {
+  COSMETIC_GROUP_HEADINGS,
+  DEBRIEF_TITLE,
+  START_FREE_FLIGHT,
+} from '../shared/screens';
 
 export { screen, within };
 
@@ -365,6 +371,42 @@ export function debriefCard(): HTMLElement {
  */
 export function stageCard(title: string): HTMLElement {
   return screen.getByRole('article', { name: title });
+}
+
+/**
+ * The buttons of one group of the Hangar's Cosmetics, in the order shown: the
+ * ones under that group's heading and above the next heading. Each reads its
+ * price (`300 Cr`) while unowned, Equip when owned and Equipped when it is the
+ * one in use. Open the Hangar first. Finding them by the headings keeps a
+ * test from counting buttons from the end, which the next kind would break.
+ */
+export function cosmeticButtons(kind: CosmeticKind): HTMLButtonElement[] {
+  const heading = screen.getByRole('heading', {
+    name: COSMETIC_GROUP_HEADINGS[kind],
+    level: 3,
+  });
+  const after = (element: Element, other: Element) =>
+    Boolean(
+      element.compareDocumentPosition(other) & Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+  const nextHeading = screen
+    .getAllByRole('heading', { level: 3 })
+    .find((other) => after(heading, other));
+  return (
+    screen.getAllByRole('button', {
+      name: new RegExp(`^(${EQUIPPED}|${EQUIP}|[\\d,]+ Cr)$`),
+    }) as HTMLButtonElement[]
+  ).filter(
+    (button) =>
+      after(heading, button) && (!nextHeading || after(button, nextHeading)),
+  );
+}
+
+/** Clicks the `index`th button of a Hangar group (0 is the free default), as `cosmeticButtons` lists them. */
+export function clickCosmetic(kind: CosmeticKind, index: number): void {
+  const button = cosmeticButtons(kind)[index];
+  if (!button) throw new Error(`The ${kind} group has no button ${index}`);
+  fireEvent.click(button);
 }
 
 /** True when the element, or anything around it, is inert. */

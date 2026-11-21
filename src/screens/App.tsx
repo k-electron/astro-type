@@ -20,17 +20,19 @@ import type { Screen } from '../game/machine';
  * itself, so a change to either re-renders only the starfield, not the app.
  */
 function CosmicBackdrop() {
-  const { onFlightDeck, overdriveActive, multiplier } = useGameState(
+  const { onFlightDeck, overdriveActive, multiplier, backdrop } = useGameState(
     (state) => ({
       onFlightDeck: state.screen === 'flight-deck',
       overdriveActive: state.run.overdriveActive,
       multiplier: state.run.multiplier,
+      backdrop: state.profile.upgrades.equippedBackdrop,
     }),
   );
   return (
     <GlobalCosmicBackground
       overdriveActive={onFlightDeck && overdriveActive}
       multiplier={onFlightDeck ? multiplier : 1}
+      backdrop={backdrop}
     />
   );
 }

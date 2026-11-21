@@ -1,3 +1,5 @@
+import type { CosmeticKind } from '../game/catalog';
+
 /**
  * The words on a Cosmetic card's button: Equipped once it is the one in use,
  * Equip while it is owned but not. A card's corner badge shows EQUIPPED too
@@ -5,3 +7,13 @@
  */
 export const EQUIPPED = 'Equipped';
 export const EQUIP = 'Equip';
+
+/** The heading over each kind of Cosmetic in the Hangar. */
+export const COSMETIC_GROUP_HEADINGS: Record<CosmeticKind, string> = {
+  trail: 'Trails',
+  soundKit: 'Sound Kits',
+  burst: 'Bursts',
+  backdrop: 'Backdrops',
+  ship: 'Ships',
+  hull: 'Hulls',
+};

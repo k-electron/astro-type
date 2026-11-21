@@ -4,7 +4,7 @@ import { clearedStages, RETURNING_PLAYER } from '../shared/saves';
 import {
   BEGIN_HOME_ROW,
   DEBRIEF_TITLE,
-  HANGAR_TRAILS_HEADING,
+  COSMETIC_GROUP_HEADINGS,
   HUD_NAME,
   LAUNCH_STAGE,
   MENU_HEADINGS,
@@ -207,7 +207,7 @@ describe('the glossary names', () => {
     renderGame().openHeader('Hangar');
 
     expect(
-      screen.getByRole('heading', { name: HANGAR_TRAILS_HEADING }),
+      screen.getByRole('heading', { name: COSMETIC_GROUP_HEADINGS.trail }),
     ).toBeTruthy();
   });
 

@@ -3,14 +3,14 @@ import { describe, expect, it } from 'vitest';
 import { DEFAULT_PROFILE } from '../../src/game/schemas';
 import { OWNS_EVERY_SOUND_KIT, RETURNING_PLAYER } from '../shared/saves';
 import { START_STAGE, soundKitName } from '../shared/screens';
-import { type Player, renderGame, screen } from './harness';
+import { cosmeticButtons, type Player, renderGame, screen } from './harness';
 import {
   OPEN_AUDIO_PANEL,
   muteAllLabel,
   laserSfxLabel,
   rhythmBeatsLabel,
 } from '../../src/screens/audioLabels';
-import { EQUIP, EQUIPPED } from '../../src/screens/hangarLabels';
+import { EQUIPPED } from '../../src/screens/hangarLabels';
 
 // The header's audio controls: Mute All Audio, and the panel its settings
 // button opens (volume for the laser sounds and for the rhythm beats, each
@@ -158,15 +158,12 @@ describe('the audio panel', () => {
 });
 
 describe('picking a Sound Kit in the panel', () => {
-  // The Hangar lists the cores in the panel's order and marks the equipped one
-  // with an Equipped button; the others read Equip. (The Trails above them have
-  // Equipped and Equip buttons too, so take the last four.)
-  const equippedCoreIndex = () => {
-    const cores = screen
-      .getAllByRole('button', { name: new RegExp(`^(${EQUIPPED}|${EQUIP})$`) })
-      .slice(-4);
-    return cores.findIndex((core) => core.textContent === EQUIPPED);
-  };
+  // The Hangar lists the Sound Kits in the panel's order and marks the equipped
+  // one with an Equipped button; the others read Equip.
+  const equippedCoreIndex = () =>
+    cosmeticButtons('soundKit').findIndex(
+      (core) => core.textContent === EQUIPPED,
+    );
 
   it('equips it, as the Hangar shows, and it is still equipped after a reload', () => {
     const player = renderGame({ profile: OWNS_EVERY_SOUND_KIT });

@@ -1,10 +1,14 @@
 import type React from 'react';
 import { useEffect, useRef } from 'react';
 import { X3_STEP } from '../game/rules';
+import type { BackdropId } from '../game/schemas';
+import { BACKDROPS } from './backdrops';
 
 interface GlobalCosmicBackgroundProps {
   overdriveActive: boolean;
   multiplier: number;
+  /** The equipped Backdrop: the space the stars drift in. */
+  backdrop: BackdropId;
 }
 
 interface CosmicStar {
@@ -21,6 +25,7 @@ interface CosmicStar {
 export const GlobalCosmicBackground: React.FC<GlobalCosmicBackgroundProps> = ({
   overdriveActive,
   multiplier,
+  backdrop,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const starsRef = useRef<CosmicStar[]>([]);
@@ -51,11 +56,12 @@ export const GlobalCosmicBackground: React.FC<GlobalCosmicBackgroundProps> = ({
 
     // Initialize 180 multi-spectral stars across the entire screen once
     const starColors = ['#ffffff', '#bae6fd', '#38bdf8', '#c4b5fd', '#fef08a'];
-    const starCount = 180;
+    const style = BACKDROPS[backdrop];
+    const starCount = style.stars;
     starsRef.current = [];
 
     for (let i = 0; i < starCount; i++) {
-      const baseAlpha = 0.25 + Math.random() * 0.65;
+      const baseAlpha = (0.25 + Math.random() * 0.65) * style.starAlpha;
       starsRef.current.push({
         x: Math.random(),
         y: Math.random(), // full 0.0 to 1.0 vertical distribution across entire window
@@ -80,6 +86,7 @@ export const GlobalCosmicBackground: React.FC<GlobalCosmicBackgroundProps> = ({
       const height = canvas.height;
 
       ctx.clearRect(0, 0, width, height);
+      style.ambient?.(ctx, width, height, frame, currentSpeed);
 
       const targetOverdrive = stateRef.current.overdriveActive;
       const targetMultiplier = stateRef.current.multiplier;
@@ -144,7 +151,7 @@ export const GlobalCosmicBackground: React.FC<GlobalCosmicBackgroundProps> = ({
       cancelAnimationFrame(animId);
       window.removeEventListener('resize', updateSize);
     };
-  }, []); // Run setup once; live state tracked via stateRef
+  }, [backdrop]); // Set up again only for another Backdrop; live state tracked via stateRef
 
   return (
     <canvas

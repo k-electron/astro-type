@@ -1,13 +1,17 @@
 import { Container, Graphics, Rectangle, Sprite, Text } from 'pixi.js';
 import type { Grade } from '../game/rules';
 import { hitPopupLabel, hitPopupsToPrepare, hitPopupStems } from './hitPopups';
+import { DEFAULT_BURST } from '../game/catalog';
+import type { BurstId } from '../game/schemas';
 import { Pool } from './pool';
+import { BURSTS, type BurstPainter } from './bursts';
 import {
   CRYSTAL_SIZE,
   DOT_RADIUS,
   diamondTexture,
   dotTexture,
   FLASH_RADIUS,
+  pixelTexture,
   flashTexture,
   GlowSprite,
   SHARD_SIZE,
@@ -54,6 +58,8 @@ export interface HitShot {
   laserColor: string;
   /** The Judgement's colour. */
   hitColor: string;
+  /** The equipped Burst: how the explosion scatters its particles. */
+  burst: BurstId;
 }
 
 /** The wrong key was struck. */
@@ -97,6 +103,7 @@ interface Bolt {
   speed: number;
   color: string;
   hitColor: string;
+  burst: BurstId;
   isSpace: boolean;
   /** Hit grade, or null for the red laser of a wrong key. */
   grade: Grade | null;
@@ -215,6 +222,14 @@ export class DeckEffects {
   private readonly crystalLayer = new Container();
   private readonly popupLayer = new Container();
 
+  /** What a Burst paints with: the pools below, handed over once, so a hit allocates nothing. */
+  private readonly painter: BurstPainter = {
+    spark: this.spark.bind(this),
+    pixel: (x, y, vx, vy, color, size, maxLife) =>
+      this.spark(x, y, vx, vy, color, size, maxLife, true),
+    ring: this.shockwave.bind(this),
+  };
+
   private readonly bolts = new Pool<Bolt>(() => this.makeBolt(), 8);
   private readonly sparks = new Pool<Spark>(
     () => this.makeSpark(this.sparkLayer),
@@ -329,6 +344,7 @@ export class DeckEffects {
       speed: 0,
       color: '#fff',
       hitColor: '#fff',
+      burst: DEFAULT_BURST,
       isSpace: false,
       grade: null,
       points: 0,
@@ -507,6 +523,7 @@ export class DeckEffects {
     bolt.speed = 46;
     bolt.color = shot.laserColor;
     bolt.hitColor = shot.hitColor;
+    bolt.burst = shot.burst;
     bolt.isSpace = shot.isSpace;
     bolt.grade = shot.grade;
     bolt.points = shot.points;
@@ -807,6 +824,7 @@ export class DeckEffects {
     color: string,
     size: number,
     maxLife: number,
+    square = false,
   ): void {
     const p = this.sparks.acquire();
     if (!p) return;
@@ -817,6 +835,7 @@ export class DeckEffects {
     p.size = size;
     p.life = 0;
     p.maxLife = maxLife;
+    p.sprite.texture = square ? pixelTexture() : dotTexture();
     p.sprite.tint = color;
     p.sprite.visible = true;
     p.sprite.position.set(x, y);
@@ -954,20 +973,7 @@ export class DeckEffects {
         p.sprite.alpha = 1;
       }
 
-      const sparkCount = perfect ? (isSpace ? 55 : 40) : 26;
-      for (let i = 0; i < sparkCount; i++) {
-        const angle = Math.random() * Math.PI * 2;
-        const speed = 4.5 + Math.random() * 9.5;
-        this.spark(
-          x + (Math.random() - 0.5) * (w * 0.4),
-          y,
-          Math.cos(angle) * speed,
-          Math.sin(angle) * speed - 1.5,
-          i % 3 === 0 ? '#ffffff' : i % 2 === 0 ? hitColor : '#f97316',
-          3 + Math.random() * 4.5,
-          28 + Math.random() * 20,
-        );
-      }
+      BURSTS[bolt.burst](this.painter, x, y, w, isSpace, perfect, hitColor);
 
       const crystalCount = perfect ? (isSpace ? 4 : 3) : 2;
       for (let i = 0; i < crystalCount; i++) {

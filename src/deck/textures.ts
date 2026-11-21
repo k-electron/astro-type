@@ -57,6 +57,16 @@ export function dotTexture(): Texture {
   );
 }
 
+/** A solid white square of side `2 * DOT_RADIUS`, which sprites scale like the disc. */
+export function pixelTexture(): Texture {
+  return cached('pixel', () =>
+    canvasTexture(DOT_RADIUS * 2, DOT_RADIUS * 2, (ctx) => {
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, DOT_RADIUS * 2, DOT_RADIUS * 2);
+    }),
+  );
+}
+
 /**
  * The hull shard that debris is made of: a four-point polygon at
  * size 1, drawn here at `SHARD_SIZE` pixels so a sprite scales by size / SHARD_SIZE.

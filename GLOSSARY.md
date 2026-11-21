@@ -99,7 +99,7 @@ A Hangar purchase that changes play: shields, reactor or sensors.
 _Avoid_: Power-up, perk
 
 **Cosmetic**:
-A Hangar purchase that changes only the look or sound: a Trail or a Sound Kit.
+A Hangar purchase that changes only the look or sound: a Trail, Sound Kit, Burst, Backdrop, Ship or Hull. It never changes what the player reads to type or to judge themselves: finger colours, a Drone's size, its key, the keyboard, the Strike Line, Miss marks or the hit colours by Multiplier.
 _Avoid_: Skin, theme, upgrade
 
 **Trail**:
@@ -109,6 +109,22 @@ _Avoid_: Trail theme
 **Sound Kit**:
 A Cosmetic set of sounds for the lasers and the music.
 _Avoid_: Audio core, synthesizer voice
+
+**Burst**:
+A Cosmetic style for the explosion on a hit.
+_Avoid_: Explosion skin
+
+**Backdrop**:
+A Cosmetic for the space behind the Flight Deck.
+_Avoid_: Background, theme
+
+**Ship**:
+A Cosmetic shape for the small ship at the Strike Line, which keeps the finger colour.
+_Avoid_: Skin
+
+**Hull**:
+A Cosmetic shape for the Drones' border and body, which keeps their size, key and finger colour.
+_Avoid_: Drone skin
 
 ### Screens
 

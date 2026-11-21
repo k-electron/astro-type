@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { completeSave, RETURNING_PLAYER } from '../../tests/shared/saves';
+import {
+  COSMETIC_FIELDS,
+  completeSave,
+  RETURNING_PLAYER,
+} from '../../tests/shared/saves';
 import type { UpgradesSchema } from './schemas';
 import type { Game } from './game';
 import { DEFAULT_PROFILE, SAVE_VERSION } from './schemas';
@@ -31,34 +35,77 @@ const UPGRADES = [
 
 /**
  * A Cosmetic is bought once, then equipped for free. Each kind has the Profile
- * fields that hold what is equipped and what is owned, the one the player
- * starts with, and the others with their price. `equipMoments` is what
- * equipping one announces: a Trail is heard, a Sound Kit makes no moment.
+ * fields that hold what is equipped and what is owned and the one the player
+ * starts with (`COSMETIC_FIELDS`), and the others with their price, in the
+ * Hangar's order: the prices are the rule, so they are written out. `equipMoments`
+ * is what equipping one announces: a Trail, a Burst, a Backdrop, a Ship and a
+ * Hull are heard, a Sound Kit makes no moment.
  */
 const COSMETICS = [
   {
     kind: 'trail colour',
-    equipped: 'equippedTrailTheme',
-    owned: 'unlockedThemes',
-    free: 'CYAN',
+    ...COSMETIC_FIELDS.trail,
     equipMoments: [{ type: 'equip' }],
     items: [
       ['AMBER', 350],
       ['EMERALD', 450],
       ['VIOLET', 600],
       ['SUPERNOVA', 900],
+      ['TEAL', 1400],
+      ['GOLD', 2200],
+      ['SPECTRUM', 3200],
     ],
   },
   {
     kind: 'Sound Kit',
-    equipped: 'equippedAudioCore',
-    owned: 'unlockedAudioCores',
-    free: 'CYBER_SYNTH',
+    ...COSMETIC_FIELDS.soundKit,
     equipMoments: [],
     items: [
       ['RETRO_8BIT', 300],
       ['DEEP_SPACE', 450],
       ['NEO_ACOUSTIC', 600],
+      ['ORBITAL_CHOIR', 1800],
+      ['PULSE_DRUMS', 2600],
+    ],
+  },
+  {
+    kind: 'Burst',
+    ...COSMETIC_FIELDS.burst,
+    equipMoments: [{ type: 'equip' }],
+    items: [
+      ['STARFLOWER', 600],
+      ['PIXEL_SHARDS', 1600],
+      ['SHOCKWAVE', 3000],
+    ],
+  },
+  {
+    kind: 'Backdrop',
+    ...COSMETIC_FIELDS.backdrop,
+    equipMoments: [{ type: 'equip' }],
+    items: [
+      ['NEBULA', 800],
+      ['AURORA', 2000],
+      ['DEEP_VOID', 3500],
+    ],
+  },
+  {
+    kind: 'Ship',
+    ...COSMETIC_FIELDS.ship,
+    equipMoments: [{ type: 'equip' }],
+    items: [
+      ['DART', 700],
+      ['MANTA', 2400],
+      ['CORVETTE', 4500],
+    ],
+  },
+  {
+    kind: 'Hull',
+    ...COSMETIC_FIELDS.hull,
+    equipMoments: [{ type: 'equip' }],
+    items: [
+      ['HEX', 900],
+      ['PLATED', 2400],
+      ['CRYSTAL', 3000],
     ],
   },
 ] as const;
@@ -77,6 +124,9 @@ function buyFromHangar(game: Game, item: Parameters<Game['buy']>[0]): void {
 
 /** A player with plenty of Credits and nothing bought. */
 const richPlayer = (credits = 10000) => loadGame({ totalCredits: credits });
+
+/** More Credits than the whole Hangar costs. */
+const EVERYTHING = 100_000;
 
 describe('buy, for an Upgrade', () => {
   it.each(UPGRADES)(
@@ -148,7 +198,7 @@ describe.each(COSMETICS)('buy, for a $kind', (cosmetic) => {
     it(`buys ${item} for its price, owns it from then on, and equips it`, () => {
       const { game } = richPlayer(price);
 
-      game.buy(item);
+      expect(game.buy(item)).toBe(true);
 
       const { profile } = game.getState();
       expect(profile.totalCredits).toBe(0);
@@ -157,6 +207,15 @@ describe.each(COSMETICS)('buy, for a $kind', (cosmetic) => {
       expect(profile.upgrades[owned]).toContain(free);
     });
   }
+
+  it('is owned and worn from the start, with nothing else owned', () => {
+    const { game } = richPlayer();
+
+    const { upgrades } = game.getState().profile;
+
+    expect(upgrades[equipped]).toBe(free);
+    expect(upgrades[owned]).toEqual([free]);
+  });
 
   it('equips one that is already owned at no cost, including the one every player starts with', () => {
     const [[first, firstPrice], [second, secondPrice]] = items;
@@ -258,6 +317,22 @@ describe.each(COSMETICS)('buy, for a $kind', (cosmetic) => {
   });
 });
 
+describe('buy, across the kinds of Cosmetic', () => {
+  it('keeps each kind to its own fields: the first item of every kind, bought in turn, is each kind’s alone', () => {
+    const { game } = richPlayer(EVERYTHING);
+    for (const { items } of COSMETICS) game.buy(items[0][0]);
+
+    const { profile } = game.getState();
+    for (const { equipped, owned, free, items } of COSMETICS) {
+      const [[item]] = items;
+      expect(profile.upgrades[equipped], equipped).toBe(item);
+      expect([...profile.upgrades[owned]].sort(), owned).toEqual(
+        [free, item].sort(),
+      );
+    }
+  });
+});
+
 describe('a purchase and the Save', () => {
   // A purchase writes the Save back under the same keys it was read from: the
   // Upgrade levels, the owned and equipped Cosmetics, and every setting.
@@ -280,9 +355,10 @@ describe('a purchase and the Save', () => {
     game.buy('sensors');
     game.buy('AMBER');
     game.buy('RETRO_8BIT');
+    game.buy('PIXEL_SHARDS');
 
     expect(storage.saved?.version).toBe(SAVE_VERSION);
-    expect(storage.saved?.totalCredits).toBe(5000 - 200 - 350 - 300);
+    expect(storage.saved?.totalCredits).toBe(5000 - 200 - 350 - 300 - 1600);
     expect(storage.saved?.upgrades).toEqual({
       deflectorShields: save.upgrades.deflectorShields,
       overdriveReactor: save.upgrades.overdriveReactor,
@@ -291,6 +367,14 @@ describe('a purchase and the Save', () => {
       equippedAudioCore: 'RETRO_8BIT',
       unlockedThemes: ['CYAN', 'AMBER'],
       unlockedAudioCores: ['CYBER_SYNTH', 'RETRO_8BIT'],
+      equippedBurst: 'PIXEL_SHARDS',
+      unlockedBursts: [...save.upgrades.unlockedBursts, 'PIXEL_SHARDS'],
+      equippedBackdrop: save.upgrades.equippedBackdrop,
+      unlockedBackdrops: save.upgrades.unlockedBackdrops,
+      equippedShip: save.upgrades.equippedShip,
+      unlockedShips: save.upgrades.unlockedShips,
+      equippedHull: save.upgrades.equippedHull,
+      unlockedHulls: save.upgrades.unlockedHulls,
     });
     for (const field of SETTINGS) {
       expect(storage.saved?.[field], field).toEqual(save[field]);

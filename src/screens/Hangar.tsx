@@ -7,6 +7,9 @@ import {
   Volume2,
   Palette,
   Check,
+  Rocket,
+  Hexagon,
+  Moon,
   type LucideIcon,
 } from 'lucide-react';
 import {
@@ -15,16 +18,16 @@ import {
   OverlayShell,
 } from './OverlayShell';
 import {
-  type SoundKitEntry,
+  type CosmeticEntry,
+  type CosmeticKind,
   entriesOf,
-  type TrailEntry,
   type UpgradeEntry,
   type UpgradeIcon,
   type UpgradeTone,
 } from '../game/catalog';
 import { type CosmeticStatus, cosmeticStatus } from '../game/profile';
 import { useGame } from '../app/useGame';
-import { EQUIP, EQUIPPED } from './hangarLabels';
+import { COSMETIC_GROUP_HEADINGS, EQUIP, EQUIPPED } from './hangarLabels';
 import { useGameState } from '../app/useGameState';
 
 const UPGRADE_ICONS: Record<UpgradeIcon, LucideIcon> = {
@@ -60,6 +63,17 @@ const UPGRADE_TONES: Record<
     wash: 'bg-emerald-950/20',
   },
 };
+
+/** The kinds of Cosmetic in the order the Hangar lists them, each with its icon. */
+const COSMETIC_ICONS: Record<CosmeticKind, LucideIcon> = {
+  trail: Palette,
+  soundKit: Volume2,
+  burst: Sparkles,
+  backdrop: Moon,
+  ship: Rocket,
+  hull: Hexagon,
+};
+const COSMETIC_KINDS = Object.keys(COSMETIC_ICONS) as CosmeticKind[];
 
 /** One Upgrade's card: its level, and the button for the next level at its catalog price. */
 const UpgradeCard: React.FC<{
@@ -131,7 +145,7 @@ const UpgradeCard: React.FC<{
  * buys it, equips it or says it is Equipped.
  */
 const CosmeticCard: React.FC<{
-  entry: TrailEntry | SoundKitEntry;
+  entry: CosmeticEntry;
   status: CosmeticStatus;
   onBuy: () => void;
   children: ReactNode;
@@ -229,84 +243,55 @@ export const Hangar: React.FC = () => {
           </div>
         </div>
 
-        {/* Cosmetics: Trails */}
-        <div>
-          <div className="flex items-center gap-2 mb-3">
-            <Palette className="w-4 h-4 text-cyan-400" />
-            <h3 className="text-sm font-semibold uppercase font-mono tracking-wider text-slate-400">
-              Trails
-            </h3>
-          </div>
+        {/* Cosmetics: one group for each kind, in the order of COSMETIC_KINDS */}
+        {COSMETIC_KINDS.map((kind) => {
+          const Icon = COSMETIC_ICONS[kind];
+          return (
+            <div key={kind}>
+              <div className="flex items-center gap-2 mb-3">
+                <Icon className="w-4 h-4 text-cyan-400" />
+                <h3 className="text-sm font-semibold uppercase font-mono tracking-wider text-slate-400">
+                  {COSMETIC_GROUP_HEADINGS[kind]}
+                </h3>
+              </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-            {entriesOf('trail').map((trail) => {
-              const status = cosmeticStatus(profile, trail);
-
-              return (
-                <CosmeticCard
-                  key={trail.id}
-                  entry={trail}
-                  status={status}
-                  onBuy={() => buy(trail.id)}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <span
-                      className="w-3.5 h-3.5 rounded-full"
-                      style={{ backgroundColor: trail.color }}
-                    />
-                    {status.equipped && (
-                      <span className="text-[10px] font-mono font-bold uppercase text-cyan-400 flex items-center gap-0.5">
-                        <Check className="w-3 h-3" /> {EQUIPPED}
-                      </span>
-                    )}
-                  </div>
-                  <span className="font-semibold text-xs text-slate-200 block mb-2">
-                    {trail.name}
-                  </span>
-                </CosmeticCard>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Soundscapes: Sound Kits */}
-        <div>
-          <div className="flex items-center gap-2 mb-3">
-            <Volume2 className="w-4 h-4 text-cyan-400" />
-            <h3 className="text-sm font-semibold uppercase font-mono tracking-wider text-slate-400">
-              Sound Kits
-            </h3>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            {entriesOf('soundKit').map((kit) => {
-              const status = cosmeticStatus(profile, kit);
-
-              return (
-                <CosmeticCard
-                  key={kit.id}
-                  entry={kit}
-                  status={status}
-                  onBuy={() => buy(kit.id)}
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="font-semibold text-xs text-white">
-                      {kit.name}
-                    </span>
-                    {status.equipped && (
-                      <span className="text-[10px] font-mono font-bold uppercase text-cyan-400 flex items-center gap-0.5">
-                        <Check className="w-3 h-3" /> {EQUIPPED}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-[11px] text-slate-400 mb-3">
-                    {kit.description}
-                  </p>
-                </CosmeticCard>
-              );
-            })}
-          </div>
-        </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                {entriesOf(kind).map((entry) => {
+                  const status = cosmeticStatus(profile, entry);
+                  return (
+                    <CosmeticCard
+                      key={entry.id}
+                      entry={entry}
+                      status={status}
+                      onBuy={() => buy(entry.id)}
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="flex items-center gap-2 font-semibold text-xs text-white">
+                          {entry.kind === 'trail' && (
+                            <span
+                              aria-hidden="true"
+                              className="w-3.5 h-3.5 rounded-full shrink-0"
+                              style={{ backgroundColor: entry.color }}
+                            />
+                          )}
+                          {entry.name}
+                        </span>
+                        {status.equipped && (
+                          <span className="text-[10px] font-mono font-bold uppercase text-cyan-400 flex items-center gap-0.5">
+                            <Check className="w-3 h-3" /> {EQUIPPED}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-slate-400 mb-3">
+                        {entry.description}
+                      </p>
+                    </CosmeticCard>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </OverlayShell>
   );

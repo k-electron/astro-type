@@ -273,6 +273,7 @@ export class DeckScene {
     this.ship.update({
       targetX: rect ? rect.cx : null,
       color,
+      ship: state.profile.upgrades.equippedShip,
       shipY: layout.shipY,
       d,
     });
@@ -332,6 +333,7 @@ export class DeckScene {
         laneColor,
         laserColor,
         hitColor,
+        burst: state.profile.upgrades.equippedBurst,
       });
       return;
     }
@@ -467,6 +469,7 @@ export class DeckScene {
         rect.h,
         index,
         FINGER_LANES[drone.lane]?.color || DEFAULT_COLOR,
+        state.profile.upgrades.equippedHull,
       );
       view.animate(this.timeMs);
     });

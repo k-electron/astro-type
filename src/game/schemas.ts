@@ -1,6 +1,14 @@
 import { z } from 'zod';
 import { MAX_STARS_PER_STAGE } from '../curriculum/curriculum';
-import { DEFAULT_TRAIL, MAX_UPGRADE_LEVEL } from './catalog';
+import {
+  DEFAULT_BACKDROP,
+  DEFAULT_BURST,
+  DEFAULT_HULL,
+  DEFAULT_SHIP,
+  DEFAULT_SOUND_KIT,
+  DEFAULT_TRAIL,
+  MAX_UPGRADE_LEVEL,
+} from './catalog';
 
 export const TrailIdSchema = z.enum([
   'CYAN',
@@ -8,6 +16,9 @@ export const TrailIdSchema = z.enum([
   'EMERALD',
   'VIOLET',
   'SUPERNOVA',
+  'TEAL',
+  'GOLD',
+  'SPECTRUM',
 ]);
 
 export const SoundKitSchema = z.enum([
@@ -15,7 +26,32 @@ export const SoundKitSchema = z.enum([
   'RETRO_8BIT',
   'DEEP_SPACE',
   'NEO_ACOUSTIC',
+  'ORBITAL_CHOIR',
+  'PULSE_DRUMS',
 ]);
+
+export const BurstIdSchema = z.enum([
+  'SPARKS',
+  'STARFLOWER',
+  'PIXEL_SHARDS',
+  'SHOCKWAVE',
+]);
+
+export const BackdropIdSchema = z.enum([
+  'STARFIELD',
+  'NEBULA',
+  'AURORA',
+  'DEEP_VOID',
+]);
+
+export const ShipIdSchema = z.enum([
+  'INTERCEPTOR',
+  'DART',
+  'MANTA',
+  'CORVETTE',
+]);
+
+export const HullIdSchema = z.enum(['STANDARD', 'HEX', 'PLATED', 'CRYSTAL']);
 
 export const BeatThemeSchema = z.enum([
   'NEON_SYNTHWAVE',
@@ -91,9 +127,17 @@ export const UpgradesSchema = z.object({
   overdriveReactor: upgradeLevel(),
   precisionSensors: upgradeLevel(),
   equippedTrailTheme: TrailIdSchema.catch(DEFAULT_TRAIL),
-  equippedAudioCore: SoundKitSchema.catch('CYBER_SYNTH'),
+  equippedAudioCore: SoundKitSchema.catch(DEFAULT_SOUND_KIT),
   unlockedThemes: ownedList(TrailIdSchema, DEFAULT_TRAIL),
-  unlockedAudioCores: ownedList(SoundKitSchema, 'CYBER_SYNTH'),
+  unlockedAudioCores: ownedList(SoundKitSchema, DEFAULT_SOUND_KIT),
+  equippedBurst: BurstIdSchema.catch(DEFAULT_BURST),
+  unlockedBursts: ownedList(BurstIdSchema, DEFAULT_BURST),
+  equippedBackdrop: BackdropIdSchema.catch(DEFAULT_BACKDROP),
+  unlockedBackdrops: ownedList(BackdropIdSchema, DEFAULT_BACKDROP),
+  equippedShip: ShipIdSchema.catch(DEFAULT_SHIP),
+  unlockedShips: ownedList(ShipIdSchema, DEFAULT_SHIP),
+  equippedHull: HullIdSchema.catch(DEFAULT_HULL),
+  unlockedHulls: ownedList(HullIdSchema, DEFAULT_HULL),
 });
 
 /**
@@ -214,5 +258,9 @@ export type StageProgress = z.output<typeof StageProgressSchema>;
 export type KeyAnalytics = z.output<typeof KeyAnalyticsSchema>;
 export type TrailId = z.output<typeof TrailIdSchema>;
 export type SoundKit = z.output<typeof SoundKitSchema>;
+export type BurstId = z.output<typeof BurstIdSchema>;
+export type BackdropId = z.output<typeof BackdropIdSchema>;
+export type ShipId = z.output<typeof ShipIdSchema>;
+export type HullId = z.output<typeof HullIdSchema>;
 export type BeatTheme = z.output<typeof BeatThemeSchema>;
 export type Settings = z.output<typeof SettingsSchema>;

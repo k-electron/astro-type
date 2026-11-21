@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { RETURNING_PLAYER } from '../../tests/shared/saves';
+import {
+  DEFAULT_BACKDROP,
+  DEFAULT_BURST,
+  DEFAULT_HULL,
+  DEFAULT_SHIP,
+} from './catalog';
 import { KEYBOARD_ROWS } from '../curriculum/keyboardLayout';
 import {
   type Game,
@@ -27,6 +33,14 @@ import {
 
 type Moment = Parameters<Parameters<Game['onMoment']>[0]>[0];
 type Hit = Extract<Moment, { type: 'hit' }>;
+
+/** The free default of the kind each Cosmetic belongs to. */
+const DEFAULT_OF = {
+  STARFLOWER: DEFAULT_BURST,
+  NEBULA: DEFAULT_BACKDROP,
+  DART: DEFAULT_SHIP,
+  HEX: DEFAULT_HULL,
+} as const;
 
 /** Collects every Moment the game announces from now on. */
 function listen(game: Game): Moment[] {
@@ -339,6 +353,35 @@ describe('a purchase', () => {
     // CYAN is the colour every player starts with: equipping it again is free.
     expect(game.buy('CYAN')).toBe(true);
     expect(typesOf(moments)).toEqual(['equip', 'equip']);
+  });
+
+  it.each([
+    ['a Burst', 'STARFLOWER'],
+    ['a Backdrop', 'NEBULA'],
+    ['a Ship', 'DART'],
+    ['a Hull', 'HEX'],
+  ] as const)(
+    'buying %s, and equipping the free default again, are equip moments, as for a Trail',
+    (_, item) => {
+      const { game } = loadGame(RETURNING_PLAYER);
+      const moments = listen(game);
+
+      expect(game.buy(item)).toBe(true);
+      expect(typesOf(moments)).toEqual(['equip']);
+
+      // The kind's free default is already owned: equipping it again is free.
+      expect(game.buy(DEFAULT_OF[item])).toBe(true);
+      expect(typesOf(moments)).toEqual(['equip', 'equip']);
+    },
+  );
+
+  it('buying a Sound Kit makes no moment', () => {
+    const { game } = loadGame(RETURNING_PLAYER);
+    const moments = listen(game);
+
+    expect(game.buy('RETRO_8BIT')).toBe(true);
+
+    expect(moments).toEqual([]);
   });
 
   it('a buy that changes nothing makes no moment', () => {

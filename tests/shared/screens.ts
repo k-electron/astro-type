@@ -117,11 +117,12 @@ export { STAR_BARS_LIST } from '../../src/screens/starBarLabels';
 // ---- Hangar ----------------------------------------------------------------
 
 /**
- * The heading over the Hangar's Trail Cosmetics (GLOSSARY.md: a Trail). The
- * Hangar writes it inline, so it is spelled out once here; `MENU_HEADINGS.Hangar`
- * is the screen's own heading.
+ * The level-3 heading over each group of the Hangar's Cosmetics, by kind
+ * (GLOSSARY.md: a Trail, a Sound Kit, a Burst, a Backdrop, a Ship, a Hull).
+ * The source exports them (`src/screens/hangarLabels.ts`) and tests import them
+ * from here; `MENU_HEADINGS.Hangar` is the screen's own heading.
  */
-export const HANGAR_TRAILS_HEADING = 'Trails';
+export { COSMETIC_GROUP_HEADINGS } from '../../src/screens/hangarLabels';
 
 // ---- Free Flight -----------------------------------------------------------
 
