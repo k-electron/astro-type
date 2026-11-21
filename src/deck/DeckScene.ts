@@ -131,6 +131,7 @@ export class DeckScene {
   clearEffects(): void {
     this.effects.clear();
     this.ship.reset();
+    this.hitsFired = 0;
   }
 
   /**

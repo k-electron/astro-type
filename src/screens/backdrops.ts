@@ -66,14 +66,15 @@ const nebula: BackdropStyle['ambient'] = (ctx, width, height, frame) => {
   }
 };
 
+const RIBBONS = [
+  { rgb: '52, 211, 153', y: 0.16, phase: 0 },
+  { rgb: '45, 212, 191', y: 0.24, phase: 2 },
+  { rgb: '129, 140, 248', y: 0.32, phase: 4 },
+];
+
 /** Slow, wavering ribbons of green and teal light across the top of the sky. */
 const aurora: BackdropStyle['ambient'] = (ctx, width, height, frame) => {
-  const ribbons = [
-    { rgb: '52, 211, 153', y: 0.16, phase: 0 },
-    { rgb: '45, 212, 191', y: 0.24, phase: 2 },
-    { rgb: '129, 140, 248', y: 0.32, phase: 4 },
-  ];
-  for (const ribbon of ribbons) {
+  for (const ribbon of RIBBONS) {
     const baseY = ribbon.y * height;
     const gradient = ctx.createLinearGradient(0, baseY - 90, 0, baseY + 130);
     gradient.addColorStop(0, `rgba(${ribbon.rgb}, 0)`);

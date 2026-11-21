@@ -10,13 +10,13 @@ import type { ShipId } from '../game/schemas';
 export interface ShipStyle {
   /** The engine glow under the tail, in the finger colour. */
   engine: (g: Graphics, color: string) => void;
-  /** The hull and what sits on it, edged in the finger colour. */
-  hull: (g: Graphics, color: string) => void;
+  /** The body and what sits on it, edged in the finger colour. */
+  body: (g: Graphics, color: string) => void;
   /** Where the two guns are along the ship, where the muzzle flares sit. */
   guns: readonly [number, number];
 }
 
-const HULL_FILL = '#090d16';
+const BODY_FILL = '#090d16';
 const CANOPY = '#38bdf8';
 
 /** A one-engine glow at the tail's middle. */
@@ -31,9 +31,9 @@ const gun = (g: Graphics, x: number): void => {
     .stroke({ width: 0.5, color: '#334155' });
 };
 
-/** The edged hull body from a flat list of corners. */
+/** The edged body from a flat list of corners. */
 const body = (g: Graphics, color: string, points: number[]): void => {
-  g.poly(points).fill(HULL_FILL).stroke({ width: 1.6, color });
+  g.poly(points).fill(BODY_FILL).stroke({ width: 1.6, color });
 };
 
 export const SHIPS: Record<ShipId, ShipStyle> = {
@@ -41,7 +41,7 @@ export const SHIPS: Record<ShipId, ShipStyle> = {
   INTERCEPTOR: {
     engine: singleEngine,
     guns: [7, 35],
-    hull: (g, color) => {
+    body: (g, color) => {
       g.ellipse(21, 25, 3, 1.5).fill('#ffffff');
       body(
         g,
@@ -63,7 +63,7 @@ export const SHIPS: Record<ShipId, ShipStyle> = {
   DART: {
     engine: singleEngine,
     guns: [12, 30],
-    hull: (g, color) => {
+    body: (g, color) => {
       g.ellipse(21, 25, 2.5, 1.5).fill('#ffffff');
       body(
         g,
@@ -85,7 +85,7 @@ export const SHIPS: Record<ShipId, ShipStyle> = {
   MANTA: {
     engine: singleEngine,
     guns: [6, 36],
-    hull: (g, color) => {
+    body: (g, color) => {
       g.ellipse(21, 25, 3, 1.5).fill('#ffffff');
       body(
         g,
@@ -107,11 +107,11 @@ export const SHIPS: Record<ShipId, ShipStyle> = {
       g.ellipse(33, 25, 3.6, 2.6).fill(color);
     },
     guns: [9, 33],
-    hull: (g, color) => {
+    body: (g, color) => {
       body(g, color, [6, 3, 12, 3, 14, 10, 14, 24, 4, 24, 4, 10]);
       body(g, color, [30, 3, 36, 3, 38, 10, 38, 24, 28, 24, 28, 10]);
       g.roundRect(13, 14, 16, 8, 2)
-        .fill(HULL_FILL)
+        .fill(BODY_FILL)
         .stroke({ width: 1.6, color });
       g.roundRect(17, 15.5, 8, 5, 1.5).fill({ color: CANOPY, alpha: 0.95 });
       gun(g, 9);

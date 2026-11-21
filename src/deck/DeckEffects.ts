@@ -138,6 +138,8 @@ interface Spark {
   size: number;
   life: number;
   maxLife: number;
+  /** Whether the sprite is showing the square texture rather than the disc. */
+  square?: boolean;
 }
 
 interface Shard extends Spark {
@@ -841,7 +843,12 @@ export class DeckEffects {
     p.size = size;
     p.life = 0;
     p.maxLife = maxLife;
-    p.sprite.texture = square ? pixelTexture() : dotTexture();
+    // The texture is looked up only when the particle changes shape, so a
+    // hit of round sparks does no lookups, as before.
+    if ((p.square ?? false) !== square) {
+      p.sprite.texture = square ? pixelTexture() : dotTexture();
+      p.square = square;
+    }
     p.sprite.tint = color;
     p.sprite.visible = true;
     p.sprite.position.set(x, y);

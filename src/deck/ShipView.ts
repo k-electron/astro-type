@@ -220,7 +220,7 @@ export class ShipView {
     this.engine.clear();
     style.engine(this.engine, color);
     this.hull.clear();
-    style.hull(this.hull, color);
+    style.body(this.hull, color);
     // The muzzle flares sit on this Ship's guns.
     this.flares.forEach((flare, i) => {
       flare.root.position.x = style.guns[i];

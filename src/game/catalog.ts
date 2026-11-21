@@ -229,7 +229,8 @@ export const CATALOG: readonly CatalogEntry[] = [
     kind: 'trail',
     id: 'SPECTRUM',
     name: 'Quasar Spectrum',
-    description: 'Magenta lasers that outshine the rest.',
+    description:
+      'Lasers that step through the colours of the spectrum, one hit at a time.',
     price: 3200,
     color: '#e879f9',
     spectrum: true,
