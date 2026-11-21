@@ -78,8 +78,7 @@ export interface RunDeps {
 }
 
 /**
- * The Run's part of the game's one store. `set` and `get` are the store's,
- *
+ * The Run's part of the game's one store. `set` and `get` are the store's.
  */
 export function createRunSlice(
   { getPhase, reportRunCleared, clock, runClock, emit }: RunDeps,

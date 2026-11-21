@@ -249,7 +249,6 @@ export const DEFAULT_PROFILE: PlayerProfile = PlayerProfileSchema.parse({
 
 // The Profile and its parts. These are the only definitions of these types.
 export type PlayerProfile = z.output<typeof PlayerProfileSchema>;
-export type Cosmetics = z.output<typeof CosmeticsSchema>;
 export type StageProgress = z.output<typeof StageProgressSchema>;
 export type KeyAnalytics = z.output<typeof KeyAnalyticsSchema>;
 export type TrailId = z.output<typeof TrailIdSchema>;

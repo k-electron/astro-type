@@ -118,7 +118,6 @@ export const Hangar: React.FC = () => {
         </div>
       </div>
 
-      {/* Cosmetics */}
       <div className="p-4 sm:p-6 overflow-y-auto flex flex-col gap-6">
         {/* Cosmetics: one group for each kind, in the order of COSMETIC_KINDS */}
         {COSMETIC_KINDS.map((kind) => {

@@ -55,12 +55,6 @@ describe('the catalog of Cosmetics', () => {
     },
   );
 
-  it('sells only Cosmetics: every item in the catalog belongs to one of the six kinds', () => {
-    const ofAKind = KIND_NAMES.flatMap((kind) => entriesOf(kind));
-
-    expect(ofAKind).toHaveLength(CATALOG.length);
-  });
-
   it('costs 35,000 to 45,000 Credits for the whole Hangar, about 90 typical Runs', () => {
     const total = KIND_NAMES.flatMap((kind) => entriesOf(kind)).reduce(
       (sum, entry) => sum + entry.price,

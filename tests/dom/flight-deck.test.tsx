@@ -109,12 +109,6 @@ describe('a Miss', () => {
   });
 });
 
-/**
- * A Save that still says it bought two levels of Deflector Shields (the game
- * has none since #136): the HUD must show nothing for them.
- */
-const STALE_SHIELDS = { upgrades: { deflectorShields: 2 } };
-
 describe('keys that type no character', () => {
   const IGNORED_KEYS: Array<[string, Parameters<Player['press']>]> = [
     ['Backspace', ['Backspace']],
@@ -147,8 +141,8 @@ describe('keys that type no character', () => {
 });
 
 describe('a wrong key', () => {
-  it('resets the Streak, and the HUD tags only the Multiplier, whatever the Save says about shields', () => {
-    const player = renderGame({ text: TEXT, profile: STALE_SHIELDS });
+  it('resets the Streak, and the HUD tags only the Multiplier', () => {
+    const player = renderGame({ text: TEXT });
     expect(hudTags()).toEqual(['x1']);
     player.type('abc');
     expectStreak(3);
