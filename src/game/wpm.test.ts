@@ -29,8 +29,8 @@ const TEXT = 'abcdef';
 
 const wpm = (game: Game) => game.getState().run.wpm;
 
-function flyingOn(text: string, save?: Record<string, unknown>): Game {
-  const game = newGame(save);
+function flyingOn(text: string): Game {
+  const game = newGame();
   startFreeFlight(game, text);
   return game;
 }
@@ -176,21 +176,15 @@ describe('the first keystroke starts Typing Time, right or wrong', () => {
   // the Run from T to T + 180 steps (the wait before the first right key, and
   // five more): 5 / 5 / (180 / 3600) = 20 WPM. Counted from the first right
   // key it would be 24.
-  it.each([
-    ['a wrong key', undefined],
-    ['a wrong key a shield absorbs', { upgrades: { deflectorShields: 1 } }],
-  ])(
-    'starts at %s that comes first, after time has already passed',
-    (_name, save) => {
-      const game = flyingOn(TEXT, save);
-      game.step(300);
-      game.pressKey(WRONG_KEY);
-      typeText(game, TEXT);
+  it('starts at a wrong key that comes first, after time has already passed', () => {
+    const game = flyingOn(TEXT);
+    game.step(300);
+    game.pressKey(WRONG_KEY);
+    typeText(game, TEXT);
 
-      expect(finalWpm(game)).toBeCloseTo(expectedWpm(6, 180), 6);
-      expect(finalWpm(game)).toBeCloseTo(20, 6);
-    },
-  );
+    expect(finalWpm(game)).toBeCloseTo(expectedWpm(6, 180), 6);
+    expect(finalWpm(game)).toBeCloseTo(20, 6);
+  });
 
   it('starts at a wrong key pressed at the very start of the Run, at Run Time 0', () => {
     const game = flyingOn(TEXT);

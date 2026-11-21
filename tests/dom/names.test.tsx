@@ -108,6 +108,19 @@ describe('BANNED_NAME', () => {
   });
 });
 
+// #136: the Upgrades are gone, so the game never offers an Upgrade or a shield.
+describe('BANNED_NAME and the removed Upgrades', () => {
+  it.each([
+    'Buy an Upgrade',
+    'Upgrades',
+    'Upgraded',
+    'Deflector Shields',
+    'a shield',
+  ])('flags "%s"', (text) => {
+    expect(BANNED_NAME.test(text)).toBe(true);
+  });
+});
+
 describe('the glossary names', () => {
   it('Academy Home uses them', () => {
     renderGame();

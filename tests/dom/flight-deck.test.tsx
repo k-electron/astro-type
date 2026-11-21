@@ -12,7 +12,7 @@ import { barsOf } from '../shared/starBars';
 import { type Player, renderGame, screen, within } from './harness';
 
 // The Flight Deck as the player reads it: the HUD, the text prompt and its
-// progress, the Streak, the shield tag and the Overdrive badges. Everything is
+// progress, the Streak and the Overdrive badges. Everything is
 // found by role, label or visible text.
 
 // Six different letters, so each position in the prompt is easy to tell apart.
@@ -42,7 +42,7 @@ const currentCharacters = () =>
       .querySelectorAll('[aria-current="true"]'),
   ).map((element) => element.textContent);
 
-/** The "x<n>" tags in the HUD: the Multiplier's, then the shields' if any. */
+/** The "x<n>" tags in the HUD: the Multiplier's, and nothing else is tagged. */
 const hudTags = () =>
   within(screen.getByRole('region', { name: HUD_NAME }))
     .queryAllByText(/^x\d$/)
@@ -109,8 +109,11 @@ describe('a Miss', () => {
   });
 });
 
-/** A player who has bought two levels of Deflector Shields. */
-const SHIELDED = { upgrades: { deflectorShields: 2 } };
+/**
+ * A Save that still says it bought two levels of Deflector Shields (the game
+ * has none since #136): the HUD must show nothing for them.
+ */
+const STALE_SHIELDS = { upgrades: { deflectorShields: 2 } };
 
 describe('keys that type no character', () => {
   const IGNORED_KEYS: Array<[string, Parameters<Player['press']>]> = [
@@ -125,10 +128,10 @@ describe('keys that type no character', () => {
   ];
 
   it.each(IGNORED_KEYS)(
-    '%s leaves the Streak, Accuracy and shields alone',
+    '%s leaves the Streak and Accuracy alone',
     (_name, key) => {
-      const player = renderGame({ text: 'abcdefgh', profile: SHIELDED });
-      expect(hudTags()).toEqual(['x1', 'x2']);
+      const player = renderGame({ text: 'abcdefgh' });
+      expect(hudTags()).toEqual(['x1']);
       player.type('abc');
 
       player.press(...key);
@@ -139,26 +142,28 @@ describe('keys that type no character', () => {
       expectStreak(4);
       player.step(30);
       expectAccuracy(100);
-      expect(hudTags()).toEqual(['x1', 'x2']);
     },
   );
 });
 
-describe('the shield tag', () => {
-  it('goes down by one when a wrong key is spent on a shield, and the Streak goes on', () => {
-    const player = renderGame({ text: TEXT, profile: SHIELDED });
+describe('a wrong key', () => {
+  it('resets the Streak, and the HUD tags only the Multiplier, whatever the Save says about shields', () => {
+    const player = renderGame({ text: TEXT, profile: STALE_SHIELDS });
+    expect(hudTags()).toEqual(['x1']);
     player.type('abc');
+    expectStreak(3);
 
     player.press('z');
-    player.press('d');
 
+    expectStreak(0);
+    expect(hudTags()).toEqual(['x1']);
+    player.press('d');
     expect(progress()).toBe('67%');
-    expect(hudTags()).toEqual(['x1', 'x1']);
-    expectStreak(4);
+    expectStreak(1);
   });
 
-  it('goes down by one, not all of them, when a wrong key is held', () => {
-    const player = renderGame({ text: TEXT, profile: SHIELDED });
+  it('is one Miss when it is held: the Streak starts again from the next right key', () => {
+    const player = renderGame({ text: TEXT });
     player.type('abc');
 
     player.press('z');
@@ -168,8 +173,9 @@ describe('the shield tag', () => {
     player.press('d');
 
     expect(progress()).toBe('67%');
-    expect(hudTags()).toEqual(['x1', 'x1']);
-    expectStreak(4);
+    expectStreak(1);
+    player.step(30);
+    expectAccuracy(75);
   });
 });
 
@@ -228,7 +234,7 @@ function followRun(player: Player) {
       player.type(LONG_TEXT.charAt(typed++));
       streak += 1;
     },
-    /** The Run has no shields, so the Streak is lost. */
+    /** A wrong key always loses the Streak. */
     miss() {
       player.press(WRONG_KEY);
       streak = 0;

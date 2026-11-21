@@ -17,8 +17,8 @@ import {
 // Six different letters, so every index is easy to tell apart.
 const TEXT = 'abcdef';
 
-function flyingOn(text: string, save?: Record<string, unknown>): Game {
-  const game = newGame(save);
+function flyingOn(text: string): Game {
+  const game = newGame();
   startFreeFlight(game, text);
   return game;
 }
@@ -64,18 +64,6 @@ describe('the miss mark in the text prompt', () => {
 
     expect(marked(game)).toEqual([0]);
     expect(cursor(game)).toBe(0);
-  });
-
-  it('is there when a shield absorbed the Miss', () => {
-    // The shield only spares the Streak. The player still typed the wrong key.
-    const game = flyingOn(TEXT, { upgrades: { deflectorShields: 2 } });
-    typeText(game, 'abc');
-    expect(game.getState().run.currentStreak).toBe(3);
-
-    game.pressKey('z');
-
-    expect(game.getState().run.currentStreak).toBe(3);
-    expect(marked(game)).toEqual([3]);
   });
 
   it.each(['Backspace', 'Enter', 'ArrowLeft', 'ArrowDown', 'F2'])(

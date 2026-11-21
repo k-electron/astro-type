@@ -1,6 +1,5 @@
 /**
- * What the Hangar sells: Upgrades (levels, each with a price) and Cosmetics
- * (six kinds: Trails, Sound Kits, Bursts, Backdrops, Ships and Hulls, each
+ * What the Hangar sells: Cosmetics (six kinds: Trails, Sound Kits, Bursts, Backdrops, Ships and Hulls, each
  * bought once and equipped for free).
  * One entry has everything about an item: its kind, its prices and how it is
  * presented. The Hangar, the header's Sound Kit picker and the Action Deck's trail
@@ -15,39 +14,9 @@ import type {
   BurstId,
   HullId,
   ShipId,
-  ShipUpgrades,
   SoundKit,
   TrailId,
 } from './schemas';
-
-/** The Upgrades' ids, as `buy` takes them. */
-export type UpgradeId = 'shields' | 'reactor' | 'sensors';
-
-/** The Profile fields that hold an Upgrade's level: the numbers among its upgrades. */
-export type UpgradeLevelField = {
-  [Field in keyof ShipUpgrades]: ShipUpgrades[Field] extends number
-    ? Field
-    : never;
-}[keyof ShipUpgrades];
-
-/** The Hangar's icons for an Upgrade, by name. */
-export type UpgradeIcon = 'shield' | 'zap' | 'sparkles';
-
-/** The colour family of an Upgrade's card, by name. */
-export type UpgradeTone = 'cyan' | 'amber' | 'emerald';
-
-export interface UpgradeEntry {
-  kind: 'upgrade';
-  id: UpgradeId;
-  /** The Profile field that holds its level. */
-  field: UpgradeLevelField;
-  name: string;
-  description: string;
-  icon: UpgradeIcon;
-  tone: UpgradeTone;
-  /** What each level costs, in order: level 1 first. Its length is the number of levels. */
-  prices: readonly number[];
-}
 
 /** The Trail a new Save equips and owns. */
 export const DEFAULT_TRAIL: TrailId = 'CYAN';
@@ -132,43 +101,11 @@ export type CosmeticEntry =
   | HullEntry;
 export type CosmeticKind = CosmeticEntry['kind'];
 
-export type CatalogEntry = UpgradeEntry | CosmeticEntry;
+export type CatalogEntry = CosmeticEntry;
 export type CatalogKind = CatalogEntry['kind'];
 export type CatalogItemId = CatalogEntry['id'];
 
 export const CATALOG: readonly CatalogEntry[] = [
-  {
-    kind: 'upgrade',
-    id: 'shields',
-    field: 'deflectorShields',
-    name: 'Deflector Shields',
-    description:
-      'Absorbs typing error keystrokes without breaking your Streak or Multiplier.',
-    icon: 'shield',
-    tone: 'cyan',
-    prices: [250, 650, 1200],
-  },
-  {
-    kind: 'upgrade',
-    id: 'reactor',
-    field: 'overdriveReactor',
-    name: 'Overdrive Reactor',
-    description:
-      'Speeds up how fast the Overdrive meter fills, so Overdrive starts sooner.',
-    icon: 'zap',
-    tone: 'amber',
-    prices: [300, 750, 1400],
-  },
-  {
-    kind: 'upgrade',
-    id: 'sensors',
-    field: 'precisionSensors',
-    name: 'Precision Sensors',
-    description: 'Widens the Perfect window at the Strike Line.',
-    icon: 'sparkles',
-    tone: 'emerald',
-    prices: [200, 500, 950],
-  },
   {
     kind: 'trail',
     id: 'CYAN',
@@ -445,10 +382,3 @@ export function trailColor(id: TrailId): string {
   if (entry.kind !== 'trail') throw new Error(`${id} is not a Trail`);
   return entry.color;
 }
-
-/**
- * The most levels any Upgrade has: the length of its price list. Every
- * Upgrade has as many levels as the first (the catalog's test checks), and
- * the Save accepts no level above it.
- */
-export const MAX_UPGRADE_LEVEL = entriesOf('upgrade')[0].prices.length;

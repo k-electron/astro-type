@@ -280,7 +280,7 @@ export class DeckScene {
     this.ship.update({
       targetX: rect ? rect.cx : null,
       color,
-      ship: state.profile.upgrades.equippedShip,
+      ship: state.profile.cosmetics.ship.equipped,
       shipY: layout.shipY,
       d,
     });
@@ -288,8 +288,7 @@ export class DeckScene {
 
   /**
    * A Judgement happened: fire the ship. A hit sends twin lasers up the lane to
-   * the Drone that was just typed; a Miss, or a shield absorbing one, sends a
-   * red laser to the wrong keycap. Called from the event, so the Drone's view
+   * the Drone that was just typed; a Miss sends a red laser to the wrong keycap. Called from the event, so the Drone's view
    * is still on the deck, exactly where the player last saw it.
    */
   judge(judgement: JudgementMoment): void {
@@ -319,7 +318,7 @@ export class DeckScene {
       const laneColor = FINGER_COLOR_MAP[judgement.finger];
       // The lasers take the equipped Trail; the Drone keeps its finger colour.
       const laserColor = trailLaserColor(
-        state.profile.upgrades.equippedTrailTheme,
+        state.profile.cosmetics.trail.equipped,
         this.hitsFired++,
       );
       const grade = judgement.grade;
@@ -343,13 +342,13 @@ export class DeckScene {
         laneColor,
         laserColor,
         hitColor,
-        burst: state.profile.upgrades.equippedBurst,
-        hull: state.profile.upgrades.equippedHull,
+        burst: state.profile.cosmetics.burst.equipped,
+        hull: state.profile.cosmetics.hull.equipped,
       });
       return;
     }
 
-    // A Miss, or a shield that took it: the ship fires at the key that was struck.
+    // A Miss: the ship fires at the key that was struck.
     const pressed = judgement.key;
     const pressedRect = keyRectOf(layout, pressed);
     const activeChar = currentChar(state);
@@ -480,7 +479,7 @@ export class DeckScene {
         rect.h,
         index,
         FINGER_LANES[drone.lane]?.color || DEFAULT_COLOR,
-        state.profile.upgrades.equippedHull,
+        state.profile.cosmetics.hull.equipped,
       );
       view.animate(this.timeMs);
     });

@@ -12,7 +12,6 @@ const PLAYING: {
   [Type in Cue['type']]: (cue: Extract<Cue, { type: Type }>) => void;
 } = {
   hit: (cue) => soundEngine.playLaneHit(cue.lane, cue.grade, cue.space),
-  shield: () => soundEngine.playShieldAbsorb(),
   miss: () => soundEngine.playMiss(),
   ignition: () => soundEngine.playOverdriveIgnition(),
   cleared: () => soundEngine.playStageCleared(),
@@ -27,7 +26,6 @@ const PLAYING: {
       }
     });
   },
-  upgrade: () => soundEngine.playShieldUpgrade(),
   equip: () => soundEngine.playEquipCosmetic(),
 };
 

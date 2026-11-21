@@ -7,8 +7,8 @@ const count = (n: number, one: string, many: string) =>
 
 /** What the Wipe Stars confirm says: the Stars and cleared Stages it takes, and what stays. */
 export const wipeStarsMessage = (stars: number, clearedStages: number) =>
-  `This wipes your ${count(stars, 'Star', 'Stars')} and resets ${count(clearedStages, 'cleared Stage', 'cleared Stages')}, so you can play the Sectors from the start. Your Credits, Upgrades and Cosmetics stay.`;
+  `This wipes your ${count(stars, 'Star', 'Stars')} and resets ${count(clearedStages, 'cleared Stage', 'cleared Stages')}, so you can play the Sectors from the start. Your Credits and Cosmetics stay.`;
 
 /** What the Factory Reset confirm says. */
 export const FACTORY_RESET_MESSAGE =
-  'This will irreversibly wipe ALL starship progress: Stars, Credits, Upgrades, per-key Analytics, Trails and Sound Kits.';
+  'This will irreversibly wipe ALL starship progress: Stars, Credits, per-key Analytics and Cosmetics.';

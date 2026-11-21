@@ -1,11 +1,10 @@
 /**
- * The Profile module: the player's Credits, Stars, Upgrades, Cosmetics,
+ * The Profile module: the player's Credits, Stars, Cosmetics,
  * settings and Stage progress, and the commands that change them. Every
  * command saves through the one `updateProfile`.
  *
  * The Run reads this module and this module reads nothing of the Run: no
- * phase, no current Stage, no Drone. What a Run takes from the Profile is its
- * `Loadout`, derived on each call.
+ * phase, no current Stage, no Drone.
  */
 import { unlocksSector } from '../curriculum/curriculum';
 import {
@@ -32,26 +31,6 @@ import {
   parseBackup,
   type SaveStorage,
 } from './save';
-
-/** What a Run takes from the Profile: its Upgrades, as the rules read them. */
-export interface Loadout {
-  /** Deflector Shields: Misses a Run absorbs, counted when the Run begins. */
-  shields: number;
-  /** Precision Sensors: widen the Judgement windows. */
-  sensors: number;
-  /** Overdrive Reactor: charges Overdrive faster. */
-  reactor: number;
-}
-
-export function loadoutOf(profile: PlayerProfile): Loadout {
-  const { deflectorShields, precisionSensors, overdriveReactor } =
-    profile.upgrades;
-  return {
-    shields: deflectorShields,
-    sensors: precisionSensors,
-    reactor: overdriveReactor,
-  };
-}
 
 /** What a cleared Run gives the Profile. */
 export interface StageResult {
@@ -170,22 +149,11 @@ export function settingsAfter(
 const clampVolume = (volume: number): number =>
   Math.max(0, Math.min(1, volume));
 
-/** Where a Cosmetic's kind keeps what the player owns and what is equipped, in the Save. */
-const COSMETIC_FIELDS = {
-  trail: { owned: 'unlockedThemes', equipped: 'equippedTrailTheme' },
-  soundKit: { owned: 'unlockedAudioCores', equipped: 'equippedAudioCore' },
-  burst: { owned: 'unlockedBursts', equipped: 'equippedBurst' },
-  backdrop: { owned: 'unlockedBackdrops', equipped: 'equippedBackdrop' },
-  ship: { owned: 'unlockedShips', equipped: 'equippedShip' },
-  hull: { owned: 'unlockedHulls', equipped: 'equippedHull' },
-} as const;
-
 /**
  * What buying an item announces, by its kind: a new kind is a build error
  * until it says what it sounds like.
  */
 const PURCHASE_MOMENT: Record<CatalogKind, Moment | null> = {
-  upgrade: { type: 'upgrade' },
   trail: { type: 'equip' },
   // A Sound Kit is sound state, not a moment: it just starts sounding.
   soundKit: null,
@@ -206,51 +174,40 @@ export function cosmeticStatus(
   profile: PlayerProfile,
   entry: CosmeticEntry,
 ): CosmeticStatus {
-  const { owned, equipped } = COSMETIC_FIELDS[entry.kind];
-  const { upgrades, totalCredits } = profile;
-  const ownedIds: readonly string[] = upgrades[owned];
+  const { totalCredits } = profile;
+  const { owned, equipped }: { owned: readonly string[]; equipped: string } =
+    profile.cosmetics[entry.kind];
   return {
-    owned: ownedIds.includes(entry.id),
-    equipped: upgrades[equipped] === entry.id,
+    owned: owned.includes(entry.id),
+    equipped: equipped === entry.id,
     affordable: totalCredits >= entry.price,
   };
 }
 
 /**
- * What the Profile becomes when the player buys an item: an Upgrade's next
- * level at its price, or a Cosmetic bought and equipped (a Cosmetic already
- * owned is equipped for nothing). Null when it changes nothing: an Upgrade at
- * its last level, a Cosmetic already equipped, or Credits short of the price.
+ * What the Profile becomes when the player buys a Cosmetic: bought and
+ * equipped (one already owned is equipped for nothing). Null when it changes
+ * nothing: a Cosmetic already equipped, or Credits short of the price.
  */
 export function purchaseOf(
   profile: PlayerProfile,
   itemId: CatalogItemId,
-): Pick<PlayerProfile, 'totalCredits' | 'upgrades'> | null {
+): Pick<PlayerProfile, 'totalCredits' | 'cosmetics'> | null {
   const entry = catalogEntry(itemId);
-  const { upgrades, totalCredits } = profile;
-
-  if (entry.kind === 'upgrade') {
-    const level = upgrades[entry.field];
-    const price = entry.prices[level];
-    if (price === undefined || totalCredits < price) return null;
-    return {
-      totalCredits: totalCredits - price,
-      upgrades: { ...upgrades, [entry.field]: level + 1 },
-    };
-  }
-
-  const { owned, equipped } = COSMETIC_FIELDS[entry.kind];
-  const ownedIds: readonly string[] = upgrades[owned];
+  const { cosmetics, totalCredits } = profile;
+  const ownedIds: readonly string[] = cosmetics[entry.kind].owned;
   const status = cosmeticStatus(profile, entry);
   if (status.equipped) return null;
   const isOwned = status.owned;
   if (!isOwned && !status.affordable) return null;
   return {
     totalCredits: isOwned ? totalCredits : totalCredits - entry.price,
-    upgrades: {
-      ...upgrades,
-      [equipped]: entry.id,
-      [owned]: isOwned ? ownedIds : [...ownedIds, entry.id],
+    cosmetics: {
+      ...cosmetics,
+      [entry.kind]: {
+        equipped: entry.id,
+        owned: isOwned ? ownedIds : [...ownedIds, entry.id],
+      },
     },
   };
 }
@@ -277,9 +234,8 @@ export interface ProfileCommands {
   /** Changes some settings. Each one's rules are in `settingsAfter`. */
   changeSettings: (patch: Partial<Settings>) => void;
   /**
-   * Buys an Upgrade's next level, or buys or equips a Cosmetic, at the price
-   * the catalog gives. False, and nothing changes, when it is maxed, owned
-   * (an Upgrade) or unaffordable.
+   * Buys or equips a Cosmetic at the price the catalog gives. False, and
+   * nothing changes, when it is already equipped or unaffordable.
    */
   buy: (itemId: CatalogItemId) => boolean;
   /**
@@ -287,7 +243,7 @@ export interface ProfileCommands {
    * the Save's checks is refused: the Profile and the Save are left as they were.
    */
   importProfile: (text: string) => BackupImport;
-  /** Wipes Stars and Stage progress; Credits and Upgrades stay. */
+  /** Wipes Stars and Stage progress; Credits and Cosmetics stay. */
   wipeCurriculumAchievements: () => void;
   /** Back to a fresh Profile. */
   resetProgress: () => void;

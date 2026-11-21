@@ -183,6 +183,10 @@ describe('a Save from before the game’s rules changed', () => {
   // notice, nothing set aside, and the old text stays where it is until the
   // next write replaces it.
   const OLDER_SAVES = [
+    [
+      'has version 3, with Upgrades',
+      '{ "version": 3,\n  "totalCredits": 5,\n  "upgrades": { "deflectorShields": 1 } }',
+    ],
     ['has version 2', '{ "version": 2,\n  "totalCredits": 5 }'],
     ['has version 1', '{ "version": 1,\n  "totalCredits": 5 }'],
     ['has no version', '{ "totalCredits": 5 }'],
@@ -204,7 +208,7 @@ describe('a Save from before the game’s rules changed', () => {
   );
 
   it('is replaced by the current Save on the next write, and the next visit reads that one', () => {
-    browserStorage.setItem(SAVE_KEY, '{ "version": 2,\n  "totalCredits": 5 }');
+    browserStorage.setItem(SAVE_KEY, '{ "version": 3,\n  "totalCredits": 5 }');
     const game = openGame();
 
     startStage(game, STAGE_ID);

@@ -1,20 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import {
-  COSMETIC_FIELDS,
   completeSave,
+  FREE_COSMETIC,
   RETURNING_PLAYER,
 } from '../../tests/shared/saves';
-import type { UpgradesSchema } from './schemas';
 import type { Game } from './game';
 import { DEFAULT_PROFILE, SAVE_VERSION } from './schemas';
 import {
   hitPerfect,
   loadGame,
-  miss,
   startedGame,
   startStage,
   STAGE_ID,
-  targetKey,
 } from '../../tests/shared/testHelpers';
 
 // The Profile changes through five commands on the Game: changeSettings, buy,
@@ -22,29 +19,20 @@ import {
 // a Backup are in backup.test.ts, and what the buttons look like is in the DOM
 // tests; this file is what the commands do to the Profile and the Save.
 
-type UpgradeField = keyof typeof UpgradesSchema.shape;
-
-/** An Upgrade's item id, the Profile field that holds its level, and the price of levels 1 to 3. */
-const UPGRADES = [
-  ['shields', 'deflectorShields', [250, 650, 1200]],
-  ['reactor', 'overdriveReactor', [300, 750, 1400]],
-  ['sensors', 'precisionSensors', [200, 500, 950]],
-] as const satisfies ReadonlyArray<
-  readonly [string, UpgradeField, readonly number[]]
->;
-
 /**
- * A Cosmetic is bought once, then equipped for free. Each kind has the Profile
- * fields that hold what is equipped and what is owned and the one the player
- * starts with (`COSMETIC_FIELDS`), and the others with their price, in the
- * Hangar's order: the prices are the rule, so they are written out. `equipMoments`
+ * A Cosmetic is bought once, then equipped for free. Each kind is
+ * kept in the Profile under its own `cosmetics[key]` (what is owned and what
+ * is equipped), with the one the player starts with (`FREE_COSMETIC`), and the
+ * others with their price, in the Hangar's order: the prices are the rule, so
+ * they are written out. `equipMoments`
  * is what equipping one announces: a Trail, a Burst, a Backdrop, a Ship and a
  * Hull are heard, a Sound Kit makes no moment.
  */
 const COSMETICS = [
   {
     kind: 'trail colour',
-    ...COSMETIC_FIELDS.trail,
+    key: 'trail',
+    free: FREE_COSMETIC.trail,
     equipMoments: [{ type: 'equip' }],
     items: [
       ['AMBER', 350],
@@ -58,7 +46,8 @@ const COSMETICS = [
   },
   {
     kind: 'Sound Kit',
-    ...COSMETIC_FIELDS.soundKit,
+    key: 'soundKit',
+    free: FREE_COSMETIC.soundKit,
     equipMoments: [],
     items: [
       ['RETRO_8BIT', 300],
@@ -70,7 +59,8 @@ const COSMETICS = [
   },
   {
     kind: 'Burst',
-    ...COSMETIC_FIELDS.burst,
+    key: 'burst',
+    free: FREE_COSMETIC.burst,
     equipMoments: [{ type: 'equip' }],
     items: [
       ['STARFLOWER', 600],
@@ -80,7 +70,8 @@ const COSMETICS = [
   },
   {
     kind: 'Backdrop',
-    ...COSMETIC_FIELDS.backdrop,
+    key: 'backdrop',
+    free: FREE_COSMETIC.backdrop,
     equipMoments: [{ type: 'equip' }],
     items: [
       ['NEBULA', 800],
@@ -90,7 +81,8 @@ const COSMETICS = [
   },
   {
     kind: 'Ship',
-    ...COSMETIC_FIELDS.ship,
+    key: 'ship',
+    free: FREE_COSMETIC.ship,
     equipMoments: [{ type: 'equip' }],
     items: [
       ['DART', 700],
@@ -100,7 +92,8 @@ const COSMETICS = [
   },
   {
     kind: 'Hull',
-    ...COSMETIC_FIELDS.hull,
+    key: 'hull',
+    free: FREE_COSMETIC.hull,
     equipMoments: [{ type: 'equip' }],
     items: [
       ['HEX', 900],
@@ -128,71 +121,8 @@ const richPlayer = (credits = 10000) => loadGame({ totalCredits: credits });
 /** More Credits than the whole Hangar costs. */
 const EVERYTHING = 100_000;
 
-describe('buy, for an Upgrade', () => {
-  it.each(UPGRADES)(
-    '%s: levels 1 to 3 are bought one at a time at the catalog price',
-    (item, field, prices) => {
-      const { game } = richPlayer();
-      let credits = 10000;
-
-      prices.forEach((price, index) => {
-        game.buy(item);
-        credits -= price;
-        const { profile } = game.getState();
-        expect(profile.upgrades[field], `level after buy ${index + 1}`).toBe(
-          index + 1,
-        );
-        expect(profile.totalCredits).toBe(credits);
-      });
-    },
-  );
-
-  it.each(UPGRADES)('%s: at level 3 a buy changes nothing', (item, field) => {
-    const { game } = loadGame({
-      totalCredits: 5000,
-      upgrades: { [field]: 3 },
-    });
-    const before = game.getState().profile;
-
-    game.buy(item);
-
-    expect(game.getState().profile).toEqual(before);
-  });
-
-  it.each(UPGRADES)(
-    '%s: with the Credits one short of the price a buy changes nothing, and with exactly the price it buys',
-    (item, field, [firstPrice]) => {
-      const { game } = richPlayer(firstPrice - 1);
-      const before = game.getState().profile;
-
-      game.buy(item);
-      expect(game.getState().profile).toEqual(before);
-
-      const { game: exact } = richPlayer(firstPrice);
-      exact.buy(item);
-      expect(exact.getState().profile.upgrades[field]).toBe(1);
-      expect(exact.getState().profile.totalCredits).toBe(0);
-    },
-  );
-
-  it('prices each level on its own: the second level is refused with the first level’s price in hand', () => {
-    const { game } = richPlayer(250);
-    game.buy('shields');
-    expect(game.getState().profile.upgrades.deflectorShields).toBe(1);
-    expect(game.getState().profile.totalCredits).toBe(0);
-
-    const { game: short } = loadGame({
-      totalCredits: 649,
-      upgrades: { deflectorShields: 1 },
-    });
-    short.buy('shields');
-    expect(short.getState().profile.upgrades.deflectorShields).toBe(1);
-    expect(short.getState().profile.totalCredits).toBe(649);
-  });
-});
-
 describe.each(COSMETICS)('buy, for a $kind', (cosmetic) => {
-  const { equipped, owned, free, items } = cosmetic;
+  const { key, free, items } = cosmetic;
 
   for (const [item, price] of items) {
     it(`buys ${item} for its price, owns it from then on, and equips it`, () => {
@@ -202,19 +132,19 @@ describe.each(COSMETICS)('buy, for a $kind', (cosmetic) => {
 
       const { profile } = game.getState();
       expect(profile.totalCredits).toBe(0);
-      expect(profile.upgrades[equipped]).toBe(item);
-      expect(profile.upgrades[owned]).toContain(item);
-      expect(profile.upgrades[owned]).toContain(free);
+      expect(profile.cosmetics[key].equipped).toBe(item);
+      expect(profile.cosmetics[key].owned).toContain(item);
+      expect(profile.cosmetics[key].owned).toContain(free);
     });
   }
 
   it('is owned and worn from the start, with nothing else owned', () => {
     const { game } = richPlayer();
 
-    const { upgrades } = game.getState().profile;
+    const { cosmetics } = game.getState().profile;
 
-    expect(upgrades[equipped]).toBe(free);
-    expect(upgrades[owned]).toEqual([free]);
+    expect(cosmetics[key].equipped).toBe(free);
+    expect(cosmetics[key].owned).toEqual([free]);
   });
 
   it('equips one that is already owned at no cost, including the one every player starts with', () => {
@@ -226,13 +156,13 @@ describe.each(COSMETICS)('buy, for a $kind', (cosmetic) => {
     expect(game.getState().profile.totalCredits).toBe(paid);
 
     game.buy(first);
-    expect(game.getState().profile.upgrades[equipped]).toBe(first);
+    expect(game.getState().profile.cosmetics[key].equipped).toBe(first);
     game.buy(free);
-    expect(game.getState().profile.upgrades[equipped]).toBe(free);
+    expect(game.getState().profile.cosmetics[key].equipped).toBe(free);
 
     const { profile } = game.getState();
     expect(profile.totalCredits).toBe(paid);
-    expect([...profile.upgrades[owned]].sort()).toEqual(
+    expect([...profile.cosmetics[key].owned].sort()).toEqual(
       [free, first, second].sort(),
     );
   });
@@ -241,13 +171,13 @@ describe.each(COSMETICS)('buy, for a $kind', (cosmetic) => {
     const [[item]] = items;
     const { game } = loadGame({
       totalCredits: 0,
-      upgrades: { [owned]: [free, item] },
+      cosmetics: { [key]: { owned: [free, item], equipped: free } },
     });
-    expect(game.getState().profile.upgrades[equipped]).toBe(free);
+    expect(game.getState().profile.cosmetics[key].equipped).toBe(free);
 
     game.buy(item);
 
-    expect(game.getState().profile.upgrades[equipped]).toBe(item);
+    expect(game.getState().profile.cosmetics[key].equipped).toBe(item);
     expect(game.getState().profile.totalCredits).toBe(0);
   });
 
@@ -256,13 +186,13 @@ describe.each(COSMETICS)('buy, for a $kind', (cosmetic) => {
     [
       'one bought and equipped',
       items[0][0],
-      { [equipped]: items[0][0], [owned]: [free, items[0][0]] },
+      { [key]: { equipped: items[0][0], owned: [free, items[0][0]] } },
     ],
   ] as const)(
     'does nothing for %s when it is already equipped: no change, no Save written, no moment',
-    (_, item, upgrades) => {
-      const { game, storage } = loadGame({ totalCredits: 10000, upgrades });
-      expect(game.getState().profile.upgrades[equipped]).toBe(item);
+    (_, item, cosmetics) => {
+      const { game, storage } = loadGame({ totalCredits: 10000, cosmetics });
+      expect(game.getState().profile.cosmetics[key].equipped).toBe(item);
       const before = game.getState().profile;
       const savedBefore = storage.saved;
       const moments: unknown[] = [];
@@ -280,7 +210,7 @@ describe.each(COSMETICS)('buy, for a $kind', (cosmetic) => {
     const [[item]] = items;
     const { game, storage } = loadGame({
       totalCredits: 10000,
-      upgrades: { [owned]: [free, item] },
+      cosmetics: { [key]: { owned: [free, item], equipped: free } },
     });
     const savedBefore = storage.saved;
     const moments: unknown[] = [];
@@ -288,7 +218,7 @@ describe.each(COSMETICS)('buy, for a $kind', (cosmetic) => {
 
     expect(game.buy(item)).toBe(true);
 
-    expect(game.getState().profile.upgrades[equipped]).toBe(item);
+    expect(game.getState().profile.cosmetics[key].equipped).toBe(item);
     expect(storage.saved).not.toBe(savedBefore);
     expect(moments).toEqual(cosmetic.equipMoments);
   });
@@ -311,22 +241,22 @@ describe.each(COSMETICS)('buy, for a $kind', (cosmetic) => {
 
     const reloaded = loadGame(storage.saved).game.getState().profile;
 
-    expect(reloaded.upgrades[equipped]).toBe(item);
-    expect(reloaded.upgrades[owned]).toContain(item);
+    expect(reloaded.cosmetics[key].equipped).toBe(item);
+    expect(reloaded.cosmetics[key].owned).toContain(item);
     expect(reloaded.totalCredits).toBe(50);
   });
 });
 
 describe('buy, across the kinds of Cosmetic', () => {
-  it('keeps each kind to its own fields: the first item of every kind, bought in turn, is each kind’s alone', () => {
+  it('keeps each kind to its own entry: the first item of every kind, bought in turn, is each kind’s alone', () => {
     const { game } = richPlayer(EVERYTHING);
     for (const { items } of COSMETICS) game.buy(items[0][0]);
 
     const { profile } = game.getState();
-    for (const { equipped, owned, free, items } of COSMETICS) {
+    for (const { key, free, items } of COSMETICS) {
       const [[item]] = items;
-      expect(profile.upgrades[equipped], equipped).toBe(item);
-      expect([...profile.upgrades[owned]].sort(), owned).toEqual(
+      expect(profile.cosmetics[key].equipped, key).toBe(item);
+      expect([...profile.cosmetics[key].owned].sort(), key).toEqual(
         [free, item].sort(),
       );
     }
@@ -335,7 +265,7 @@ describe('buy, across the kinds of Cosmetic', () => {
 
 describe('a purchase and the Save', () => {
   // A purchase writes the Save back under the same keys it was read from: the
-  // Upgrade levels, the owned and equipped Cosmetics, and every setting.
+  // owned and equipped Cosmetics, and every setting.
   const SETTINGS = [
     'soundEnabled',
     'soundVolume',
@@ -352,29 +282,29 @@ describe('a purchase and the Save', () => {
     const { game, storage } = loadGame({ ...save, totalCredits: 5000 });
     expect(game.getState().loadNotice).toBeNull();
 
-    game.buy('sensors');
-    game.buy('AMBER');
-    game.buy('RETRO_8BIT');
+    // `completeSave` already wears Amber and the 8-Bit Retro kit: these are new.
+    game.buy('EMERALD');
+    game.buy('DEEP_SPACE');
     game.buy('PIXEL_SHARDS');
 
     expect(storage.saved?.version).toBe(SAVE_VERSION);
-    expect(storage.saved?.totalCredits).toBe(5000 - 200 - 350 - 300 - 1600);
-    expect(storage.saved?.upgrades).toEqual({
-      deflectorShields: save.upgrades.deflectorShields,
-      overdriveReactor: save.upgrades.overdriveReactor,
-      precisionSensors: 1,
-      equippedTrailTheme: 'AMBER',
-      equippedAudioCore: 'RETRO_8BIT',
-      unlockedThemes: ['CYAN', 'AMBER'],
-      unlockedAudioCores: ['CYBER_SYNTH', 'RETRO_8BIT'],
-      equippedBurst: 'PIXEL_SHARDS',
-      unlockedBursts: [...save.upgrades.unlockedBursts, 'PIXEL_SHARDS'],
-      equippedBackdrop: save.upgrades.equippedBackdrop,
-      unlockedBackdrops: save.upgrades.unlockedBackdrops,
-      equippedShip: save.upgrades.equippedShip,
-      unlockedShips: save.upgrades.unlockedShips,
-      equippedHull: save.upgrades.equippedHull,
-      unlockedHulls: save.upgrades.unlockedHulls,
+    expect(storage.saved?.totalCredits).toBe(5000 - 450 - 450 - 1600);
+    expect(storage.saved?.cosmetics).toEqual({
+      trail: {
+        owned: [...save.cosmetics.trail.owned, 'EMERALD'],
+        equipped: 'EMERALD',
+      },
+      soundKit: {
+        owned: [...save.cosmetics.soundKit.owned, 'DEEP_SPACE'],
+        equipped: 'DEEP_SPACE',
+      },
+      burst: {
+        owned: [...save.cosmetics.burst.owned, 'PIXEL_SHARDS'],
+        equipped: 'PIXEL_SHARDS',
+      },
+      backdrop: save.cosmetics.backdrop,
+      ship: save.cosmetics.ship,
+      hull: save.cosmetics.hull,
     });
     for (const field of SETTINGS) {
       expect(storage.saved?.[field], field).toEqual(save[field]);
@@ -384,51 +314,20 @@ describe('a purchase and the Save', () => {
 });
 
 describe('a purchase during a Run', () => {
-  it('Precision Sensors widen the Perfect window for the keys still to come', () => {
-    // Two steps after a Drone appears it is 17.6 from the Strike Line: a Good
-    // (50 points) without Sensors, a Great (75) with Sensors level 1.
-    const keyAtTwoSteps = (game: ReturnType<typeof startedGame>) => {
-      game.step(2);
-      game.pressKey(targetKey(game));
-      return game.getState().run.score;
+  it('leaves the Run as it was: a Cosmetic changes how the game looks, never how it plays', () => {
+    const game = startedGame({ totalCredits: 2000 });
+    hitPerfect(game, 3);
+    const played = (g: Game) => {
+      const { score, currentStreak, multiplier, overdriveEnergy } =
+        g.getState().run;
+      return { score, currentStreak, multiplier, overdriveEnergy };
     };
-    const plain = startedGame({}, { totalCredits: 2000 });
-    expect(keyAtTwoSteps(plain)).toBe(50);
+    const before = played(game);
 
-    const upgraded = startedGame({}, { totalCredits: 2000 });
-    buyFromHangar(upgraded, 'sensors');
-    expect(upgraded.getState().phase).toBe('running');
-    expect(keyAtTwoSteps(upgraded)).toBe(75);
-  });
+    buyFromHangar(game, 'AMBER');
 
-  it('the Overdrive Reactor fills the meter faster from then on', () => {
-    // Without a Reactor Overdrive starts on the 29th hit. Buying level 1 after
-    // the 10th speeds up the rest.
-    const game = startedGame({}, { totalCredits: 2000 });
-    hitPerfect(game, 10);
-    buyFromHangar(game, 'reactor');
-    hitPerfect(game, 15);
-    expect(game.getState().run.overdriveActive, 'after 25 hits').toBe(false);
-
-    hitPerfect(game, 1);
-
-    expect(game.getState().run.overdriveActive, 'after 26 hits').toBe(true);
-  });
-
-  it('Deflector Shields are taken on when a Run starts, so this Run goes without and the next has one', () => {
-    const game = startedGame({}, { totalCredits: 2000 });
-    hitPerfect(game, 3);
-
-    buyFromHangar(game, 'shields');
-    expect(game.getState().run.shieldsRemaining).toBe(0);
-    miss(game);
-    expect(game.getState().run.currentStreak, 'the Miss goes through').toBe(0);
-
-    startStage(game, STAGE_ID);
-    expect(game.getState().run.shieldsRemaining).toBe(1);
-    hitPerfect(game, 3);
-    miss(game);
-    expect(game.getState().run.currentStreak, 'the shield absorbs it').toBe(3);
+    expect(game.getState().phase).toBe('running');
+    expect(played(game)).toEqual(before);
   });
 
   it('spends the Credits at once and saves them', () => {
@@ -436,10 +335,10 @@ describe('a purchase during a Run', () => {
     startStage(game, STAGE_ID);
     hitPerfect(game, 2);
 
-    buyFromHangar(game, 'sensors');
+    buyFromHangar(game, 'AMBER');
 
-    expect(game.getState().profile.totalCredits).toBe(1800);
-    expect(storage.saved?.totalCredits).toBe(1800);
+    expect(game.getState().profile.totalCredits).toBe(1650);
+    expect(storage.saved?.totalCredits).toBe(1650);
   });
 });
 
@@ -556,7 +455,7 @@ describe('changeSettings', () => {
 });
 
 describe('wipeAchievements', () => {
-  it('clears the Stars and the Stage records, keeps the Credits, Upgrades and settings, and saves', () => {
+  it('clears the Stars and the Stage records, keeps the Credits, Cosmetics and settings, and saves', () => {
     const { game, storage } = loadGame(completeSave());
 
     game.wipeAchievements();
@@ -565,7 +464,7 @@ describe('wipeAchievements', () => {
     expect(profile.totalStars).toBe(0);
     expect(profile.stagesProgress).toEqual({});
     expect(profile.totalCredits).toBe(1234);
-    expect(profile.upgrades).toEqual(completeSave().upgrades);
+    expect(profile.cosmetics).toEqual(completeSave().cosmetics);
     expect(profile.globalMuted).toBe(true);
     expect(profile.soundVolume).toBe(0.3);
     expect(storage.saved?.stagesProgress).toEqual({});

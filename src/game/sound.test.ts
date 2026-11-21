@@ -145,8 +145,4 @@ it('sounds right at every moment of a Run', () => {
     overdrive: false,
     cues: [HIT, 'cleared', `stars:${debrief?.starsEarned}`],
   });
-
-  // Buying an Upgrade in the Debrief: its own cue, and the music stays off.
-  expect(game.buy('shields'), 'the Upgrade is bought').toBe(true);
-  heard('Upgrade bought', { beat: false, overdrive: false, cues: ['upgrade'] });
 });

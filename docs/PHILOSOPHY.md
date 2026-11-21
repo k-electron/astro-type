@@ -38,11 +38,11 @@ Each Stage adds one small new thing. Progress has real gates (Stars on a Stage, 
 
 ### P5. Earned, not bought
 
-Stars, unlocks and Upgrades come only from typing performance. Nothing can be bought, or grinded for, that makes a Star easier to earn. Credits buy Cosmetics only: they change how the game looks and sounds, never how it plays. A Cosmetic may reshape the ship or a Drone's hull, but never changes what the player reads to type or to judge themselves: the finger colours, a Drone's size and the key on it, the keyboard and hands, the Strike Line, Miss marks and the Multiplier's colours. A player's ship reflects their typing ability.
+Stars and unlocks come only from typing performance. Nothing can be bought, or grinded for, that makes a Star easier to earn. Credits buy Cosmetics only: they change how the game looks and sounds, never how it plays. A Cosmetic may reshape the ship or a Drone's hull, but never changes what the player reads to type or to judge themselves: the finger colours, a Drone's size and the key on it, the keyboard and hands, the Strike Line, Miss marks and the Multiplier's colours. A player's ship reflects their typing ability.
 
 ### P6. Never punish absence
 
-Stars, Upgrades and Cosmetics are never taken away. Returning players are offered an optional warm-up that refreshes everything learned so far, weighted toward what is most likely to have faded.
+Stars and Cosmetics are never taken away. Returning players are offered an optional warm-up that refreshes everything learned so far, weighted toward what is most likely to have faded.
 
 ### P7. Short and daily
 
@@ -115,7 +115,6 @@ Rules the game has today that conflict with the principles above. They stay unti
 | Today                                                                                                                                         | Conflicts with        |
 | :-------------------------------------------------------------------------------------------------------------------------------------------- | :-------------------- |
 | Judgements grade a hit Perfect, Great or Good by how close its Drone was to the Strike Line                                                   | P1                    |
-| Credits buy Upgrades (shields, reactor, sensors) that change play                                                                             | P1, P5                |
 | Overdrive fills on every correct keystroke, not from steady Rhythm                                                                            | P1                    |
 | Drones fall at one speed and wait at the Strike Line, so Drone pressure isn't the Stage's target speed                                        | P1                    |
 | Every Stage is one fixed text, so practice can't target the player's weak keys and a replay can earn Stars on a text the player has memorised | P4, P10               |

@@ -1,20 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import {
-  COSMETIC_FIELDS,
   completeSave,
+  FREE_COSMETIC,
   RETURNING_PLAYER,
   stageProgress,
 } from '../../tests/shared/saves';
 import { createMemoryStorage } from '../../tests/shared/memoryStorage';
-import { DEFAULT_TRAIL, entriesOf, MAX_UPGRADE_LEVEL } from './catalog';
+import { type CosmeticKind, entriesOf } from './catalog';
 import { createSteppedClock } from './clock';
 import { createGame, type Game } from './game';
-import {
-  clearedStagesOf,
-  DEFAULT_PROFILE,
-  SAVE_VERSION,
-  SoundKitSchema,
-} from './schemas';
+import { clearedStagesOf, DEFAULT_PROFILE, SAVE_VERSION } from './schemas';
 import { UNREADABLE_SAVE_NOTICE } from './save';
 import {
   clearStage,
@@ -30,11 +25,19 @@ const load = (save?: unknown) => loadGame(save);
 
 type ReturningSave = ReturnType<typeof completeSave>;
 
-function withUpgrades(
-  save: ReturningSave,
-  upgrades: Partial<ReturningSave['upgrades']>,
+/** The Save with one kind of Cosmetic's entry changed: its owned list, its equipped id, or both. */
+function withCosmetic(
+  save: Record<string, unknown> & { cosmetics: Record<string, object> },
+  kind: CosmeticKind,
+  entry: { owned?: unknown; equipped?: unknown },
 ) {
-  return { ...save, upgrades: { ...save.upgrades, ...upgrades } };
+  return {
+    ...save,
+    cosmetics: {
+      ...save.cosmetics,
+      [kind]: { ...save.cosmetics[kind], ...entry },
+    },
+  };
 }
 
 /** The Save with the given top-level fields taken out. */
@@ -60,8 +63,6 @@ describe('a Save that is readable', () => {
     expect(profile.totalStars).toBe(5);
     expect(profile.stagesProgress['s1-l1'].starsEarned).toBe(3);
     expect(profile.stagesProgress['s1-l2'].starsEarned).toBe(2);
-    expect(profile.upgrades.deflectorShields).toBe(1);
-    expect(profile.upgrades.overdriveReactor).toBe(2);
     expect(profile.globalMuted).toBe(true);
     expect(game.getState().loadNotice).toBeNull();
     expect(storage.movedAside).toEqual([]);
@@ -71,7 +72,7 @@ describe('a Save that is readable', () => {
     const save = completeSave();
     const { game } = load(save);
 
-    expect(game.getState().profile.upgrades).toEqual(save.upgrades);
+    expect(game.getState().profile.cosmetics).toEqual(save.cosmetics);
   });
 
   it('starts a player with no Save fresh, without a notice', () => {
@@ -85,26 +86,13 @@ describe('a Save that is readable', () => {
   it('writes the Save back as the current version, and reads what it wrote as the same Profile', () => {
     const { game, storage } = load(completeSave());
 
-    // 1,234 Credits buys the first sensors Upgrade (200), which saves.
-    game.buy('sensors');
+    // 1,234 Credits buys an Emerald Trail (450), which saves.
+    game.buy('EMERALD');
 
     expect(storage.saved?.version).toBe(SAVE_VERSION);
     const nextVisit = createGame({ storage });
     expect(nextVisit.getState().loadNotice).toBeNull();
     expect(nextVisit.getState().profile).toEqual(game.getState().profile);
-  });
-
-  it('accepts Upgrades at level 3', () => {
-    const { game } = load(
-      withUpgrades(completeSave(), {
-        deflectorShields: 3,
-        overdriveReactor: 3,
-        precisionSensors: 3,
-      }),
-    );
-
-    expect(game.getState().loadNotice).toBeNull();
-    expect(game.getState().profile.upgrades.deflectorShields).toBe(3);
   });
 
   it('drops fields the Save does not define, and writes them back no more', () => {
@@ -116,7 +104,13 @@ describe('a Save that is readable', () => {
         ...save.stagesProgress,
         's1-l1': { ...save.stagesProgress['s1-l1'], bonusStars: 99 },
       },
-      upgrades: { ...save.upgrades, warpDrive: 4 },
+      // The Upgrades of a Save from before they were removed, and a kind of
+      // Cosmetic the game does not have.
+      upgrades: { deflectorShields: 3 },
+      cosmetics: {
+        ...save.cosmetics,
+        wings: { owned: ['FEATHER'], equipped: 'FEATHER' },
+      },
     });
 
     expect(game.getState().loadNotice).toBeNull();
@@ -124,12 +118,13 @@ describe('a Save that is readable', () => {
     expect(game.getState().profile.stagesProgress['s1-l1']).not.toHaveProperty(
       'bonusStars',
     );
-    expect(game.getState().profile.upgrades).not.toHaveProperty('warpDrive');
+    expect(game.getState().profile).not.toHaveProperty('upgrades');
+    expect(game.getState().profile.cosmetics).not.toHaveProperty('wings');
 
-    game.buy('sensors');
+    game.buy('EMERALD');
     expect(storage.saved).not.toHaveProperty('cheatCode');
     expect(JSON.stringify(storage.saved)).not.toMatch(
-      /xyzzy|bonusStars|warpDrive/,
+      /xyzzy|bonusStars|upgrades|deflectorShields|wings/,
     );
   });
 });
@@ -175,13 +170,13 @@ describe('a Save with a field missing', () => {
     expect(profile.totalStars).toBe(0);
   });
 
-  it('takes the default Upgrades when the Upgrades are missing', () => {
-    const { game } = load(without(completeSave(), 'upgrades'));
+  it('takes the default Cosmetics when the Cosmetics are missing', () => {
+    const { game } = load(without(completeSave(), 'cosmetics'));
 
     expect(game.getState().loadNotice).toBeNull();
-    expect(game.getState().profile.upgrades.deflectorShields).toBe(0);
-    expect(game.getState().profile.upgrades.overdriveReactor).toBe(0);
-    expect(game.getState().profile.upgrades.precisionSensors).toBe(0);
+    expect(game.getState().profile.cosmetics).toEqual(
+      DEFAULT_PROFILE.cosmetics,
+    );
     expect(game.getState().profile.totalCredits).toBe(1234);
   });
 });
@@ -192,20 +187,6 @@ describe('a Save with a wrong field', () => {
   // stored. Each row is a bad Save and the Save that it should read as; the two
   // must load to the same Profile, with no notice and nothing moved aside.
   const save = completeSave();
-  const otherTrail = entriesOf('trail').find(
-    (trail) => trail.id !== DEFAULT_TRAIL,
-  )?.id;
-  const otherKit = SoundKitSchema.options.find(
-    (kit) => kit !== DEFAULT_PROFILE.upgrades.equippedAudioCore,
-  );
-  if (!otherTrail || !otherKit)
-    throw new Error('The catalog has no spare Cosmetic');
-  const owningCosmetics = withUpgrades(save, {
-    equippedTrailTheme: otherTrail,
-    unlockedThemes: [DEFAULT_TRAIL, otherTrail],
-    equippedAudioCore: otherKit,
-    unlockedAudioCores: [DEFAULT_PROFILE.upgrades.equippedAudioCore, otherKit],
-  });
   const withStages = (stagesProgress: Record<string, unknown>) => ({
     ...save,
     stagesProgress,
@@ -242,14 +223,9 @@ describe('a Save with a wrong field', () => {
       without(save, 'stagesProgress'),
     ],
     [
-      'Upgrades that are text',
-      { ...save, upgrades: 'maxed' },
-      without(save, 'upgrades'),
-    ],
-    [
-      'an Upgrade level that is text',
-      withUpgrades(save, { deflectorShields: '2' as never }),
-      withUpgrades(save, { deflectorShields: 0 }),
+      'Cosmetics that are text',
+      { ...save, cosmetics: 'all' },
+      without(save, 'cosmetics'),
     ],
     // Out of range: clamped.
     [
@@ -261,21 +237,6 @@ describe('a Save with a wrong field', () => {
       'a negative count',
       { ...save, totalMissMarks: -1 },
       { ...save, totalMissMarks: 0 },
-    ],
-    [
-      'a shield Upgrade above the maximum',
-      withUpgrades(save, { deflectorShields: MAX_UPGRADE_LEVEL + 1 }),
-      withUpgrades(save, { deflectorShields: MAX_UPGRADE_LEVEL }),
-    ],
-    [
-      'a reactor Upgrade far above the maximum',
-      withUpgrades(save, { overdriveReactor: 7 }),
-      withUpgrades(save, { overdriveReactor: MAX_UPGRADE_LEVEL }),
-    ],
-    [
-      'a sensors Upgrade below 0',
-      withUpgrades(save, { precisionSensors: -1 }),
-      withUpgrades(save, { precisionSensors: 0 }),
     ],
     [
       'a volume above 1',
@@ -331,30 +292,11 @@ describe('a Save with a wrong field', () => {
       { ...save, totalCredits: 12.7 },
       { ...save, totalCredits: 12 },
     ],
-    [
-      'an Upgrade level with a fraction',
-      withUpgrades(save, { deflectorShields: 1.9 }),
-      withUpgrades(save, { deflectorShields: 1 }),
-    ],
     // An unknown name: the default.
     [
       'a beat theme the game does not have',
       { ...save, beatTheme: 'POLKA' },
       without(save, 'beatTheme'),
-    ],
-    [
-      'an equipped Trail the game does not have',
-      withUpgrades(owningCosmetics, {
-        equippedTrailTheme: 'GONE_TRAIL' as never,
-      }),
-      withUpgrades(owningCosmetics, { equippedTrailTheme: DEFAULT_TRAIL }),
-    ],
-    [
-      'an equipped Sound Kit the game does not have',
-      withUpgrades(owningCosmetics, { equippedAudioCore: 'GONE_KIT' as never }),
-      withUpgrades(owningCosmetics, {
-        equippedAudioCore: DEFAULT_PROFILE.upgrades.equippedAudioCore,
-      }),
     ],
     // An entry that is not an entry: dropped, and the rest kept.
     [
@@ -402,84 +344,6 @@ describe('a Save with a wrong field', () => {
       DEFAULT_PROFILE.soundVolume,
     );
   });
-
-  it('caps a reactor Upgrade above the maximum at the maximum, in the Save the game writes next', () => {
-    const { game, storage } = load(withUpgrades(save, { overdriveReactor: 7 }));
-
-    expect(game.getState().profile.upgrades.overdriveReactor).toBe(
-      MAX_UPGRADE_LEVEL,
-    );
-    game.buy('sensors'); // 200 Credits, and the game saves
-    expect(storage.saved?.upgrades.overdriveReactor).toBe(MAX_UPGRADE_LEVEL);
-  });
-
-  describe('in the lists of owned Cosmetics', () => {
-    const sorted = (list: readonly string[]) => [...list].sort();
-
-    it('drops an owned Trail the game does not have, and keeps the others', () => {
-      const { game } = load(
-        withUpgrades(owningCosmetics, {
-          unlockedThemes: [DEFAULT_TRAIL, 'GONE_TRAIL', otherTrail] as never,
-        }),
-      );
-
-      expect(game.getState().loadNotice).toBeNull();
-      expect(sorted(game.getState().profile.upgrades.unlockedThemes)).toEqual(
-        sorted([DEFAULT_TRAIL, otherTrail]),
-      );
-    });
-
-    it('drops an owned Sound Kit the game does not have, and keeps the others', () => {
-      const { game } = load(
-        withUpgrades(owningCosmetics, {
-          unlockedAudioCores: [
-            DEFAULT_PROFILE.upgrades.equippedAudioCore,
-            'GONE_KIT',
-            otherKit,
-          ] as never,
-        }),
-      );
-
-      expect(game.getState().loadNotice).toBeNull();
-      expect(
-        sorted(game.getState().profile.upgrades.unlockedAudioCores),
-      ).toEqual(sorted([DEFAULT_PROFILE.upgrades.equippedAudioCore, otherKit]));
-    });
-
-    it('always owns the default Trail and Sound Kit, even when the lists leave them out', () => {
-      const { game } = load(
-        withUpgrades(save, {
-          equippedTrailTheme: DEFAULT_TRAIL,
-          unlockedThemes: [otherTrail] as never,
-          unlockedAudioCores: [otherKit] as never,
-        }),
-      );
-
-      const upgrades = game.getState().profile.upgrades;
-      expect(sorted(upgrades.unlockedThemes)).toEqual(
-        sorted([DEFAULT_TRAIL, otherTrail]),
-      );
-      expect(sorted(upgrades.unlockedAudioCores)).toEqual(
-        sorted([DEFAULT_PROFILE.upgrades.equippedAudioCore, otherKit]),
-      );
-    });
-
-    it('owns only the defaults when a list is not a list', () => {
-      const { game } = load(
-        withUpgrades(save, {
-          unlockedThemes: 'all' as never,
-          unlockedAudioCores: 7 as never,
-        }),
-      );
-
-      const upgrades = game.getState().profile.upgrades;
-      expect(game.getState().loadNotice).toBeNull();
-      expect(upgrades.unlockedThemes).toEqual([DEFAULT_TRAIL]);
-      expect(upgrades.unlockedAudioCores).toEqual([
-        DEFAULT_PROFILE.upgrades.equippedAudioCore,
-      ]);
-    });
-  });
 });
 
 describe('a Save from before the game’s rules changed', () => {
@@ -489,7 +353,16 @@ describe('a Save from before the game’s rules changed', () => {
   // replaces it. The raw Save is built on the storage here, as no seeding
   // helper would write it.
   const save = completeSave();
+  // Version 3 was the last Save with Upgrades (#136): a Profile that bought
+  // them would carry an advantage the game no longer has, so it starts fresh.
+  const withUpgrades = {
+    ...without(save, 'cosmetics'),
+    version: 3,
+    upgrades: { deflectorShields: 1, overdriveReactor: 2, precisionSensors: 3 },
+  };
   const older: Array<[string, unknown]> = [
+    ['version 3, with its Upgrades', withUpgrades],
+    ['version 3', { ...save, version: 3 }],
     // Version 2 was the Save before the Stars were honest (#134): its Stars
     // were earned under other bars, so it starts fresh like any older one.
     ['version 2', { ...save, version: 2 }],
@@ -517,15 +390,16 @@ describe('a Save from before the game’s rules changed', () => {
   );
 
   it('is replaced by the current Save on the next write, and the next visit reads that', () => {
-    const storage = createMemoryStorage({ ...save, version: 2 });
+    const storage = createMemoryStorage(withUpgrades);
     const game = createGame({ storage });
 
     startStage(game, STAGE_ID);
     clearStage(game, { seconds: 60 });
 
     expect(storage.saved?.version).toBe(SAVE_VERSION);
-    // Nothing of the old Save came along: it had a Shields level of 1.
-    expect(storage.saved?.upgrades.deflectorShields).toBe(0);
+    // Nothing of the old Save came along: not its Upgrades, not its Cosmetics.
+    expect(storage.saved).not.toHaveProperty('upgrades');
+    expect(storage.saved?.cosmetics).toEqual(DEFAULT_PROFILE.cosmetics);
     expect(storage.movedAside).toEqual([]);
     const nextVisit = createGame({ storage });
     expect(nextVisit.getState().loadNotice).toBeNull();
@@ -689,99 +563,112 @@ describe('clearedStagesOf', () => {
   });
 });
 
-describe('a Save from before the newer Cosmetics', () => {
-  // A Burst, a Backdrop, a Ship and a Hull each have an owned list and an
-  // equipped id beside the Trail's and the Sound Kit's. A Save without them is
-  // still a Save of today's format (the version did not move): the player owns
-  // and wears each kind's free default, and nothing else is lost.
-  const NEWER_KINDS = ['burst', 'backdrop', 'ship', 'hull'] as const;
-  const fieldsOf = (kind: (typeof NEWER_KINDS)[number]) => [
-    COSMETIC_FIELDS[kind].owned,
-    COSMETIC_FIELDS[kind].equipped,
-  ];
-  const otherThanFree = (kind: (typeof NEWER_KINDS)[number]) => {
-    const entry = entriesOf(kind).find(
-      (candidate) => candidate.id !== COSMETIC_FIELDS[kind].free,
-    );
-    if (!entry) throw new Error(`The catalog has no spare ${kind}`);
-    return entry.id;
-  };
-  const withoutFields = (save: ReturningSave, fields: string[]) => ({
-    ...save,
-    upgrades: Object.fromEntries(
-      Object.entries(save.upgrades).filter(([key]) => !fields.includes(key)),
-    ),
-  });
+describe('the Cosmetics in a Save', () => {
+  // One entry per kind under `cosmetics`, with its owned list and its equipped
+  // id. A bad part costs only that part: the kind takes its free default and
+  // everything else loads as it was stored.
+  const KINDS = [
+    'trail',
+    'soundKit',
+    'burst',
+    'backdrop',
+    'ship',
+    'hull',
+  ] as const satisfies readonly CosmeticKind[];
 
-  it('loads with the free default of every newer kind owned and equipped, and loses nothing else', () => {
+  it('gives a kind the Save leaves out its free default, owned and worn, and keeps the other kinds', () => {
     const save = completeSave();
-    const { game, storage } = load(
-      withoutFields(save, NEWER_KINDS.flatMap(fieldsOf)),
-    );
+    for (const kind of KINDS) {
+      const { [kind]: _left, ...rest } = save.cosmetics;
+      const { game, storage } = load({ ...save, cosmetics: rest });
 
-    const { profile } = game.getState();
-    expect(game.getState().loadNotice).toBeNull();
-    expect(storage.movedAside).toEqual([]);
-    for (const kind of NEWER_KINDS) {
-      const { owned, equipped, free } = COSMETIC_FIELDS[kind];
-      expect(profile.upgrades[equipped], equipped).toBe(free);
-      expect(profile.upgrades[owned], owned).toEqual([free]);
+      const { profile } = game.getState();
+      expect(game.getState().loadNotice, kind).toBeNull();
+      expect(storage.movedAside, kind).toEqual([]);
+      expect(profile.cosmetics[kind], kind).toEqual({
+        owned: [FREE_COSMETIC[kind]],
+        equipped: FREE_COSMETIC[kind],
+      });
+      expect(profile.cosmetics, kind).toEqual({
+        ...save.cosmetics,
+        [kind]: profile.cosmetics[kind],
+      });
+      expect(profile.totalCredits).toBe(1234);
+      expect(profile.totalStars).toBe(5);
     }
-    expect(profile.totalCredits).toBe(1234);
-    expect(profile.totalStars).toBe(5);
-    expect(profile.upgrades.overdriveReactor).toBe(2);
   });
 
-  describe.each(NEWER_KINDS)('for a %s', (kind) => {
-    const { owned, equipped, free } = COSMETIC_FIELDS[kind];
-    const other = otherThanFree(kind);
+  describe.each(KINDS)('for a %s', (kind) => {
+    const free = FREE_COSMETIC[kind];
+    const other = entriesOf(kind).find((entry) => entry.id !== free)?.id;
+    if (!other) throw new Error(`The catalog has no spare ${kind}`);
     const save = completeSave();
-    const owning = withUpgrades(save, {
-      [equipped]: other,
-      [owned]: [free, other],
+    const owning = withCosmetic(save, kind, {
+      owned: [free, other],
+      equipped: other,
+    });
+
+    it('keeps what is owned and worn', () => {
+      const { game } = load(owning);
+
+      expect(game.getState().profile.cosmetics[kind]).toEqual({
+        owned: [free, other],
+        equipped: other,
+      });
     });
 
     it('wears the free default when the equipped id is missing, and keeps what is owned', () => {
-      const { game } = load(withoutFields(owning, [equipped]));
+      const { game } = load({
+        ...owning,
+        cosmetics: { ...owning.cosmetics, [kind]: { owned: [free, other] } },
+      });
 
-      const { upgrades } = game.getState().profile;
       expect(game.getState().loadNotice).toBeNull();
-      expect(upgrades[equipped]).toBe(free);
-      expect(upgrades[owned]).toEqual([free, other]);
+      expect(game.getState().profile.cosmetics[kind]).toEqual({
+        owned: [free, other],
+        equipped: free,
+      });
     });
 
     it('falls back to the free default for an equipped id the game does not have, and keeps the rest', () => {
-      const { game } = load(withUpgrades(owning, { [equipped]: 'GONE' }));
+      const { game } = load(withCosmetic(owning, kind, { equipped: 'GONE' }));
 
       const { profile } = game.getState();
       expect(game.getState().loadNotice).toBeNull();
-      expect(profile.upgrades[equipped]).toBe(free);
-      expect(profile.upgrades[owned]).toEqual([free, other]);
+      expect(profile.cosmetics[kind]).toEqual({
+        owned: [free, other],
+        equipped: free,
+      });
       expect(profile.totalCredits).toBe(1234);
     });
 
     it('drops an owned id the game does not have, and keeps the others', () => {
       const { game } = load(
-        withUpgrades(owning, { [owned]: [free, 'GONE', other] }),
+        withCosmetic(owning, kind, { owned: [free, 'GONE', other] }),
       );
 
       expect(game.getState().loadNotice).toBeNull();
-      expect(game.getState().profile.upgrades[owned]).toEqual([free, other]);
+      expect(game.getState().profile.cosmetics[kind].owned).toEqual([
+        free,
+        other,
+      ]);
     });
 
     it('always owns the free default, even when the list leaves it out', () => {
-      const { game } = load(withUpgrades(owning, { [owned]: [other] }));
+      const { game } = load(withCosmetic(owning, kind, { owned: [other] }));
 
-      expect([...game.getState().profile.upgrades[owned]].sort()).toEqual(
+      expect([...game.getState().profile.cosmetics[kind].owned].sort()).toEqual(
         [free, other].sort(),
       );
     });
 
     it('owns only the free default when the list is not a list', () => {
-      const { game } = load(withUpgrades(owning, { [owned]: 'all' as never }));
+      const { game } = load(
+        withCosmetic(owning, kind, { owned: 'all', equipped: free }),
+      );
 
       expect(game.getState().loadNotice).toBeNull();
-      expect(game.getState().profile.upgrades[owned]).toEqual([free]);
+      expect(game.getState().profile.cosmetics[kind].owned).toEqual([free]);
     });
   });
 });

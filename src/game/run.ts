@@ -5,22 +5,16 @@
  * one `set`, its moments are told, and only then is a clear reported, so
  * nothing re-enters the Run mid-keystroke.
  *
- * The Run reads the Profile through `loadoutOf` and never changes it, except
- * by handing a cleared Stage's result to the Profile's command. The Profile
- * reads nothing of this module.
+ * The Run reads the Profile and never changes it, except by handing a cleared
+ * Stage's result to the Profile's command. The Profile reads nothing of this
+ * module.
  */
 import { FIRST_STAGE } from '../curriculum/curriculum';
 import type { Stage } from '../curriculum/curriculum';
 import type { RunPhase } from './machine';
 import type { Clock, RunClock } from './clock';
 import type { Moment } from './moments';
-import {
-  type Loadout,
-  loadoutOf,
-  type ProfileSlice,
-  type StageRecord,
-  type StageResult,
-} from './profile';
+import type { ProfileSlice, StageRecord, StageResult } from './profile';
 import {
   clearedRun,
   countsAsKeystroke,
@@ -85,26 +79,21 @@ export interface RunDeps {
 
 /**
  * The Run's part of the game's one store. `set` and `get` are the store's,
- * `loadout` is what the Profile loaded from the Save gives the first Run.
+ *
  */
 export function createRunSlice(
   { getPhase, reportRunCleared, clock, runClock, emit }: RunDeps,
   set: (partial: Partial<RunSliceState>) => void,
   get: () => RunStore,
-  loadout: Loadout,
 ): RunSlice {
-  // The Profile as the Run reads it, live on each call: a Sensors or Reactor
-  // bought mid-Run counts at once, and a Shield only from the next Run.
-  const currentLoadout = () => loadoutOf(get().profile);
-
   return {
-    run: idleRun(FIRST_STAGE, loadout),
+    run: idleRun(FIRST_STAGE),
     debrief: null,
 
     beginRun: (stage) => {
       runClock.reset();
       set({
-        run: startRun(stage, currentLoadout(), clock.now()),
+        run: startRun(stage, clock.now()),
         debrief: null,
       });
       emit({ type: 'launched' });
@@ -112,7 +101,7 @@ export function createRunSlice(
 
     abandonRun: () => {
       runClock.reset();
-      set({ run: idleRun(get().run.stage, currentLoadout()), debrief: null });
+      set({ run: idleRun(get().run.stage), debrief: null });
     },
 
     showFirstStage: () => {
@@ -129,7 +118,7 @@ export function createRunSlice(
       if (getPhase() !== 'running') return;
       if (!countsAsKeystroke(key, options)) return;
 
-      const result = strike(get().run, key, currentLoadout(), {
+      const result = strike(get().run, key, {
         steps: runClock.steps(),
         now: clock.now(),
       });

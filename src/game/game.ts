@@ -31,7 +31,7 @@ import {
   silentSound,
   soundStateOf,
 } from './sound';
-import { createProfileSlice, loadoutOf, type ProfileSlice } from './profile';
+import { createProfileSlice, type ProfileSlice } from './profile';
 import { createRunSlice, type RunSlice, type DebriefResult } from './run';
 import type { CatalogItemId } from './catalog';
 import type { BackupImport, SaveStorage } from './save';
@@ -150,16 +150,15 @@ export interface Game {
    */
   changeSettings(patch: Partial<Settings>): void;
   /**
-   * Buy an item from the catalog at its catalog price: an Upgrade's next
-   * level, or a Cosmetic (bought and equipped, or just equipped when it is
-   * already owned). True when it bought or equipped something; false, with
-   * the Profile unchanged, when the Upgrade is at its last level, the
-   * Cosmetic is the one already equipped, or the Credits fall short.
+   * Buy a Cosmetic from the catalog at its catalog price (bought and
+   * equipped, or just equipped when it is already owned). True when it bought
+   * or equipped something; false, with the Profile unchanged, when the
+   * Cosmetic is the one already equipped or the Credits fall short.
    */
   buy(itemId: CatalogItemId): boolean;
   /** Replace the Profile with a Backup's, if it passes the Save's checks. */
   importBackup(text: string): BackupImport;
-  /** Wipe Stars and Stage progress; Credits and Upgrades stay. */
+  /** Wipe Stars and Stage progress; Credits and Cosmetics stay. */
   wipeAchievements(): void;
   /** Back to a fresh Profile. */
   resetProgress(): void;
@@ -224,9 +223,8 @@ export function createGame(options: GameOptions): Game {
     if (depth === 0) heardAfter();
   };
   // One store, built from the Profile's part and the Run's. The Run reads the
-  // Profile (its Loadout, and handing it a cleared Stage's result); the
-  // Profile reads nothing of the Run. The Run starts with the Loadout of the
-  // Profile the Save gave.
+  // Profile (handing it a cleared Stage's result); the Profile reads nothing
+  // of the Run.
   const store = createStore<GameStoreState>()((set, get) => {
     const profile = createProfileSlice(
       { storage: options.storage, clock, emit },
@@ -243,7 +241,6 @@ export function createGame(options: GameOptions): Game {
       },
       set,
       get,
-      loadoutOf(profile.profile),
     );
     return { ...profile, ...run };
   });

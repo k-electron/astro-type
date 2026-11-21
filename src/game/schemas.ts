@@ -7,7 +7,6 @@ import {
   DEFAULT_SHIP,
   DEFAULT_SOUND_KIT,
   DEFAULT_TRAIL,
-  MAX_UPGRADE_LEVEL,
 } from './catalog';
 
 export const TrailIdSchema = z.enum([
@@ -116,28 +115,25 @@ function entriesOf<T>(entry: z.ZodType<T>) {
   }, z.custom<Record<string, T>>());
 }
 
-const upgradeLevel = () =>
-  numberField({ min: 0, max: MAX_UPGRADE_LEVEL, integer: true, fallback: 0 });
+/** What the player owns of one kind of Cosmetic, and which one is equipped. */
+function ownership<T extends string>(schema: z.ZodType<T>, defaultId: T) {
+  return z.preprocess(
+    (value) => (isRecord(value) ? value : {}),
+    z.object({
+      owned: ownedList(schema, defaultId),
+      equipped: schema.catch(defaultId),
+    }),
+  );
+}
 
-// The fields keep the names they were first written with (a Trail was a
-// "theme", a Sound Kit an "audio core"). Renaming one is a change to what the
-// Save holds, so it raises `SAVE_VERSION`.
-export const UpgradesSchema = z.object({
-  deflectorShields: upgradeLevel(),
-  overdriveReactor: upgradeLevel(),
-  precisionSensors: upgradeLevel(),
-  equippedTrailTheme: TrailIdSchema.catch(DEFAULT_TRAIL),
-  equippedAudioCore: SoundKitSchema.catch(DEFAULT_SOUND_KIT),
-  unlockedThemes: ownedList(TrailIdSchema, DEFAULT_TRAIL),
-  unlockedAudioCores: ownedList(SoundKitSchema, DEFAULT_SOUND_KIT),
-  equippedBurst: BurstIdSchema.catch(DEFAULT_BURST),
-  unlockedBursts: ownedList(BurstIdSchema, DEFAULT_BURST),
-  equippedBackdrop: BackdropIdSchema.catch(DEFAULT_BACKDROP),
-  unlockedBackdrops: ownedList(BackdropIdSchema, DEFAULT_BACKDROP),
-  equippedShip: ShipIdSchema.catch(DEFAULT_SHIP),
-  unlockedShips: ownedList(ShipIdSchema, DEFAULT_SHIP),
-  equippedHull: HullIdSchema.catch(DEFAULT_HULL),
-  unlockedHulls: ownedList(HullIdSchema, DEFAULT_HULL),
+/** The Cosmetics, by the catalog's kind names: what the player owns and wears of each. */
+export const CosmeticsSchema = z.object({
+  trail: ownership(TrailIdSchema, DEFAULT_TRAIL),
+  soundKit: ownership(SoundKitSchema, DEFAULT_SOUND_KIT),
+  burst: ownership(BurstIdSchema, DEFAULT_BURST),
+  backdrop: ownership(BackdropIdSchema, DEFAULT_BACKDROP),
+  ship: ownership(ShipIdSchema, DEFAULT_SHIP),
+  hull: ownership(HullIdSchema, DEFAULT_HULL),
 });
 
 /**
@@ -187,9 +183,9 @@ export const SettingsSchema = z.object({
   globalMuted: booleanField(false),
 });
 
-/** The Upgrades as stored: anything that is not an object reads as no Upgrades at all. */
-const readStoredUpgrades = (upgrades: unknown): unknown =>
-  isRecord(upgrades) ? upgrades : {};
+/** The Cosmetics as stored: anything that is not an object reads as every Cosmetic at its default. */
+const readStoredCosmetics = (cosmetics: unknown): unknown =>
+  isRecord(cosmetics) ? cosmetics : {};
 
 /**
  * The Save's format version, which is also the version a Backup carries. A
@@ -197,7 +193,7 @@ const readStoredUpgrades = (upgrades: unknown): unknown =>
  * the Save module discards an older Save and refuses an older Backup, so no
  * Profile ever mixes old and new numbers, and no code reads an old format.
  */
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 4;
 
 /**
  * The Save: the only definition of what a Profile is. Unknown fields are
@@ -220,7 +216,7 @@ export const SaveFieldsSchema = z.object({
   highestWpmAllTime: numberField({ min: 0, fallback: 0 }),
   stagesProgress: entriesOf(StageProgressSchema),
   keyAnalytics: entriesOf(KeyAnalyticsSchema),
-  upgrades: z.preprocess(readStoredUpgrades, UpgradesSchema),
+  cosmetics: z.preprocess(readStoredCosmetics, CosmeticsSchema),
   ...SettingsSchema.shape,
 });
 
@@ -253,7 +249,7 @@ export const DEFAULT_PROFILE: PlayerProfile = PlayerProfileSchema.parse({
 
 // The Profile and its parts. These are the only definitions of these types.
 export type PlayerProfile = z.output<typeof PlayerProfileSchema>;
-export type ShipUpgrades = z.output<typeof UpgradesSchema>;
+export type Cosmetics = z.output<typeof CosmeticsSchema>;
 export type StageProgress = z.output<typeof StageProgressSchema>;
 export type KeyAnalytics = z.output<typeof KeyAnalyticsSchema>;
 export type TrailId = z.output<typeof TrailIdSchema>;

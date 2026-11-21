@@ -5,7 +5,6 @@ import {
   newGame,
   SAMPLE_TEXT,
   STAGE_ID,
-  startedGame,
   startStage,
   WRONG_KEY,
 } from '../../tests/shared/testHelpers';
@@ -83,19 +82,6 @@ describe('the key stats of a cleared Run: one miss for a character that carries 
       0,
     );
     expect(total).toBe(SAMPLE_TEXT.length);
-  });
-
-  it('a wrong key a shield absorbs still marks the character as a miss', () => {
-    const game = startedGame({ deflectorShields: 3 });
-    const first = SAMPLE_TEXT[0];
-
-    clearStage(game, { seconds: 60, missesFirst: 3 });
-
-    expect(statsOf(game, first)).toEqual({
-      hits: occurrences(first) - 1,
-      misses: 1,
-    });
-    expect(profileOf(game).totalMissMarks).toBe(1);
   });
 
   it('adds to the key stats the Save already had', () => {

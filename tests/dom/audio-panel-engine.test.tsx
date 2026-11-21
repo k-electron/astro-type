@@ -54,9 +54,8 @@ const slider = (which: 'laser' | 'beats', value: number) =>
 /** A Save with the 8-Bit Retro Sound Kit equipped and the other settings off their defaults. */
 const CUSTOM_SAVE = {
   ...OWNS_RETRO_SOUND_KIT,
-  upgrades: {
-    unlockedAudioCores: ['CYBER_SYNTH', 'RETRO_8BIT'],
-    equippedAudioCore: 'RETRO_8BIT',
+  cosmetics: {
+    soundKit: { owned: ['CYBER_SYNTH', 'RETRO_8BIT'], equipped: 'RETRO_8BIT' },
   },
   beatTheme: 'COSMIC_LOFI',
   soundVolume: 0.3,

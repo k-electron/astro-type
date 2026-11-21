@@ -17,9 +17,9 @@ import {
  * The grade a keystroke gets is by its distance to the Strike Line (y = 84).
  * Every Run moves at FAST: the lead Drone starts 22 from it and closes 2.2 a
  * step, so it is 22 - 2.2 x steps away. The windows are 8 for Perfect and 16
- * for Great, and each level of Precision Sensors widens both by 3.5. This file
- * holds the one table of those windows (no step count lands exactly on a
- * window's edge at this speed, so the table brackets each edge instead).
+ * for Great, the same for every player. This file holds the one table of those
+ * windows (no step count lands exactly on a window's edge at this speed, so
+ * the table brackets each edge instead).
  */
 
 /**
@@ -31,7 +31,7 @@ function collectInto(into: Judgement[]): (moment: Moment) => void {
     if (moment.type === 'hit') {
       const { type, grade, key, points, overdrive } = moment;
       into.push({ type, grade, key, points, overdrive });
-    } else if (moment.type === 'miss' || moment.type === 'shield') {
+    } else if (moment.type === 'miss') {
       into.push({ type: moment.type, key: moment.key });
     }
   };
@@ -46,29 +46,18 @@ function listen(game: Game): Judgement[] {
 
 describe('a hit', () => {
   it.each([
-    // [Sensors level, steps before pressing, distance, grade, points at x1]
-    [0, 0, 22, 'good', 50],
-    [0, 2, 17.6, 'good', 50],
-    [0, 3, 15.4, 'great', 75],
-    [0, 6, 8.8, 'great', 75],
-    [0, 7, 6.6, 'perfect', 100],
-    [0, 10, 0, 'perfect', 100], // waiting on the Strike Line
-    [0, 40, 0, 'perfect', 100], // the Drone waits; there is no timeout
-    [1, 0, 22, 'good', 50],
-    [1, 1, 19.8, 'good', 50], // Great window is 16 + 3.5 = 19.5
-    [1, 2, 17.6, 'great', 75],
-    [1, 4, 13.2, 'great', 75], // Perfect window is 8 + 3.5 = 11.5
-    [1, 5, 11, 'perfect', 100],
-    [2, 0, 22, 'great', 75], // Great window is 16 + 7 = 23
-    [2, 3, 15.4, 'great', 75], // Perfect window is 15
-    [2, 4, 13.2, 'perfect', 100],
-    [3, 0, 22, 'great', 75],
-    [3, 1, 19.8, 'great', 75], // Perfect window is 18.5
-    [3, 2, 17.6, 'perfect', 100],
+    // [steps before pressing, distance, grade, points at x1]
+    [0, 22, 'good', 50],
+    [2, 17.6, 'good', 50],
+    [3, 15.4, 'great', 75],
+    [6, 8.8, 'great', 75],
+    [7, 6.6, 'perfect', 100],
+    [10, 0, 'perfect', 100], // waiting on the Strike Line
+    [40, 0, 'perfect', 100], // the Drone waits; there is no timeout
   ] as const)(
-    'with Sensors level %i, %i steps in (%s from the line) is %s',
-    (sensors, steps, _distance, grade, points) => {
-      const game = startedGame({ precisionSensors: sensors });
+    '%i steps in (%s from the line) is %s',
+    (steps, _distance, grade, points) => {
+      const game = startedGame();
       const events = listen(game);
 
       game.step(steps);
@@ -153,39 +142,21 @@ describe('a Miss', () => {
     // The Drone is still the one to hit.
     expect(game.getState().run.currentCharIndex).toBe(0);
   });
-
-  it('is a shield event while a shield absorbs it, then a Miss', () => {
-    const game = startedGame({ deflectorShields: 1 });
-    hitPerfect(game, 3);
-    const events = listen(game);
-
-    game.pressKey('x');
-    expect(events).toEqual([{ type: 'shield', key: 'x' }]);
-    expect(game.getState().run.shieldsRemaining).toBe(0);
-    expect(game.getState().run.currentStreak).toBe(3);
-
-    game.pressKey('y');
-    expect(events).toEqual([
-      { type: 'shield', key: 'x' },
-      { type: 'miss', key: 'y' },
-    ]);
-    expect(game.getState().run.currentStreak).toBe(0);
-  });
 });
 
 describe('one event per counted keystroke', () => {
   it('holds from the first key of a Run to the one that clears it', () => {
-    const game = startedGame({ deflectorShields: 1 });
+    const game = startedGame();
     const events = listen(game);
 
-    // Three wrong keys up front (a shield, then two Misses), then the whole text.
+    // Three wrong keys up front, then the whole text.
     for (const wrong of ['x', 'y', 'z']) game.pressKey(wrong);
     hitPerfect(game, SAMPLE_TEXT.length);
 
     expect(game.getState().debrief).not.toBeNull();
     expect(events).toHaveLength(3 + SAMPLE_TEXT.length);
     expect(events.map((event) => event.type)).toEqual([
-      'shield',
+      'miss',
       'miss',
       'miss',
       ...Array.from({ length: SAMPLE_TEXT.length }, () => 'hit'),
@@ -272,8 +243,8 @@ describe('a key that types no character', () => {
     'Dead',
     'Unidentified',
   ])('%s counts as nothing: no event, and the Run is untouched', (key) => {
-    // A Run with a Streak, Overdrive charge and shields to lose.
-    const game = startedGame({ deflectorShields: 2 });
+    // A Run with a Streak and an Overdrive charge to lose.
+    const game = startedGame();
     hitPerfect(game, 3);
     const before = structuredClone(game.getState().run);
     const events = listen(game);
@@ -283,7 +254,6 @@ describe('a key that types no character', () => {
     expect(events).toEqual([]);
     expect(game.getState().run).toEqual(before);
     expect(before.currentStreak).toBe(3);
-    expect(before.shieldsRemaining).toBe(2);
   });
 
   it('does not count even when it comes between right keys', () => {
@@ -306,7 +276,7 @@ describe('a key that types no character', () => {
 
 describe('an auto-repeat keydown', () => {
   it('is ignored completely, even on the right key', () => {
-    const game = startedGame({ deflectorShields: 2 });
+    const game = startedGame();
     hitPerfect(game, 3);
     game.step(30);
     const before = structuredClone(game.getState().run);
@@ -347,18 +317,17 @@ describe('an auto-repeat keydown', () => {
     expect(game.getState().run.currentCharIndex).toBe(10);
   });
 
-  it('after a held wrong key is one Miss, and uses up one shield', () => {
-    const game = startedGame({ deflectorShields: 2 });
+  it('after a held wrong key is one Miss', () => {
+    const game = startedGame();
     hitPerfect(game, 3);
     const events = listen(game);
 
     game.pressKey('x'); // the keydown
     for (let i = 0; i < 5; i++) game.pressKey('x', { repeat: true });
 
-    expect(events).toEqual([{ type: 'shield', key: 'x' }]);
-    expect(game.getState().run.shieldsRemaining).toBe(1);
+    expect(events).toEqual([{ type: 'miss', key: 'x' }]);
     expect(game.getState().run.incorrectKeystrokes).toBe(1);
-    expect(game.getState().run.currentStreak).toBe(3);
+    expect(game.getState().run.currentStreak).toBe(0);
   });
 
   it('on a key that types no character is ignored too', () => {

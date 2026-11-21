@@ -8,7 +8,11 @@
  * Flight Deck (cockpit), Free Flight (drill, custom practice), Runs (session), the Save
  * (storage) and Stars (rating). GLOSSARY.md lists each one as a word to avoid. "Trail theme" is
  * banned too, since #88 renamed the Cosmetic a Trail; it is banned as a phrase,
- * because "trail" alone is the name.
+ * because "trail" alone is the name. "Upgrade" (and "upgrades" and
+ * "upgraded") and "shield" (and "shields") are banned since #136 removed the
+ * Upgrades: nothing bought changes how the game plays, so no screen offers an
+ * Upgrade or a shield. The Glossary keeps "upgrade" in the Avoid list of
+ * Cosmetic.
  *
  * It also holds the old on-screen names that #89 retired, each as the whole
  * phrase so the words the Glossary keeps still pass:
@@ -46,4 +50,4 @@
  * split "hyper space", "main menu" and "custom practice".
  */
 export const BANNED_NAME =
-  /\b(?:combos?|trail[\s-]?themes?|hyper[\s-]?space|warp(?:s|ed|ing)?|missions?|highways?|(?:falling|laser|keystroke)[\s-]notes?|debriefings?|main[\s-]?menus?|cockpits?|drill(?:s|ed|ing)?|sessions?|storage|custom[\s-]?practices?|custom[\s-]?themes?|ratings?|tactile[\s-]rhythm|audio[\s-]flight[\s-]deck|custom[\s-]flights?|(?:hide|show)[\s-]+(?:the[\s-]+)?(?:action[\s-]+)?deck|audio[\s-]cores?|audio[\s-]synths?|synthesizers?|deep[\s-]space[\s-]drone|cadences?|target[\s-]?wpms?)\b|^reports?$/i;
+  /\b(?:combos?|trail[\s-]?themes?|hyper[\s-]?space|warp(?:s|ed|ing)?|upgrades?|upgraded|shields?|missions?|highways?|(?:falling|laser|keystroke)[\s-]notes?|debriefings?|main[\s-]?menus?|cockpits?|drill(?:s|ed|ing)?|sessions?|storage|custom[\s-]?practices?|custom[\s-]?themes?|ratings?|tactile[\s-]rhythm|audio[\s-]flight[\s-]deck|custom[\s-]flights?|(?:hide|show)[\s-]+(?:the[\s-]+)?(?:action[\s-]+)?deck|audio[\s-]cores?|audio[\s-]synths?|synthesizers?|deep[\s-]space[\s-]drone|cadences?|target[\s-]?wpms?)\b|^reports?$/i;

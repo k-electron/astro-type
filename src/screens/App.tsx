@@ -25,7 +25,7 @@ function CosmicBackdrop() {
       onFlightDeck: state.screen === 'flight-deck',
       overdriveActive: state.run.overdriveActive,
       multiplier: state.run.multiplier,
-      backdrop: state.profile.upgrades.equippedBackdrop,
+      backdrop: state.profile.cosmetics.backdrop.equipped,
     }),
   );
   return (

@@ -24,8 +24,10 @@ import {
 import { flightDeckLabel } from '../../src/screens/closeLabel';
 import { OPEN_AUDIO_PANEL } from '../../src/screens/audioLabels';
 import {
+  FACTORY_RESET_MESSAGE,
   FACTORY_RESET_TITLE,
   WIPE_STARS_TITLE,
+  wipeStarsMessage,
 } from '../../src/screens/confirmLabels';
 
 // Wiping the Stars asks first. profile.test.tsx guards Factory Reset
@@ -440,5 +442,34 @@ describe('Wipe lives only in Analytics', () => {
     expect(screen.getByRole('button', { name: 'Export Backup' })).toBeTruthy();
     // Import Backup is a file chooser, not a button.
     expect(screen.getByText('Import Backup')).toBeTruthy();
+  });
+});
+
+// What each confirm tells the player it takes, and what stays (#136: the
+// Upgrades are gone, so neither mentions them; the wording is imported, and
+// names.test.tsx reads both confirms for words the game never says).
+describe('what a confirm says before it wipes', () => {
+  it('Wipe Stars gives the Stars and cleared Stages it takes, and what stays', () => {
+    const player = renderGame({ profile: RETURNING_PLAYER });
+    player.openHeader('Analytics');
+
+    player.click('Wipe Stars');
+
+    const dialog = within(
+      screen.getByRole('alertdialog', { name: WIPE_STARS_TITLE }),
+    );
+    expect(dialog.getByText(wipeStarsMessage(5, 2))).toBeTruthy();
+  });
+
+  it('Factory Reset says what it takes', () => {
+    const player = renderGame({ profile: RETURNING_PLAYER });
+    player.openHeader('Analytics');
+
+    player.click('Factory Reset');
+
+    const dialog = within(
+      screen.getByRole('alertdialog', { name: FACTORY_RESET_TITLE }),
+    );
+    expect(dialog.getByText(FACTORY_RESET_MESSAGE)).toBeTruthy();
   });
 });

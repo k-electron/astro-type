@@ -36,8 +36,8 @@ export const AudioPanel: React.FC = () => {
     soundVolume: state.profile.soundVolume,
     musicVolume: state.profile.musicVolume,
     beatTheme: state.profile.beatTheme,
-    soundKit: state.profile.upgrades.equippedAudioCore,
-    ownedSoundKits: state.profile.upgrades.unlockedAudioCores,
+    soundKit: state.profile.cosmetics.soundKit.equipped,
+    ownedSoundKits: state.profile.cosmetics.soundKit.owned,
   }));
 
   return (
@@ -110,7 +110,7 @@ export const AudioPanel: React.FC = () => {
                 Keystroke Laser SFX
               </span>
               <span className="text-[10px] text-slate-400">
-                Tactile hits, Streak alarms & shield absorbs
+                Tactile hits and Streak alarms
               </span>
             </div>
           </div>

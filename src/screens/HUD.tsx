@@ -1,5 +1,5 @@
 import type React from 'react';
-import { Shield, Zap } from 'lucide-react';
+import { Zap } from 'lucide-react';
 import { useGame } from '../app/useGame';
 import {
   X3_STEP,
@@ -36,7 +36,6 @@ export const HUD: React.FC = () => {
     multiplier,
     overdriveActive,
     overdriveEnergy,
-    shieldsRemaining,
     wpm,
     accuracy,
     rhythm,
@@ -47,7 +46,6 @@ export const HUD: React.FC = () => {
     multiplier: state.run.multiplier,
     overdriveActive: state.run.overdriveActive,
     overdriveEnergy: state.run.overdriveEnergy,
-    shieldsRemaining: state.run.shieldsRemaining,
     wpm: state.run.wpm,
     accuracy: state.run.accuracy,
     rhythm: state.run.rhythm,
@@ -166,18 +164,6 @@ export const HUD: React.FC = () => {
               {band}
             </span>
           </div>
-        </div>
-
-        {/* Shield Status */}
-        <div className="w-12 h-6 flex items-center justify-center shrink-0">
-          {shieldsRemaining > 0 ? (
-            <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-blue-950/60 border border-blue-900 text-blue-300 text-[11px] font-mono">
-              <Shield className="w-3 h-3 fill-blue-500/20" />
-              <span>x{shieldsRemaining}</span>
-            </div>
-          ) : (
-            <span className="text-[10px] font-mono text-slate-600">—</span>
-          )}
         </div>
       </div>
 

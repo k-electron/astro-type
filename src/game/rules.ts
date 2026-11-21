@@ -1,6 +1,6 @@
 /**
  * The rules of a Run, as plain functions: Judgement, scoring, Streak,
- * Multiplier, Overdrive, shields, Drone movement, live WPM, Stars and
+ * Multiplier, Overdrive, Drone movement, live WPM, Stars and
  * Credits. No React, PixiJS, DOM or sound in here.
  *
  * The whole keystroke is one function, `strike`, and the whole step is
@@ -19,7 +19,7 @@ import {
 import type { FingerZone } from '../curriculum/keyboardLayout';
 import { STEP_MS } from './clock';
 import type { Moment } from './moments';
-import type { Loadout, StageResult } from './profile';
+import type { StageResult } from './profile';
 
 /** How close to the Strike Line a hit landed: Perfect, Great or Good. */
 export type Grade = 'perfect' | 'great' | 'good';
@@ -41,7 +41,6 @@ export interface LivePerformance {
   multiplier: number; // 1, 2, 3, 4
   overdriveActive: boolean;
   overdriveEnergy: number; // 0 to 100
-  shieldsRemaining: number;
   correctKeystrokes: number;
   incorrectKeystrokes: number;
   totalKeystrokes: number;
@@ -69,8 +68,7 @@ export type Judgement =
       points: number;
       overdrive: boolean;
     }
-  | { type: 'miss'; key: string }
-  | { type: 'shield'; key: string };
+  | { type: 'miss'; key: string };
 
 /** What a keydown says besides its key: how it was pressed. */
 export interface KeyOptions {
@@ -135,9 +133,9 @@ export interface RunTime {
 }
 
 /** A Run with nothing in flight: no Drones, no marks, the numbers at their start. */
-export function idleRun(stage: Stage, loadout: Loadout): Run {
+export function idleRun(stage: Stage): Run {
   return {
-    ...freshPerformance(loadout.shields),
+    ...freshPerformance(),
     drones: [],
     stage,
     errorIndices: new Set<number>(),
@@ -150,11 +148,11 @@ export function idleRun(stage: Stage, loadout: Loadout): Run {
 }
 
 /** A fresh Run of `stage`, with its first Drones seeded. */
-export function startRun(stage: Stage, loadout: Loadout, now: number): Run {
-  return { ...idleRun(stage, loadout), drones: seedDrones(stage, now) };
+export function startRun(stage: Stage, now: number): Run {
+  return { ...idleRun(stage), drones: seedDrones(stage, now) };
 }
 
-function freshPerformance(shields: number): LivePerformance {
+function freshPerformance(): LivePerformance {
   return {
     score: 0,
     currentStreak: 0,
@@ -162,7 +160,6 @@ function freshPerformance(shields: number): LivePerformance {
     multiplier: 1,
     overdriveActive: false,
     overdriveEnergy: 0,
-    shieldsRemaining: shields,
     correctKeystrokes: 0,
     incorrectKeystrokes: 0,
     totalKeystrokes: 0,
@@ -255,15 +252,14 @@ function moveDrones(drones: Drone[]): Drone[] {
 // ---- Judgement, scoring, Streak, Multiplier, Overdrive ------------------
 
 /**
- * Perfect, Great or Good by distance from the Strike Line. Precision sensor
- * Upgrades widen the windows. With no Drone to measure, a hit is Great.
+ * Perfect, Great or Good by distance from the Strike Line. With no Drone to
+ * measure, a hit is Great.
  */
-function judge(droneY: number | undefined, precisionSensors: number): Grade {
+function judge(droneY: number | undefined): Grade {
   if (droneY === undefined) return 'great';
-  const sensorBonus = precisionSensors * 3.5;
   const diff = Math.abs(droneY - STRIKE_LINE_Y);
-  if (diff <= 8 + sensorBonus) return 'perfect';
-  if (diff <= 16 + sensorBonus) return 'great';
+  if (diff <= 8) return 'perfect';
+  if (diff <= 16) return 'great';
   return 'good';
 }
 
@@ -313,10 +309,8 @@ export function scoreForHit(
 function chargeOverdrive(
   energy: number,
   active: boolean,
-  reactorLevel: number,
 ): { energy: number; ignites: boolean } {
-  const reactorBonus = 1 + reactorLevel * 0.2;
-  const next = Math.min(100, energy + 3.5 * reactorBonus);
+  const next = Math.min(100, energy + 3.5);
   const ignites = next >= 100 && !active;
   return { energy: ignites ? 100 : next, ignites };
 }
@@ -352,33 +346,17 @@ export function rhythmBand(rhythm: number): RhythmBand {
   return 'Uneven';
 }
 
-/** The Run's numbers after a Miss: shields absorb it, otherwise the Streak breaks. */
-function applyMiss(run: Run, rhythm: number): { run: Run; shielded: boolean } {
-  const base = {
+/** The Run's numbers after a Miss: the Streak always breaks. */
+function applyMiss(run: Run, rhythm: number): Run {
+  return {
+    ...run,
+    currentStreak: 0,
+    multiplier: 1,
+    overdriveActive: false,
+    overdriveEnergy: Math.max(0, run.overdriveEnergy - 25),
     incorrectKeystrokes: run.incorrectKeystrokes + 1,
     totalKeystrokes: run.totalKeystrokes + 1,
     rhythm,
-  };
-  if (run.shieldsRemaining > 0) {
-    return {
-      shielded: true,
-      run: {
-        ...run,
-        shieldsRemaining: run.shieldsRemaining - 1,
-        ...base,
-      },
-    };
-  }
-  return {
-    shielded: false,
-    run: {
-      ...run,
-      currentStreak: 0,
-      multiplier: 1,
-      overdriveActive: false,
-      overdriveEnergy: Math.max(0, run.overdriveEnergy - 25),
-      ...base,
-    },
   };
 }
 
@@ -397,17 +375,10 @@ export interface StrikeResult {
  * The whole keystroke: the player strikes `key` against the character the Run
  * is on. `key` is one that counts (see `countsAsKeystroke`). A right key is
  * judged against the lead Drone for the character, scored, adds to the Streak
- * and Overdrive's charge and moves the Run on; a wrong key is a Miss, which a
- * shield absorbs or else breaks the Streak. The loadout is what the player's
- * Upgrades give the Run: Sensors widen the windows, the Reactor charges
- * Overdrive faster, and the shields were counted when the Run began.
+ * and Overdrive's charge and moves the Run on; a wrong key is a Miss, which
+ * always breaks the Streak.
  */
-export function strike(
-  run: Run,
-  key: string,
-  loadout: Loadout,
-  time: RunTime,
-): StrikeResult {
+export function strike(run: Run, key: string, time: RunTime): StrikeResult {
   const { stage } = run;
   const index = run.currentCharIndex;
   const target = stage.sampleText[index];
@@ -431,14 +402,11 @@ export function strike(
 
   if (key !== target) {
     const missed = applyMiss(run, rhythmAfterMiss(run.rhythm));
-    const judgement = {
-      type: missed.shielded ? 'shield' : 'miss',
-      key,
-    } as const;
+    const judgement = { type: 'miss', key } as const;
     return {
       run: {
         ...withAccuracy({
-          ...missed.run,
+          ...missed,
           errorIndices: new Set(run.errorIndices).add(index),
         }),
         keyStats: {
@@ -457,15 +425,11 @@ export function strike(
   const drone = run.drones.find((d) => d.char === target);
   // A Run that is running always has a Drone for the character to type.
   if (!drone) throw new Error(`No Drone for "${target}" in a running Run`);
-  const grade = judge(drone.yPercent, loadout.sensors);
+  const grade = judge(drone.yPercent);
   const streak = run.currentStreak + 1;
   const multiplier = multiplierForStreak(streak);
   const points = scoreForHit(grade, multiplier, run.overdriveActive);
-  const charge = chargeOverdrive(
-    run.overdriveEnergy,
-    run.overdriveActive,
-    loadout.reactor,
-  );
+  const charge = chargeOverdrive(run.overdriveEnergy, run.overdriveActive);
   const nextIndex = index + 1;
 
   // Inter-keystroke intervals, for rhythm scoring.

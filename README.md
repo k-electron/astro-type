@@ -10,11 +10,11 @@ The capitalised terms are defined in [`GLOSSARY.md`](GLOSSARY.md).
 
 - **Curriculum:** 7 Sectors of 4 Stages each, 28 Stages in all. Each Stage is a fixed text. A cleared Run earns the Stage 0 to 3 Stars, from accuracy and WPM, and a Stage keeps its best. The 28 Stages give at most 84 Stars, and Stars open new Sectors.
 - **Galaxy Map:** where you pick a Stage from the Sectors.
-- **Flight Deck:** where a Run is played. It shows the HUD (score, Multiplier, WPM, accuracy, Streak, shields), the text prompt and the Action Deck, with the lanes, Drones, keyboard and the hands showing which finger to use.
+- **Flight Deck:** where a Run is played. It shows the HUD (score, Multiplier, WPM, accuracy, Streak), the text prompt and the Action Deck, with the lanes, Drones, keyboard and the hands showing which finger to use.
 - **Judgement:** each keystroke is a Perfect, Great or Good hit by how close the Drone was to the Strike Line, or a Miss for a wrong key.
-- **Streak, Multiplier and Overdrive:** correct keystrokes in a row build the Streak, which raises the Multiplier from x1 to x4. Correct keystrokes also fill the Overdrive meter, and a full meter starts Overdrive, which doubles the score of each hit. A Miss resets the Streak and ends Overdrive unless a shield absorbs it.
+- **Streak, Multiplier and Overdrive:** correct keystrokes in a row build the Streak, which raises the Multiplier from x1 to x4. Correct keystrokes also fill the Overdrive meter, and a full meter starts Overdrive, which doubles the score of each hit. A Miss resets the Streak and ends Overdrive.
 - **Debrief:** when a Run is cleared, it shows the result, the Stars earned and the Credits paid.
-- **Hangar:** spend Credits on Upgrades (shields, reactor, sensors) and Cosmetics (Trails, Sound Kits, Bursts, Backdrops, Ships and Hulls).
+- **Hangar:** spend Credits on Cosmetics (Trails, Sound Kits, Bursts, Backdrops, Ships and Hulls).
 - **Analytics:** lifetime totals (highest speed, accuracy, words typed, practice time), hand balance and a per-key accuracy heatmap, with exporting and importing a Backup.
 - **Free Flight:** set up a Stage from your own text.
 - **Sound:** sound effects and the beat are synthesized with the Web Audio API. There are no audio files.

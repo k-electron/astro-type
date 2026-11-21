@@ -32,13 +32,11 @@ export interface SoundState {
 /** A one-shot sound. */
 export type Cue =
   | { type: 'hit'; lane: number; grade: Grade; space: boolean }
-  | { type: 'shield' }
   | { type: 'miss' }
   | { type: 'ignition' }
   | { type: 'cleared' }
   /** The chimes for the Stars earned, played a beat after the fanfare. */
   | { type: 'stars'; count: number }
-  | { type: 'upgrade' }
   | { type: 'equip' };
 
 /** How sound is attached to the game. The app gives it the engine; tests get silence or a recorder. */
@@ -83,7 +81,7 @@ export function soundStateOf(
     musicOn: profile.musicEnabled,
     musicVolume: profile.musicVolume,
     theme: profile.beatTheme,
-    soundKit: profile.upgrades.equippedAudioCore,
+    soundKit: profile.cosmetics.soundKit.equipped,
     beat: running && musicHeard,
     overdrive: running && run.overdriveActive,
   };
@@ -106,7 +104,6 @@ export function cueFor(moment: Moment): Cue[] {
         },
       ];
     case 'miss':
-    case 'shield':
     case 'ignition':
       return [{ type: moment.type }];
     case 'launched':
@@ -114,8 +111,6 @@ export function cueFor(moment: Moment): Cue[] {
       return [];
     case 'cleared':
       return [{ type: 'cleared' }, { type: 'stars', count: moment.stars }];
-    case 'upgrade':
-      return [{ type: 'upgrade' }];
     case 'equip':
       return [{ type: 'equip' }];
   }

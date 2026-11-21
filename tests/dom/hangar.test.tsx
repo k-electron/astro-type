@@ -49,6 +49,15 @@ describe('the Hangar’s groups of Cosmetics', () => {
     }
   });
 
+  it('sells only Cosmetics: its groups are the six kinds and nothing else', () => {
+    renderGame().openHeader('Hangar');
+
+    const groups = screen
+      .getAllByRole('heading', { level: 3 })
+      .map((heading) => heading.textContent);
+    expect(groups).toEqual(Object.values(COSMETIC_GROUP_HEADINGS));
+  });
+
   it.each(KINDS)(
     'a new player has the free default of the %s equipped and sees the price of every other',
     (kind) => {

@@ -18,22 +18,16 @@ export type Moment =
       lane: number;
       finger: FingerZone;
     })
-  | Extract<Judgement, { type: 'miss' | 'shield' }>
+  | Extract<Judgement, { type: 'miss' }>
   /** A new Run began (a launch, a Replay, a Next Stage): whatever the last one left is stale. */
   | { type: 'launched' }
   | { type: 'ignition' }
   | { type: 'cleared'; stars: number }
-  | { type: 'upgrade' }
   | { type: 'equip' };
 
-/** The Judgement cases of a moment: a hit, a Miss, or a shield taking one. */
-export type JudgementMoment = Extract<
-  Moment,
-  { type: 'hit' | 'miss' | 'shield' }
->;
+/** The Judgement cases of a moment: a hit or a Miss. */
+export type JudgementMoment = Extract<Moment, { type: 'hit' | 'miss' }>;
 
 export function isJudgement(moment: Moment): moment is JudgementMoment {
-  return (
-    moment.type === 'hit' || moment.type === 'miss' || moment.type === 'shield'
-  );
+  return moment.type === 'hit' || moment.type === 'miss';
 }

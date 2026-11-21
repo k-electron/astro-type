@@ -4,7 +4,7 @@ import {
   completeSave,
   OLD_LIVE_EXPORT,
 } from '../../tests/shared/saves';
-import { DEFAULT_TRAIL, MAX_UPGRADE_LEVEL } from './catalog';
+import { DEFAULT_TRAIL } from './catalog';
 import { DEFAULT_PROFILE, SAVE_VERSION } from './schemas';
 import {
   exportBackup,
@@ -55,7 +55,7 @@ describe('importing a Backup', () => {
     expect(storage.saved?.totalMissMarks).toBe(save.totalMissMarks);
   });
 
-  it('keeps the Credits, Upgrades, settings and key stats of a Backup, and the next Save and Backup keep them', () => {
+  it('keeps the Credits, Cosmetics, settings and key stats of a Backup, and the next Save and Backup keep them', () => {
     const save = completeSave();
     const { game, storage } = gameWith();
 
@@ -73,7 +73,7 @@ describe('importing a Backup', () => {
     ] as const;
     const expectIntact = (profile: Profile | null) => {
       expect(profile?.totalCredits).toBe(save.totalCredits);
-      expect(profile?.upgrades).toEqual(save.upgrades);
+      expect(profile?.cosmetics).toEqual(save.cosmetics);
       expect(profile?.keyAnalytics).toEqual(save.keyAnalytics);
       expect(profile?.stagesProgress).toEqual(save.stagesProgress);
       for (const field of SETTINGS) {
@@ -97,9 +97,7 @@ describe('importing a Backup', () => {
     const profile = game.getState().profile;
     expect(profile.totalCredits).toBe(DEFAULT_PROFILE.totalCredits);
     expect(profile.totalStars).toBe(5);
-    expect(profile.upgrades.deflectorShields).toBe(
-      completeSave().upgrades.deflectorShields,
-    );
+    expect(profile.cosmetics).toEqual(completeSave().cosmetics);
     expect(storage.saved?.totalCredits).toBe(DEFAULT_PROFILE.totalCredits);
     expect(storage.saved?.stagesProgress).toEqual(
       completeSave().stagesProgress,
@@ -113,11 +111,6 @@ describe('importing a Backup', () => {
       ...completeSave(),
       totalCredits: -50,
       musicVolume: 4,
-      upgrades: {
-        ...completeSave().upgrades,
-        precisionSensors: MAX_UPGRADE_LEVEL + 5,
-        deflectorShields: -2,
-      },
     };
 
     const outcome = game.importBackup(JSON.stringify(backup));
@@ -126,45 +119,38 @@ describe('importing a Backup', () => {
     const profile = game.getState().profile;
     expect(profile.totalCredits).toBe(0);
     expect(profile.musicVolume).toBe(1);
-    expect(profile.upgrades.precisionSensors).toBe(MAX_UPGRADE_LEVEL);
-    expect(profile.upgrades.deflectorShields).toBe(0);
   });
 
   it('imports a Backup that equips a Trail the game does not have, with the default Trail', () => {
     const { game } = gameWith();
+    const save = completeSave();
     const backup = {
-      ...completeSave(),
-      upgrades: {
-        ...completeSave().upgrades,
-        equippedTrailTheme: 'GONE_TRAIL',
-        unlockedThemes: [DEFAULT_TRAIL, 'GONE_TRAIL'],
+      ...save,
+      cosmetics: {
+        ...save.cosmetics,
+        trail: { equipped: 'GONE_TRAIL', owned: [DEFAULT_TRAIL, 'GONE_TRAIL'] },
       },
     };
 
     const outcome = game.importBackup(JSON.stringify(backup));
 
     expect(outcome.ok).toBe(true);
-    const upgrades = game.getState().profile.upgrades;
-    expect(upgrades.equippedTrailTheme).toBe(
-      DEFAULT_PROFILE.upgrades.equippedTrailTheme,
-    );
-    expect(upgrades.unlockedThemes).toEqual([
-      DEFAULT_PROFILE.upgrades.equippedTrailTheme,
-    ]);
-    expect(game.getState().profile.totalCredits).toBe(1234);
+    const { cosmetics, totalCredits } = game.getState().profile;
+    expect(cosmetics.trail).toEqual({
+      equipped: DEFAULT_TRAIL,
+      owned: [DEFAULT_TRAIL],
+    });
+    expect(cosmetics.hull).toEqual(save.cosmetics.hull);
+    expect(totalCredits).toBe(1234);
   });
 
-  it('caps a Reactor level above the maximum at the maximum', () => {
-    const { game } = gameWith();
-    const backup = {
-      ...completeSave(),
-      upgrades: { ...completeSave().upgrades, overdriveReactor: 9 },
-    };
+  it('exports the Cosmetics under their names, and no Upgrades', () => {
+    const { game } = gameWith(completeSave());
 
-    expect(game.importBackup(JSON.stringify(backup)).ok).toBe(true);
-    expect(game.getState().profile.upgrades.overdriveReactor).toBe(
-      MAX_UPGRADE_LEVEL,
-    );
+    const backup = JSON.parse(exportBackup(game.getState().profile));
+
+    expect(backup.cosmetics).toEqual(completeSave().cosmetics);
+    expect(backup).not.toHaveProperty('upgrades');
   });
 
   // The one rule for a Backup's `version`: lower or missing is refused as made
@@ -174,6 +160,14 @@ describe('importing a Backup', () => {
   const refusals: Array<[string, string, string]> = [
     ...[
       ['a Backup exported before versions existed', OLD_LIVE_EXPORT],
+      [
+        'version 3, a Backup with Upgrades',
+        {
+          ...completeSave(),
+          version: 3,
+          upgrades: { deflectorShields: 1, overdriveReactor: 2 },
+        },
+      ],
       ['version 2', { ...completeSave(), version: 2 }],
       ['version 1', { ...completeSave(), version: 1 }],
       ['version 0', { ...completeSave(), version: 0 }],

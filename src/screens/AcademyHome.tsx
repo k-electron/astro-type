@@ -33,7 +33,7 @@ export const AcademyHome: React.FC = () => {
       <p className="text-sm sm:text-base text-slate-400 leading-relaxed mb-8 max-w-xl">
         Master touch typing with a comprehensive structured curriculum. Guide
         falling Drones down the Action Deck, earn Stars to unlock new Sectors,
-        and upgrade your starship shields.
+        and equip Cosmetics for your starship.
       </p>
 
       <div className="flex flex-wrap items-center justify-center gap-4 mb-10">
@@ -108,7 +108,7 @@ export const AcademyHome: React.FC = () => {
             Sector Fleet Progression
           </span>
           <p className="text-xs text-slate-400">
-            {`Earn ${MAX_STARS_PER_STAGE} Stars per Stage, unlock gated Sectors, install Deflector Shields, and equip Sound Kits.`}
+            {`Earn ${MAX_STARS_PER_STAGE} Stars per Stage, unlock gated Sectors, and equip Cosmetics.`}
           </p>
         </div>
       </div>

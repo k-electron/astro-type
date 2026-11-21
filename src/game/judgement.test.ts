@@ -1,11 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { multiplierAt } from '../../tests/shared/multiplier';
-import { hitPerfect, miss, startedGame } from '../../tests/shared/testHelpers';
+import {
+  hitPerfect,
+  miss,
+  startedGame,
+  targetKey,
+} from '../../tests/shared/testHelpers';
 
 /**
- * The rules of scoring, Streak, Multiplier, Overdrive and shields, read from
- * the Run. The grade a keystroke gets at each distance (and with each level of
- * Precision Sensors) is in judgement-events.test.ts.
+ * The rules of scoring, Streak, Multiplier and Overdrive, read from the Run.
+ * The grade a keystroke gets at each distance is in judgement-events.test.ts.
+ * Every player plays these rules: nothing bought changes them (#136).
  *
  * A first hit on a fresh Run is at Multiplier x1 with Overdrive off, so
  * Perfect = 100, Great = 75, Good = 50. How far a Drone is when a key lands,
@@ -67,24 +72,7 @@ describe('Overdrive', () => {
     expect(game.getState().run.score).toBe(6700);
   });
 
-  it.each([
-    // Reactor level, and the hit on which Overdrive starts.
-    [0, 29],
-    [1, 24],
-    [2, 21],
-    [3, 18],
-  ])(
-    'with Overdrive Reactor level %i it starts on hit %i',
-    (reactor, startsOn) => {
-      const game = startedGame({ overdriveReactor: reactor });
-      hitPerfect(game, startsOn - 1);
-      expect(game.getState().run.overdriveActive).toBe(false);
-      hitPerfect(game, 1);
-      expect(game.getState().run.overdriveActive).toBe(true);
-    },
-  );
-
-  it('ends on an unshielded Miss, keeping only part of the energy', () => {
+  it('ends on a Miss, keeping only part of the energy', () => {
     const game = startedGame();
     hitPerfect(game, 29);
     expect(game.getState().run.overdriveActive).toBe(true);
@@ -127,8 +115,8 @@ describe('Overdrive after a Miss', () => {
   });
 });
 
-describe('Shields', () => {
-  it('without a shield, a Miss ends the Streak and costs Overdrive energy; the score stays', () => {
+describe('A Miss', () => {
+  it('always ends the Streak and costs 25 Overdrive energy; the score stays', () => {
     const game = startedGame();
     hitPerfect(game, 12);
     expect(game.getState().run).toMatchObject({
@@ -149,58 +137,59 @@ describe('Shields', () => {
     expect(run.totalKeystrokes).toBe(13);
   });
 
-  it('a shield absorbs one Miss: Streak, Multiplier and energy stay, and the next Miss goes through', () => {
-    const game = startedGame({ deflectorShields: 1 });
-    expect(game.getState().run.shieldsRemaining).toBe(1);
-    hitPerfect(game, 12);
+  it('breaks the Streak every time, not just the first: three wrong keys in a row cost three Misses and 25 energy each', () => {
+    const game = startedGame();
+    hitPerfect(game, 28); // 98 energy, one hit short of Overdrive
 
-    miss(game);
-    let run = game.getState().run;
-    expect(run.shieldsRemaining).toBe(0);
-    expect(run.currentStreak).toBe(12);
-    expect(run.multiplier).toBe(2);
-    expect(run.overdriveEnergy).toBeCloseTo(42);
-    expect(run.score).toBe(1500);
+    miss(game, 3);
 
-    miss(game);
-    run = game.getState().run;
+    const run = game.getState().run;
     expect(run.currentStreak).toBe(0);
     expect(run.multiplier).toBe(1);
-  });
-
-  it('a shield keeps Overdrive on', () => {
-    const game = startedGame({ deflectorShields: 1 });
-    hitPerfect(game, 29);
-    miss(game);
-    expect(game.getState().run.overdriveActive).toBe(true);
-    expect(game.getState().run.overdriveEnergy).toBe(100);
-  });
-
-  it('an absorbed Miss still counts against accuracy', () => {
-    const game = startedGame({ deflectorShields: 3 });
-    hitPerfect(game, 12);
-    miss(game, 3);
-    const run = game.getState().run;
-    expect(run.shieldsRemaining).toBe(0);
-    expect(run.currentStreak).toBe(12);
     expect(run.incorrectKeystrokes).toBe(3);
-    expect(run.totalKeystrokes).toBe(15);
-
-    miss(game);
-    expect(game.getState().run.currentStreak).toBe(0);
-    expect(game.getState().run.incorrectKeystrokes).toBe(4);
+    expect(run.overdriveEnergy).toBeCloseTo(98 - 3 * 25);
   });
 });
 
-describe('A Miss', () => {
-  it('leaves the same character to type, and the next correct key scores as normal', () => {
-    const game = startedGame();
-    hitPerfect(game, 3);
-    const index = game.getState().run.currentCharIndex;
+describe('Every player plays the same game', () => {
+  // A Save from the game's last version with Upgrades (3) is discarded, but a
+  // Save of the current version that still carries an `upgrades` object (a
+  // hand-edited one) must not read it either: nothing in the Save changes a
+  // rule. Each case plays the base rule on a Save with the best Upgrades.
+  const STALE_UPGRADES = {
+    upgrades: { deflectorShields: 3, overdriveReactor: 3, precisionSensors: 3 },
+  };
+
+  it('a wrong key breaks the Streak and ends Overdrive, whatever the Save says about shields', () => {
+    const game = startedGame(STALE_UPGRADES);
+    hitPerfect(game, 29);
+    expect(game.getState().run.overdriveActive).toBe(true);
+
     miss(game);
-    expect(game.getState().run.currentCharIndex).toBe(index);
+
+    const run = game.getState().run;
+    expect(run.currentStreak).toBe(0);
+    expect(run.multiplier).toBe(1);
+    expect(run.overdriveActive).toBe(false);
+    expect(run.overdriveEnergy).toBe(75);
+  });
+
+  it('Overdrive still takes 29 hits, whatever the Save says about a reactor', () => {
+    const game = startedGame(STALE_UPGRADES);
+
+    hitPerfect(game, 28);
+    expect(game.getState().run.overdriveActive).toBe(false);
     hitPerfect(game, 1);
-    expect(game.getState().run.currentCharIndex).toBe(index + 1);
-    expect(game.getState().run.score).toBe(400);
+
+    expect(game.getState().run.overdriveActive).toBe(true);
+  });
+
+  it('a key 17.6 from the Strike Line is a Good (50), whatever the Save says about sensors', () => {
+    const game = startedGame(STALE_UPGRADES);
+
+    game.step(2);
+    game.pressKey(targetKey(game));
+
+    expect(game.getState().run.score).toBe(50);
   });
 });

@@ -378,9 +378,9 @@ test('each Burst scatters its own particles, in the hit colour the Multiplier gi
   // Trail's colour instead of the hit's would show here.
   const GOLD_HUE = 45;
   const burstSave = (id?: string) => ({
-    upgrades: {
-      ...trailEquipped('GOLD').upgrades,
-      ...(id ? cosmeticEquipped('burst', id).upgrades : {}),
+    cosmetics: {
+      ...trailEquipped('GOLD').cosmetics,
+      ...(id ? cosmeticEquipped('burst', id).cosmetics : {}),
     },
   });
   const explode = (id?: string) =>

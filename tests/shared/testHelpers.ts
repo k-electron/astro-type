@@ -33,12 +33,6 @@ export const WRONG_KEY = 'x';
  */
 const STEPS_TO_REACH_LINE = 30;
 
-export interface Upgrades {
-  deflectorShields?: number;
-  overdriveReactor?: number;
-  precisionSensors?: number;
-}
-
 /**
  * A game over an in-memory Save, with the Save's storage to look at. `seed` is
  * the Save the player already has, as the current game writes it: a plain
@@ -74,12 +68,9 @@ export function startFreeFlight(game: Game, text: string): void {
   game.send({ type: 'LAUNCH_FREE_FLIGHT', text });
 }
 
-/** A fresh game with the given Upgrade levels, with Stage 1 started. */
-export function startedGame(
-  upgrades: Upgrades = {},
-  extraSave: Record<string, unknown> = {},
-): Game {
-  const game = newGame({ ...extraSave, upgrades });
+/** A game over the seeded Save (a fresh Profile when left out), with Stage 1 started. */
+export function startedGame(seed: Record<string, unknown> = {}): Game {
+  const game = newGame(seed);
   startStage(game, STAGE_ID);
   return game;
 }

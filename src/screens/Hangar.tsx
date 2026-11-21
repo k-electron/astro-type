@@ -1,8 +1,6 @@
 import type React from 'react';
 import type { ReactNode } from 'react';
 import {
-  Shield,
-  Zap,
   Sparkles,
   Volume2,
   Palette,
@@ -21,48 +19,11 @@ import {
   type CosmeticEntry,
   type CosmeticKind,
   entriesOf,
-  type UpgradeEntry,
-  type UpgradeIcon,
-  type UpgradeTone,
 } from '../game/catalog';
 import { type CosmeticStatus, cosmeticStatus } from '../game/profile';
 import { useGame } from '../app/useGame';
 import { COSMETIC_GROUP_HEADINGS, EQUIP, EQUIPPED } from './hangarLabels';
 import { useGameState } from '../app/useGameState';
-
-const UPGRADE_ICONS: Record<UpgradeIcon, LucideIcon> = {
-  shield: Shield,
-  zap: Zap,
-  sparkles: Sparkles,
-};
-
-// Whole class names, so Tailwind finds them.
-const UPGRADE_TONES: Record<
-  UpgradeTone,
-  { text: string; bar: string; buy: string; border: string; wash: string }
-> = {
-  cyan: {
-    text: 'text-cyan-400',
-    bar: 'bg-cyan-500',
-    buy: 'bg-cyan-500 hover:bg-cyan-400',
-    border: 'border-cyan-500/30',
-    wash: 'bg-cyan-950/20',
-  },
-  amber: {
-    text: 'text-amber-400',
-    bar: 'bg-amber-500',
-    buy: 'bg-amber-500 hover:bg-amber-400',
-    border: 'border-amber-500/30',
-    wash: 'bg-amber-950/20',
-  },
-  emerald: {
-    text: 'text-emerald-400',
-    bar: 'bg-emerald-500',
-    buy: 'bg-emerald-500 hover:bg-emerald-400',
-    border: 'border-emerald-500/30',
-    wash: 'bg-emerald-950/20',
-  },
-};
 
 /** The kinds of Cosmetic in the order the Hangar lists them, each with its icon. */
 const COSMETIC_ICONS: Record<CosmeticKind, LucideIcon> = {
@@ -74,71 +35,6 @@ const COSMETIC_ICONS: Record<CosmeticKind, LucideIcon> = {
   hull: Hexagon,
 };
 const COSMETIC_KINDS = Object.keys(COSMETIC_ICONS) as CosmeticKind[];
-
-/** One Upgrade's card: its level, and the button for the next level at its catalog price. */
-const UpgradeCard: React.FC<{
-  entry: UpgradeEntry;
-  level: number;
-  totalCredits: number;
-  onBuy: () => void;
-}> = ({ entry, level, totalCredits, onBuy }) => {
-  const Icon = UPGRADE_ICONS[entry.icon];
-  const tone = UPGRADE_TONES[entry.tone];
-  const nextPrice = entry.prices[level];
-  const levels = entry.prices.length;
-
-  return (
-    <div className="p-4 rounded-xl border border-slate-800 bg-slate-950/60 flex flex-col justify-between">
-      <div>
-        <div className="flex items-center justify-between mb-2">
-          <div className={`flex items-center gap-2 ${tone.text}`}>
-            <Icon className="w-4 h-4" />
-            <span className="font-bold text-sm text-white">{entry.name}</span>
-          </div>
-          <span className={`text-xs font-mono ${tone.text}`}>
-            Tier {level}/{levels}
-          </span>
-        </div>
-        <p className="text-xs text-slate-400 mb-3">{entry.description}</p>
-        <div className="flex items-center gap-1.5 mb-4">
-          {entry.prices.map((_, index) => {
-            const tier = index + 1;
-            return (
-              <div
-                key={tier}
-                className={`h-2 flex-1 rounded ${
-                  tier <= level ? tone.bar : 'bg-slate-800'
-                }`}
-              />
-            );
-          })}
-        </div>
-      </div>
-
-      {nextPrice !== undefined ? (
-        <button
-          type="button"
-          disabled={totalCredits < nextPrice}
-          onClick={onBuy}
-          className={`w-full py-2 px-3 rounded-lg text-xs font-medium font-mono flex items-center justify-between transition-colors ${
-            totalCredits >= nextPrice
-              ? `${tone.buy} text-slate-950 font-bold`
-              : 'bg-slate-800 text-slate-500 cursor-not-allowed'
-          }`}
-        >
-          <span>Upgrade Tier {level + 1}</span>
-          <span>{nextPrice} Cr</span>
-        </button>
-      ) : (
-        <div
-          className={`w-full py-2 text-center text-xs font-mono ${tone.text} border ${tone.border} rounded-lg ${tone.wash}`}
-        >
-          Max Tier Installed
-        </div>
-      )}
-    </div>
-  );
-};
 
 /**
  * One Cosmetic's card: its own heading (`children`), and the button that
@@ -185,7 +81,7 @@ const CosmeticCard: React.FC<{
 export const Hangar: React.FC = () => {
   const { buy } = useGame();
   const profile = useGameState((state) => state.profile);
-  const { upgrades, totalCredits } = profile;
+  const { totalCredits } = profile;
 
   return (
     <OverlayShell variant="window" width="4xl" labelledBy="hangar-title">
@@ -222,27 +118,8 @@ export const Hangar: React.FC = () => {
         </div>
       </div>
 
-      {/* Upgrade Cards Container */}
+      {/* Cosmetics */}
       <div className="p-4 sm:p-6 overflow-y-auto flex flex-col gap-6">
-        {/* Functional Ship Modules */}
-        <div>
-          <h3 className="text-sm font-semibold uppercase font-mono tracking-wider text-slate-400 mb-3">
-            Ship Performance Systems
-          </h3>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {entriesOf('upgrade').map((entry) => (
-              <UpgradeCard
-                key={entry.id}
-                entry={entry}
-                level={upgrades[entry.field]}
-                totalCredits={totalCredits}
-                onBuy={() => buy(entry.id)}
-              />
-            ))}
-          </div>
-        </div>
-
         {/* Cosmetics: one group for each kind, in the order of COSMETIC_KINDS */}
         {COSMETIC_KINDS.map((kind) => {
           const Icon = COSMETIC_ICONS[kind];

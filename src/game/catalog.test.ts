@@ -9,20 +9,7 @@ import {
   DEFAULT_SOUND_KIT,
   DEFAULT_TRAIL,
   entriesOf,
-  MAX_UPGRADE_LEVEL,
 } from './catalog';
-
-// The highest level the Save accepts is the length of the first Upgrade's
-// price list. An Upgrade with a longer list would have a level that can be
-// bought but that the Save refuses, which would make the whole Save unreadable
-// on the next load.
-describe('the catalog', () => {
-  it('gives every Upgrade the same number of levels, which the Save accepts', () => {
-    for (const upgrade of entriesOf('upgrade')) {
-      expect(upgrade.prices, upgrade.name).toHaveLength(MAX_UPGRADE_LEVEL);
-    }
-  });
-});
 
 // The Hangar's Cosmetics are priced to last the curriculum (ticket #135): the
 // whole Hangar costs about 90 typical Runs, the first thing is affordable
@@ -67,6 +54,12 @@ describe('the catalog of Cosmetics', () => {
       }
     },
   );
+
+  it('sells only Cosmetics: every item in the catalog belongs to one of the six kinds', () => {
+    const ofAKind = KIND_NAMES.flatMap((kind) => entriesOf(kind));
+
+    expect(ofAKind).toHaveLength(CATALOG.length);
+  });
 
   it('costs 35,000 to 45,000 Credits for the whole Hangar, about 90 typical Runs', () => {
     const total = KIND_NAMES.flatMap((kind) => entriesOf(kind)).reduce(

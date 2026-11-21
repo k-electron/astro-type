@@ -19,8 +19,8 @@ import {
 // Six different letters; the wrong key is never a target.
 const TEXT = 'abcdef';
 
-function flyingOn(text: string, save?: Record<string, unknown>): Game {
-  const game = newGame(save);
+function flyingOn(text: string): Game {
+  const game = newGame();
   startFreeFlight(game, text);
   return game;
 }
@@ -77,16 +77,6 @@ describe('Accuracy', () => {
     // The Run still counts the wrong keystrokes themselves.
     expect(thrice.getState().run.incorrectKeystrokes).toBe(3);
     expect(once.getState().run.incorrectKeystrokes).toBe(1);
-  });
-
-  it('is lowered by a Miss a shield absorbed, which still leaves its Miss mark', () => {
-    const game = flyingOn(TEXT, { upgrades: { deflectorShields: 1 } });
-    typeText(game, 'ab');
-
-    game.pressKey(WRONG_KEY);
-
-    expect(game.getState().run.shieldsRemaining).toBe(0);
-    expect(accuracy(game)).toBeCloseTo(200 / 3);
   });
 
   it("counts a Free Flight's Debrief the same way: the whole text reached, a character marked once", () => {

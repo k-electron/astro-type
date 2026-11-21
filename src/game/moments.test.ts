@@ -23,8 +23,8 @@ import {
 
 /**
  * Moments (#70): one stream says what just happened. A keystroke that counts
- * is a hit, a Miss or a shield; Overdrive starting is an ignition; the last
- * hit of a Run is followed by the clear; a purchase is an upgrade or an equip;
+ * is a hit or a Miss; Overdrive starting is an ignition; the last
+ * hit of a Run is followed by the clear; a Cosmetic bought is an equip (a Sound Kit makes none);
  * and a new Run (a start, a Replay, a Next Stage) is announced as launched.
  * The sound and the deck both listen to it, so a moment carries everything
  * they need and neither looks up the key table: the hit names its Drone, lane
@@ -195,7 +195,7 @@ describe('a hit', () => {
   });
 });
 
-describe('a Miss and a shield', () => {
+describe('a Miss', () => {
   it('a wrong key is a Miss moment naming the key', () => {
     const game = startedGame();
     const moments = listen(game);
@@ -203,19 +203,6 @@ describe('a Miss and a shield', () => {
     game.pressKey('x');
 
     expect(moments).toEqual([{ type: 'miss', key: 'x' }]);
-  });
-
-  it('a shield takes the first wrong key, then a Miss follows', () => {
-    const game = startedGame({ deflectorShields: 1 });
-    const moments = listen(game);
-
-    game.pressKey('x');
-    game.pressKey('y');
-
-    expect(moments).toEqual([
-      { type: 'shield', key: 'x' },
-      { type: 'miss', key: 'y' },
-    ]);
   });
 
   it('there are none when no Run is running', () => {
@@ -334,15 +321,6 @@ describe('clearing the Stage', () => {
 });
 
 describe('a purchase', () => {
-  it('buying an Upgrade is an upgrade moment', () => {
-    const { game } = loadGame(RETURNING_PLAYER);
-    const moments = listen(game);
-
-    expect(game.buy('shields')).toBe(true);
-
-    expect(typesOf(moments)).toEqual(['upgrade']);
-  });
-
   it('buying a trail colour, and equipping one already owned, are equip moments', () => {
     const { game } = loadGame(RETURNING_PLAYER);
     const moments = listen(game);
@@ -388,7 +366,6 @@ describe('a purchase', () => {
     const { game } = loadGame({ totalCredits: 0 });
     const moments = listen(game);
 
-    expect(game.buy('shields')).toBe(false);
     expect(game.buy('AMBER')).toBe(false);
 
     expect(moments).toEqual([]);

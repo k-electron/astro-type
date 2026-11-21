@@ -18,7 +18,7 @@ describe('the Save the game writes', () => {
   it('has no total of Stars, whatever the Save it read claimed', () => {
     const { game, storage } = loadGame({ ...completeSave(), totalStars: 40 });
 
-    game.buy('sensors'); // the game saves
+    game.buy('EMERALD'); // the game saves
     expect(storage.saved).not.toHaveProperty('totalStars');
 
     startStage(game, STAGE_ID);

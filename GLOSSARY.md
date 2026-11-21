@@ -45,7 +45,7 @@ A character of the text where a wrong key was pressed, marked in the text prompt
 _Avoid_: Error mark, typo
 
 **Streak**:
-The number of correct keystrokes in a row in the current Run. A Miss that a shield doesn't absorb resets it.
+The number of correct keystrokes in a row in the current Run. A Miss resets it.
 _Avoid_: Combo, chain
 
 **Multiplier**:
@@ -71,7 +71,7 @@ _Avoid_: Cadence
 ### Progress
 
 **Profile**:
-Everything the game remembers about the player between visits: Stage progress, Stars, Credits, Upgrades, Cosmetics, settings and key stats.
+Everything the game remembers about the player between visits: Stage progress, Stars, Credits, Cosmetics, settings and key stats.
 _Avoid_: Account, player data, user
 
 **Save**:
@@ -93,10 +93,6 @@ _Avoid_: Threshold, star threshold, Goal, Target WPM
 **Credits**:
 Currency earned on each Debrief and spent in the Hangar.
 _Avoid_: Coins, money, points
-
-**Upgrade**:
-A Hangar purchase that changes play: shields, reactor or sensors.
-_Avoid_: Power-up, perk
 
 **Cosmetic**:
 A Hangar purchase that changes only the look or sound: a Trail, Sound Kit, Burst, Backdrop, Ship or Hull. It never changes what the player reads to type or to judge themselves: finger colours, a Drone's size, its key, the keyboard, the Strike Line, Miss marks or the hit colours by Multiplier.
@@ -141,7 +137,7 @@ The screen for choosing a Stage from the Sectors.
 _Avoid_: Stage select, level select, galaxy sectors
 
 **Hangar**:
-The screen for spending Credits on Upgrades and Cosmetics.
+The screen for spending Credits on Cosmetics.
 _Avoid_: Shop, upgrades screen
 
 **Analytics**:

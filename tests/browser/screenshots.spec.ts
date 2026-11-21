@@ -52,7 +52,7 @@ import {
 //   end (`animations: 'disabled'`), because the page's clock does not drive
 //   them.
 // - A fresh browser context per test, so the Profile is a new player's, with
-//   no Stars, no Credits and no Upgrades.
+//   no Stars, no Credits and no Cosmetics but the free defaults.
 
 test.skip(
   !process.env.PW_SCREENSHOTS,

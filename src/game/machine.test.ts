@@ -553,7 +553,6 @@ describe('a pause keeps the Streak, Multiplier and Overdrive exactly as they wer
       multiplier: run.multiplier,
       overdriveOn: run.overdriveActive,
       overdriveMeter: run.overdriveEnergy,
-      shields: run.shieldsRemaining,
     };
   };
 

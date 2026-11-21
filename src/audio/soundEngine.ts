@@ -17,7 +17,7 @@ class SoundEngine {
   private soundEnabled: boolean = DEFAULT_PROFILE.soundEnabled;
   private musicEnabled: boolean = DEFAULT_PROFILE.musicEnabled;
   private currentSoundKit: SoundKit =
-    DEFAULT_PROFILE.upgrades.equippedAudioCore;
+    DEFAULT_PROFILE.cosmetics.soundKit.equipped;
   private beatTheme: BeatTheme = DEFAULT_PROFILE.beatTheme;
   private globalMuted: boolean = DEFAULT_PROFILE.globalMuted;
 
@@ -886,32 +886,6 @@ class SoundEngine {
     }
   }
 
-  public playShieldAbsorb() {
-    if (this.globalMuted || !this.soundEnabled) return;
-    this.init();
-    if (!this.ctx || !this.sfxGain) return;
-
-    try {
-      const now = this.ctx.currentTime;
-      const osc = this.ctx.createOscillator();
-      const gain = this.ctx.createGain();
-
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(600, now);
-      osc.frequency.exponentialRampToValueAtTime(1200, now + 0.15);
-
-      gain.gain.setValueAtTime(0.25, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
-
-      osc.connect(gain);
-      gain.connect(this.sfxGain);
-      osc.start(now);
-      osc.stop(now + 0.22);
-    } catch {
-      // Audio exception ignored
-    }
-  }
-
   public playOverdriveIgnition() {
     if (this.globalMuted || !this.soundEnabled) return;
     this.init();
@@ -999,28 +973,6 @@ class SoundEngine {
     } catch {
       // Audio exception ignored
     }
-  }
-
-  public playShieldUpgrade() {
-    if (this.globalMuted || !this.soundEnabled) return;
-    this.init();
-    if (!this.ctx || !this.sfxGain) return;
-    try {
-      const now = this.ctx.currentTime;
-      [440, 554.37, 659.25, 880].forEach((freq, idx) => {
-        if (!this.ctx || !this.sfxGain) return;
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(freq, now + idx * 0.06);
-        gain.gain.setValueAtTime(0.18, now + idx * 0.06);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.06 + 0.3);
-        osc.connect(gain);
-        gain.connect(this.sfxGain);
-        osc.start(now + idx * 0.06);
-        osc.stop(now + idx * 0.06 + 0.32);
-      });
-    } catch {}
   }
 
   public playEquipCosmetic() {
