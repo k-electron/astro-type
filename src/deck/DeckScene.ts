@@ -330,6 +330,7 @@ export class DeckScene {
           feedback.banner.color,
           layout.width / 2,
           layout.deckY * 0.45,
+          layout.width * 0.9,
         );
       }
       this.effects.fireHit({

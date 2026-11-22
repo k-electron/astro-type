@@ -188,6 +188,8 @@ interface Popup {
   vy: number;
   life: number;
   maxLife: number;
+  /** A banner: only one shows at a time. */
+  banner: boolean;
 }
 
 const POPUP_FONT =
@@ -200,8 +202,10 @@ class Untouchable extends Rectangle {
   }
 }
 
-/** A banner's text is this much bigger than a popup's. */
-const BANNER_SCALE = 1.7;
+/** Font sizes (px): a hit's popup, a clean word's bigger one, and a banner's. */
+const POPUP_SIZE = 24;
+const CLEAN_POPUP_SIZE = 30;
+const BANNER_SIZE = 40;
 
 export interface DeckEffectsOptions {
   resolution: number;
@@ -258,6 +262,7 @@ export class DeckEffects {
       vy: 0,
       life: 0,
       maxLife: 0,
+      banner: false,
     }),
     40,
   );
@@ -300,8 +305,8 @@ export class DeckEffects {
     // Prepare every hit popup up front, so the first hit costs no more than the rest.
     for (const { label, color } of hitPopupsToPrepare()) {
       this.giveText(
-        `${label}|${color}`,
-        this.makePopupText(label, color, true),
+        `${label}|${color}|${POPUP_SIZE}`,
+        this.makePopupText(label, color, true, POPUP_SIZE),
       );
     }
   }
@@ -442,12 +447,17 @@ export class DeckEffects {
     return { glow, x: 0, y: 0, w: 0, h: 0, color: '#fff', life: 0, maxLife: 0 };
   }
 
-  private makePopupText(label: string, color: string, named: boolean): Text {
+  private makePopupText(
+    label: string,
+    color: string,
+    named: boolean,
+    size: number,
+  ): Text {
     const text = new Text({
       text: label,
       style: {
         fontFamily: POPUP_FONT,
-        fontSize: 16,
+        fontSize: size,
         fontWeight: '900',
         fill: color,
         dropShadow: { color: '#000000', alpha: 1, blur: 10, distance: 0 },
@@ -503,7 +513,7 @@ export class DeckEffects {
     if (!bolt) {
       // Every laser is in flight (a burst of hits before a frame is drawn):
       // the hit still names the points it scored.
-      this.hitPopup(shot.label, shot.hitColor, shot.x, shot.y);
+      this.hitPopup(shot.label, shot.hitColor, shot.x, shot.y, shot.big);
       return;
     }
     const x1 = shot.x - spacing;
@@ -875,17 +885,18 @@ export class DeckEffects {
     maxLife: number,
     vy: number,
     named: boolean,
-    scale = 1,
-  ): void {
+    size = POPUP_SIZE,
+    banner = false,
+  ): Text | null {
     const slot = this.popups.acquire();
-    if (!slot) return;
-    const key = `${label}|${color}`;
+    if (!slot) return null;
+    const key = `${label}|${color}|${size}`;
     const text = this.takeText(key, () =>
-      this.makePopupText(label, color, named),
+      this.makePopupText(label, color, named, size),
     );
     text.position.set(x, y);
     text.alpha = 1;
-    text.scale.set(scale);
+    text.scale.set(1);
     text.visible = true;
     this.popupLayer.addChild(text);
     slot.text = text;
@@ -893,19 +904,54 @@ export class DeckEffects {
     slot.vy = vy;
     slot.life = 0;
     slot.maxLife = maxLife;
+    slot.banner = banner;
+    return text;
   }
 
   /** The popup of a hit, naming the points it scored (or a clean word's bonus). */
-  private hitPopup(label: string, color: string, x: number, y: number): void {
-    this.popup(label, color, x, y - 26, 40, -2.6, true);
+  private hitPopup(
+    label: string,
+    color: string,
+    x: number,
+    y: number,
+    big: boolean,
+  ): void {
+    const size = big ? CLEAN_POPUP_SIZE : POPUP_SIZE;
+    this.popup(label, color, x, y - 26, 40, -2.6, true, size);
   }
 
   /**
    * A big line of text across the deck, held a little longer than a popup and
-   * named in the accessibility layer like one.
+   * named in the accessibility layer like one. A new banner takes the place
+   * of the one on show, so two never overlap while the older fades.
    */
-  banner(label: string, color: string, x: number, y: number): void {
-    this.popup(label, color, x, y, 70, -0.8, true, BANNER_SCALE);
+  banner(
+    label: string,
+    color: string,
+    x: number,
+    y: number,
+    maxWidth: number,
+  ): void {
+    for (let i = this.popups.active.length - 1; i >= 0; i--) {
+      const old = this.popups.active[i];
+      if (!old.banner) continue;
+      this.popupLayer.removeChild(old.text);
+      this.giveText(old.key, old.text);
+      this.popups.releaseAt(i);
+    }
+    const text = this.popup(
+      label,
+      color,
+      x,
+      y,
+      70,
+      -0.8,
+      true,
+      BANNER_SIZE,
+      true,
+    );
+    // A narrow window shrinks the banner to fit, not off the deck's edges.
+    if (text && text.width > maxWidth) text.scale.set(maxWidth / text.width);
   }
 
   private detonate(bolt: Bolt): void {
@@ -1000,7 +1046,7 @@ export class DeckEffects {
       this.shockwave(x, y, 12, isSpace ? w * 1.6 : w * 2.2, hitColor, 1);
       this.shockwave(x, y, 6, isSpace ? w * 2.2 : w * 2.8, '#ffffff', 0.9);
 
-      this.hitPopup(bolt.label, hitColor, x, y);
+      this.hitPopup(bolt.label, hitColor, x, y, big);
     } else {
       this.shockwave(x, y, 8, w * 1.3, '#ef4444', 1);
       for (let i = 0; i < 24; i++) {
