@@ -69,6 +69,10 @@ test.use({
 test.setTimeout(180_000);
 
 const COMPARE = {
+  // Capturing a frame of the software-drawn deck can take over the default 5 s
+  // on a busy CI runner (#137's push failed twice on it with no picture
+  // difference), so a capture gets longer before it counts as a failure.
+  timeout: 30_000,
   animations: 'disabled',
   caret: 'hide',
   scale: 'css',
