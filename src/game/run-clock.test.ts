@@ -4,7 +4,7 @@ import {
   clearStageTypingSteps,
   expectedWpm,
   type Game,
-  hitPerfect,
+  hit,
   miss,
   newGame,
   STAGE_ID,
@@ -179,7 +179,7 @@ describe('the Run clock steps only while the Run is running', () => {
 
   it('leaves the live WPM where it was during a pause', () => {
     const game = startedGame();
-    hitPerfect(game, 2); // keys at 30 and 60 steps
+    hit(game, 2); // keys at 30 and 60 steps
     game.step(30);
     // 2 characters over 60 steps of Typing Time: 12 WPM.
     expect(game.getState().run.wpm).toBeCloseTo(expectedWpm(2, 60), 6);
@@ -196,7 +196,7 @@ describe('the Run clock steps only while the Run is running', () => {
 
   it('refreshes the live WPM every 30 steps, which is 500 ms', () => {
     const game = startedGame();
-    hitPerfect(game, 2); // keys at 30 and 60 steps
+    hit(game, 2); // keys at 30 and 60 steps
     expect(game.getState().run.wpm).toBeNull();
 
     game.step(29);
@@ -216,9 +216,9 @@ describe('the Run clock steps only while the Run is running', () => {
 describe('a pause in the middle of a Run leaves WPM, accuracy and Rhythm unchanged', () => {
   /** 3 hits, a gap, 3 more hits and 2 wrong keys on the next character: 4 s of Run Time, in 3 stretches of whole half seconds. */
   function play(game: Game, pauseInTheMiddle: boolean): void {
-    hitPerfect(game, 3);
+    hit(game, 3);
     if (pauseInTheMiddle) pauseFor(game);
-    hitPerfect(game, 3);
+    hit(game, 3);
     miss(game, 2);
     game.step(60);
   }
@@ -249,9 +249,9 @@ describe('a pause in the middle of a Run leaves WPM, accuracy and Rhythm unchang
     /** 77 keys in 60 s of Run Time (15.3 WPM, 3 Stars), with or without a pause on the way. */
     function clear(pauseInTheMiddle: boolean) {
       const game = startedGame();
-      hitPerfect(game, 40);
+      hit(game, 40);
       if (pauseInTheMiddle) pauseFor(game);
-      hitPerfect(game, 36);
+      hit(game, 36);
       game.step(60 * 60 - 76 * 30);
       game.pressKey(targetKey(game));
       expect(game.getState().screen).toBe('debrief');
@@ -273,12 +273,12 @@ describe('a pause in the middle of a Run leaves WPM, accuracy and Rhythm unchang
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(new Date('2026-01-01T12:00:00Z'));
     const game = startedGame();
-    hitPerfect(game, 40);
+    hit(game, 40);
     game.send({ type: 'PRESS_ESC' });
     vi.setSystemTime(new Date('2026-01-01T12:10:00Z'));
     game.step(TEN_MINUTES_OF_STEPS);
     game.send({ type: 'PRESS_RESUME' });
-    hitPerfect(game, 36);
+    hit(game, 36);
     game.step(60 * 60 - 76 * 30);
     game.pressKey(targetKey(game));
 
@@ -292,7 +292,7 @@ describe('a pause in the middle of a Run leaves WPM, accuracy and Rhythm unchang
 
   it('leaves a pause out of Typing Time, however long it is', () => {
     const game = startedGame();
-    hitPerfect(game, 5); // keys at 30 to 150 steps
+    hit(game, 5); // keys at 30 to 150 steps
     pauseFor(game);
     game.step(30);
 
@@ -303,7 +303,7 @@ describe('a pause in the middle of a Run leaves WPM, accuracy and Rhythm unchang
 
   it('counts an idle gap in Typing Time in full, with no cap, though a pause of the same length is left out', () => {
     const game = startedGame();
-    hitPerfect(game, 5); // keys at 30 to 150 steps
+    hit(game, 5); // keys at 30 to 150 steps
     game.step(TEN_MINUTES_OF_STEPS);
 
     // The same ten minutes with the Run running: Typing Time is the 120 steps
@@ -316,9 +316,9 @@ describe('a pause in the middle of a Run leaves WPM, accuracy and Rhythm unchang
 
   it('counts the time between keystrokes in Run Time, so a pause is not one slow keystroke', () => {
     const game = startedGame();
-    hitPerfect(game, 5);
+    hit(game, 5);
     pauseFor(game);
-    hitPerfect(game, 5);
+    hit(game, 5);
 
     // Ten keystrokes 30 steps apart: perfectly even typing.
     expect(game.getState().run.rhythm).toBe(100);

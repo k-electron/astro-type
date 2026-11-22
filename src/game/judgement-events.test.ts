@@ -1,36 +1,39 @@
 import { describe, expect, it } from 'vitest';
-import type { Judgement, Moment } from './game';
+import type { Moment } from './game';
 import {
   type Game,
-  hitPerfect,
+  hit,
+  hitFlat,
   newGame,
   SAMPLE_TEXT,
   startedGame,
+  startFlatRun,
   targetKey,
 } from '../../tests/shared/testHelpers';
 
 /**
  * Judgement events (#22): every keystroke that counts produces exactly one
  * event, and a key that doesn't count (or an auto-repeat keydown) produces none
- * and changes nothing.
- *
- * The grade a keystroke gets is by its distance to the Strike Line (y = 84).
- * Every Run moves at FAST: the lead Drone starts 22 from it and closes 2.2 a
- * step, so it is 22 - 2.2 x steps away. The windows are 8 for Perfect and 16
- * for Great, the same for every player. This file holds the one table of those
- * windows (no step count lands exactly on a window's edge at this speed, so
- * the table brackets each edge instead).
+ * and changes nothing. A Judgement is a hit or a Miss (#137): a hit says the
+ * points it scored, and a correct key scores the same wherever its Drone is.
+ * What else a hit carries (the Streak, the clean word) is in
+ * clean-words.test.ts.
  */
 
+/** The part of a Judgement these tests read: a hit's key, points and Overdrive flag, or a Miss's key. */
+type Event =
+  | { type: 'hit'; key: string; points: number; overdrive: boolean }
+  | { type: 'miss'; key: string };
+
 /**
- * A listener that adds each Judgement moment to `into`, as the bare Judgement
- * it carries (a hit's Drone, lane and finger left off).
+ * A listener that adds each Judgement moment to `into`, as the bare event it
+ * carries (a hit's Drone, lane and finger left off).
  */
-function collectInto(into: Judgement[]): (moment: Moment) => void {
+function collectInto(into: Event[]): (moment: Moment) => void {
   return (moment) => {
     if (moment.type === 'hit') {
-      const { type, grade, key, points, overdrive } = moment;
-      into.push({ type, grade, key, points, overdrive });
+      const { type, key, points, overdrive } = moment;
+      into.push({ type, key, points, overdrive });
     } else if (moment.type === 'miss') {
       into.push({ type: moment.type, key: moment.key });
     }
@@ -38,25 +41,20 @@ function collectInto(into: Judgement[]): (moment: Moment) => void {
 }
 
 /** Collects every Judgement event the game announces from now on. */
-function listen(game: Game): Judgement[] {
-  const events: Judgement[] = [];
+function listen(game: Game): Event[] {
+  const events: Event[] = [];
   game.onMoment(collectInto(events));
   return events;
 }
 
 describe('a hit', () => {
   it.each([
-    // [steps before pressing, distance, grade, points at x1]
-    [0, 22, 'good', 50],
-    [2, 17.6, 'good', 50],
-    [3, 15.4, 'great', 75],
-    [6, 8.8, 'great', 75],
-    [7, 6.6, 'perfect', 100],
-    [10, 0, 'perfect', 100], // waiting on the Strike Line
-    [40, 0, 'perfect', 100], // the Drone waits; there is no timeout
-  ] as const)(
-    '%i steps in (%s from the line) is %s',
-    (steps, _distance, grade, points) => {
+    // How many steps into the Run the key is pressed: the lead Drone starts
+    // 22 from the Strike Line, falls 2.2 a step and waits on it from step 10.
+    0, 2, 3, 6, 7, 10, 40,
+  ])(
+    'is one hit of 100 points when the key is pressed %i steps in',
+    (steps) => {
       const game = startedGame();
       const events = listen(game);
 
@@ -64,45 +62,41 @@ describe('a hit', () => {
       game.pressKey(targetKey(game));
 
       expect(events).toEqual([
-        { type: 'hit', grade, key: 'f', points, overdrive: false },
+        { type: 'hit', key: 'f', points: 100, overdrive: false },
       ]);
     },
   );
 
   it('names the key that was pressed, Space included', () => {
     const game = startedGame();
-    hitPerfect(game, 1); // the first character is "f"; the second is a space
+    hit(game, 1); // the first character is "f"; the second is a space
     const events = listen(game);
 
     game.step(30);
     game.pressKey(' ');
 
     expect(events).toEqual([
-      {
-        type: 'hit',
-        grade: 'perfect',
-        key: ' ',
-        points: 100,
-        overdrive: false,
-      },
+      { type: 'hit', key: ' ', points: 100, overdrive: false },
     ]);
   });
 });
 
 describe('a hit says the points it scored', () => {
-  /** Plays one Perfect hit and returns its event with the score it added. */
+  // A Free Flight with no spaces, so no clean-word bonus rides on a hit: what
+  // the hit says is exactly what it added to the score.
+  /** Plays one hit and returns its event with the score it added. */
   function strike(game: Game) {
     const events = listen(game);
     const before = game.getState().run.score;
-    hitPerfect(game, 1);
+    hitFlat(game, 1);
     const [event] = events;
     if (event?.type !== 'hit') throw new Error('Expected a hit');
     return { event, added: game.getState().run.score - before };
   }
 
   it('under a Multiplier, counting the Streak the hit makes', () => {
-    const game = startedGame();
-    hitPerfect(game, 8);
+    const game = startFlatRun();
+    hitFlat(game, 8);
     const ninth = strike(game);
     const tenth = strike(game); // Streak 10 is already x2
     expect(ninth.event.points).toBe(ninth.added);
@@ -112,8 +106,8 @@ describe('a hit says the points it scored', () => {
   });
 
   it('doubled in Overdrive, but not on the hit that starts it', () => {
-    const game = startedGame();
-    hitPerfect(game, 28);
+    const game = startFlatRun();
+    hitFlat(game, 28);
     const igniting = strike(game);
     expect(game.getState().run.overdriveActive).toBe(true);
     expect(igniting.event).toMatchObject({ points: 300, overdrive: false });
@@ -151,7 +145,7 @@ describe('one event per counted keystroke', () => {
 
     // Three wrong keys up front, then the whole text.
     for (const wrong of ['x', 'y', 'z']) game.pressKey(wrong);
-    hitPerfect(game, SAMPLE_TEXT.length);
+    hit(game, SAMPLE_TEXT.length);
 
     expect(game.getState().debrief).not.toBeNull();
     expect(events).toHaveLength(3 + SAMPLE_TEXT.length);
@@ -185,7 +179,7 @@ describe('one event per counted keystroke', () => {
 
   it('is not given for keys pressed after the Run is cleared', () => {
     const game = startedGame();
-    hitPerfect(game, SAMPLE_TEXT.length);
+    hit(game, SAMPLE_TEXT.length);
     expect(game.getState().debrief).not.toBeNull();
     const events = listen(game);
 
@@ -197,8 +191,8 @@ describe('one event per counted keystroke', () => {
 
   it('stops once the listener unsubscribes, and only for that listener', () => {
     const game = startedGame();
-    const first: Judgement[] = [];
-    const second: Judgement[] = [];
+    const first: Event[] = [];
+    const second: Event[] = [];
     const stopFirst = game.onMoment(collectInto(first));
     game.onMoment(collectInto(second));
 
@@ -245,7 +239,7 @@ describe('a key that types no character', () => {
   ])('%s counts as nothing: no event, and the Run is untouched', (key) => {
     // A Run with a Streak and an Overdrive charge to lose.
     const game = startedGame();
-    hitPerfect(game, 3);
+    hit(game, 3);
     const before = structuredClone(game.getState().run);
     const events = listen(game);
 
@@ -277,7 +271,7 @@ describe('a key that types no character', () => {
 describe('an auto-repeat keydown', () => {
   it('is ignored completely, even on the right key', () => {
     const game = startedGame();
-    hitPerfect(game, 3);
+    hit(game, 3);
     game.step(30);
     const before = structuredClone(game.getState().run);
     const events = listen(game);
@@ -291,7 +285,7 @@ describe('an auto-repeat keydown', () => {
 
   it('after a held right key scores that one hit and nothing more, even on a repeated letter', () => {
     const game = startedGame();
-    hitPerfect(game, 8); // the next two characters are both "f"
+    hit(game, 8); // the next two characters are both "f"
     const events = listen(game);
 
     game.step(30);
@@ -299,13 +293,7 @@ describe('an auto-repeat keydown', () => {
     for (let i = 0; i < 5; i++) game.pressKey('f', { repeat: true });
 
     expect(events).toEqual([
-      {
-        type: 'hit',
-        grade: 'perfect',
-        key: 'f',
-        points: 100,
-        overdrive: false,
-      },
+      { type: 'hit', key: 'f', points: 100, overdrive: false },
     ]);
     expect(game.getState().run.currentCharIndex).toBe(9);
     expect(game.getState().run.incorrectKeystrokes).toBe(0);
@@ -319,7 +307,7 @@ describe('an auto-repeat keydown', () => {
 
   it('after a held wrong key is one Miss', () => {
     const game = startedGame();
-    hitPerfect(game, 3);
+    hit(game, 3);
     const events = listen(game);
 
     game.pressKey('x'); // the keydown

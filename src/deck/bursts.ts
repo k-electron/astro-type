@@ -3,8 +3,8 @@ import type { BurstId } from '../game/schemas';
 /**
  * What a Burst can ask the effects for. It is how the explosion on a hit
  * scatters its particles: their shapes, their spread and how they fade. Where
- * they come from, how big the hit is (`perfect`, `isSpace`) and the colour it
- * takes (`hitColor`, the game's by Multiplier tier) are given, never chosen:
+ * they come from, how big the hit is (`big`: it finished a clean word; `isSpace`) and the colour it
+ * takes (`hitColor`, the game's: by Multiplier tier, or a clean word's) are given, never chosen:
  * no Burst changes what the player reads from the hit.
  */
 export interface BurstPainter {
@@ -46,13 +46,13 @@ export type BurstFn = (
   y: number,
   w: number,
   isSpace: boolean,
-  perfect: boolean,
+  big: boolean,
   hitColor: string,
 ) => void;
 
 /** Sparks flying every way: the Burst the game has always had. */
-const sparks: BurstFn = (paint, x, y, w, isSpace, perfect, hitColor) => {
-  const count = perfect ? (isSpace ? 55 : 40) : 26;
+const sparks: BurstFn = (paint, x, y, w, isSpace, big, hitColor) => {
+  const count = big ? (isSpace ? 55 : 40) : 26;
   for (let i = 0; i < count; i++) {
     const angle = Math.random() * Math.PI * 2;
     const speed = 4.5 + Math.random() * 9.5;
@@ -69,9 +69,9 @@ const sparks: BurstFn = (paint, x, y, w, isSpace, perfect, hitColor) => {
 };
 
 /** Sparks in eight tight streaks, like petals, that fade slowly. */
-const starflower: BurstFn = (paint, x, y, _w, isSpace, perfect, hitColor) => {
+const starflower: BurstFn = (paint, x, y, _w, isSpace, big, hitColor) => {
   const petals = 8;
-  const perPetal = perfect ? (isSpace ? 8 : 6) : 4;
+  const perPetal = big ? (isSpace ? 8 : 6) : 4;
   for (let petal = 0; petal < petals; petal++) {
     const angle = (petal / petals) * Math.PI * 2 - Math.PI / 2;
     for (let i = 0; i < perPetal; i++) {
@@ -91,8 +91,8 @@ const starflower: BurstFn = (paint, x, y, _w, isSpace, perfect, hitColor) => {
 };
 
 /** Square pixels that fly only along the eight compass lines. */
-const pixelShards: BurstFn = (paint, x, y, w, isSpace, perfect, hitColor) => {
-  const count = perfect ? (isSpace ? 44 : 32) : 20;
+const pixelShards: BurstFn = (paint, x, y, w, isSpace, big, hitColor) => {
+  const count = big ? (isSpace ? 44 : 32) : 20;
   for (let i = 0; i < count; i++) {
     const direction = Math.floor(Math.random() * 8);
     const angle = (direction * Math.PI) / 4;
@@ -110,16 +110,8 @@ const pixelShards: BurstFn = (paint, x, y, w, isSpace, perfect, hitColor) => {
 };
 
 /** A few sparks inside three rings that roll outward one after another. */
-const shockwaveRings: BurstFn = (
-  paint,
-  x,
-  y,
-  w,
-  isSpace,
-  perfect,
-  hitColor,
-) => {
-  const count = perfect ? (isSpace ? 16 : 12) : 8;
+const shockwaveRings: BurstFn = (paint, x, y, w, isSpace, big, hitColor) => {
+  const count = big ? (isSpace ? 16 : 12) : 8;
   for (let i = 0; i < count; i++) {
     const angle = Math.random() * Math.PI * 2;
     const speed = 3 + Math.random() * 5;

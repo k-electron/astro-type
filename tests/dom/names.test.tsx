@@ -121,6 +121,23 @@ describe('BANNED_NAME and the removed Upgrades', () => {
   });
 });
 
+// #137: the grades are gone, so nothing the game says grades a keystroke.
+describe('BANNED_NAME and the removed grades', () => {
+  it.each(['Perfect', 'GREAT', 'good', 'Good job!', 'a Great hit'])(
+    'flags "%s"',
+    (text) => {
+      expect(BANNED_NAME.test(text)).toBe(true);
+    },
+  );
+
+  it.each(['Greater', 'Goodbye', 'Perfectly', 'CLEAN +600', 'x2  +200'])(
+    'leaves the whole word out of "%s"',
+    (text) => {
+      expect(BANNED_NAME.test(text)).toBe(false);
+    },
+  );
+});
+
 describe('the glossary names', () => {
   it('Academy Home uses them', () => {
     renderGame();

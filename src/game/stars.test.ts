@@ -103,22 +103,24 @@ describe('Stars from accuracy and WPM', () => {
     const debrief = debriefOf(game);
     expect(debrief.wpm).toBeCloseTo(stageWpm(60), 6); // 76 / 5 over 59.5 s = 15.3
     expect(debrief.accuracy).toBe(100);
-    expect(debrief.score).toBe(44300);
+    // 77 hits climbing to x4, with Overdrive from the 29th, plus the bonus of
+    // each of the text's 30 clean words (the Run is clean throughout).
+    expect(debrief.score).toBe(58250);
     expect(debrief.starsEarned).toBe(3);
-    // 100 + 75 per Star + score / 200 (221.5 rounds up)
-    expect(debrief.creditsEarned).toBe(100 + 3 * 75 + 222);
+    // 100 + 75 per Star + score / 200 (291.25 rounds down)
+    expect(debrief.creditsEarned).toBe(100 + 3 * 75 + 291);
     expect(debrief.isNewHighScore).toBe(true);
     expect(debrief.newStarsAwarded).toBe(3);
 
     const profile = game.getState().profile;
-    expect(profile.totalCredits).toBe(547);
+    expect(profile.totalCredits).toBe(616);
     expect(profile.totalStars).toBe(3);
     expect(profile.totalCharactersTyped).toBe(77);
     expect(profile.totalMissMarks).toBe(0);
     expect(profile.stagesProgress[STAGE_ID]).toMatchObject({
       completed: true,
       starsEarned: 3,
-      highScore: 44300,
+      highScore: 58250,
       timesPlayed: 1,
     });
     // The Profile keeps the exact WPM too.
@@ -423,7 +425,7 @@ describe('what a clear pays and keeps', () => {
     const game = newGame({
       stagesProgress: {
         [STAGE_ID]: stageProgress(STAGE_ID, 3, {
-          highScore: 50000,
+          highScore: 70000,
           bestWpm: 20,
           bestStreak: 77,
           timesPlayed: 1,
@@ -437,12 +439,12 @@ describe('what a clear pays and keeps', () => {
     expect(debrief.starsEarned).toBe(2);
     expect(debrief.newStarsAwarded).toBe(0);
     expect(debrief.isNewHighScore).toBe(false);
-    expect(debrief.creditsEarned).toBe(100 + 2 * 75 + 222); // Credits are paid on every clear
+    expect(debrief.creditsEarned).toBe(100 + 2 * 75 + 291); // Credits are paid on every clear
 
     const profile = game.getState().profile;
     expect(profile.stagesProgress[STAGE_ID]).toMatchObject({
       starsEarned: 3,
-      highScore: 50000,
+      highScore: 70000,
       bestWpm: 20,
       timesPlayed: 2,
     });

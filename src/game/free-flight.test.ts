@@ -91,8 +91,9 @@ describe('what a Free Flight pays', () => {
       expect(paid, text).toBe(Math.round(debrief.score / 200));
       expect(debrief.creditsEarned, text).toBe(paid);
     }
-    // A two-letter text pays about 1.
-    expect(paidFor('ab').paid).toBe(1);
+    // A two-letter text: two hits and the bonus of its one word, 300 points.
+    expect(paidFor('ab').debrief.score).toBe(300);
+    expect(paidFor('ab').paid).toBe(2);
   });
 });
 

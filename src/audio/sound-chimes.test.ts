@@ -39,6 +39,15 @@ afterEach(() => {
   engine.played.length = 0;
 });
 
+/**
+ * What the engine was asked to play from the fanfare on. A Run's own chimes
+ * (a clean word's, a milestone's) sound while it is typed, and the last hit of
+ * the Stage sounds one just before the fanfare; the Stars' chimes are the ones
+ * that come after the fanfare.
+ */
+const fromTheFanfare = () =>
+  engine.played.slice(engine.played.indexOf('cleared'));
+
 // A fast clean clear is 3 Stars; characters carrying a Miss mark take Stars off.
 it.each([
   { stars: 3, missMarks: 0 },
@@ -58,16 +67,15 @@ it.each([
       game.getState().debrief?.starsEarned,
       'Stars the Debrief shows',
     ).toBe(stars);
-    expect(engine.played, 'right at the clear: the fanfare alone').toEqual([
+    expect(fromTheFanfare(), 'right at the clear: the fanfare alone').toEqual([
       'cleared',
     ]);
 
     // Two seconds in 50 ms slices, so the order the chimes fire in is seen.
     for (let i = 0; i < 40; i++) vi.advanceTimersByTime(50);
     const chimes = Array.from({ length: stars }, (_, i) => `chime:${i + 1}`);
-    expect(engine.played, 'fanfare first, then the chimes in order').toEqual([
-      'cleared',
-      ...chimes,
-    ]);
+    expect(fromTheFanfare(), 'fanfare first, then the chimes in order').toEqual(
+      ['cleared', ...chimes],
+    );
   },
 );

@@ -9,7 +9,7 @@ import {
 import { KEYBOARD_ROWS } from '../curriculum/keyboardLayout';
 import {
   type Game,
-  hitPerfect,
+  hit,
   loadGame,
   miss,
   newGame,
@@ -77,7 +77,7 @@ describe('a Run launching', () => {
   it('is announced for a Free Flight, a Replay and a Next Stage, each a new Run', () => {
     const game = startedGame();
     const moments = listen(game);
-    hitPerfect(game, SAMPLE_TEXT.length);
+    hit(game, SAMPLE_TEXT.length);
     expect(game.getState().phase).toBe('cleared');
     moments.length = 0;
 
@@ -85,7 +85,7 @@ describe('a Run launching', () => {
     expect(typesOf(moments)).toEqual(['launched']);
     expect(game.getState().runTime).toBe(0);
 
-    hitPerfect(game, SAMPLE_TEXT.length);
+    hit(game, SAMPLE_TEXT.length);
     moments.length = 0;
     game.send({ type: 'PRESS_NEXT_STAGE' });
     expect(typesOf(moments)).toEqual(['launched']);
@@ -101,7 +101,7 @@ describe('a Run launching', () => {
 
     game.send({ type: 'PRESS_ESC' });
     game.send({ type: 'PRESS_RESUME' });
-    hitPerfect(game, SAMPLE_TEXT.length);
+    hit(game, SAMPLE_TEXT.length);
     game.send({ type: 'OPEN_GALAXY_MAP' });
     game.send({ type: 'PRESS_CLOSE' });
 
@@ -182,15 +182,26 @@ describe('a hit', () => {
     }
   });
 
-  it('still carries the grade, the points and the Overdrive flag', () => {
+  it('carries the points, the Overdrive flag, the Streak and Multiplier it made, and no clean word', () => {
     const game = startedGame();
     const moments = listen(game);
 
     game.step(30);
     game.pressKey(targetKey(game));
 
+    // The first "f" of Stage 1: a word of one character, finished by the
+    // space that comes next, not by this hit.
     expect(moments).toMatchObject([
-      { type: 'hit', grade: 'perfect', points: 100, overdrive: false },
+      {
+        type: 'hit',
+        points: 100,
+        overdrive: false,
+        streak: 1,
+        multiplier: 1,
+        milestone: false,
+        cleanWord: null,
+        cleanWords: 0,
+      },
     ]);
   });
 });
@@ -219,15 +230,15 @@ describe('a Miss', () => {
 describe('ignition', () => {
   it('fires once, right after the hit that starts Overdrive, and not on later hits', () => {
     const game = startedGame();
-    hitPerfect(game, 28);
+    hit(game, 28);
     const moments = listen(game);
     expect(game.getState().run.overdriveActive).toBe(false);
 
-    hitPerfect(game, 1); // the 29th hit starts Overdrive
+    hit(game, 1); // the 29th hit starts Overdrive
     expect(game.getState().run.overdriveActive).toBe(true);
     expect(typesOf(moments)).toEqual(['hit', 'ignition']);
 
-    hitPerfect(game, 6); // on in Overdrive: only hits
+    hit(game, 6); // on in Overdrive: only hits
     expect(typesOf(moments).filter((type) => type === 'ignition')).toHaveLength(
       1,
     );
@@ -242,14 +253,14 @@ describe('ignition', () => {
     const game = startedGame();
     const moments = listen(game);
 
-    hitPerfect(game, 28);
+    hit(game, 28);
 
     expect(typesOf(moments)).toEqual(Array(28).fill('hit'));
   });
 
   it('fires again when a Miss has ended Overdrive and the Streak climbs back to it', () => {
     const game = startedGame();
-    hitPerfect(game, 29);
+    hit(game, 29);
     const moments = listen(game);
     miss(game);
     expect(game.getState().run.overdriveActive).toBe(false);
@@ -258,7 +269,7 @@ describe('ignition', () => {
     const budget =
       SAMPLE_TEXT.length - game.getState().run.currentCharIndex - 1;
     for (let i = 0; i < budget && !typesOf(moments).includes('ignition'); i++) {
-      hitPerfect(game, 1);
+      hit(game, 1);
     }
 
     const types = typesOf(moments);
@@ -272,10 +283,10 @@ describe('ignition', () => {
 describe('clearing the Stage', () => {
   it('fires once, after the last hit, with the Stars the Debrief shows', () => {
     const game = startedGame();
-    hitPerfect(game, SAMPLE_TEXT.length - 1);
+    hit(game, SAMPLE_TEXT.length - 1);
     const moments = listen(game);
 
-    hitPerfect(game, 1);
+    hit(game, 1);
 
     const { debrief } = game.getState();
     expect(debrief).not.toBeNull();
@@ -288,13 +299,13 @@ describe('clearing the Stage', () => {
 
   it('is heard with the game already on the Debrief', () => {
     const game = startedGame();
-    hitPerfect(game, SAMPLE_TEXT.length - 1);
+    hit(game, SAMPLE_TEXT.length - 1);
     const heard: { state?: ReturnType<Game['getState']> } = {};
     game.onMoment((moment) => {
       if (moment.type === 'cleared') heard.state = game.getState();
     });
 
-    hitPerfect(game, 1);
+    hit(game, 1);
 
     expect(heard.state?.screen).toBe('debrief');
     expect(heard.state?.debrief).not.toBeNull();
@@ -306,10 +317,10 @@ describe('clearing the Stage', () => {
   it('does not fire for a Run that is not cleared, or again for keys after the clear', () => {
     const game = startedGame();
     const moments = listen(game);
-    hitPerfect(game, SAMPLE_TEXT.length - 1);
+    hit(game, SAMPLE_TEXT.length - 1);
     expect(typesOf(moments)).not.toContain('cleared');
 
-    hitPerfect(game, 1);
+    hit(game, 1);
     game.pressKey('f');
     game.pressKey('x');
 

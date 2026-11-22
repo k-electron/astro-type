@@ -1,12 +1,13 @@
 import { expect, type Page, test } from '@playwright/test';
-import { debrief, pauseMenu, promptProgress } from '../helpers';
+import { debrief, drone, pauseMenu, promptProgress } from '../helpers';
 import { DEBRIEF_TITLE } from '../../shared/screens';
 import {
-  hudScore,
+  bottomEdge,
   hudSpeed,
   launchOnStoppedClock,
   pauseButton,
   resumeButton,
+  waitForDeck,
 } from '../journey-helpers';
 
 // LOCAL ONLY (run by `pnpm verify`, not in CI; docs/agents/testing.md): exact Run Time
@@ -102,26 +103,40 @@ test('catch-up after a long stall is capped: the Drones do not jump across the d
 }) => {
   await launchOnStoppedClock(page, 'abcdefghijklmnop');
 
-  await test.step('a five-minute stall leaves the lead Drone a little way down, so the first key is a Great', async () => {
+  await test.step('a five-minute stall leaves the lead Drone a little way down, and it is still falling', async () => {
+    // The Run is paused while the clock gives the deck its first frames, so
+    // the lead Drone is drawn where the Run seeded it.
+    await waitForDeck(page, 'a');
+    const lead = drone(page, 'a');
+    const start = await bottomEdge(lead);
+
     // One frame of flight, so the Run is under way. The page then stalls for
     // five minutes in one go (a frozen tab, a laptop asleep). A Drone that fell
-    // for all of it would be waiting on the Strike Line now and the first key
-    // would be a Perfect (100 points). Capped, the Run catches up by 100 ms
-    // (6 steps): every Run moves at FAST, 2.2 a step from 22 away, so the Drone
-    // has come down to 8.8 from the Strike Line, just past the Perfect window of
-    // 8, and a key now is a Great (75 points). One more step of catch-up would
-    // make it a Perfect, so this holds the cap at 100 ms.
+    // for all of it would be waiting on the Strike Line now. Capped, the Run
+    // catches up by 100 ms (6 steps) and the Drone is a few steps from the line
+    // (measured: 52 of 93 px fallen, the rest still to go).
     await page.clock.runFor(20);
     await page.clock.fastForward(5 * MINUTE);
-    await page.keyboard.press('a');
+    await page.clock.runFor(17);
+    const afterStall = await bottomEdge(lead);
 
-    await expect.poll(() => hudScore(page)).toBe(75);
+    await page.clock.runFor(1000);
+    const waiting = await bottomEdge(lead);
+
+    expect(afterStall, 'it has come down from where it began').toBeGreaterThan(
+      start,
+    );
+    expect(
+      waiting - afterStall,
+      'and it still had a way to fall',
+    ).toBeGreaterThan((waiting - start) * 0.2);
   });
 
   await test.step('a second stall is caught up only by a fraction of a second, so the Speed is what the typing gives', async () => {
-    // 8 keys, the first typed about 0.1 s into the Run and the rest 1 s later,
-    // then 5 s more: Typing Time is about 6 s, so 7 / 5 / (6 / 60) = 14 WPM.
-    // The range is wide for the live refresh landing a half second either way.
+    // 8 keys, the first typed a second or so before the rest, then 5 s more:
+    // Typing Time is about 6 s, so 7 / 5 / (6 / 60) = 14 WPM. The range is wide
+    // for the live refresh landing a half second either way.
+    await page.keyboard.press('a');
     await page.clock.runFor(1000);
     for (const key of 'bcdefgh') await page.keyboard.press(key);
     await expect(promptProgress(page)).toHaveText('50%');

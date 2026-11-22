@@ -161,6 +161,10 @@ describe('importing a Backup', () => {
     ...[
       ['a Backup exported before versions existed', OLD_LIVE_EXPORT],
       [
+        'version 4, a Backup with graded scores',
+        { ...completeSave(), version: 4 },
+      ],
+      [
         'version 3, a Backup with Upgrades',
         {
           ...completeSave(),

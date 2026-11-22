@@ -1,13 +1,17 @@
-import { expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { createRecordingSound } from '../../tests/shared/recordingSound';
 import { RETURNING_PLAYER } from '../../tests/shared/saves';
 import {
-  hitPerfect,
+  FLAT_TEXT,
+  hit,
   loadGame,
   miss,
   SAMPLE_TEXT,
   STAGE_ID,
+  startFreeFlight,
   startStage,
+  typeText,
+  typeTextWithMissMarks,
 } from '../../tests/shared/testHelpers';
 
 /**
@@ -20,43 +24,63 @@ import {
  * the Settings buttons do, and nothing is read back from the store.
  */
 
-const HIT = 'hit:PERFECT';
-const hits = (count: number) => Array.from({ length: count }, () => HIT);
+/** A hit cue of any kind: a letter, a space or a clean word's finish (the kinds are told apart below). */
+const isHit = (cue: string) => cue.startsWith('hit:');
+/** A chime of any tier. */
+const isChime = (cue: string) => cue.startsWith('chime:');
 
 it('sounds right at every moment of a Run', () => {
   const sound = createRecordingSound();
   const { game } = loadGame(RETURNING_PLAYER, sound.effects);
 
-  /** Assert the moment: is the beat sounding, is the Overdrive layer on, and which cues just fired. */
+  /**
+   * Assert the moment: is the beat sounding, is the Overdrive layer on, how many
+   * hit cues just fired, and which other cues. Which kind of hit cue and which
+   * chime a key makes depends on the text it falls in, so the one that checks
+   * that is below, on short texts; here a hit is one cue and the chimes are left out.
+   */
   const heard = (
     moment: string,
-    expected: { beat: boolean; overdrive: boolean; cues?: string[] },
+    expected: {
+      beat: boolean;
+      overdrive: boolean;
+      hits?: number;
+      cues?: string[];
+    },
   ) => {
     expect(sound.heard(), `${moment}: beat and Overdrive layer`).toEqual({
       beat: expected.beat,
       overdrive: expected.overdrive,
     });
-    expect(sound.takeCues(), `${moment}: cues`).toEqual(expected.cues ?? []);
+    const cues = sound.takeCues();
+    expect(cues.filter(isHit), `${moment}: hit cues`).toHaveLength(
+      expected.hits ?? 0,
+    );
+    expect(
+      cues.filter((cue) => !isHit(cue) && !isChime(cue)),
+      `${moment}: cues`,
+    ).toEqual(expected.cues ?? []);
   };
 
-  /** Hit Perfects one at a time until Overdrive catches fire. Quiet until then. */
+  /** Hit one key at a time until Overdrive catches fire. Quiet until then. */
   const hitUntilOverdrive = (moment: string) => {
     const budget =
       SAMPLE_TEXT.length - game.getState().run.currentCharIndex - 2;
     for (let i = 0; i < budget; i++) {
-      hitPerfect(game, 1);
+      hit(game, 1);
       if (sound.heard().overdrive) {
         heard(`${moment}: Overdrive ignites`, {
           beat: true,
           overdrive: true,
-          cues: [HIT, 'ignition'],
+          hits: 1,
+          cues: ['ignition'],
         });
         return;
       }
       heard(`${moment}: hit ${i + 1} before Overdrive`, {
         beat: true,
         overdrive: false,
-        cues: [HIT],
+        hits: 1,
       });
     }
     throw new Error(`${moment}: Overdrive never ignited`);
@@ -128,21 +152,108 @@ it('sounds right at every moment of a Run', () => {
 
   // Typing on to the last character: a hit cue each, nothing else.
   const left = SAMPLE_TEXT.length - 1 - game.getState().run.currentCharIndex;
-  hitPerfect(game, left);
+  hit(game, left);
   heard('typed on to the last character', {
     beat: true,
     overdrive: true,
-    cues: hits(left),
+    hits: left,
   });
 
   // Clearing the Stage: the last hit, the fanfare, then the chimes for the
-  // Stars the Debrief shows. Beat and Overdrive layer go.
-  hitPerfect(game, 1);
+  // Stars the Debrief shows. Beat and Overdrive layer go. (The last hit
+  // finishes the last word, which is clean here, so it also sounds a clean
+  // word's chime, with the fanfare.)
+  hit(game, 1);
   const debrief = game.getState().debrief;
   expect(debrief, 'Debrief after the clear').not.toBeNull();
   heard('Stage cleared', {
     beat: false,
     overdrive: false,
-    cues: [HIT, 'cleared', `stars:${debrief?.starsEarned}`],
+    hits: 1,
+    cues: ['cleared', `stars:${debrief?.starsEarned}`],
+  });
+});
+
+describe('the cue a hit makes', () => {
+  /** A new Free Flight of `text` with the recording sound adapter listening. */
+  function flightOf(text: string) {
+    const sound = createRecordingSound();
+    const { game } = loadGame(undefined, sound.effects);
+    startFreeFlight(game, text);
+    sound.takeCues();
+    return { game, sound };
+  }
+
+  it('is a letter, a space, or a clean word’s finish, and a clean word’s finish chimes once', () => {
+    // A Miss on the first "a", so "ab" is not clean: its space is a plain
+    // space. "cd" is clean: its space finishes it. The second space of a run of
+    // spaces holds no word.
+    const { game, sound } = flightOf('ab cd  ef');
+
+    typeTextWithMissMarks(game, 'ab cd  e', [0]);
+
+    expect(sound.takeCues()).toEqual([
+      'miss',
+      'hit:LETTER',
+      'hit:LETTER',
+      'hit:SPACE',
+      'hit:LETTER',
+      'hit:LETTER',
+      'hit:CLEAN',
+      'chime:1',
+      'hit:SPACE',
+      'hit:LETTER',
+    ]);
+  });
+
+  it('is the clean word’s cue on the last character of the text, which finishes its word', () => {
+    const { game, sound } = flightOf('ab');
+
+    typeText(game, 'a');
+    expect(sound.takeCues()).toEqual(['hit:LETTER']);
+    typeText(game, 'b');
+
+    expect(sound.takeCues().slice(0, 2)).toEqual(['hit:CLEAN', 'chime:1']);
+  });
+
+  it('chimes at Streak 10, 20 and 30, by the Multiplier it reaches, and every 25 after 30', () => {
+    const { game, sound } = flightOf(FLAT_TEXT);
+    const cuesOfKey: string[][] = [];
+
+    for (let key = 1; key <= 56; key++) {
+      typeText(game, 'f');
+      cuesOfKey[key] = sound.takeCues();
+    }
+
+    expect(cuesOfKey[9]).toEqual(['hit:LETTER']);
+    expect(cuesOfKey[10]).toEqual(['hit:LETTER', 'chime:1']); // x2
+    expect(cuesOfKey[11]).toEqual(['hit:LETTER']);
+    expect(cuesOfKey[20]).toEqual(['hit:LETTER', 'chime:2']); // x3
+    expect(cuesOfKey[30]).toEqual(['hit:LETTER', 'chime:3']); // x4
+    expect(cuesOfKey[40]).toEqual(['hit:LETTER']);
+    expect(cuesOfKey[54]).toEqual(['hit:LETTER']);
+    expect(cuesOfKey[55]).toEqual(['hit:LETTER', 'chime:3']);
+    expect(cuesOfKey[56]).toEqual(['hit:LETTER']);
+  });
+
+  it('is one chime, the milestone’s, when a milestone lands on a clean word’s finish', () => {
+    // The 20th key is the space that finishes a clean 19-letter word, at Streak 20 (x3).
+    const { game, sound } = flightOf(`${'f'.repeat(19)} ff`);
+
+    typeText(game, 'f'.repeat(19));
+    sound.takeCues();
+    typeText(game, ' ');
+
+    expect(sound.takeCues()).toEqual(['hit:CLEAN', 'chime:2']);
+  });
+
+  it('lights Overdrive after the hit that earned it', () => {
+    const { game, sound } = flightOf(FLAT_TEXT);
+
+    typeText(game, 'f'.repeat(28));
+    sound.takeCues();
+    typeText(game, 'f');
+
+    expect(sound.takeCues()).toEqual(['hit:LETTER', 'ignition']);
   });
 });

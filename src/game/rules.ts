@@ -1,6 +1,6 @@
 /**
- * The rules of a Run, as plain functions: Judgement, scoring, Streak,
- * Multiplier, Overdrive, Drone movement, live WPM, Stars and
+ * The rules of a Run, as plain functions: Judgement, scoring, clean words,
+ * Streak, Multiplier, Overdrive, Drone movement, live WPM, Stars and
  * Credits. No React, PixiJS, DOM or sound in here.
  *
  * The whole keystroke is one function, `strike`, and the whole step is
@@ -8,8 +8,8 @@
  * results; everything else in this file is a helper of those two, Stars and
  * Credits, or something the HUD and the deck read.
  *
- * The numbers and windows are the original game's, except that every Run now
- * falls at one Drone speed (`DRONE_SPEED`).
+ * Every Run falls at one Drone speed (`DRONE_SPEED`). A hit is a hit wherever
+ * its Drone was: nothing here grades timing.
  */
 import {
   keyForCharacter,
@@ -20,9 +20,6 @@ import type { FingerZone } from '../curriculum/keyboardLayout';
 import { STEP_MS } from './clock';
 import type { Moment } from './moments';
 import type { StageResult } from './profile';
-
-/** How close to the Strike Line a hit landed: Perfect, Great or Good. */
-export type Grade = 'perfect' | 'great' | 'good';
 
 /** A Drone: one character of the Stage's text, falling down its lane. */
 export interface Drone {
@@ -44,6 +41,8 @@ export interface LivePerformance {
   correctKeystrokes: number;
   incorrectKeystrokes: number;
   totalKeystrokes: number;
+  /** How many clean words the Run has finished so far. */
+  cleanWords: number;
   /** Gross WPM over Typing Time so far, exact; null until there is one (see `grossWpm`). */
   wpm: number | null;
   accuracy: number;
@@ -55,18 +54,36 @@ export interface LivePerformance {
 /** Where a Drone waits for the player, as a percentage down the Action Deck. */
 export const STRIKE_LINE_Y = 84;
 
+/** A word typed with no Miss mark, finished by the hit that carries it. */
+export interface CleanWord {
+  /** The word's characters, without the space that finished it. */
+  word: string;
+  /** The bonus the word paid, on top of the hit's points. */
+  bonus: number;
+}
+
 /**
- * What judging one keystroke produced. Exactly one per keystroke that counts.
- * `key` is the key the player pressed. A hit also says the points it scored
- * and whether Overdrive doubled them, the same numbers the score was given.
+ * What judging one keystroke produced. Exactly one per keystroke that counts:
+ * a hit for the right key, or a Miss for a wrong one. `key` is the key the
+ * player pressed. A hit says the points it scored and whether Overdrive
+ * doubled them, the same numbers the score was given; the Streak and
+ * Multiplier it made; and, when it finished a clean word, the word and its
+ * bonus (which is not in `points`) and how many clean words the Run has
+ * finished so far, this one included.
  */
 export type Judgement =
   | {
       type: 'hit';
-      grade: Grade;
       key: string;
       points: number;
       overdrive: boolean;
+      /** The Streak after this hit, and its Multiplier. */
+      streak: number;
+      multiplier: number;
+      /** This hit's Streak is a milestone (see `isStreakMilestone`). */
+      milestone: boolean;
+      cleanWord: CleanWord | null;
+      cleanWords: number;
     }
   | { type: 'miss'; key: string };
 
@@ -163,6 +180,7 @@ function freshPerformance(): LivePerformance {
     correctKeystrokes: 0,
     incorrectKeystrokes: 0,
     totalKeystrokes: 0,
+    cleanWords: 0,
     wpm: null,
     accuracy: 100,
     currentCharIndex: 0,
@@ -252,18 +270,6 @@ function moveDrones(drones: Drone[]): Drone[] {
 // ---- Judgement, scoring, Streak, Multiplier, Overdrive ------------------
 
 /**
- * Perfect, Great or Good by distance from the Strike Line. With no Drone to
- * measure, a hit is Great.
- */
-function judge(droneY: number | undefined): Grade {
-  if (droneY === undefined) return 'great';
-  const diff = Math.abs(droneY - STRIKE_LINE_Y);
-  if (diff <= 8) return 'perfect';
-  if (diff <= 16) return 'great';
-  return 'good';
-}
-
-/**
  * The Multiplier at each Streak: x1 to start, then x2, x3 and x4 from the
  * Streak that is listed. The one place these steps are written.
  */
@@ -295,14 +301,72 @@ export function overdriveScoreFactor(multiplier: number): number {
   return multiplier * OVERDRIVE_FACTOR;
 }
 
-/** Points for one hit. Overdrive doubles them. */
-export function scoreForHit(
-  grade: Grade,
+/** What every hit scores before the Multiplier, wherever its Drone was. */
+const HIT_POINTS = 100;
+
+/** What a clean word pays for each of its characters before the Multiplier. */
+const CLEAN_WORD_POINTS_PER_CHARACTER = 50;
+
+/** The factor a hit's points are multiplied by: the Multiplier, and Overdrive doubles it. */
+function scoreFactor(multiplier: number, overdrive: boolean): number {
+  return overdrive ? overdriveScoreFactor(multiplier) : multiplier;
+}
+
+/** Points for one hit: 100 times the Multiplier. Overdrive doubles them. */
+export function scoreForHit(multiplier: number, overdrive: boolean): number {
+  return HIT_POINTS * scoreFactor(multiplier, overdrive);
+}
+
+/**
+ * The bonus for a clean word of `characters` characters (the space that
+ * finishes it not counted): 50 each, times the Multiplier, doubled by
+ * Overdrive.
+ */
+export function cleanWordBonus(
+  characters: number,
   multiplier: number,
   overdrive: boolean,
 ): number {
-  const base = grade === 'perfect' ? 100 : grade === 'great' ? 75 : 50;
-  return base * (overdrive ? overdriveScoreFactor(multiplier) : multiplier);
+  return (
+    CLEAN_WORD_POINTS_PER_CHARACTER *
+    characters *
+    scoreFactor(multiplier, overdrive)
+  );
+}
+
+/**
+ * Whether a Streak is a milestone: 10, 20 and 30 (x2, x3 and x4), then every
+ * 25 after (55, 80, 105...). A milestone gets a banner and a chime.
+ */
+export function isStreakMilestone(streak: number): boolean {
+  if (streak > 30) return (streak - 30) % 25 === 0;
+  return MULTIPLIER_STEPS.some(
+    (step) => step.streak > 0 && step.streak === streak,
+  );
+}
+
+/**
+ * The clean word the hit at `index` finishes, or null. A word is the run of
+ * characters between spaces, punctuation included. It is finished by the space
+ * after it, or by the Stage's last character. It is clean when none of its
+ * characters, the finishing space included, carries a Miss mark. A run of
+ * spaces holds no word.
+ */
+function finishedCleanWord(
+  text: string,
+  index: number,
+  errorIndices: ReadonlySet<number>,
+): string | null {
+  const finishesWord = text[index] === ' ' || index === text.length - 1;
+  if (!finishesWord) return null;
+  const end = text[index] === ' ' ? index : index + 1;
+  let start = end;
+  while (start > 0 && text[start - 1] !== ' ') start--;
+  if (start === end) return null;
+  for (let i = start; i <= index; i++) {
+    if (errorIndices.has(i)) return null;
+  }
+  return text.slice(start, end);
 }
 
 /** Overdrive energy after a hit, and whether this hit ignites it. */
@@ -374,9 +438,9 @@ export interface StrikeResult {
 /**
  * The whole keystroke: the player strikes `key` against the character the Run
  * is on. `key` is one that counts (see `countsAsKeystroke`). A right key is
- * judged against the lead Drone for the character, scored, adds to the Streak
- * and Overdrive's charge and moves the Run on; a wrong key is a Miss, which
- * always breaks the Streak.
+ * a hit, scored, adds to the Streak and Overdrive's charge and moves the Run
+ * on, and the hit that finishes a clean word pays its bonus; a wrong key is a
+ * Miss, which always breaks the Streak.
  */
 export function strike(run: Run, key: string, time: RunTime): StrikeResult {
   const { stage } = run;
@@ -421,14 +485,23 @@ export function strike(run: Run, key: string, time: RunTime): StrikeResult {
     };
   }
 
-  // Judge the Strike against the lead Drone for this character.
+  // A right key is a hit, wherever its Drone is. The Drone is the one the
+  // moment names, for the deck.
   const drone = run.drones.find((d) => d.char === target);
   // A Run that is running always has a Drone for the character to type.
   if (!drone) throw new Error(`No Drone for "${target}" in a running Run`);
-  const grade = judge(drone.yPercent);
   const streak = run.currentStreak + 1;
   const multiplier = multiplierForStreak(streak);
-  const points = scoreForHit(grade, multiplier, run.overdriveActive);
+  const points = scoreForHit(multiplier, run.overdriveActive);
+  const word = finishedCleanWord(stage.sampleText, index, run.errorIndices);
+  const cleanWord: CleanWord | null =
+    word === null
+      ? null
+      : {
+          word,
+          bonus: cleanWordBonus(word.length, multiplier, run.overdriveActive),
+        };
+  const cleanWords = run.cleanWords + (cleanWord ? 1 : 0);
   const charge = chargeOverdrive(run.overdriveEnergy, run.overdriveActive);
   const nextIndex = index + 1;
 
@@ -440,10 +513,14 @@ export function strike(run: Run, key: string, time: RunTime): StrikeResult {
 
   const judgement: Judgement = {
     type: 'hit',
-    grade,
     key,
     points,
     overdrive: run.overdriveActive,
+    streak,
+    multiplier,
+    milestone: isStreakMilestone(streak),
+    cleanWord,
+    cleanWords,
   };
   // The Drone carries its lane and finger.
   const moments: Moment[] = [
@@ -460,7 +537,8 @@ export function strike(run: Run, key: string, time: RunTime): StrikeResult {
   return {
     run: withAccuracy({
       ...run,
-      score: run.score + points,
+      score: run.score + points + (cleanWord?.bonus ?? 0),
+      cleanWords,
       currentStreak: streak,
       maxStreak: Math.max(run.maxStreak, streak),
       multiplier,

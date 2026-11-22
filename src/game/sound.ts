@@ -1,6 +1,6 @@
 import type { RunPhase } from './machine';
 import type { SoundKit, BeatTheme, PlayerProfile } from './schemas';
-import type { Grade, LivePerformance } from './rules';
+import type { LivePerformance } from './rules';
 import type { Moment } from './moments';
 
 /**
@@ -29,9 +29,14 @@ export interface SoundState {
   overdrive: boolean;
 }
 
+/** What a hit sounds like: a letter, a space, or the finish of a clean word (the biggest). */
+export type HitKind = 'letter' | 'space' | 'clean';
+
 /** A one-shot sound. */
 export type Cue =
-  | { type: 'hit'; lane: number; grade: Grade; space: boolean }
+  | { type: 'hit'; lane: number; kind: HitKind }
+  /** The chime of a clean word's finish (tier 1) or of a Streak milestone: tier 1 at x2, 2 at x3, 3 from x4. */
+  | { type: 'chime'; tier: 1 | 2 | 3 }
   | { type: 'miss' }
   | { type: 'ignition' }
   | { type: 'cleared' }
@@ -94,15 +99,21 @@ export function sameSound(a: SoundState, b: SoundState): boolean {
 /** The cues for a moment, in the order they play. */
 export function cueFor(moment: Moment): Cue[] {
   switch (moment.type) {
-    case 'hit':
-      return [
-        {
-          type: 'hit',
-          lane: moment.lane,
-          grade: moment.grade,
-          space: moment.key === ' ',
-        },
-      ];
+    case 'hit': {
+      const kind: HitKind = moment.cleanWord
+        ? 'clean'
+        : moment.key === ' '
+          ? 'space'
+          : 'letter';
+      const cues: Cue[] = [{ type: 'hit', lane: moment.lane, kind }];
+      // A milestone's chime takes the place of the clean word's.
+      if (moment.milestone) {
+        cues.push({ type: 'chime', tier: milestoneTier(moment.multiplier) });
+      } else if (moment.cleanWord) {
+        cues.push({ type: 'chime', tier: 1 });
+      }
+      return cues;
+    }
     case 'miss':
     case 'ignition':
       return [{ type: moment.type }];
@@ -114,4 +125,9 @@ export function cueFor(moment: Moment): Cue[] {
     case 'equip':
       return [{ type: 'equip' }];
   }
+}
+
+/** The chime tier of a Streak milestone: x2 is tier 1, x3 tier 2, x4 and beyond tier 3. */
+export function milestoneTier(multiplier: number): 1 | 2 | 3 {
+  return Math.min(3, Math.max(1, multiplier - 1)) as 1 | 2 | 3;
 }

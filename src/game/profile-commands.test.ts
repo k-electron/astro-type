@@ -7,7 +7,7 @@ import {
 import type { Game } from './game';
 import { DEFAULT_PROFILE, SAVE_VERSION } from './schemas';
 import {
-  hitPerfect,
+  hit,
   loadGame,
   startedGame,
   startStage,
@@ -316,7 +316,7 @@ describe('a purchase and the Save', () => {
 describe('a purchase during a Run', () => {
   it('leaves the Run as it was: a Cosmetic changes how the game looks, never how it plays', () => {
     const game = startedGame({ totalCredits: 2000 });
-    hitPerfect(game, 3);
+    hit(game, 3);
     const played = (g: Game) => {
       const { score, currentStreak, multiplier, overdriveEnergy } =
         g.getState().run;
@@ -333,7 +333,7 @@ describe('a purchase during a Run', () => {
   it('spends the Credits at once and saves them', () => {
     const { game, storage } = loadGame({ totalCredits: 2000 });
     startStage(game, STAGE_ID);
-    hitPerfect(game, 2);
+    hit(game, 2);
 
     buyFromHangar(game, 'AMBER');
 
@@ -444,7 +444,7 @@ describe('changeSettings', () => {
   it('works during a Run without disturbing it', () => {
     const { game } = loadGame(RETURNING_PLAYER);
     startStage(game, STAGE_ID);
-    hitPerfect(game, 5);
+    hit(game, 5);
     const before = game.getState().run;
 
     game.changeSettings({ musicVolume: 0, globalMuted: true });

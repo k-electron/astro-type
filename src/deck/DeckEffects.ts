@@ -1,6 +1,5 @@
 import { Container, Graphics, Rectangle, Sprite, Text } from 'pixi.js';
-import type { Grade } from '../game/rules';
-import { hitPopupLabel, hitPopupsToPrepare, hitPopupStems } from './hitPopups';
+import { hitPopupsToPrepare } from './hitPopups';
 import { DEFAULT_BURST, DEFAULT_HULL } from '../game/catalog';
 import type { BurstId, HullId } from '../game/schemas';
 import { Pool } from './pool';
@@ -47,17 +46,17 @@ export interface HitShot {
   /** Where the cannons fire from. */
   originY: number;
   isSpace: boolean;
-  grade: Grade;
-  /** The points the hit scored, and whether Overdrive doubled them. */
-  points: number;
-  overdrive: boolean;
+  /** The biggest explosion: the hit finished a clean word. */
+  big: boolean;
+  /** The popup's whole text. */
+  label: string;
   /** What is printed on the Drone. */
   display: string;
   /** The locked Drone's colour: its finger's. */
   laneColor: string;
   /** The lasers' colour: the equipped Trail's. */
   laserColor: string;
-  /** The Judgement's colour. */
+  /** The hit's colour, for its explosion and popup. */
   hitColor: string;
   /** The equipped Burst: how the explosion scatters its particles. */
   burst: BurstId;
@@ -109,11 +108,10 @@ interface Bolt {
   burst: BurstId;
   hull: HullId;
   isSpace: boolean;
-  /** Hit grade, or null for the red laser of a wrong key. */
-  grade: Grade | null;
-  /** What the hit scored, for its popup, and whether Overdrive doubled it. */
-  points: number;
-  overdrive: boolean;
+  /** A hit's explosion: big when it finished a clean word, or null for the red laser of a wrong key. */
+  size: 'mid' | 'big' | null;
+  /** The popup's whole text. */
+  label: string;
   keyName: string;
   /** The locked Drone drawn at the target while the laser flies. */
   locked: { display: string; color: string } | null;
@@ -202,11 +200,8 @@ class Untouchable extends Rectangle {
   }
 }
 
-/** One of the items at random; with only one to pick, no random number is drawn. */
-const pick = <T>(items: readonly T[]): T =>
-  items.length === 1
-    ? items[0]
-    : items[Math.floor(Math.random() * items.length)];
+/** A banner's text is this much bigger than a popup's. */
+const BANNER_SCALE = 1.7;
 
 export interface DeckEffectsOptions {
   resolution: number;
@@ -353,9 +348,8 @@ export class DeckEffects {
       burst: DEFAULT_BURST,
       hull: DEFAULT_HULL,
       isSpace: false,
-      grade: null,
-      points: 0,
-      overdrive: false,
+      size: null,
+      label: '',
       keyName: '',
       locked: null,
       glyph: null,
@@ -468,7 +462,7 @@ export class DeckEffects {
 
   /**
    * Accessibility layer: a hit popup's whole text, like "Drone F" for a Drone,
-   * so it ends with the points the hit scored.
+   * so it ends with the points the hit scored (or the bonus, for a clean word).
    * The name is there only while the popup is in the tree and visible, so it
    * goes when the popup fades. Not a tab stop and never in the way of a click.
    */
@@ -509,7 +503,7 @@ export class DeckEffects {
     if (!bolt) {
       // Every laser is in flight (a burst of hits before a frame is drawn):
       // the hit still names the points it scored.
-      this.hitPopup(shot, shot.hitColor, shot.x, shot.y);
+      this.hitPopup(shot.label, shot.hitColor, shot.x, shot.y);
       return;
     }
     const x1 = shot.x - spacing;
@@ -533,9 +527,8 @@ export class DeckEffects {
     bolt.burst = shot.burst;
     bolt.hull = shot.hull;
     bolt.isSpace = shot.isSpace;
-    bolt.grade = shot.grade;
-    bolt.points = shot.points;
-    bolt.overdrive = shot.overdrive;
+    bolt.size = shot.big ? 'big' : 'mid';
+    bolt.label = shot.label;
     bolt.keyName = '';
     bolt.locked = { display: shot.display, color: shot.laneColor };
     const key = `glyph|${shot.display}`;
@@ -580,7 +573,7 @@ export class DeckEffects {
     bolt.color = '#f43f5e';
     bolt.hitColor = '#ef4444';
     bolt.isSpace = false;
-    bolt.grade = null;
+    bolt.size = null;
     bolt.keyName = shot.keyName;
     bolt.locked = null;
     bolt.glyph = null;
@@ -882,6 +875,7 @@ export class DeckEffects {
     maxLife: number,
     vy: number,
     named: boolean,
+    scale = 1,
   ): void {
     const slot = this.popups.acquire();
     if (!slot) return;
@@ -891,6 +885,7 @@ export class DeckEffects {
     );
     text.position.set(x, y);
     text.alpha = 1;
+    text.scale.set(scale);
     text.visible = true;
     this.popupLayer.addChild(text);
     slot.text = text;
@@ -900,38 +895,25 @@ export class DeckEffects {
     slot.maxLife = maxLife;
   }
 
-  /** The popup of a hit: a few words, then the points that hit scored. */
-  private hitPopup(
-    hit: Pick<HitShot, 'isSpace' | 'points' | 'overdrive'> & {
-      grade: Grade | null;
-    },
-    color: string,
-    x: number,
-    y: number,
-  ): void {
-    if (!hit.grade) return;
-    const stems = hitPopupStems({
-      grade: hit.grade,
-      isSpace: hit.isSpace,
-      overdrive: hit.overdrive,
-    });
-    this.popup(
-      hitPopupLabel(pick(stems), hit.points),
-      color,
-      x,
-      y - 26,
-      40,
-      -2.6,
-      true,
-    );
+  /** The popup of a hit, naming the points it scored (or a clean word's bonus). */
+  private hitPopup(label: string, color: string, x: number, y: number): void {
+    this.popup(label, color, x, y - 26, 40, -2.6, true);
+  }
+
+  /**
+   * A big line of text across the deck, held a little longer than a popup and
+   * named in the accessibility layer like one.
+   */
+  banner(label: string, color: string, x: number, y: number): void {
+    this.popup(label, color, x, y, 70, -0.8, true, BANNER_SCALE);
   }
 
   private detonate(bolt: Bolt): void {
     const { tx: x, ty: y, w, isSpace, hitColor } = bolt;
     // The Drone's hull and debris keep its colour; the laser's is the Trail's.
     const color = bolt.locked?.color ?? bolt.color;
-    if (bolt.grade) {
-      const perfect = bolt.grade === 'perfect';
+    if (bolt.size) {
+      const big = bolt.size === 'big';
       // The Drone's hull vaporises where it was held.
       const ghost = this.ghosts.acquire();
       if (ghost) {
@@ -962,7 +944,7 @@ export class DeckEffects {
         flash.sprite.alpha = 1;
       }
 
-      const debrisCount = perfect ? (isSpace ? 30 : 22) : 15;
+      const debrisCount = big ? (isSpace ? 30 : 22) : 15;
       for (let i = 0; i < debrisCount; i++) {
         const p = this.shards.acquire();
         if (!p) break;
@@ -986,9 +968,9 @@ export class DeckEffects {
         p.sprite.alpha = 1;
       }
 
-      BURSTS[bolt.burst](this.painter, x, y, w, isSpace, perfect, hitColor);
+      BURSTS[bolt.burst](this.painter, x, y, w, isSpace, big, hitColor);
 
-      const crystalCount = perfect ? (isSpace ? 4 : 3) : 2;
+      const crystalCount = big ? (isSpace ? 4 : 3) : 2;
       for (let i = 0; i < crystalCount; i++) {
         const c = this.crystals.acquire();
         if (!c) break;
@@ -1018,7 +1000,7 @@ export class DeckEffects {
       this.shockwave(x, y, 12, isSpace ? w * 1.6 : w * 2.2, hitColor, 1);
       this.shockwave(x, y, 6, isSpace ? w * 2.2 : w * 2.8, '#ffffff', 0.9);
 
-      this.hitPopup(bolt, hitColor, x, y);
+      this.hitPopup(bolt.label, hitColor, x, y);
     } else {
       this.shockwave(x, y, 8, w * 1.3, '#ef4444', 1);
       for (let i = 0; i < 24; i++) {

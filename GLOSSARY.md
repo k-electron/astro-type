@@ -37,8 +37,12 @@ The line just above the keyboard where the lead Drone comes to rest and waits to
 _Avoid_: Receptor, hit line, target line
 
 **Judgement**:
-The verdict on one keystroke: Perfect, Great or Good by how close the Drone was to the Strike Line, or Miss for a wrong key.
-_Avoid_: Timing, timing feedback, rating
+The verdict on one keystroke: a hit for the right key, or a Miss for a wrong key.
+_Avoid_: Timing, timing feedback, rating, Perfect, Great, Good
+
+**Clean word**:
+A word of the text, with the space that finishes it, typed with no Miss mark. Finishing one sets off the biggest explosion and pays a bonus.
+_Avoid_: Perfect word
 
 **Miss mark**:
 A character of the text where a wrong key was pressed, marked in the text prompt. However many wrong keys the player presses on one character, it carries one Miss mark.
@@ -53,7 +57,7 @@ The x1 to x4 factor on each hit's score, rising as the Streak grows.
 _Avoid_: Combo multiplier
 
 **Overdrive**:
-A boosted mode that doubles the score of each hit: during Overdrive a hit scores its base points times the Multiplier times 2, and that number is what the Overdrive badges show. Correct keystrokes fill the Overdrive meter, and Overdrive starts when the meter is full.
+A boosted mode that doubles the score of each hit: during Overdrive a hit scores 100 points times the Multiplier times 2, and that number is what the Overdrive badges show. Correct keystrokes fill the Overdrive meter, and Overdrive starts when the meter is full.
 _Avoid_: Hyperspace, warp, hyperdrive
 
 **Run Time**:

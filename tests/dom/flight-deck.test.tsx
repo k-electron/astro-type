@@ -26,6 +26,12 @@ const hudText = () =>
 const expectStreak = (streak: number) =>
   expect(hudText()).toMatch(new RegExp(`Streak\\s*${streak}(?!\\d)`));
 
+/** The HUD's Score readout shows exactly this number. */
+const expectScore = (score: number) =>
+  expect(hudText().replaceAll(',', '')).toMatch(
+    new RegExp(`Score\\s*${score}(?!\\d)`),
+  );
+
 /** The HUD's Accuracy readout. It follows every keystroke. */
 const expectAccuracy = (percent: number) =>
   expect(hudText()).toMatch(new RegExp(`Accuracy\\s*${percent}%`));
@@ -170,6 +176,33 @@ describe('a wrong key', () => {
     expectStreak(1);
     player.step(30);
     expectAccuracy(75);
+  });
+});
+
+describe('the HUD’s score', () => {
+  // A hit is 100 at x1, and the hit that finishes a clean word adds 50 for each
+  // character of the word (#137). These rule numbers are restated on purpose.
+  const WORDS = 'ab cd ef';
+
+  it('is each hit’s 100, and the clean word’s bonus on top, as the space finishes it', () => {
+    const player = renderGame({ text: WORDS });
+
+    player.type('ab');
+    expectScore(200);
+    player.type(' ');
+    expectScore(300 + 100); // the third hit, and "ab" is two characters: 50 each
+
+    player.type('cd ');
+    expectScore(400 + 300 + 100);
+  });
+
+  it('is the hit’s 100 alone when the word had a Miss mark', () => {
+    const player = renderGame({ text: WORDS });
+
+    player.press('z');
+    player.type('ab ');
+
+    expectScore(300);
   });
 });
 

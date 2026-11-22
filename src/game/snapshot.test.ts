@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { PlayerEvent } from './game';
 import {
   type Game,
-  hitPerfect,
+  hit,
   newGame,
   SAMPLE_TEXT,
   STAGE_ID,
@@ -39,7 +39,7 @@ function watch(game: Game): { seen: Snapshot[]; stop: () => void } {
 /** A game with Stage 1 started and `typed` characters typed, as hits. */
 function runningGame(typed = 5): Game {
   const game = startedGame();
-  hitPerfect(game, typed);
+  hit(game, typed);
   return game;
 }
 
@@ -158,7 +158,7 @@ describe('clearing a Stage settles the machine, the Run and the Profile together
   /** A Stage 1 Run one correct key short of the end, with its Credits on record. */
   function oneKeyFromClearing() {
     const game = startedGame();
-    hitPerfect(game, SAMPLE_TEXT.length - 1);
+    hit(game, SAMPLE_TEXT.length - 1);
     game.step(30);
     return { game, creditsBefore: game.getState().profile.totalCredits };
   }
@@ -184,7 +184,7 @@ describe('clearing a Stage settles the machine, the Run and the Profile together
     const game = startedGame();
     const { seen } = watch(game);
 
-    hitPerfect(game, SAMPLE_TEXT.length);
+    hit(game, SAMPLE_TEXT.length);
     game.send(OPEN_HANGAR);
     game.send(CLOSE);
 

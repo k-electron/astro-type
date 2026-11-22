@@ -429,9 +429,11 @@ test('each Burst scatters its own particles, in the hit colour the Multiplier gi
       inHue / drawn,
       'most of it is in one colour, the hit colour',
     ).toBeGreaterThan(0.4);
-    // The control: the opposite hue is not what an explosion is made of.
+    // The control: the opposite hue is not what an explosion is made of. A
+    // narrow window, since the amber crystals (hue 43) lie within 25 of the
+    // x1 hit colour's opposite (about 19).
     expect(
-      await pixels.hue(sparks.peak, (hitHue + 180) % 360, 25, region),
+      await pixels.hue(sparks.peak, (hitHue + 180) % 360, 12, region),
     ).toBeLessThan(sparksInHue * 0.2);
   });
 

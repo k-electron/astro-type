@@ -767,7 +767,7 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         difficulty: 'Advanced',
         focusFingers: 'Unbroken Rhythm Flow',
         techniqueTip:
-          'Avoid sprinting and pausing. A steady, unhurried rhythm achieves higher final WPM and near-perfect accuracy.',
+          'Avoid sprinting and pausing. A steady, unhurried rhythm achieves higher final WPM and near-flawless accuracy.',
         starThresholds: {
           twoStarWpm: 20,
           threeStarWpm: 27,
@@ -1229,7 +1229,7 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         title: 'Cosmic Grandmaster Trial',
         subtitle: 'The Ultimate Touch Typing Certification',
         description:
-          'The final certification of AstroType Academy. Perfect technique across prose, numbers, and symbols with zero looking down.',
+          'The final certification of AstroType Academy. Flawless technique across prose, numbers, and symbols with zero looking down.',
         targetKeys: [
           'a',
           'b',
@@ -1278,7 +1278,7 @@ const SECTOR_DEFINITIONS: SectorDefinition[] = [
         difficulty: 'Expert',
         focusFingers: 'Supreme 10-Finger Touch Typing Fluency',
         techniqueTip:
-          'You have mastered the complete keyboard. Flawless finger selection, perfect posture, and cosmic speed.',
+          'You have mastered the complete keyboard. Flawless finger selection, steady posture, and cosmic speed.',
         starThresholds: {
           twoStarWpm: 25,
           threeStarWpm: 35,

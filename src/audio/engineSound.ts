@@ -11,7 +11,13 @@ const CHIME_AT_MS = [300, 700, 1100] as const;
 const PLAYING: {
   [Type in Cue['type']]: (cue: Extract<Cue, { type: Type }>) => void;
 } = {
-  hit: (cue) => soundEngine.playLaneHit(cue.lane, cue.grade, cue.space),
+  hit: (cue) =>
+    soundEngine.playLaneHit(
+      cue.lane,
+      cue.kind === 'clean',
+      cue.kind !== 'letter',
+    ),
+  chime: (cue) => soundEngine.playStarChime(cue.tier),
   miss: () => soundEngine.playMiss(),
   ignition: () => soundEngine.playOverdriveIgnition(),
   cleared: () => soundEngine.playStageCleared(),

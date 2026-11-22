@@ -328,6 +328,131 @@ test('a hit explodes the Drone in its own lane, and the explosion plays out and 
   expect(await pixels.changed(peak, settled, lane)).toBeGreaterThan(3000);
 });
 
+/**
+ * The two strips at the sides of the deck, from just above the keyboard
+ * upwards, well away from the middle where the Drones wait, the lasers run and
+ * the popups and banners are drawn. Only the debris and sparks of a big enough
+ * explosion reach them.
+ */
+async function sideStrips(page: Page, deck: Rect): Promise<Rect[]> {
+  const keyboardTop = (await box(keycap(page, '1'))).y;
+  const centre = deck.x + deck.width / 2;
+  const height = 280;
+  return [centre - 480, centre + 240].map((x) =>
+    inDeck(deck, { x, y: keyboardTop - 12 - height, width: 240, height }),
+  );
+}
+
+/**
+ * How far an explosion reaches: the most pixels changed in the side strips,
+ * from the quiet deck before the hit, over the frames from 100 to 400 ms after
+ * it. Gives the clock the frames, so it leaves the deck 400 ms on.
+ */
+async function explosionReach(
+  page: Page,
+  pixels: Pixels,
+  deck: Rect,
+  strips: Rect[],
+  before: number,
+): Promise<number> {
+  let most = 0;
+  for (let frame = 0; frame < 4; frame++) {
+    await page.clock.runFor(100);
+    const now = await look(page, deck, pixels);
+    let changed = 0;
+    for (const strip of strips) {
+      changed += await pixels.changed(before, now, strip);
+    }
+    most = Math.max(most, changed);
+  }
+  return most;
+}
+
+test('the hit that finishes a clean word sets off a bigger explosion than a letter hit', async ({
+  page,
+  pixels,
+}) => {
+  // "b" and "n" are letter hits (their word is not finished). The space after
+  // them finishes the clean word "bn". Their Drones all fall near the middle of
+  // the deck, so the same side strips see how far each explosion reaches. "mv"
+  // keeps the Run going.
+  await launchWithLeadDroneSettled(page, 'bn mv');
+  const deck = await deckArea(page);
+  const strips = await sideStrips(page, deck);
+
+  const quietBeforeLetter = await look(page, deck, pixels);
+  await page.keyboard.press('b');
+  const letter = await explosionReach(
+    page,
+    pixels,
+    deck,
+    strips,
+    quietBeforeLetter,
+  );
+
+  // The letter's explosion is long over, and the next Drone has settled. A
+  // second letter, then the space.
+  await page.clock.runFor(3500);
+  await page.keyboard.press('n');
+  await page.clock.runFor(3500);
+  const quietBeforeClean = await look(page, deck, pixels);
+  await page.keyboard.press('Space');
+  const clean = await explosionReach(
+    page,
+    pixels,
+    deck,
+    strips,
+    quietBeforeClean,
+  );
+
+  // The letter's debris stays near its Drone; the clean word's flies out to
+  // the sides.
+  expect(
+    clean,
+    'the clean word explodes bigger than the letter',
+  ).toBeGreaterThan(Math.max(1000, letter * 3));
+});
+
+test('a milestone is announced by a banner across the upper deck at Streak 10, and not at Streak 9', async ({
+  page,
+  pixels,
+}) => {
+  // Sixteen different letters: no "x" or "z" (a Miss's keys), and no space, so
+  // no clean-word banner but the milestone's.
+  const text = 'abcdefghijklmnop';
+  await launchWithLeadDroneSettled(page, text);
+  const deck = await deckArea(page);
+  // The banners sit in the upper part of the deck, clear of the keyboard and
+  // the text prompt: the top third.
+  const band: Rect = { x: 0, y: 0, width: deck.width, height: deck.height / 3 };
+
+  /**
+   * What a hit leaves in the band that is gone five seconds later: the deck
+   * 850 ms after the hit, once the Drones have slid into their places and the
+   * explosion is down to a few sparks, against the deck long after. A banner
+   * is the only thing there that is not. (850 ms assumes the banner lasts
+   * about a second, a starting value the owner may tune: if the banner changes
+   * length, move the sample with it.)
+   */
+  async function leftInBandBy(key: string): Promise<number> {
+    await page.keyboard.press(key);
+    await page.clock.runFor(850);
+    const shown = await look(page, deck, pixels);
+    await page.clock.runFor(5000);
+    const gone = await look(page, deck, pixels);
+    return pixels.changed(shown, gone, band);
+  }
+
+  for (const key of text.slice(0, 8)) await page.keyboard.press(key);
+  await page.clock.runFor(2500);
+  const ninth = await leftInBandBy(text[8]);
+  const tenth = await leftInBandBy(text[9]);
+
+  // Streak 10 draws a large banner in the band; Streak 9 draws nothing there.
+  expect(tenth, 'Streak 10 has a banner').toBeGreaterThan(1500);
+  expect(ninth, 'Streak 9 has none').toBeLessThan(tenth / 2.5);
+});
+
 test('a symbol that needs Shift is a target like any other: the ship and the guidance beam wait under its base key, and a hit explodes its Drone in that lane', async ({
   page,
   pixels,

@@ -21,7 +21,7 @@ import { DroneView } from './DroneView';
 import type { DroneMotion } from './droneMotion';
 import { makeText } from './draw';
 import { HandView, type HandState } from './HandView';
-import { hitPopupColor } from './hitPopups';
+import { hitFeedback } from './hitPopups';
 import { KeyView, keycapLabel } from './KeyView';
 import { ShipView } from './ShipView';
 import { GlowSprite, sweepBoxGlows } from './textures';
@@ -321,13 +321,17 @@ export class DeckScene {
         state.profile.cosmetics.trail.equipped,
         this.hitsFired++,
       );
-      const grade = judgement.grade;
-      const hitColor = hitPopupColor({
-        grade,
-        isSpace,
-        overdrive: judgement.overdrive,
-      });
+      const feedback = hitFeedback(judgement);
       this.ship.fire(false, 0);
+      if (feedback.banner) {
+        // Up in the deck, clear of the keyboard and the text prompt.
+        this.effects.banner(
+          feedback.banner.label,
+          feedback.banner.color,
+          layout.width / 2,
+          layout.deckY * 0.45,
+        );
+      }
       this.effects.fireHit({
         x: rect.cx,
         y: topY,
@@ -335,13 +339,12 @@ export class DeckScene {
         h: rect.h,
         originY,
         isSpace,
-        grade,
-        points: judgement.points,
-        overdrive: judgement.overdrive,
+        big: feedback.big,
+        label: feedback.label,
         display: rect.spec.display,
         laneColor,
         laserColor,
-        hitColor,
+        hitColor: feedback.color,
         burst: state.profile.cosmetics.burst.equipped,
         hull: state.profile.cosmetics.hull.equipped,
       });

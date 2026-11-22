@@ -358,7 +358,7 @@ test('the text prompt keeps the current character in view through a long text at
   page,
 }) => {
   await page.setViewportSize(SMALL_LAPTOP_WINDOW);
-  // The clock is stopped: every key is a Good, and the keys cost no drawing.
+  // The clock is stopped: no Drone moves, and the keys cost no drawing.
   await launchOnStoppedClock(page, LONG_TEXT);
   const size = `${SMALL_LAPTOP_WINDOW.width}x${SMALL_LAPTOP_WINDOW.height}`;
 

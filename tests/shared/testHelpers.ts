@@ -29,7 +29,8 @@ export const WRONG_KEY = 'x';
  * Steps (1/60 s each) that are enough for the lead Drone to reach the Strike Line
  * from wherever it starts, at the Drone speed every Run uses (`DRONE_SPEED`:
  * the lead Drone falls `leadStep` a step, and the Drones behind it close in on
- * their slots). Pressing after this many steps is always a Perfect.
+ * their slots). A key pressed after this many steps finds its Drone waiting
+ * on the line.
  */
 const STEPS_TO_REACH_LINE = 30;
 
@@ -68,6 +69,26 @@ export function startFreeFlight(game: Game, text: string): void {
   game.send({ type: 'LAUNCH_FREE_FLIGHT', text });
 }
 
+/**
+ * A Free Flight text of one letter and no spaces. A word finishes on the space
+ * after it, or on the last character, so a Run of this text scores only each
+ * hit's own points until its last character: use it, and stop short of the end,
+ * to test the per-hit scoring without any clean-word bonus.
+ */
+export const FLAT_TEXT = 'f'.repeat(120);
+
+/** A new game over a fresh Save, with a Free Flight of `FLAT_TEXT` just started. */
+export function startFlatRun(): Game {
+  const game = newGame();
+  startFreeFlight(game, FLAT_TEXT);
+  return game;
+}
+
+/** Hit the next `count` characters of a `FLAT_TEXT` Run, each after the lead Drone has reached the Strike Line. */
+export function hitFlat(game: Game, count: number): void {
+  typeText(game, FLAT_TEXT.slice(0, count));
+}
+
 /** A game over the seeded Save (a fresh Profile when left out), with Stage 1 started. */
 export function startedGame(seed: Record<string, unknown> = {}): Game {
   const game = newGame(seed);
@@ -80,8 +101,8 @@ export function targetKey(game: Game): string {
   return SAMPLE_TEXT[game.getState().run.currentCharIndex];
 }
 
-/** Press the target key `count` times, each time after the lead Drone has reached the Strike Line. */
-export function hitPerfect(game: Game, count: number): void {
+/** Hit the target key `count` times, each time after the lead Drone has reached the Strike Line. */
+export function hit(game: Game, count: number): void {
   for (let i = 0; i < count; i++) {
     game.step(STEPS_TO_REACH_LINE);
     game.pressKey(targetKey(game));
@@ -93,8 +114,8 @@ export function miss(game: Game, times = 1): void {
 }
 
 /**
- * Clear Stage 1 by typing the whole sample text with every correct key a Perfect,
- * so the Run takes exactly `seconds` of Run Time (at least 38 s: the 76 waits
+ * Clear Stage 1 by typing the whole sample text, every key after the lead Drone
+ * has reached the Strike Line, so the Run takes exactly `seconds` of Run Time (at least 38 s: the 76 waits
  * before the keys that follow the first take that long, and a smaller `seconds`
  * does not shorten them).
  *

@@ -114,7 +114,6 @@ Rules the game has today that conflict with the principles above. They stay unti
 
 | Today                                                                                                                                         | Conflicts with        |
 | :-------------------------------------------------------------------------------------------------------------------------------------------- | :-------------------- |
-| Judgements grade a hit Perfect, Great or Good by how close its Drone was to the Strike Line                                                   | P1                    |
 | Overdrive fills on every correct keystroke, not from steady Rhythm                                                                            | P1                    |
 | Drones fall at one speed and wait at the Strike Line, so Drone pressure isn't the Stage's target speed                                        | P1                    |
 | Every Stage is one fixed text, so practice can't target the player's weak keys and a replay can earn Stars on a text the player has memorised | P4, P10               |

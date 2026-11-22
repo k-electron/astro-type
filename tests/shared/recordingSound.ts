@@ -26,7 +26,9 @@ export interface RecordingSound {
 function nameOf(cue: Cue): string {
   switch (cue.type) {
     case 'hit':
-      return `hit:${cue.grade.toUpperCase()}`;
+      return `hit:${cue.kind.toUpperCase()}`;
+    case 'chime':
+      return `chime:${cue.tier}`;
     case 'stars':
       return `stars:${cue.count}`;
     default:

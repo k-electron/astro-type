@@ -99,7 +99,7 @@ export const AcademyHome: React.FC = () => {
             Action Deck
           </span>
           <p className="text-xs text-slate-400">
-            {`${FINGER_LANES.length} lanes of falling Drones, Perfect timing at the Strike Line, Multipliers and Overdrive.`}
+            {`${FINGER_LANES.length} lanes of falling Drones, clean words, Multipliers and Overdrive.`}
           </p>
         </div>
 

@@ -5,7 +5,7 @@ import { type PlayerEvent, RefusedMoveError, type Screen } from './game';
 import {
   clearStage,
   type Game,
-  hitPerfect,
+  hit,
   newGame,
   STAGE_ID,
   startedGame,
@@ -68,7 +68,7 @@ function play(game: Game, event: PlayerEvent): void {
 /** A Run on Stage 1 with five characters typed. */
 function runningGame(): Game {
   const game = startedGame();
-  hitPerfect(game, 5);
+  hit(game, 5);
   return game;
 }
 
@@ -576,7 +576,7 @@ describe('a pause keeps the Streak, Multiplier and Overdrive exactly as they wer
     for (const way of ways) {
       it(`${name} survive ${way.name}`, () => {
         const game = startedGame();
-        hitPerfect(game, hits);
+        hit(game, hits);
         const before = meters(game);
         expect(before.streak).toBe(hits);
         expect(before.multiplier).toBeGreaterThan(1);
@@ -596,7 +596,7 @@ describe('a pause keeps the Streak, Multiplier and Overdrive exactly as they wer
         if (game.getState().screen !== 'pause-menu') play(game, CLOSE);
         play(game, RESUME);
         expect(meters(game)).toEqual(before);
-        hitPerfect(game, 1);
+        hit(game, 1);
         expect(game.getState().run.currentStreak).toBe(hits + 1);
       });
     }

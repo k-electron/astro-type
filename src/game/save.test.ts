@@ -361,6 +361,9 @@ describe('a Save from before the game’s rules changed', () => {
     upgrades: { deflectorShields: 1, overdriveReactor: 2, precisionSensors: 3 },
   };
   const older: Array<[string, unknown]> = [
+    // Version 4 was the last Save whose high scores came from graded hits
+    // (#137): a score now means something else, so it starts fresh.
+    ['version 4', { ...save, version: 4 }],
     ['version 3, with its Upgrades', withUpgrades],
     ['version 3', { ...save, version: 3 }],
     // Version 2 was the Save before the Stars were honest (#134): its Stars
