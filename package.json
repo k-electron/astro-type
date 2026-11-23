@@ -18,6 +18,12 @@
     "smoke": "node scripts/smoke.mjs"
   },
   "dependencies": {
+    "@visx/axis": "4.0.0",
+    "@visx/curve": "4.0.0",
+    "@visx/group": "4.0.0",
+    "@visx/responsive": "4.0.0",
+    "@visx/scale": "4.0.0",
+    "@visx/shape": "4.0.0",
     "canvas-confetti": "^1.9.4",
     "lucide-react": "^1.76.0",
     "pixi.js": "^8.23.0",

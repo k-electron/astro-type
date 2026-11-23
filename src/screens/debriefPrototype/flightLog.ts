@@ -4,7 +4,7 @@
  * `runReport` would work out from a Flight log, plus a recorded-looking
  * sample Run so the Debrief can be judged on more than one short Stage.
  */
-import { beginnerPresses } from './beginner';
+import { beginnerPresses, type Press } from './beginner';
 import type { ProtoKeystroke } from '../../game/rules';
 
 export type { ProtoKeystroke };
@@ -241,6 +241,11 @@ function rhythmAfterHit(times: number[], previous: number): number {
  * and about 90% accuracy, the Run's numbers stamped as the rules would.
  */
 export function sampleFlightLog(): ProtoKeystroke[] {
+  return logFromPresses(SAMPLE_TEXT, beginnerPresses(SAMPLE_TEXT, 7));
+}
+
+/** A Flight log for `text` typed as `presses`, stamped as the rules would. */
+export function logFromPresses(text: string, presses: Press[]): ProtoKeystroke[] {
   const log: ProtoKeystroke[] = [];
   const firstStep = 600;
   let stepMs = firstStep * STEP_MS;
@@ -250,10 +255,10 @@ export function sampleFlightLog(): ProtoKeystroke[] {
   let first = true;
   const marks = new Set<number>();
   const times: number[] = [];
-  for (const press of beginnerPresses(SAMPLE_TEXT, 7)) {
+  for (const press of presses) {
     stepMs += press.afterMs;
     const step = Math.round(stepMs / STEP_MS);
-    const expected = SAMPLE_TEXT[index];
+    const expected = text[index];
     const hit = press.key === expected;
     if (hit) {
       streak += 1;

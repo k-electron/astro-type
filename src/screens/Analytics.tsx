@@ -25,6 +25,7 @@ import {
 import { Download, Upload, RotateCcw } from 'lucide-react';
 import { DISMISS_NOTICE_LABEL } from './dismissLabel';
 import { roundDown } from './roundDown';
+import { AnalyticsPrototype } from './analyticsPrototype/AnalyticsPrototype';
 
 /**
  * The keyboard's keys for the heatmap, row by row: the letters, the digits and
@@ -178,6 +179,8 @@ export const Analytics: React.FC = () => {
 
         {/* Content */}
         <div className="p-4 sm:p-6 overflow-y-auto flex flex-col gap-6">
+          {/* PROTOTYPE (#148) */}
+          <AnalyticsPrototype />
           {/* Lifetime Metric Cards */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="p-3.5 rounded-xl border border-slate-800 bg-slate-950/60">
