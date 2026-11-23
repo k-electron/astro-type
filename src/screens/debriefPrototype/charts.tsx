@@ -28,6 +28,10 @@ interface LineChartProps {
   yLabels?: [string, string];
   /** Show a seconds axis underneath. */
   xAxis?: boolean;
+  /** A vertical cursor at this x (seconds), or none. */
+  cursorX?: number | null;
+  /** Told the x (seconds) under the pointer, or null when it leaves. */
+  onHoverX?: (x: number | null) => void;
 }
 
 const W = 600;
@@ -42,6 +46,8 @@ export const LineChart: React.FC<LineChartProps> = ({
   guides = [],
   yLabels,
   xAxis,
+  cursorX = null,
+  onHoverX,
 }) => {
   const H = 100;
   const sx = (x: number) => (xMax <= 0 ? 0 : (x / xMax) * W);
@@ -57,7 +63,17 @@ export const LineChart: React.FC<LineChartProps> = ({
     return d;
   };
   return (
-    <div className="relative w-full" style={{ height }}>
+    // biome-ignore lint/a11y/noStaticElementInteractions: prototype
+    <div
+      className="relative w-full"
+      style={{ height, cursor: onHoverX ? 'crosshair' : undefined }}
+      onMouseMove={(e) => {
+        if (!onHoverX) return;
+        const box = e.currentTarget.getBoundingClientRect();
+        onHoverX(((e.clientX - box.left) / box.width) * xMax);
+      }}
+      onMouseLeave={() => onHoverX?.(null)}
+    >
       <svg
         viewBox={`0 0 ${W} ${H}`}
         preserveAspectRatio="none"
@@ -90,6 +106,17 @@ export const LineChart: React.FC<LineChartProps> = ({
             vectorEffect="non-scaling-stroke"
           />
         ))}
+        {cursorX !== null && (
+          <line
+            x1={sx(cursorX)}
+            x2={sx(cursorX)}
+            y1={0}
+            y2={H}
+            stroke="#f8fafc"
+            strokeWidth={1.5}
+            vectorEffect="non-scaling-stroke"
+          />
+        )}
         {lines.map((line, i) => {
           const d = pathOf(line);
           if (!d) return null;

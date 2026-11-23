@@ -35,6 +35,7 @@ export const VARIANTS = [
   { key: 'A', name: 'Flight recorder' },
   { key: 'B', name: 'Cockpit' },
   { key: 'C', name: 'Replay' },
+  { key: 'D', name: 'Together' },
 ] as const;
 export type VariantKey = (typeof VARIANTS)[number]['key'];
 

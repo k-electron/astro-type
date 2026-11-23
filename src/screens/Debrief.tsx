@@ -6,6 +6,7 @@ import {
 } from './debriefPrototype/PrototypeSwitcher';
 import { sampleFlightLog } from './debriefPrototype/flightLog';
 import { VariantA, VariantB, VariantC } from './debriefPrototype/variants';
+import { VariantD } from './debriefPrototype/variantD';
 import {
   Star,
   Sparkles,
@@ -280,7 +281,15 @@ export const Debrief: React.FC = () => {
   return (
     <OverlayShell
       variant="debrief"
-      width={variant === 'B' ? '5xl' : variant === 'C' ? '2xl' : 'xl'}
+      width={
+        variant === 'B'
+          ? '5xl'
+          : variant === 'D'
+            ? '4xl'
+            : variant === 'C'
+              ? '2xl'
+              : 'xl'
+      }
       labelledBy="debrief-title"
     >
       {/* Everything above the action buttons scrolls here when the window is too short */}
@@ -313,6 +322,7 @@ export const Debrief: React.FC = () => {
             {upper}
             {variant === 'A' && <VariantA log={log} />}
             {variant === 'C' && <VariantC log={log} />}
+            {variant === 'D' && <VariantD log={log} />}
             {technique}
           </>
         )}
