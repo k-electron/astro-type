@@ -4,8 +4,7 @@
  * `runReport` would work out from a Flight log, plus a recorded-looking
  * sample Run so the Debrief can be judged on more than one short Stage.
  */
-import { keyForCharacter } from '../../curriculum/curriculum';
-import { KEYBOARD_ROWS } from '../../curriculum/keyboardLayout';
+import { beginnerPresses } from './beginner';
 import type { ProtoKeystroke } from '../../game/rules';
 
 export type { ProtoKeystroke };
@@ -223,42 +222,6 @@ export function replayOf(log: ProtoKeystroke[]): CharReplay[] {
 export const SAMPLE_TEXT =
   'the quiet fox jumps over a lazy dog and the brave pilot flies past bright stars while the crew sings softly in the hold as the ship drifts home through the dark between two worlds';
 
-/** Tiny seeded random numbers, so the sample is the same on every reload. */
-function rng(seed: number) {
-  let s = seed >>> 0;
-  return () => {
-    s = (s * 1664525 + 1013904223) >>> 0;
-    return s / 2 ** 32;
-  };
-}
-
-const FINGER_MS: Record<string, number> = {
-  LEFT_INDEX: 300,
-  RIGHT_INDEX: 300,
-  LEFT_MIDDLE: 330,
-  RIGHT_MIDDLE: 330,
-  LEFT_RING: 390,
-  RIGHT_RING: 390,
-  LEFT_PINKY: 450,
-  RIGHT_PINKY: 450,
-  THUMB: 260,
-};
-
-/** The key next to this one on its row: a beginner's most common Mix-up. */
-function neighbourOf(c: string, r: () => number): string {
-  for (const row of KEYBOARD_ROWS) {
-    const keys = row.map((k) => k.key).filter((k) => /^[a-z]$/.test(k));
-    const i = keys.indexOf(c);
-    if (i >= 0) {
-      const j = r() < 0.5 ? i - 1 : i + 1;
-      return keys[Math.max(0, Math.min(keys.length - 1, j))] === c
-        ? keys[i === 0 ? 1 : i - 1]
-        : keys[Math.max(0, Math.min(keys.length - 1, j))];
-    }
-  }
-  return 'x';
-}
-
 /** The rules' Rhythm formula, copied for the sample only. */
 function rhythmAfterHit(times: number[], previous: number): number {
   if (times.length < 4) return previous;
@@ -274,72 +237,56 @@ function rhythmAfterHit(times: number[], previous: number): number {
 }
 
 /**
- * A made-up beginner Run of SAMPLE_TEXT at about 18 WPM: pinkies slower, two
- * keys (b and y) much slower, Misses mostly on a neighbouring key, a little
- * faster as the Run goes on, and one stop to think in the middle.
+ * A made-up beginner Run of SAMPLE_TEXT (see `beginner.ts`): about 12–15 WPM
+ * and about 90% accuracy, the Run's numbers stamped as the rules would.
  */
 export function sampleFlightLog(): ProtoKeystroke[] {
-  const r = rng(7);
   const log: ProtoKeystroke[] = [];
-  let step = 600;
+  const firstStep = 600;
+  let stepMs = firstStep * STEP_MS;
   let streak = 0;
   let rhythm = 100;
+  let index = 0;
+  let first = true;
   const marks = new Set<number>();
   const times: number[] = [];
-  const firstStep = step;
-  const slowKeys = new Set(['b', 'y', 'p']);
-  const shakyKeys = new Set(['e', 'o', 'w']);
-  const text = SAMPLE_TEXT;
-  const push = (
-    index: number,
-    expected: string,
-    pressed: string,
-    first: boolean,
-  ) => {
-    // As the rules count it: every character up to this one is reached.
-    const accuracy = ((index + 1 - marks.size) * 100) / (index + 1);
-    const typed = pressed === expected ? index + 1 : index;
+  for (const press of beginnerPresses(SAMPLE_TEXT, 7)) {
+    stepMs += press.afterMs;
+    const step = Math.round(stepMs / STEP_MS);
+    const expected = SAMPLE_TEXT[index];
+    const hit = press.key === expected;
+    if (hit) {
+      streak += 1;
+      times.push(step * STEP_MS);
+      if (times.length > 10) times.shift();
+      rhythm = rhythmAfterHit(times, rhythm);
+    } else {
+      marks.add(index);
+      streak = 0;
+      rhythm = Math.max(25, rhythm - 15);
+    }
+    const typed = hit ? index + 1 : index;
     const typingSteps = step - firstStep;
     log.push({
       index,
       expected,
-      pressed,
+      pressed: press.key,
       firstAttempt: first,
       step,
       streak,
-      accuracy,
+      accuracy: ((index + 1 - marks.size) * 100) / (index + 1),
       rhythm,
       wpm:
         typed < 2 || typingSteps <= 0
           ? null
           : ((typed - 1) * (3600 / 5)) / typingSteps,
     });
-  };
-  for (let i = 0; i < text.length; i++) {
-    const c = text[i];
-    const finger = keyForCharacter(c)?.finger ?? 'THUMB';
-    const progress = i / text.length;
-    let ms = FINGER_MS[finger] * (1.15 - 0.3 * progress);
-    if (slowKeys.has(c)) ms *= 2.1;
-    if (i > 0 && text[i - 1] === ' ') ms *= 1.35; // a word's first letter
-    ms *= 0.7 + r() * 0.6;
-    if (i === Math.floor(text.length * 0.55)) ms += 2600; // stopped to think
-    step += Math.max(1, Math.round(ms / STEP_MS));
-    const missChance = shakyKeys.has(c) ? 0.22 : c === ' ' ? 0.01 : 0.045;
-    let first = true;
-    while (r() < (first ? missChance : 0.15) && c !== ' ') {
-      marks.add(i);
-      streak = 0;
-      rhythm = Math.max(25, rhythm - 15);
-      push(i, c, neighbourOf(c, r), first);
+    if (hit) {
+      index += 1;
+      first = true;
+    } else {
       first = false;
-      step += Math.round((450 + r() * 400) / STEP_MS);
     }
-    streak += 1;
-    times.push(step * STEP_MS);
-    if (times.length > 10) times.shift();
-    rhythm = rhythmAfterHit(times, rhythm);
-    push(i, c, c, first);
   }
   return log;
 }
