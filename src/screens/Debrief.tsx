@@ -1,5 +1,11 @@
 import type React from 'react';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
+import {
+  PrototypeSwitcher,
+  usePrototypeParams,
+} from './debriefPrototype/PrototypeSwitcher';
+import { sampleFlightLog } from './debriefPrototype/flightLog';
+import { VariantA, VariantB, VariantC } from './debriefPrototype/variants';
 import {
   Star,
   Sparkles,
@@ -48,6 +54,11 @@ export const Debrief: React.FC = () => {
     result: state.debrief,
     totalStars: state.profile.totalStars,
   }));
+  // PROTOTYPE (#147): the Run's Flight log, or the sample Run.
+  const flightLog = useGameState((state) => state.run.flightLog);
+  const { variant, data } = usePrototypeParams();
+  const sampleLog = useMemo(() => sampleFlightLog(), []);
+  const log = data === 'mine' ? flightLog : sampleLog;
   const hasUnlockedNextSector = result?.unlockedSector ?? false;
   const onReplay = () => send({ type: 'PRESS_REPLAY' });
   const onNextStage = () => send({ type: 'PRESS_NEXT_STAGE' });
@@ -92,8 +103,186 @@ export const Debrief: React.FC = () => {
   } = result;
   const band = rhythmBand(result.rhythm);
 
+  const upper = (
+    <>
+      {bars && (
+        <>
+          {/* Stars earned animation */}
+          <div className="flex items-center justify-center gap-3 mb-5">
+            {STAR_NUMBERS.map((starNum) => {
+              const isEarned = starNum <= starsEarned;
+              return (
+                <div
+                  key={starNum}
+                  className={`p-3 rounded-2xl border transition-all transform ${
+                    isEarned
+                      ? 'border-amber-400/80 bg-amber-500/20 scale-110 shadow-[0_0_20px_rgba(245,158,11,0.5)]'
+                      : 'border-slate-800 bg-slate-950/60 opacity-40'
+                  }`}
+                >
+                  <Star
+                    className={`w-8 h-8 sm:w-10 sm:h-10 ${
+                      isEarned
+                        ? 'fill-amber-400 text-amber-400'
+                        : 'text-slate-600 fill-slate-800'
+                    }`}
+                  />
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Sector Unlock Notification Banner */}
+          {hasUnlockedNextSector && (
+            <div className="w-full mb-5 p-3 rounded-xl border border-cyan-500/50 bg-cyan-950/40 text-cyan-200 text-xs font-mono flex items-center justify-center gap-2">
+              <Sparkles className="w-4 h-4 text-cyan-400 shrink-0" />
+              <span>{NEW_SECTOR_UNLOCKED}</span>
+            </div>
+          )}
+
+          {/* Auto-Save & Stars Collection Notification Banner */}
+          <div className="w-full mb-5 p-3.5 rounded-xl border border-emerald-500/40 bg-emerald-950/30 text-left flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-[0_0_20px_rgba(16,185,129,0.12)]">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-lg bg-emerald-500/20 border border-emerald-400/50 flex items-center justify-center shrink-0">
+                <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold font-mono uppercase tracking-wide text-emerald-300">
+                    Stars Collected & Auto-Saved
+                  </span>
+                  <span className="px-1.5 rounded text-[10px] font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                    Saved
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-300 mt-0.5">
+                  All stars, credits, and unlocked sectors are securely recorded
+                  in your starship log.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 sm:border-l sm:border-emerald-500/30 sm:pl-4 shrink-0">
+              <div className="text-left font-mono">
+                <span className="text-[10px] text-slate-400 uppercase block">
+                  Total Fleet Stars
+                </span>
+                <div className="flex items-center gap-1.5 text-amber-300 font-bold text-sm">
+                  <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                  <span>{totalStars} ★</span>
+                  {newStarsAwarded > 0 && (
+                    <span className="text-[10px] text-emerald-400 font-semibold">
+                      (+{newStarsAwarded} new)
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* The Star bars, worded as on the Galaxy Map */}
+          <div className="w-full bg-slate-950/60 border border-slate-800 rounded-xl p-3 mb-5 text-xs font-mono text-left space-y-1.5">
+            {bars.map((bar) => {
+              const achieved = starsEarned >= bar.star;
+              return (
+                <div
+                  key={bar.star}
+                  className="flex items-center justify-between text-slate-300"
+                >
+                  <span className={achieved ? 'text-amber-400 font-bold' : ''}>
+                    {starBarLabel(bar)}
+                  </span>
+                  <span
+                    className={
+                      achieved ? 'text-emerald-400 font-bold' : 'text-slate-500'
+                    }
+                  >
+                    {achieved ? BAR_ACHIEVED : BAR_INCOMPLETE}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
+
+      {/* Performance Metrics Grid */}
+      <div className="w-full grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+        <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800">
+          <span className="text-[10px] uppercase font-mono text-slate-500 block">
+            Score
+          </span>
+          <div className="flex items-center justify-center gap-1 font-mono font-bold text-white text-lg">
+            {score.toLocaleString()}
+          </div>
+          {isNewHighScore && (
+            <span className="text-[9px] font-mono text-amber-400 uppercase font-semibold">
+              New Best!
+            </span>
+          )}
+        </div>
+
+        <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800">
+          <span className="text-[10px] uppercase font-mono text-slate-500 block">
+            Speed
+          </span>
+          <span className="font-mono font-bold text-cyan-400 text-lg">
+            {roundDown(wpm)} <span className="text-xs text-slate-500">WPM</span>
+          </span>
+        </div>
+
+        <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800">
+          <span className="text-[10px] uppercase font-mono text-slate-500 block">
+            Accuracy
+          </span>
+          <span className="font-mono font-bold text-emerald-400 text-lg">
+            {roundDown(accuracy)}%
+          </span>
+        </div>
+
+        <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800">
+          <span className="text-[10px] uppercase font-mono text-slate-500 block">
+            Credits
+          </span>
+          <div className="flex items-center justify-center gap-1 font-mono font-bold text-amber-400 text-lg">
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>+{creditsEarned}</span>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+  const technique = (
+    <>
+      {/* Form & Rhythm Pedagogical Assessment Card */}
+      <div className="w-full bg-slate-950/70 border border-slate-800 rounded-xl p-3.5 mb-5 text-left">
+        <div className="flex items-center justify-between gap-2 mb-1.5">
+          <span className="text-[11px] font-mono uppercase font-bold text-cyan-400">
+            Touch-Typing Technique Assessment
+          </span>
+          <span
+            className={`text-[10px] font-mono px-2 py-0.5 rounded border ${RHYTHM_PILL[band]}`}
+          >
+            Rhythm: {result.rhythm}% ({band})
+          </span>
+        </div>
+        <p className="text-xs text-slate-300 leading-relaxed">
+          {accuracy >= 97
+            ? 'Flawless finger discipline! You struck each key with accurate finger placement without rushing. This deliberate muscle memory is the true foundation of touch typing.'
+            : accuracy >= 92
+              ? 'Solid rhythm and finger control. Keep your hands relaxed and resting lightly on the home anchor bumps (F and J). Speed will naturally follow.'
+              : 'Pacing advice: Slow down your stroke tempo! Touch typing is built on accurate finger selection, not raw speed. Practicing slowly with correct fingers prevents bad habits.'}
+        </p>
+      </div>
+    </>
+  );
+
   return (
-    <OverlayShell variant="debrief" width="xl" labelledBy="debrief-title">
+    <OverlayShell
+      variant="debrief"
+      width={variant === 'B' ? '5xl' : variant === 'C' ? '2xl' : 'xl'}
+      labelledBy="debrief-title"
+    >
       {/* Everything above the action buttons scrolls here when the window is too short */}
       <div className="flex-1 min-h-0 overflow-y-auto px-6 pt-6 pb-2.5 sm:px-8 sm:pt-8 flex flex-col items-center [&>*:last-child]:mb-0">
         {/* Stage Badge & Title */}
@@ -111,177 +300,22 @@ export const Debrief: React.FC = () => {
           {stage.subtitle}
         </p>
 
-        {bars && (
+        {variant === 'B' ? (
+          <div className="w-full grid lg:grid-cols-[1fr_1.15fr] gap-5 items-start">
+            <div className="flex flex-col items-center">
+              {upper}
+              {technique}
+            </div>
+            <VariantB log={log} />
+          </div>
+        ) : (
           <>
-            {/* Stars earned animation */}
-            <div className="flex items-center justify-center gap-3 mb-5">
-              {STAR_NUMBERS.map((starNum) => {
-                const isEarned = starNum <= starsEarned;
-                return (
-                  <div
-                    key={starNum}
-                    className={`p-3 rounded-2xl border transition-all transform ${
-                      isEarned
-                        ? 'border-amber-400/80 bg-amber-500/20 scale-110 shadow-[0_0_20px_rgba(245,158,11,0.5)]'
-                        : 'border-slate-800 bg-slate-950/60 opacity-40'
-                    }`}
-                  >
-                    <Star
-                      className={`w-8 h-8 sm:w-10 sm:h-10 ${
-                        isEarned
-                          ? 'fill-amber-400 text-amber-400'
-                          : 'text-slate-600 fill-slate-800'
-                      }`}
-                    />
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Sector Unlock Notification Banner */}
-            {hasUnlockedNextSector && (
-              <div className="w-full mb-5 p-3 rounded-xl border border-cyan-500/50 bg-cyan-950/40 text-cyan-200 text-xs font-mono flex items-center justify-center gap-2">
-                <Sparkles className="w-4 h-4 text-cyan-400 shrink-0" />
-                <span>{NEW_SECTOR_UNLOCKED}</span>
-              </div>
-            )}
-
-            {/* Auto-Save & Stars Collection Notification Banner */}
-            <div className="w-full mb-5 p-3.5 rounded-xl border border-emerald-500/40 bg-emerald-950/30 text-left flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-[0_0_20px_rgba(16,185,129,0.12)]">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-emerald-500/20 border border-emerald-400/50 flex items-center justify-center shrink-0">
-                  <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold font-mono uppercase tracking-wide text-emerald-300">
-                      Stars Collected & Auto-Saved
-                    </span>
-                    <span className="px-1.5 rounded text-[10px] font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
-                      Saved
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-slate-300 mt-0.5">
-                    All stars, credits, and unlocked sectors are securely
-                    recorded in your starship log.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3 sm:border-l sm:border-emerald-500/30 sm:pl-4 shrink-0">
-                <div className="text-left font-mono">
-                  <span className="text-[10px] text-slate-400 uppercase block">
-                    Total Fleet Stars
-                  </span>
-                  <div className="flex items-center gap-1.5 text-amber-300 font-bold text-sm">
-                    <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                    <span>{totalStars} ★</span>
-                    {newStarsAwarded > 0 && (
-                      <span className="text-[10px] text-emerald-400 font-semibold">
-                        (+{newStarsAwarded} new)
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* The Star bars, worded as on the Galaxy Map */}
-            <div className="w-full bg-slate-950/60 border border-slate-800 rounded-xl p-3 mb-5 text-xs font-mono text-left space-y-1.5">
-              {bars.map((bar) => {
-                const achieved = starsEarned >= bar.star;
-                return (
-                  <div
-                    key={bar.star}
-                    className="flex items-center justify-between text-slate-300"
-                  >
-                    <span
-                      className={achieved ? 'text-amber-400 font-bold' : ''}
-                    >
-                      {starBarLabel(bar)}
-                    </span>
-                    <span
-                      className={
-                        achieved
-                          ? 'text-emerald-400 font-bold'
-                          : 'text-slate-500'
-                      }
-                    >
-                      {achieved ? BAR_ACHIEVED : BAR_INCOMPLETE}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
+            {upper}
+            {variant === 'A' && <VariantA log={log} />}
+            {variant === 'C' && <VariantC log={log} />}
+            {technique}
           </>
         )}
-
-        {/* Performance Metrics Grid */}
-        <div className="w-full grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-          <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800">
-            <span className="text-[10px] uppercase font-mono text-slate-500 block">
-              Score
-            </span>
-            <div className="flex items-center justify-center gap-1 font-mono font-bold text-white text-lg">
-              {score.toLocaleString()}
-            </div>
-            {isNewHighScore && (
-              <span className="text-[9px] font-mono text-amber-400 uppercase font-semibold">
-                New Best!
-              </span>
-            )}
-          </div>
-
-          <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800">
-            <span className="text-[10px] uppercase font-mono text-slate-500 block">
-              Speed
-            </span>
-            <span className="font-mono font-bold text-cyan-400 text-lg">
-              {roundDown(wpm)}{' '}
-              <span className="text-xs text-slate-500">WPM</span>
-            </span>
-          </div>
-
-          <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800">
-            <span className="text-[10px] uppercase font-mono text-slate-500 block">
-              Accuracy
-            </span>
-            <span className="font-mono font-bold text-emerald-400 text-lg">
-              {roundDown(accuracy)}%
-            </span>
-          </div>
-
-          <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800">
-            <span className="text-[10px] uppercase font-mono text-slate-500 block">
-              Credits
-            </span>
-            <div className="flex items-center justify-center gap-1 font-mono font-bold text-amber-400 text-lg">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>+{creditsEarned}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Form & Rhythm Pedagogical Assessment Card */}
-        <div className="w-full bg-slate-950/70 border border-slate-800 rounded-xl p-3.5 mb-5 text-left">
-          <div className="flex items-center justify-between gap-2 mb-1.5">
-            <span className="text-[11px] font-mono uppercase font-bold text-cyan-400">
-              Touch-Typing Technique Assessment
-            </span>
-            <span
-              className={`text-[10px] font-mono px-2 py-0.5 rounded border ${RHYTHM_PILL[band]}`}
-            >
-              Rhythm: {result.rhythm}% ({band})
-            </span>
-          </div>
-          <p className="text-xs text-slate-300 leading-relaxed">
-            {accuracy >= 97
-              ? 'Flawless finger discipline! You struck each key with accurate finger placement without rushing. This deliberate muscle memory is the true foundation of touch typing.'
-              : accuracy >= 92
-                ? 'Solid rhythm and finger control. Keep your hands relaxed and resting lightly on the home anchor bumps (F and J). Speed will naturally follow.'
-                : 'Pacing advice: Slow down your stroke tempo! Touch typing is built on accurate finger selection, not raw speed. Practicing slowly with correct fingers prevents bad habits.'}
-          </p>
-        </div>
       </div>
 
       {/* Action Buttons: a footer that stays on screen */}
@@ -337,6 +371,7 @@ export const Debrief: React.FC = () => {
           </button>
         )}
       </div>
+      <PrototypeSwitcher mineCount={flightLog.length} />
     </OverlayShell>
   );
 };
