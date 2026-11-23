@@ -25,7 +25,10 @@ import {
 import { Download, Upload, RotateCcw } from 'lucide-react';
 import { DISMISS_NOTICE_LABEL } from './dismissLabel';
 import { roundDown } from './roundDown';
-import { AnalyticsPrototype } from './analyticsPrototype/AnalyticsPrototype';
+import {
+  AnalyticsPrototype,
+  useVariant,
+} from './analyticsPrototype/AnalyticsPrototype';
 
 /**
  * The keyboard's keys for the heatmap, row by row: the letters, the digits and
@@ -50,6 +53,9 @@ export const Analytics: React.FC = () => {
   const game = useGame();
   const { importBackup, wipeAchievements, resetProgress } = game;
   const profile = useGameState((state) => state.profile);
+  // PROTOTYPE (#148): version D drops what the new sections replace.
+  const [variant] = useVariant();
+  const together = variant === 'D';
   const [confirmMode, setConfirmMode] = useState<
     'NONE' | 'WIPE_ACHIEVEMENTS' | 'FULL_RESET'
   >('NONE');
@@ -181,216 +187,230 @@ export const Analytics: React.FC = () => {
         <div className="p-4 sm:p-6 overflow-y-auto flex flex-col gap-6">
           {/* PROTOTYPE (#148) */}
           <AnalyticsPrototype />
-          {/* Lifetime Metric Cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="p-3.5 rounded-xl border border-slate-800 bg-slate-950/60">
-              <span className="text-[10px] uppercase font-mono text-slate-500 block mb-1">
-                Highest Speed
-              </span>
-              <div className="flex items-baseline gap-1 font-mono">
-                <span className="text-2xl font-bold text-cyan-400 tabular-nums">
-                  {roundDown(highestWpmAllTime)}
-                </span>
-                <span className="text-xs text-slate-500">WPM</span>
-              </div>
-            </div>
-
-            <div className="p-3.5 rounded-xl border border-slate-800 bg-slate-950/60">
-              <span className="text-[10px] uppercase font-mono text-slate-500 block mb-1">
-                Lifetime Accuracy
-              </span>
-              <div className="flex items-baseline gap-1 font-mono">
-                <span className="text-2xl font-bold text-emerald-400 tabular-nums">
-                  {overallAccuracy ?? 100}%
-                </span>
-              </div>
-            </div>
-
-            <div className="p-3.5 rounded-xl border border-slate-800 bg-slate-950/60">
-              <span className="text-[10px] uppercase font-mono text-slate-500 block mb-1">
-                Words Typed
-              </span>
-              <div className="flex items-baseline gap-1 font-mono">
-                <span className="text-2xl font-bold text-white tabular-nums">
-                  {totalWordsTyped.toLocaleString()}
-                </span>
-              </div>
-            </div>
-
-            <div className="p-3.5 rounded-xl border border-slate-800 bg-slate-950/60">
-              <span className="text-[10px] uppercase font-mono text-slate-500 block mb-1">
-                Practice Time
-              </span>
-              <div className="flex items-baseline gap-1 font-mono">
-                <span className="text-2xl font-bold text-amber-400 tabular-nums">
-                  {timeFormatted}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Hand Balance Breakdown */}
-          <div className="p-4 rounded-xl border border-slate-800 bg-slate-950/60">
-            <h3 className="text-xs uppercase font-mono tracking-wider text-slate-400 mb-3">
-              Bilateral Hand Accuracy Balance
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <div className="flex justify-between text-xs font-mono text-slate-400 mb-1">
-                  <span>Left Hand (ASDF / QWER / ZXCV)</span>
-                  <span className="text-cyan-400 font-bold">{leftAcc}%</span>
+          {!together && (
+            <>
+              {/* Lifetime Metric Cards */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="p-3.5 rounded-xl border border-slate-800 bg-slate-950/60">
+                  <span className="text-[10px] uppercase font-mono text-slate-500 block mb-1">
+                    Highest Speed
+                  </span>
+                  <div className="flex items-baseline gap-1 font-mono">
+                    <span className="text-2xl font-bold text-cyan-400 tabular-nums">
+                      {roundDown(highestWpmAllTime)}
+                    </span>
+                    <span className="text-xs text-slate-500">WPM</span>
+                  </div>
                 </div>
-                <div className="h-2 rounded bg-slate-800 overflow-hidden">
-                  <div
-                    className="h-full bg-cyan-500"
-                    style={{ width: `${leftAcc}%` }}
-                  />
+
+                <div className="p-3.5 rounded-xl border border-slate-800 bg-slate-950/60">
+                  <span className="text-[10px] uppercase font-mono text-slate-500 block mb-1">
+                    Lifetime Accuracy
+                  </span>
+                  <div className="flex items-baseline gap-1 font-mono">
+                    <span className="text-2xl font-bold text-emerald-400 tabular-nums">
+                      {overallAccuracy ?? 100}%
+                    </span>
+                  </div>
+                </div>
+
+                <div className="p-3.5 rounded-xl border border-slate-800 bg-slate-950/60">
+                  <span className="text-[10px] uppercase font-mono text-slate-500 block mb-1">
+                    Words Typed
+                  </span>
+                  <div className="flex items-baseline gap-1 font-mono">
+                    <span className="text-2xl font-bold text-white tabular-nums">
+                      {totalWordsTyped.toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="p-3.5 rounded-xl border border-slate-800 bg-slate-950/60">
+                  <span className="text-[10px] uppercase font-mono text-slate-500 block mb-1">
+                    Practice Time
+                  </span>
+                  <div className="flex items-baseline gap-1 font-mono">
+                    <span className="text-2xl font-bold text-amber-400 tabular-nums">
+                      {timeFormatted}
+                    </span>
+                  </div>
                 </div>
               </div>
 
-              <div>
-                <div className="flex justify-between text-xs font-mono text-slate-400 mb-1">
-                  <span>Right Hand (JKL; / UIOP / NM,.)</span>
-                  <span className="text-amber-400 font-bold">{rightAcc}%</span>
-                </div>
-                <div className="h-2 rounded bg-slate-800 overflow-hidden">
-                  <div
-                    className="h-full bg-amber-500"
-                    style={{ width: `${rightAcc}%` }}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Interactive Keyboard Accuracy Heatmap */}
-          <div className="p-4 rounded-xl border border-slate-800 bg-slate-950/60">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-xs uppercase font-mono tracking-wider text-slate-400">
-                Key Accuracy Heatmap
-              </h3>
-              <div className="flex items-center gap-3 text-[11px] font-mono text-slate-400">
-                <span className="flex items-center gap-1">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />{' '}
-                  95%+
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="w-2.5 h-2.5 rounded-full bg-cyan-500" />{' '}
-                  88-94%
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />{' '}
-                  80-87%
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />{' '}
-                  &lt;80%
-                </span>
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-1.5 items-center select-none overflow-x-auto py-2">
-              {KEYBOARD_HEATMAP_ROWS.map((row) => (
-                <div key={row.join('')} className="flex gap-1.5">
-                  {row.map((k) => {
-                    const stats = keyAnalytics[k] ||
-                      keyAnalytics[k.toUpperCase()] || { hits: 0, misses: 0 };
-                    const total = stats.hits + stats.misses;
-                    const acc = shareOf(stats.hits, total);
-
-                    let bgClass =
-                      'bg-slate-900 border-slate-800 text-slate-500';
-                    if (acc !== null) {
-                      if (acc >= 95)
-                        bgClass =
-                          'bg-emerald-950/40 border-emerald-500/50 text-emerald-300';
-                      else if (acc >= 88)
-                        bgClass =
-                          'bg-cyan-950/40 border-cyan-500/50 text-cyan-300';
-                      else if (acc >= 80)
-                        bgClass =
-                          'bg-amber-950/40 border-amber-500/50 text-amber-300';
-                      else
-                        bgClass =
-                          'bg-rose-950/50 border-rose-500/60 text-rose-300 font-bold';
-                    }
-
-                    return (
+              {/* Hand Balance Breakdown */}
+              <div className="p-4 rounded-xl border border-slate-800 bg-slate-950/60">
+                <h3 className="text-xs uppercase font-mono tracking-wider text-slate-400 mb-3">
+                  Bilateral Hand Accuracy Balance
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <div className="flex justify-between text-xs font-mono text-slate-400 mb-1">
+                      <span>Left Hand (ASDF / QWER / ZXCV)</span>
+                      <span className="text-cyan-400 font-bold">
+                        {leftAcc}%
+                      </span>
+                    </div>
+                    <div className="h-2 rounded bg-slate-800 overflow-hidden">
                       <div
-                        key={k}
-                        title={
-                          acc !== null
-                            ? `${k.toUpperCase()}: ${acc}% (${stats.hits} hit / ${stats.misses} miss)`
-                            : `${k.toUpperCase()}: Not tested yet`
+                        className="h-full bg-cyan-500"
+                        style={{ width: `${leftAcc}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="flex justify-between text-xs font-mono text-slate-400 mb-1">
+                      <span>Right Hand (JKL; / UIOP / NM,.)</span>
+                      <span className="text-amber-400 font-bold">
+                        {rightAcc}%
+                      </span>
+                    </div>
+                    <div className="h-2 rounded bg-slate-800 overflow-hidden">
+                      <div
+                        className="h-full bg-amber-500"
+                        style={{ width: `${rightAcc}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Interactive Keyboard Accuracy Heatmap */}
+              <div className="p-4 rounded-xl border border-slate-800 bg-slate-950/60">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-xs uppercase font-mono tracking-wider text-slate-400">
+                    Key Accuracy Heatmap
+                  </h3>
+                  <div className="flex items-center gap-3 text-[11px] font-mono text-slate-400">
+                    <span className="flex items-center gap-1">
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />{' '}
+                      95%+
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <span className="w-2.5 h-2.5 rounded-full bg-cyan-500" />{' '}
+                      88-94%
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />{' '}
+                      80-87%
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />{' '}
+                      &lt;80%
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-1.5 items-center select-none overflow-x-auto py-2">
+                  {KEYBOARD_HEATMAP_ROWS.map((row) => (
+                    <div key={row.join('')} className="flex gap-1.5">
+                      {row.map((k) => {
+                        const stats = keyAnalytics[k] ||
+                          keyAnalytics[k.toUpperCase()] || {
+                            hits: 0,
+                            misses: 0,
+                          };
+                        const total = stats.hits + stats.misses;
+                        const acc = shareOf(stats.hits, total);
+
+                        let bgClass =
+                          'bg-slate-900 border-slate-800 text-slate-500';
+                        if (acc !== null) {
+                          if (acc >= 95)
+                            bgClass =
+                              'bg-emerald-950/40 border-emerald-500/50 text-emerald-300';
+                          else if (acc >= 88)
+                            bgClass =
+                              'bg-cyan-950/40 border-cyan-500/50 text-cyan-300';
+                          else if (acc >= 80)
+                            bgClass =
+                              'bg-amber-950/40 border-amber-500/50 text-amber-300';
+                          else
+                            bgClass =
+                              'bg-rose-950/50 border-rose-500/60 text-rose-300 font-bold';
                         }
-                        className={`w-8 h-8 sm:w-9 sm:h-9 rounded-md border flex flex-col items-center justify-center font-mono text-xs transition-colors ${bgClass}`}
-                      >
-                        <span className="font-bold uppercase text-[11px]">
-                          {k}
-                        </span>
-                        <span className="text-[9px] tabular-nums leading-none">
-                          {acc !== null ? `${acc}%` : '-'}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              ))}
-            </div>
-          </div>
 
-          {/* Trouble Keys & Pedagogical Tips */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="p-4 rounded-xl border border-slate-800 bg-slate-950/60">
-              <h3 className="text-xs uppercase font-mono tracking-wider text-rose-400 mb-2">
-                Struggling Reaches / High Error Rate
-              </h3>
-              {troubleKeys.length > 0 ? (
-                <div className="flex flex-col gap-2">
-                  {troubleKeys.map(([char, stats]) => {
-                    const total = stats.hits + stats.misses;
-                    const missRate = Math.round((stats.misses / total) * 100);
-                    const info = keyForCharacter(char);
-
-                    return (
-                      <div
-                        key={char}
-                        className="flex items-center justify-between p-2 rounded-lg bg-slate-900/80 border border-slate-800 text-xs font-mono"
-                      >
-                        <div className="flex items-center gap-2">
-                          <span className="px-2 py-0.5 rounded bg-rose-950 text-rose-300 font-bold border border-rose-900">
-                            {char === ' ' ? 'SPACE' : char.toUpperCase()}
-                          </span>
-                          {info && (
-                            <span className="flex items-center gap-1.5 text-slate-400">
-                              <span
-                                className="w-2 h-2 rounded-full inline-block shadow-sm"
-                                style={{
-                                  backgroundColor:
-                                    FINGER_COLOR_MAP[info.finger],
-                                }}
-                              />
-                              <span>
-                                {FINGER_DISPLAY_NAMES[info.finger] ||
-                                  info.finger}
-                              </span>
+                        return (
+                          <div
+                            key={k}
+                            title={
+                              acc !== null
+                                ? `${k.toUpperCase()}: ${acc}% (${stats.hits} hit / ${stats.misses} miss)`
+                                : `${k.toUpperCase()}: Not tested yet`
+                            }
+                            className={`w-8 h-8 sm:w-9 sm:h-9 rounded-md border flex flex-col items-center justify-center font-mono text-xs transition-colors ${bgClass}`}
+                          >
+                            <span className="font-bold uppercase text-[11px]">
+                              {k}
                             </span>
-                          )}
-                        </div>
-                        <span className="text-rose-400 font-bold">
-                          {missRate}% errors
-                        </span>
-                      </div>
-                    );
-                  })}
+                            <span className="text-[9px] tabular-nums leading-none">
+                              {acc !== null ? `${acc}%` : '-'}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ))}
                 </div>
-              ) : (
-                <p className="text-xs text-slate-400 py-3">
-                  No critical error trends detected. Your finger reaches have
-                  high consistency!
-                </p>
-              )}
-            </div>
+              </div>
+            </>
+          )}
+          {/* Trouble Keys & Pedagogical Tips */}
+          <div
+            className={`grid grid-cols-1 gap-4 ${together ? '' : 'md:grid-cols-2'}`}
+          >
+            {!together && (
+              <div className="p-4 rounded-xl border border-slate-800 bg-slate-950/60">
+                <h3 className="text-xs uppercase font-mono tracking-wider text-rose-400 mb-2">
+                  Struggling Reaches / High Error Rate
+                </h3>
+                {troubleKeys.length > 0 ? (
+                  <div className="flex flex-col gap-2">
+                    {troubleKeys.map(([char, stats]) => {
+                      const total = stats.hits + stats.misses;
+                      const missRate = Math.round((stats.misses / total) * 100);
+                      const info = keyForCharacter(char);
+
+                      return (
+                        <div
+                          key={char}
+                          className="flex items-center justify-between p-2 rounded-lg bg-slate-900/80 border border-slate-800 text-xs font-mono"
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className="px-2 py-0.5 rounded bg-rose-950 text-rose-300 font-bold border border-rose-900">
+                              {char === ' ' ? 'SPACE' : char.toUpperCase()}
+                            </span>
+                            {info && (
+                              <span className="flex items-center gap-1.5 text-slate-400">
+                                <span
+                                  className="w-2 h-2 rounded-full inline-block shadow-sm"
+                                  style={{
+                                    backgroundColor:
+                                      FINGER_COLOR_MAP[info.finger],
+                                  }}
+                                />
+                                <span>
+                                  {FINGER_DISPLAY_NAMES[info.finger] ||
+                                    info.finger}
+                                </span>
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-rose-400 font-bold">
+                            {missRate}% errors
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-400 py-3">
+                    No critical error trends detected. Your finger reaches have
+                    high consistency!
+                  </p>
+                )}
+              </div>
+            )}
 
             {/* Touch Typing Pedagogical Guidance */}
             <div className="p-4 rounded-xl border border-slate-800 bg-slate-950/60">

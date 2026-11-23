@@ -32,15 +32,16 @@ export const ANALYTICS_VARIANTS = [
   { key: 'A', name: 'Timeline' },
   { key: 'B', name: 'Keys first' },
   { key: 'C', name: 'Logbook' },
+  { key: 'D', name: 'Together' },
 ] as const;
 
-const card = 'bg-slate-950/60 border border-slate-800 rounded-xl p-4';
-const heading =
+export const card = 'bg-slate-950/60 border border-slate-800 rounded-xl p-4';
+export const heading =
   'text-[10px] uppercase font-mono tracking-wider text-slate-400 mb-2';
-const keyLabel = (k: string) => (k === ' ' ? 'Space' : k);
-const capLabel = (k: string) => (k === ' ' ? 'Space' : k.toUpperCase());
+export const keyLabel = (k: string) => (k === ' ' ? 'Space' : k);
+export const capLabel = (k: string) => (k === ' ' ? 'Space' : k.toUpperCase());
 
-const STRIPS: StripSpec[] = [
+export const STRIPS: StripSpec[] = [
   {
     label: 'Speed',
     color: '#22d3ee',
@@ -99,7 +100,7 @@ function stateAsOf(k: KeyState, asOf: number | null) {
   };
 }
 
-function speedTone(ms: number | null, mean: number) {
+export function speedTone(ms: number | null, mean: number) {
   if (ms === null) return 'bg-slate-800/60';
   const r = ms / mean;
   if (r < 0.8) return 'bg-emerald-500/35';
@@ -184,7 +185,7 @@ export const JourneyKeyboard: React.FC<{
 
 // ---- Shared panels -----------------------------------------------------------
 
-const COMMON_ENGLISH = [
+export const COMMON_ENGLISH = [
   'th',
   'he',
   'in',
@@ -197,7 +198,7 @@ const COMMON_ENGLISH = [
   'nd',
 ];
 
-const PairsPanel: React.FC<{ journey: Journey; filter?: string }> = ({
+export const PairsPanel: React.FC<{ journey: Journey; filter?: string }> = ({
   journey,
   filter,
 }) => {
@@ -259,7 +260,7 @@ const PairsPanel: React.FC<{ journey: Journey; filter?: string }> = ({
   );
 };
 
-const MixUpsPanel: React.FC<{ journey: Journey }> = ({ journey }) => (
+export const MixUpsPanel: React.FC<{ journey: Journey }> = ({ journey }) => (
   <div className={card}>
     <div className={heading}>Mix-ups · all time</div>
     <p className="text-[11px] text-slate-400 mb-2">
@@ -292,7 +293,7 @@ const MixUpsPanel: React.FC<{ journey: Journey }> = ({ journey }) => (
   </div>
 );
 
-const ShiftPanel: React.FC<{ journey: Journey }> = ({ journey }) => {
+export const ShiftPanel: React.FC<{ journey: Journey }> = ({ journey }) => {
   const { opposite, same, none } = journey.shift;
   const total = opposite + same + none;
   return (
@@ -337,7 +338,7 @@ const ShiftPanel: React.FC<{ journey: Journey }> = ({ journey }) => {
   );
 };
 
-const Headline: React.FC<{ journey: Journey }> = ({ journey }) => (
+export const Headline: React.FC<{ journey: Journey }> = ({ journey }) => (
   <p className="text-base sm:text-lg text-white font-display leading-snug">
     {journey.headline}
   </p>
@@ -678,7 +679,7 @@ export const AnalyticsC: React.FC<{ journey: Journey }> = ({ journey }) => {
   );
 };
 
-const Sparkline: React.FC<{ values: number[]; color: string }> = ({
+export const Sparkline: React.FC<{ values: number[]; color: string }> = ({
   values,
   color,
 }) => {

@@ -234,6 +234,8 @@ export interface DayPoint {
   runs: number;
   minutes: number;
   wpm: number | null;
+  /** Speed on letters only, from Clean hits: drills of numbers and symbols don't move it. */
+  letterWpm: number | null;
   accuracy: number | null;
   rhythm: number | null;
   opposite: number | null; // share of shifted characters with the opposite Shift
@@ -254,6 +256,8 @@ export interface KeyState {
   thenAccuracy: number | null;
   attempts: number;
   daily: { day: number; ms: number | null; accuracy: number | null }[];
+  /** The trend as drawn: each point is the last 5 days with at least 10 tries. */
+  smoothed: { day: number; ms: number | null; accuracy: number | null }[];
   mixUps: { pressed: string; count: number }[];
 }
 
@@ -301,6 +305,17 @@ export function journeyOf(runs: JourneyRun[]): Journey {
       played: todays.length > 0,
       runs: todays.length,
       minutes: todays.reduce((s, r) => s + r.runTimeS, 0) / 60,
+      letterWpm: (() => {
+        let n = 0;
+        let sum = 0;
+        for (const r of todays)
+          for (const [k, t] of r.keys)
+            if (/^[a-z]$/.test(k)) {
+              n += t.cleanN;
+              sum += t.cleanSumMs;
+            }
+        return n >= 50 ? 12000 / (sum / n) : null;
+      })(),
       wpm: todays.length
         ? todays.reduce((s, r) => s + r.wpm * r.stage.sampleText.length, 0) /
           chars
@@ -377,6 +392,21 @@ export function journeyOf(runs: JourneyRun[]): Journey {
         ? ((then.attempts - then.misses) * 100) / then.attempts
         : null,
       attempts: total.attempts,
+      smoothed: (() => {
+        const enough = ordered.filter(([, t]) => t.attempts >= 10);
+        return enough.map(([day], i) => {
+          const w = sum(
+            enough.slice(Math.max(0, i - 4), i + 1).map((e) => e[1]),
+          );
+          return {
+            day,
+            ms: ms(w),
+            accuracy: w.attempts
+              ? ((w.attempts - w.misses) * 100) / w.attempts
+              : null,
+          };
+        });
+      })(),
       daily: ordered.map(([day, t]) => ({
         day,
         ms: ms(t),

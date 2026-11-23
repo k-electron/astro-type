@@ -37,7 +37,13 @@ export interface Tuning {
 
 const ROWS = ['qwertyuiop', 'asdfghjkl;', 'zxcvbnm,./', '1234567890'];
 const SHIFTED = '!@#$%^&*()';
-const SHIFT_BASE: Record<string, string> = { ':': ';', '<': ',', '>': '.', '?': '/', '"': ';' };
+const SHIFT_BASE: Record<string, string> = {
+  ':': ';',
+  '<': ',',
+  '>': '.',
+  '?': '/',
+  '"': ';',
+};
 const FINGER_MS = [860, 760, 640, 560, 560, 560, 560, 640, 760, 860];
 const ROW_FACTOR = [1.2, 1.0, 1.3, 1.3];
 const THUMB_MS = 430;
@@ -96,7 +102,8 @@ export function beginnerPresses(
     let ms = c === ' ' || !p ? THUMB_MS : FINGER_MS[p.col] * ROW_FACTOR[p.row];
     if (i > 0 && text[i - 1] === ' ') ms *= 1.4;
     ms *= warmUp * pace * (keyFactor?.(c.toLowerCase()) ?? 1);
-    const needsShift = c !== c.toLowerCase() || SHIFTED.includes(c) || c in SHIFT_BASE;
+    const needsShift =
+      c !== c.toLowerCase() || SHIFTED.includes(c) || c in SHIFT_BASE;
     if (needsShift) ms *= 1.5;
     ms *= Math.exp(0.35 * gauss());
     if (r() < 0.05) ms += 1200 + r() * 1400;
@@ -104,8 +111,7 @@ export function beginnerPresses(
     const missChance =
       c === ' '
         ? 0.015
-        : (0.05 + (outer ? 0.03 : 0) + (p && p.row !== 1 ? 0.03 : 0)) *
-          miss;
+        : (0.05 + (outer ? 0.03 : 0) + (p && p.row !== 1 ? 0.03 : 0)) * miss;
     const shift: Press['shift'] = needsShift
       ? r() < shiftOpposite
         ? 'opposite'

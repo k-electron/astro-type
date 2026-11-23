@@ -12,6 +12,7 @@ import {
   AnalyticsC,
 } from './analyticsVariants';
 import { sampleJourney } from './journey';
+import { AnalyticsD } from './variantD';
 
 type Key = (typeof ANALYTICS_VARIANTS)[number]['key'];
 
@@ -20,7 +21,7 @@ const read = (): Key => {
   return ANALYTICS_VARIANTS.some((x) => x.key === v) ? (v as Key) : 'A';
 };
 
-function useVariant(): [Key, (k: Key) => void] {
+export function useVariant(): [Key, (k: Key) => void] {
   const [variant, setVariant] = useState<Key>(read);
   useEffect(() => {
     const update = () => setVariant(read());
@@ -62,9 +63,12 @@ export const AnalyticsPrototype: React.FC = () => {
       {variant === 'A' && <AnalyticsA journey={journey} />}
       {variant === 'B' && <AnalyticsB journey={journey} />}
       {variant === 'C' && <AnalyticsC journey={journey} />}
-      <div className="mt-2 pt-4 border-t border-dashed border-fuchsia-500/50 text-[11px] font-mono uppercase tracking-wider text-fuchsia-300">
-        Today's Analytics screen, unchanged below: what stays?
-      </div>
+      {variant === 'D' && <AnalyticsD journey={journey} />}
+      {variant !== 'D' && (
+        <div className="mt-2 pt-4 border-t border-dashed border-fuchsia-500/50 text-[11px] font-mono uppercase tracking-wider text-fuchsia-300">
+          Today's Analytics screen, unchanged below: what stays?
+        </div>
+      )}
       <div className="fixed bottom-4 left-4 z-[100] flex items-center gap-2 rounded-full bg-fuchsia-600 text-white shadow-2xl shadow-black/60 px-2 py-1.5 font-mono text-xs">
         <button
           type="button"

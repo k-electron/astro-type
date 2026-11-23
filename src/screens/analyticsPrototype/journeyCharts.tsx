@@ -60,6 +60,8 @@ export const JourneyStrips: React.FC<{
   cursorDay: number | null;
   onCursorDay: (day: number | null) => void;
   showSectorNames?: boolean;
+  /** Told the Sector (its index) of a band or a day the player clicks. */
+  onPickSector?: (sector: number) => void;
 }> = ({
   journey,
   strips,
@@ -67,6 +69,7 @@ export const JourneyStrips: React.FC<{
   cursorDay,
   onCursorDay,
   showSectorNames = true,
+  onPickSector,
 }) => {
   const { days } = journey;
   const lastDay = days.length - 1;
@@ -113,6 +116,8 @@ export const JourneyStrips: React.FC<{
                         fontSize={10}
                         fontFamily="ui-monospace, monospace"
                         fill={SECTOR_TINTS[r.sector]}
+                        style={{ cursor: onPickSector ? 'pointer' : undefined }}
+                        onClick={() => onPickSector?.(r.sector)}
                       >
                         {w > name.length * 6.2
                           ? name
@@ -285,6 +290,13 @@ export const JourneyStrips: React.FC<{
                   fill="transparent"
                   onMouseMove={onMove}
                   onMouseLeave={() => onCursorDay(null)}
+                  onClick={(e) => {
+                    if (!onPickSector) return;
+                    const box = e.currentTarget.getBoundingClientRect();
+                    const day = Math.round(x.invert(e.clientX - box.left));
+                    onPickSector(bands[Math.max(0, Math.min(lastDay, day))]);
+                  }}
+                  style={{ cursor: onPickSector ? 'pointer' : undefined }}
                 />
               </Group>
             </svg>

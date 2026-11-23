@@ -245,7 +245,10 @@ export function sampleFlightLog(): ProtoKeystroke[] {
 }
 
 /** A Flight log for `text` typed as `presses`, stamped as the rules would. */
-export function logFromPresses(text: string, presses: Press[]): ProtoKeystroke[] {
+export function logFromPresses(
+  text: string,
+  presses: Press[],
+): ProtoKeystroke[] {
   const log: ProtoKeystroke[] = [];
   const firstStep = 600;
   let stepMs = firstStep * STEP_MS;
