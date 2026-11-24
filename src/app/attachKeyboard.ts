@@ -1,3 +1,4 @@
+import type { ShiftSide } from '../analytics/keystroke';
 import type { Game } from '../game/game';
 import { closeTopEscLayer } from './escLayers';
 
@@ -13,6 +14,11 @@ import { closeTopEscLayer } from './escLayers';
  *   them, so Space can't scroll it and a stray Tab and Enter can't walk focus
  *   to a header button and click it, which would abandon the Run. Esc, and
  *   anything while paused or on a menu, is left to the page.
+ * - Shift: ShiftLeft and ShiftRight are tracked through keydown and keyup
+ *   (and cleared on blur), so each key goes to the game with the side it was
+ *   typed with. A keydown with no Shift flag is `none`, whatever was tracked
+ *   (which also clears a keyup the page never saw); one with the flag but no
+ *   Shift seen going down (it was held before the page had focus) is `unknown`.
  * - Esc: the top open layer closes, or else `PRESS_ESC` on every screen, never
  *   a keystroke. The machine decides what it means there (the Esc contract,
  *   below).
@@ -34,7 +40,26 @@ import { closeTopEscLayer } from './escLayers';
 export function attachKeyboard(game: Game, win: Window): () => void {
   const isRunning = () => game.getState().phase === 'running';
 
+  const shiftDown = { left: false, right: false };
+  const trackShift = (event: KeyboardEvent, down: boolean) => {
+    if (event.code === 'ShiftLeft') shiftDown.left = down;
+    if (event.code === 'ShiftRight') shiftDown.right = down;
+  };
+  const shiftSideOf = (event: KeyboardEvent): ShiftSide => {
+    if (!event.shiftKey) {
+      shiftDown.left = false;
+      shiftDown.right = false;
+      return 'none';
+    }
+    if (shiftDown.left && shiftDown.right) return 'both';
+    if (shiftDown.left) return 'left';
+    if (shiftDown.right) return 'right';
+    return 'unknown';
+  };
+
   const onKeyDown = (event: KeyboardEvent) => {
+    trackShift(event, true);
+
     if (event.key === 'Escape') {
       if (event.repeat) return;
       if (!closeTopEscLayer()) game.send({ type: 'PRESS_ESC' });
@@ -55,10 +80,12 @@ export function attachKeyboard(game: Game, win: Window): () => void {
       ctrlKey: event.ctrlKey,
       metaKey: event.metaKey,
       altKey: event.altKey,
+      shift: shiftSideOf(event),
     });
   };
 
   const onKeyUp = (event: KeyboardEvent) => {
+    trackShift(event, false);
     if (!isRunning()) return;
     game.releaseKey(event.key);
   };
@@ -66,6 +93,8 @@ export function attachKeyboard(game: Game, win: Window): () => void {
   // Leaving the page (another window, another tab) is a player event: the
   // machine pauses a running Run and ignores it anywhere else.
   const onBlur = () => {
+    shiftDown.left = false;
+    shiftDown.right = false;
     game.releaseKey();
     game.send({ type: 'LOST_FOCUS' });
   };

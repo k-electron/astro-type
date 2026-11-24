@@ -48,6 +48,53 @@
       }
     }
   },
+  "overrides": [
+    {
+      "includes": ["src/analytics/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [
+                  {
+                    "group": [
+                      "**/curriculum/*",
+                      "!**/curriculum/keyboardLayout",
+                      "!**/curriculum/keyboardLayout.ts"
+                    ],
+                    "message": "Analytics imports only the curriculum's key and finger table (keyboardLayout), never the Sectors and Stages (ADR-0004)."
+                  },
+                  {
+                    "group": [
+                      "**/game",
+                      "**/game/**",
+                      "**/app",
+                      "**/app/**",
+                      "**/screens",
+                      "**/screens/**",
+                      "**/deck",
+                      "**/deck/**",
+                      "**/audio",
+                      "**/audio/**",
+                      "react",
+                      "react/**",
+                      "react-dom",
+                      "react-dom/**",
+                      "pixi.js",
+                      "pixi.js/**"
+                    ],
+                    "message": "Analytics imports nothing from the game, React, PixiJS or sound (ADR-0004)."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
   "javascript": {
     "formatter": {
       "quoteStyle": "single",
