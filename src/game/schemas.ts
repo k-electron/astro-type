@@ -189,7 +189,7 @@ const readStoredCosmetics = (cosmetics: unknown): unknown =>
  * the Save module discards an older Save and refuses an older Backup, so no
  * Profile ever mixes old and new numbers, and no code reads an old format.
  */
-export const SAVE_VERSION = 7;
+export const SAVE_VERSION = 8;
 
 /**
  * The Save: the only definition of what a Profile is. Unknown fields are

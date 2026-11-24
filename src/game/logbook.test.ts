@@ -67,6 +67,22 @@ describe('a cleared Run', () => {
     expect(storage.saved?.logbook.sectors).toEqual(logbookOf(game).sectors);
   });
 
+  it('starts each key it typed in the Logbook, with its first day and its first days, and saves them', () => {
+    const { game, storage } = loadGame();
+    startFreeFlight(game, 'ab ba');
+
+    typeText(game, 'ab ba');
+
+    const { keys } = logbookOf(game);
+    expect(Object.keys(keys).sort()).toEqual([' ', 'a', 'b']);
+    expect(keys.a).toMatchObject({
+      firstDay: TEST_DAY,
+      typed: 2,
+      firstDays: { days: 1, firstAttempts: 2 },
+    });
+    expect(storage.saved?.logbook.keys).toEqual(keys);
+  });
+
   it('is a Free Flight with no Sector, and still in the Logbook', () => {
     const game = newGame();
     startFreeFlight(game, 'ab ba');

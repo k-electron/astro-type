@@ -1,7 +1,7 @@
 import type React from 'react';
 import { useEffect, useRef } from 'react';
 import type { SectorSummary } from '../analytics/sectors';
-import { keyLabel } from './debriefLabels';
+import { keyLabel, keycapLabel } from './debriefLabels';
 import {
   ENTRY_ACCURACY,
   ENTRY_KEYS,
@@ -15,6 +15,7 @@ import {
   LOGBOOK_HEADING,
   LOGBOOK_HINT,
   NO_KEYS_BROUGHT_IN,
+  openKeyStoryTitle,
 } from './journeyLabels';
 import { roundDown } from './roundDown';
 
@@ -39,6 +40,10 @@ interface SectorEntriesProps {
   starsOf: (sectorId: string) => EntryStars | null;
   /** The entry to ring and scroll to, or null. */
   jump: EntryJump | null;
+  /** The keycap whose story is open. */
+  selected: string | null;
+  /** A key was clicked: open its story. */
+  onPickKey: (keycap: string) => void;
 }
 
 const SPARK_WIDTH = 120;
@@ -68,13 +73,23 @@ const Sparkline: React.FC<{ speeds: readonly number[] }> = ({ speeds }) => {
       <title>
         {`${ENTRY_SPARKLINE}: ${Math.round(speeds[0])} to ${Math.round(speeds[speeds.length - 1])} WPM`}
       </title>
-      <polyline
-        points={points.join(' ')}
-        fill="none"
-        stroke="#22d3ee"
-        strokeWidth={1.5}
-        strokeLinejoin="round"
-      />
+      {speeds.length === 1 ? (
+        // One Run draws no line: a dot says where it is.
+        <circle
+          cx={SPARK_WIDTH / 2}
+          cy={SPARK_HEIGHT / 2}
+          r={2.5}
+          fill="#22d3ee"
+        />
+      ) : (
+        <polyline
+          points={points.join(' ')}
+          fill="none"
+          stroke="#22d3ee"
+          strokeWidth={1.5}
+          strokeLinejoin="round"
+        />
+      )}
     </svg>
   );
 };
@@ -90,6 +105,8 @@ export const SectorEntries: React.FC<SectorEntriesProps> = ({
   entries,
   starsOf,
   jump,
+  selected,
+  onPickKey,
 }) => {
   const elements = useRef(new Map<string, HTMLElement>());
   useEffect(() => {
@@ -175,12 +192,21 @@ export const SectorEntries: React.FC<SectorEntriesProps> = ({
                   </span>
                 ) : (
                   entry.keysBroughtIn.map((keycap) => (
-                    <span
+                    <button
+                      type="button"
                       key={keycap}
-                      className="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 text-[11px] font-mono text-slate-200"
+                      aria-label={`${keycapLabel(keycap)} key`}
+                      aria-pressed={selected === keycap}
+                      title={openKeyStoryTitle(keycap)}
+                      onClick={() => onPickKey(keycap)}
+                      className={`px-1.5 py-0.5 rounded bg-slate-800 border text-[11px] font-mono text-slate-200 hover:text-white cursor-pointer ${
+                        selected === keycap
+                          ? 'border-cyan-300'
+                          : 'border-slate-700'
+                      }`}
                     >
                       {keyLabel(keycap)}
-                    </span>
+                    </button>
                   ))
                 )}
               </div>

@@ -36,11 +36,12 @@ import {
 
 interface JourneyTimelineProps {
   report: JourneyReport;
-  /** The day under the pointer, or null. Page state: the entries and the keyboard will read it too. */
+  /** The day the cursor is on, or null for none. Page state: the keyboard and the key story read it too. */
   cursor: Day | null;
-  onCursor: (day: Day | null) => void;
-  /** A band or a day was clicked: the id of the Sector the player had reached by then. */
-  onSelectSector: (id: string) => void;
+  /** The pointer moved over a day. The cursor is held when it leaves a strip; the page lets it go when the pointer leaves the whole block. */
+  onCursor: (day: Day) => void;
+  /** A band or a day was clicked: the day, and the Sector the player had reached by then (null before any). */
+  onSelectDay: (day: Day, sectorId: string | null) => void;
 }
 
 const STRIP_HEIGHT = 70;
@@ -135,7 +136,7 @@ export const JourneyTimeline: React.FC<JourneyTimelineProps> = ({
   report,
   cursor,
   onCursor,
-  onSelectSector,
+  onSelectDay,
 }) => {
   const [hovered, setHovered] = useState<string | null>(null);
   if (report.rebuilding) {
@@ -257,11 +258,14 @@ export const JourneyTimeline: React.FC<JourneyTimelineProps> = ({
     .filter((at) => (days.length - 1 - at) % AXIS_GAP_DAYS === 0);
   const dayAt = (x: number) =>
     days[Math.min(days.length - 1, Math.max(0, Math.round(x)))];
-  const onPointer = (x: number | null) =>
-    onCursor(x === null ? null : dayAt(x).day);
+  // A pointer that leaves a strip (into the gap between two, say) leaves the
+  // cursor where it was: the page clears it when the pointer leaves the block.
+  const onPointer = (x: number | null) => {
+    if (x !== null) onCursor(dayAt(x).day);
+  };
   const onSelect = (x: number) => {
-    const sector = dayAt(x).sector;
-    if (sector) onSelectSector(sector.id);
+    const day = dayAt(x);
+    onSelectDay(day.day, day.sector?.id ?? null);
   };
 
   const heading = shown

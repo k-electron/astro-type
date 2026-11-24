@@ -7,8 +7,9 @@ import {
   nowLetterWpm,
 } from './journeySentence';
 import { type KeyboardOnDay, keyboardDays } from './keyboardDays';
-import { foldKeyFirsts, KeyFirstsSchema } from './keyFirsts';
-import { keycapsTyped, trickiestKey } from './keys';
+import { foldKeyHistory, KeyHistorySchema } from './keyHistory';
+import { type KeyStory, keyStories, mostTypedKey } from './keyStory';
+import { trickiestKey } from './keys';
 import type { FlightLog } from './keystroke';
 import {
   type Lifetime,
@@ -46,7 +47,7 @@ export const LogbookSchema = z.preprocess(
   z.object({
     runs: RunsSchema,
     lifetime: LifetimeSchema,
-    keys: KeyFirstsSchema,
+    keys: KeyHistorySchema,
     sectors: SectorsSchema,
   }),
 );
@@ -74,7 +75,7 @@ export function foldRun(
   const kept = recentRuns(logbook.runs, today);
   const faded = logbook.runs.filter((run) => !kept.includes(run));
   const runs = [...kept, summary];
-  const { keys, fresh } = foldKeyFirsts(logbook.keys, keycapsTyped(log), today);
+  const { keys, fresh } = foldKeyHistory(logbook.keys, summary, runs, today);
   return {
     runs,
     lifetime: foldLifetime(logbook.lifetime, summary, runs, faded, today),
@@ -106,6 +107,10 @@ export interface JourneyReport {
   timeline: TimelineDay[];
   /** The keyboard as it was on each of those days: the one under the timeline's cursor. */
   keyboards: Record<Day, KeyboardOnDay>;
+  /** Every typed key's story, by keycap: its first days, trend and Mix-ups. */
+  keyStories: Record<string, KeyStory>;
+  /** The keycap whose story opens first: the trickiest key, else the most typed one, or null before any key was typed. */
+  startKey: string | null;
   /** Every Sector flown, kept for good, in the order first reached. */
   sectors: SectorSummary[];
 }
@@ -123,6 +128,8 @@ export function journeyReport(logbook: Logbook, today: Day): JourneyReport {
   // still has its band.
   const sectors = sectorSummaries(logbook.sectors);
   const timeline = buildTimeline(runs, today, lifetime.firstDay, sectors);
+  const stories = keyStories(runs, logbook.keys, today);
+  const trickiest = rebuilding ? null : trickiestKey(keys);
   const keyboards = keyboardDays(
     runs,
     logbook.keys,
@@ -144,6 +151,8 @@ export function journeyReport(logbook: Logbook, today: Day): JourneyReport {
     keyboards: Object.fromEntries(
       timeline.map(({ day }, at) => [day, keyboards[at]]),
     ),
+    keyStories: stories,
+    startKey: trickiest?.character ?? mostTypedKey(stories),
     sectors,
   };
 }

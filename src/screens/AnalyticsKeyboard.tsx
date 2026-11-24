@@ -6,17 +6,28 @@ import { STAR_ACCURACY_BARS } from '../game/rules';
 import { Keyboard, type KeyView } from './Keyboard';
 import { keycapName, TINT } from './keycapLooks';
 import {
+  BACK_TO_LATEST,
   KEYBOARD_HEADING,
   KEYBOARD_HINT,
   KEYBOARD_REBUILDING,
   keyboardAsOf,
+  keyboardHeld,
   keyOnDayTitle,
+  VERY_SLOW_MARK,
 } from './journeyLabels';
 
 interface AnalyticsKeyboardProps {
   report: JourneyReport;
   /** The day under the timeline's cursor, or null for the latest day. */
   cursor: Day | null;
+  /** The day the player clicked and is holding, or null. */
+  held: Day | null;
+  /** Let go of the held day. */
+  onLetGo: () => void;
+  /** The keycap whose story is open. */
+  selected: string | null;
+  /** A key was clicked: open its story. */
+  onPick: (keycap: string) => void;
 }
 
 /** A key is often missed below the first Star bar: fewer than 90 of 100 tries right. */
@@ -31,6 +42,10 @@ const OFTEN_MISSED_BELOW = STAR_ACCURACY_BARS[0];
 export const AnalyticsKeyboard: React.FC<AnalyticsKeyboardProps> = ({
   report,
   cursor,
+  held,
+  onLetGo,
+  selected,
+  onPick,
 }) => {
   const latest = report.timeline.at(-1)?.day ?? null;
   const day = cursor !== null && cursor in report.keyboards ? cursor : latest;
@@ -60,10 +75,21 @@ export const AnalyticsKeyboard: React.FC<AnalyticsKeyboardProps> = ({
     return {
       title: keyOnDayTitle(spec.key, key, oftenMissed),
       'aria-label': keycapName(spec),
+      'aria-pressed': selected === spec.key,
+      onClick: () => onPick(spec.key),
+      // A key with no numbers lately is told by a dashed outline, a very slow
+      // one by a mark as well as its colour.
+      badge: key.pace === 'very slow' ? VERY_SLOW_MARK : undefined,
       className: [
-        'border-slate-600 text-white cursor-pointer',
+        'text-white cursor-pointer',
+        key.accuracy === null
+          ? 'border-dashed border-slate-400'
+          : 'border-slate-600',
         key.pace === null ? '' : TINT[key.pace],
         oftenMissed ? 'ring-2 ring-rose-500/80' : '',
+        selected === spec.key
+          ? 'outline-2 outline-cyan-300 outline-offset-2'
+          : '',
       ].join(' '),
     };
   };
@@ -78,8 +104,20 @@ export const AnalyticsKeyboard: React.FC<AnalyticsKeyboardProps> = ({
           {KEYBOARD_HEADING}
         </h3>
         {!report.rebuilding && day !== null && (
-          <span className="text-[11px] font-mono text-slate-300">
+          <span className="flex items-center gap-2 text-[11px] font-mono text-slate-300">
             {keyboardAsOf(day)}
+            {held !== null && (
+              <>
+                <span className="text-cyan-300">{keyboardHeld(held)}</span>
+                <button
+                  type="button"
+                  onClick={onLetGo}
+                  className="px-2 py-0.5 rounded-md border border-slate-700 bg-slate-800 text-[11px] text-slate-200 hover:text-white cursor-pointer"
+                >
+                  {BACK_TO_LATEST}
+                </button>
+              </>
+            )}
           </span>
         )}
       </div>

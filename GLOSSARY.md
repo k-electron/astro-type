@@ -118,6 +118,10 @@ _Avoid_: Run record, run log
 What the Logbook keeps for good of one Sector the player has flown: its first and last day, days, Runs and Run Time, speed and accuracy over its first and last three days, the keys first typed in it and a sparkline of its Run speeds. It is keyed by the Sector's id and name as its Runs copied them, in the order the player first reached the Sectors, and a Free Flight never touches one. Analytics shows each as an entry of the logbook.
 _Avoid_: Chapter
 
+**Key story**:
+What Analytics tells of one key when the player clicks it: its finger, the day it was first typed, how often it has been typed, its first days against now, a smoothed speed and accuracy trend and what it gets typed as instead. The Logbook keeps the first day, the count, the key's tally over the first three days it was typed on and its best for good; the rest is read from the last eight weeks. It opens on the trickiest key.
+_Avoid_: Key profile, key stats
+
 **Day**:
 The player's own local calendar date at the moment a Run is cleared, as the wall clock gives it. A Run that crosses midnight counts on the day it was cleared.
 _Avoid_: Session, 24 hours
@@ -193,7 +197,7 @@ The screen for spending Credits on Cosmetics.
 _Avoid_: Shop, upgrades screen
 
 **Analytics**:
-The screen showing the player's Journey: a plain sentence, lifetime totals, a timeline of the last eight weeks, a keyboard as it was on the day under the timeline's cursor, and a logbook entry for each Sector flown. It also holds Backup, Wipe Stars and Factory Reset.
+The screen showing the player's Journey: a plain sentence, lifetime totals, a timeline of the last eight weeks, a keyboard as it was on the day under the timeline's cursor, one key's story, and a logbook entry for each Sector flown. It also holds Backup, Wipe Stars and Factory Reset.
 _Avoid_: Telemetry, stats screen, Report
 
 **Free Flight**:
