@@ -208,6 +208,28 @@ export function leastAccurateKeys(
     .slice(0, length);
 }
 
+/** The key a player has most to work on now: how it ranked, and the finger that types it. */
+export interface TrickiestKey {
+  /** The keycap's own character ("a" for both "a" and "A"). */
+  character: string;
+  finger: FingerZone | null;
+}
+
+/**
+ * The trickiest key in the tallies, as the Debrief ranks a Run's keys: the
+ * least accurate key, and when none has repeated Misses to rank, the slowest.
+ * Capitals and their lower case count as one key, as on the keyboard. Null
+ * when nothing is typed often enough to tell.
+ */
+export function trickiestKey(
+  tallies: Record<string, KeyTally>,
+): TrickiestKey | null {
+  const byKeycap = keycapTallies(tallies);
+  const key =
+    leastAccurateKeys(byKeycap, 1)[0] ?? slowestKeys(byKeycap, 1)[0] ?? null;
+  return key === null ? null : { character: key.character, finger: key.finger };
+}
+
 /** The characters of a text that count as letters, for the speed the Journey follows. */
 export const isLetter = (character: string): boolean =>
   /^[a-z]$/i.test(character);
