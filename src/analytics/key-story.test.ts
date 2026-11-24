@@ -170,7 +170,7 @@ describe("a key's best", () => {
     expect(story.now?.accuracy).toBeCloseTo(87.5);
   });
 
-  it('is a smoothed value: one quick day among slow ones does not set it', () => {
+  it("is the smoothed value at the fold, not one day's own time", () => {
     // 1 day at 200 ms after 4 days at 400 ms: the last 5 days average 360 ms,
     // not the 200 of the quick day.
     const logbook = flown(dailyA([24, 24, 24, 24, 12]));
@@ -288,19 +288,20 @@ describe('what a key gets typed as instead', () => {
     ]);
   });
 
-  it('counts a capital with its key, and leaves out a capital typed without Shift', () => {
+  it('counts a capital with its key, and a capital typed without Shift as the Mix-up it is', () => {
     const run: Run = {
       day: TODAY,
       log: logOf('AAA', [
         ['s', 12],
         ['A', 12],
-        ['a', 12], // right key, no Shift: not another key
+        ['a', 12], // the right key with no Shift: a Miss, as the Debrief lists it
         ['A', 12],
         ['A', 12],
       ]),
     };
 
     expect(storyOf(flown([run]), 'a').mixUps).toEqual([
+      { pressed: 'a', count: 1 },
       { pressed: 's', count: 1 },
     ]);
   });
