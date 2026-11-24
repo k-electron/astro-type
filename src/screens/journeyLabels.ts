@@ -132,7 +132,7 @@ export const letterSpeedExplanation = (): string =>
 
 /** What the Accuracy strip says of itself on hover; `bars` are the Star accuracy bars. */
 export const dailyAccuracyExplanation = (bars: readonly number[]): string =>
-  `Accuracy is how many letters you got right first time on the day. The dashed lines are the Star bars: ${bars.join('%, ')}%.`;
+  `Accuracy is the share of characters you typed right first time on the day, the figure the Debrief gives each Run. The dashed lines are the Star bars: ${bars.join('%, ')}%.`;
 
 /** What the Rhythm strip says of itself on hover; `floors` are where the bands start. */
 export const dailyRhythmExplanation = (floors: {

@@ -38,7 +38,7 @@ export type JourneySentence =
       startingLetterWpm: number | null;
       /** Letter speed over the last 3 days played, or null without 50 timed letters. */
       nowLetterWpm: number | null;
-      /** The copied name of the furthest Sector reached in the last 8 weeks, or null (Free Flights only). */
+      /** The copied name of the furthest Sector ever reached (Sector summaries are kept for good), or null (Free Flights only). */
       furthestSector: string | null;
       /** The trickiest key over the last 8 weeks, or null when no key is typed often enough to tell. */
       trickiestKey: TrickiestKey | null;
