@@ -140,7 +140,9 @@ export const shiftHandExplanation = (): string =>
 
 export const KEYBOARD_HEADING = 'Your keys over time';
 export const KEYBOARD_HINT =
-  'Move along the timeline to see each key as it was on that day. Green is quick, amber is slow, a red ring is often missed and a dark key is not typed yet.';
+  'Move along the timeline to see each key as it was on that day. Green is quick, amber is slow, a red key is very slow, a red ring means often missed and a dark key is not typed yet.';
+/** What a key's tooltip adds when it is ringed red: it is missed often. */
+export const OFTEN_MISSED = 'often missed';
 export const KEYBOARD_REBUILDING =
   'Your keys are rebuilding. A few days of play will show how each key is going now.';
 
@@ -151,6 +153,7 @@ export const keyboardAsOf = (day: string): string => `As of ${dayText(day)}`;
 export function keyOnDayTitle(
   keycap: string,
   key: KeyOnDay | undefined,
+  oftenMissed = false,
 ): string {
   const name = keycapLabel(keycap);
   if (key === undefined) return `${name}: not typed yet`;
@@ -159,7 +162,8 @@ export function keyOnDayTitle(
   }
   const speed = key.ms === null ? '' : `${Math.round(key.ms)} ms a key, `;
   const days = key.days === 1 ? 'day' : `${key.days} days`;
-  return `${name}: ${speed}${roundDown(key.accuracy)}% right, over its last ${days} played`;
+  const missed = oftenMissed ? `, ${OFTEN_MISSED}` : '';
+  return `${name}: ${speed}${roundDown(key.accuracy)}% right, over its last ${days} played${missed}`;
 }
 
 // ---- The logbook: one entry for each Sector --------------------------------
