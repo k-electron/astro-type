@@ -36,9 +36,37 @@ _Avoid_: Tile, note, target
 The line just above the keyboard where the lead Drone comes to rest and waits to be typed.
 _Avoid_: Receptor, hit line, target line
 
+**Keystroke**:
+One key press the game judges in a Run: a hit or a Miss. A key that types nothing, or a held key's repeat, is not a Keystroke; Shift is part of the Keystroke it changes, not one of its own.
+_Avoid_: Keypress, input, stroke
+
 **Judgement**:
-The verdict on one keystroke: a hit for the right key, or a Miss for a wrong key.
+The verdict on one Keystroke: a hit for the right key, or a Miss for a wrong key.
 _Avoid_: Timing, timing feedback, rating, Perfect, Great, Good
+
+**First attempt**:
+The first Keystroke on a character of the text. Accuracy, and each key's accuracy, count First attempts only.
+_Avoid_: First try
+
+**Clean hit**:
+A First-attempt hit straight after a First-attempt hit on the character before. Only Clean hits time a key.
+_Avoid_: Clean keystroke
+
+**Opposite-hand Shift**:
+A Shift pressed with the other hand from the finger that types the key it changes.
+_Avoid_: Correct Shift, cross Shift
+
+**Mix-up**:
+A wrong key pressed for the expected one, named as the pair: "e typed as r".
+_Avoid_: Confusion, substitution, swap
+
+**Letter pair**:
+Two characters next to each other in the text. Its speed is the time between their Keystrokes.
+_Avoid_: Bigram, digraph
+
+**Flight log**:
+A Run's Keystrokes, kept only until its Debrief is left; it is never saved.
+_Avoid_: Run log, keystroke history
 
 **Clean word**:
 A word of the text, with the space that finishes it, typed with no Miss mark. Finishing one sets off the biggest explosion and pays a bonus.
@@ -75,8 +103,16 @@ _Avoid_: Cadence
 ### Progress
 
 **Profile**:
-Everything the game remembers about the player between visits: Stage progress, Stars, Credits, Cosmetics, settings and key stats.
+Everything the game remembers about the player between visits: Stage progress, Stars, Credits, Cosmetics, settings and the Logbook.
 _Avoid_: Account, player data, user
+
+**Logbook**:
+The player's typing, kept in the Profile: a summary of each cleared Run from the last eight weeks, plus lifetime totals, Sector summaries and each key's beginnings and best. It records how the player types, not their progress: Stars and unlocks stay outside it.
+_Avoid_: Key stats, telemetry, analytics data, typing record
+
+**Journey**:
+The player's whole history of play as Analytics shows it, by day played, Sector and Stage. Its detail covers the last eight weeks; older play survives only as Sector summaries and lifetime totals.
+_Avoid_: History, progress log
 
 **Save**:
 The Profile as stored in this browser.
@@ -149,7 +185,7 @@ The screen showing the player's lifetime totals, hand balance and per-key stats.
 _Avoid_: Telemetry, stats screen, Report
 
 **Free Flight**:
-The screen where the player sets up a Stage from their own text. A Free Flight is practice: it earns no Stars and leaves no record, and pays Credits for its score alone.
+The screen where the player sets up a Stage from their own text. A Free Flight is practice: it earns no Stars and leaves no Stage record, and pays Credits for its score alone. Its typing still goes into the Logbook.
 _Avoid_: Custom practice, free flight drill, custom flight
 
 **Debrief**:
