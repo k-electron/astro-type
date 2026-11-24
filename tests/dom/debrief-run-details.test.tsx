@@ -7,6 +7,9 @@ import {
   type TypesPresses,
 } from '../shared/beginnerTypist';
 import {
+  ACCURACY_STRIP,
+  accuracyExplanation,
+  inaccurateKeyLabel,
   KEYS_HEADING,
   LEAST_ACCURATE_KEYS_HEADING,
   litLettersCaption,
@@ -19,6 +22,10 @@ import {
   RUN_TEXT_HEADING,
   SLOW,
   SLOWEST_KEYS_HEADING,
+  slowKeyLabel,
+  STREAK_STRIP,
+  streakExplanation,
+  streakValue,
   workOnSentence,
 } from '../shared/screens';
 import { WRONG_KEY } from '../shared/testHelpers';
@@ -54,6 +61,14 @@ function flyWithRepeatedMisses(): Player {
   ]);
   return player;
 }
+
+/** The least accurate list's entry for "f", missed 2 of its 8 First attempts. */
+const F_MISSED = inaccurateKeyLabel({
+  character: 'f',
+  misses: 2,
+  firstAttempts: 8,
+  finger: 'LEFT_INDEX',
+});
 
 const card = () => within(debriefCard());
 const textOfRun = () => card().getByRole('region', { name: RUN_TEXT_HEADING });
@@ -138,11 +153,18 @@ describe('the keys and the lists on the Debrief', () => {
           debriefCard(),
       );
     expect(
-      list(SLOWEST_KEYS_HEADING).getByRole('button', { name: /^J \d+ ms$/ }),
+      list(SLOWEST_KEYS_HEADING).getByRole('button', {
+        name: slowKeyLabel({
+          character: 'j',
+          ms: 500,
+          cleanHits: 3,
+          finger: 'RIGHT_INDEX',
+        }),
+      }),
     ).toBeTruthy();
     expect(
       list(LEAST_ACCURATE_KEYS_HEADING).getByRole('button', {
-        name: 'F 2 of 8',
+        name: F_MISSED,
       }),
     ).toBeTruthy();
     expect(
@@ -168,12 +190,36 @@ describe('the keys and the lists on the Debrief', () => {
   });
 });
 
+describe('the lists name a capital and its lower case apart', () => {
+  it('so a Run that ranks both does not show two identical entries', () => {
+    const capital = { character: 'A', ms: 400, cleanHits: 3, finger: null };
+    const lower = { ...capital, character: 'a' };
+
+    expect(slowKeyLabel(capital)).not.toBe(slowKeyLabel(lower));
+    expect(
+      inaccurateKeyLabel({
+        character: 'A',
+        misses: 2,
+        firstAttempts: 3,
+        finger: null,
+      }),
+    ).not.toBe(
+      inaccurateKeyLabel({
+        character: 'a',
+        misses: 2,
+        firstAttempts: 3,
+        finger: null,
+      }),
+    );
+  });
+});
+
 describe('linking the keys to the text', () => {
   const entry = () =>
     within(
       card().getByRole('heading', { name: LEAST_ACCURATE_KEYS_HEADING })
         .parentElement ?? debriefCard(),
-    ).getByRole('button', { name: 'F 2 of 8' });
+    ).getByRole('button', { name: F_MISSED });
 
   it('hovering a list entry lights every letter of that key and says how many', () => {
     flyWithRepeatedMisses();
@@ -294,6 +340,69 @@ describe('the tooltip of a letter with no speed', () => {
     // The Run's first letter has no Clean-hit time.
     const first = within(textOfRun()).getAllByTitle(/^F: /)[0];
     expect(first.title).toContain(NO_SPEED_TO_SHOW);
+  });
+});
+
+/**
+ * The strips are drawn by a chart that needs layout, which a DOM has none of,
+ * so what is tested here is what they say: the value beside each strip and
+ * its explanation. How they draw, and the cursor on them, is checked by a
+ * person in a real browser.
+ */
+describe('the strips', () => {
+  /** Eight keys, right every time, 10 steps apart: the Streak is 1, 2, ... 8. */
+  const flyCleanly = () => {
+    const player = renderGame({ text: 'fjfjfjfj' });
+    player.type('fjfjfjfj', { stepsPerKey: 10 });
+    return player;
+  };
+  const strip = (name: string) => card().getByRole('region', { name });
+  const letterAt = (index: number) =>
+    within(textOfRun()).getAllByText(/^[fj]$/)[index];
+
+  it('read the Run at its end until a letter is hovered, and then at that letter', () => {
+    flyCleanly();
+    expect(within(strip(STREAK_STRIP)).getByText(streakValue(8))).toBeTruthy();
+    expect(letterAt(4).getAttribute('aria-current')).toBeNull();
+
+    fireEvent.mouseEnter(letterAt(4));
+
+    expect(within(strip(STREAK_STRIP)).getByText(streakValue(5))).toBeTruthy();
+    expect(letterAt(4).getAttribute('aria-current')).toBe('true');
+
+    fireEvent.mouseLeave(letterAt(4));
+
+    expect(within(strip(STREAK_STRIP)).getByText(streakValue(8))).toBeTruthy();
+    expect(letterAt(4).getAttribute('aria-current')).toBeNull();
+  });
+
+  it('explain themselves on hover, in words with the Run numbers and the game bars', () => {
+    flyCleanly();
+
+    fireEvent.mouseEnter(strip(STREAK_STRIP));
+
+    // The Multiplier steps are rule numbers: x2 at 10, x3 at 20, x4 at 30.
+    expect(
+      card().getByText(
+        streakExplanation({ seconds: null, value: 8 }, 8, [
+          { streak: 0, multiplier: 1 },
+          { streak: 10, multiplier: 2 },
+          { streak: 20, multiplier: 3 },
+          { streak: 30, multiplier: 4 },
+        ]),
+      ),
+    ).toBeTruthy();
+
+    fireEvent.mouseLeave(strip(STREAK_STRIP));
+    fireEvent.mouseEnter(strip(ACCURACY_STRIP));
+
+    // The Star accuracy bars are rule numbers: 90, 95 and 98%. Eight letters
+    // are too few to measure the last 20.
+    expect(
+      card().getByText(
+        accuracyExplanation({ seconds: null, value: null }, [90, 95, 98]),
+      ),
+    ).toBeTruthy();
   });
 });
 

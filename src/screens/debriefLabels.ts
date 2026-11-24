@@ -7,6 +7,9 @@ import {
   stepsToMs,
 } from '../analytics/keys';
 import type { LetterReport } from '../analytics/letters';
+import { ROLLING_HITS, ROLLING_LETTERS } from '../analytics/strips';
+import { roundDown } from './roundDown';
+import { NO_SPEED } from './hudLabels';
 import type { MixUp } from '../analytics/mixUps';
 import type { WorkOn } from '../analytics/workOn';
 
@@ -133,13 +136,13 @@ export const NO_SLOW_KEYS = 'Too few keys were typed often enough to tell.';
 export const NO_MISSED_KEYS = 'No key was missed more than once.';
 export const NO_MIX_UPS = 'No Mix-ups this Run.';
 
-/** A key's entry in the slowest list. */
+/** A key's entry in the slowest list: the character as typed, so a capital and its lower case stay apart. */
 export const slowKeyLabel = (key: SlowKey): string =>
-  `${keyLabel(key.character)} ${Math.round(key.ms)} ms`;
+  `${typedLabel(key.character)} ${Math.round(key.ms)} ms`;
 
-/** A key's entry in the least accurate list. */
+/** A key's entry in the least accurate list, in the case it was typed. */
 export const inaccurateKeyLabel = (key: InaccurateKey): string =>
-  `${keyLabel(key.character)} ${key.misses} of ${key.firstAttempts}`;
+  `${typedLabel(key.character)} ${key.misses} of ${key.firstAttempts}`;
 
 /** A Mix-up's entry: the key wanted, typed as another, and how often. */
 export const mixUpLabel = (mixUp: MixUp): string =>
@@ -166,3 +169,101 @@ export function keycapTitle(
 /** The tooltip of a Shift keycap the Run held: how many keys were pressed with it down. */
 export const shiftKeycapTitle = (keycap: string, uses: number): string =>
   `${keycapLabel(keycap)}: held for ${uses} ${uses === 1 ? 'key' : 'keys'}`;
+
+// ---- The four strips ----------------------------------------------------------
+
+export const STRIPS_HEADING = 'How your Run unfolded';
+export const STRIPS_HINT =
+  'Hover a strip to follow your Run: the cursor shows the letter you were typing. Red ticks are Misses.';
+
+/** The strips' names, in the order they are drawn. */
+export const SPEED_STRIP = 'Speed';
+export const ACCURACY_STRIP = 'Accuracy';
+export const RHYTHM_STRIP = 'Rhythm';
+export const STREAK_STRIP = 'Streak';
+
+/** What each strip's value is measured over, so it is not read against the Run's whole numbers above. */
+export const SPEED_OVER = `last ${ROLLING_HITS} hits`;
+export const ACCURACY_OVER = `last ${ROLLING_LETTERS} letters`;
+export const RHYTHM_OVER = 'as on the HUD';
+export const STREAK_OVER = 'in a row';
+
+/** What a strip reads when there is nothing to draw yet. */
+export const STRIP_EMPTY = 'Too short a Run to draw';
+
+/** The Run Time of a moment, as m:ss from the Run's first key. */
+export function stripTime(seconds: number): string {
+  const whole = Math.max(0, Math.floor(seconds));
+  return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, '0')}`;
+}
+
+/** "At 0:23", or "At the end" when no moment is under the cursor. */
+const atMoment = (seconds: number | null): string =>
+  seconds === null ? 'At the end' : `At ${stripTime(seconds)}`;
+
+/** The numbers a strip's explanation quotes. `seconds` is the cursor's time, or null for the Run's end. */
+export interface StripNumbers {
+  seconds: number | null;
+  /** The strip's value there, or null when it has none yet. */
+  value: number | null;
+}
+
+/** The Speed strip's value, as it reads beside the strip. */
+export const speedValue = (value: number | null): string =>
+  value === null ? NO_SPEED : `${Math.round(value)} WPM`;
+
+export const accuracyValue = (value: number | null): string =>
+  value === null ? NO_SPEED : `${roundDown(value)}%`;
+
+export const rhythmValue = (value: number | null): string =>
+  value === null ? NO_SPEED : `${Math.round(value)}%`;
+
+export const streakValue = (value: number | null): string =>
+  value === null ? NO_SPEED : String(value);
+
+/** What the Speed strip says of itself on hover. */
+export function speedExplanation(
+  { seconds, value }: StripNumbers,
+  range: { fastest: number; slowest: number } | null,
+): string {
+  const what = `Speed is your pace over your last ${ROLLING_HITS} hits, so the start of a Run is not a spike.`;
+  if (value === null || range === null) {
+    return `${what} It shows once you have hit ${ROLLING_HITS + 1} keys.`;
+  }
+  return `${what} ${atMoment(seconds)}: ${Math.round(value)} WPM. Your fastest stretch was ${Math.round(range.fastest)} WPM and your slowest ${Math.round(range.slowest)} WPM.`;
+}
+
+/** What the Accuracy strip says of itself on hover; `bars` are the Star accuracy bars. */
+export function accuracyExplanation(
+  { seconds, value }: StripNumbers,
+  bars: readonly number[],
+): string {
+  const what = `Accuracy is the share of your last ${ROLLING_LETTERS} letters you got right first time. The dashed lines are the Star bars: ${bars.join('%, ')}%.`;
+  return value === null
+    ? `${what} It shows once you have reached ${ROLLING_LETTERS} letters.`
+    : `${what} ${atMoment(seconds)}: ${roundDown(value)}%.`;
+}
+
+/** What the Rhythm strip says of itself on hover; `floors` are where the bands start. */
+export function rhythmExplanation(
+  { seconds, value }: StripNumbers,
+  band: string | null,
+  floors: { Steady: number; Paced: number },
+): string {
+  const what = `Rhythm is how evenly your last 10 keys were spaced, as the HUD shows it: Steady from ${floors.Steady}%, Paced from ${floors.Paced}%, Uneven below.`;
+  return value === null || band === null
+    ? what
+    : `${what} ${atMoment(seconds)}: ${Math.round(value)}% (${band}).`;
+}
+
+/** What the Streak strip says of itself on hover; `steps` are the Multiplier's steps. */
+export function streakExplanation(
+  { seconds, value }: StripNumbers,
+  longest: number,
+  steps: readonly { streak: number; multiplier: number }[],
+): string {
+  const what = `Streak is the keys you got right in a row. A Miss ends it. The dashed lines are where your Multiplier goes up: ${steps.map((step) => `x${step.multiplier} at ${step.streak}`).join(', ')}.`;
+  return value === null
+    ? what
+    : `${what} ${atMoment(seconds)}: ${value} in a row. Your longest was ${longest}.`;
+}

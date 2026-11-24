@@ -16,7 +16,7 @@ A browser typing game; `README.md` says what it is and what it's built with. Use
 - `src/analytics/`: what the game measures about typing (ADR-0004): pure functions over a Run's Flight log, with no state of their own. It imports only `src/curriculum/keyboardLayout`, nothing from `src/game/`, React, PixiJS or sound; Biome enforces it.
 - `src/app/`: the composition root and the browser adapters (keys and focus, localStorage, frames), the React hooks the screens and the deck read the game through (`useGameState(selector)`, `useGame()`), and the Esc stack (`escLayers.ts`) that the keys adapter closes before Esc reaches the game.
 - `src/audio/`: the sound engine; outside tests, only the composition root imports it.
-- `src/screens/`: the React screens, overlay shell, HUD and header. They read `useGameState(selector)` and act through `useGame()`, both from `src/app/`.
+- `src/screens/`: the React screens, overlay shell, HUD and header. `StripChart` is the one visx chart the Debrief's strips (and later Analytics' timeline) draw with. They read `useGameState(selector)` and act through `useGame()`, both from `src/app/`.
 - `src/deck/`: the PixiJS Action Deck and its accessibility layer.
 - `tests/`: DOM tests, browser journeys, and the data and helpers they share (`tests/shared/`, including the `Game` set-up helpers).
 - `scripts/`: `verify`, the screenshot runner and the smoke test.

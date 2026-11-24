@@ -12,6 +12,7 @@ import type { FlightLog } from './keystroke';
 import { type LetterReport, letters } from './letters';
 import { type MixUp, mixUps } from './mixUps';
 import { type ShiftKeycap, shiftUses } from './shift';
+import { type RunStrips, runStrips } from './strips';
 import { type RhythmFacts, type WorkOn, workOn } from './workOn';
 
 /** What a Run knows beyond its Keystrokes. */
@@ -32,6 +33,8 @@ export interface RunReport {
   shiftUses: Partial<Record<ShiftKeycap, number>>;
   /** The one thing the plain sentence says to work on. */
   workOn: WorkOn;
+  /** The series the four strips draw over Run Time. */
+  strips: RunStrips;
 }
 
 /** The report on a Flight log, with the numbers the Run itself stamped. */
@@ -47,5 +50,6 @@ export function runReport(log: FlightLog, facts: RunFacts): RunReport {
     mixUps: mixUps(log),
     shiftUses: shiftUses(log),
     workOn: workOn(keys, averageSteps, facts),
+    strips: runStrips(log),
   };
 }

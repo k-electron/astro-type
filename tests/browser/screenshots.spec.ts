@@ -231,7 +231,11 @@ test('the Debrief of a cleared Run', async ({ page }) => {
   await expect(card).toHaveScreenshot('debrief.png', {
     ...COMPARE,
     mask: [
-      tile(/^speed$/i),
+      // (the strips have a Speed heading too, so this is the first one: the tile)
+      card
+        .getByText(/^speed$/i)
+        .first()
+        .locator('..'),
       tile(/^credits$/i),
       // What the letters' shading is measured against comes from timing too.
       card.getByText(/^against your average/),

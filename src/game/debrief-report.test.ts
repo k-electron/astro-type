@@ -71,6 +71,30 @@ describe('the Debrief of a cleared Run', () => {
     }
   });
 
+  it('draws the Rhythm and Streak the HUD showed after each key', () => {
+    const game = newGame();
+    startFreeFlight(game, TEXT);
+    const onGame = typingOn(game);
+    const hud: { streak: number; rhythm: number }[] = [];
+    for (const press of beginnerPresses(TEXT, 4)) {
+      playPresses(onGame, [press]);
+      const { currentStreak, rhythm } = game.getState().run;
+      hud.push({ streak: currentStreak, rhythm });
+    }
+
+    const { strips } = game.getState().debrief?.report ?? {};
+
+    // The clear ends the Streak, so the HUD's last Streak is the clear's, not the key's.
+    const shown = hud.slice(0, -1);
+    expect(strips?.streak.slice(0, -1).map((point) => point.value)).toEqual(
+      shown.map((numbers) => numbers.streak),
+    );
+    expect(strips?.rhythm.map((point) => point.value)).toEqual(
+      hud.map((numbers) => numbers.rhythm),
+    );
+    expect(strips?.streak.some((point) => point.value >= 10)).toBe(true);
+  });
+
   it('is dropped when the next Run begins', () => {
     const game = clearedBeginnerRun();
     expect(game.getState().debrief).not.toBeNull();

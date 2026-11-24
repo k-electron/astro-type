@@ -476,6 +476,121 @@ describe('a beginner typist Run', () => {
   });
 });
 
+describe('the strips: rolling speed and accuracy', () => {
+  it('draws speed from the 11th hit, over the last 10 hits timed from the one before them', () => {
+    // 6 steps a key is 10 keys a second: 120 WPM.
+    const text = 'abcdefghijklmn';
+    const { speed } = runReport(logOf(text, evenly(text, 6)), STEADY).strips;
+
+    expect(speed.map((point) => point.step)).toEqual([66, 72, 78, 84]);
+    for (const point of speed) expect(point.value).toBeCloseTo(120, 6);
+  });
+
+  it('slows while a Miss is inside the last 10 hits, and recovers once it has left', () => {
+    const text = 'abcdefghijklmnopqrstuvwxyzabcdefghijklmn';
+    const presses = evenly(text, 6);
+    // The 16th letter is missed once: 36 steps on the wrong key, then 30 on
+    // the right one, so it takes 66 steps in all where a key takes 6.
+    presses.splice(15, 1, ['x', 36], ['p', 30]);
+    const { speed } = runReport(logOf(text, presses), STEADY).strips;
+
+    const slowed = speed.filter((point) => point.value < 119);
+    // 10 hits over 9 * 6 + 66 = 120 steps is 60 WPM, for the 10 hits that
+    // have the slow one among their last 10.
+    expect(slowed).toHaveLength(10);
+    for (const point of slowed) expect(point.value).toBeCloseTo(60, 6);
+    expect(speed[speed.length - 1].value).toBeCloseTo(120, 6);
+  });
+
+  it('has no speed before there are 10 hits to measure', () => {
+    const text = 'abcdefghij';
+    expect(
+      runReport(logOf(text, evenly(text, 6)), STEADY).strips.speed,
+    ).toEqual([]);
+  });
+
+  it('draws accuracy from the 20th letter, over the last 20 letters reached', () => {
+    const text = 'abcdefghijklmnopqrstuvwxyz';
+    const presses = evenly(text, 6);
+    // "c" (the 3rd letter) gets two wrong keys: one Miss mark.
+    presses.splice(2, 0, ['x', 6], ['y', 6]);
+    const { accuracy } = runReport(logOf(text, presses), STEADY).strips;
+
+    // From the 20th letter ("t") on: 19 right of 20 for as long as "c" is
+    // among the last 20 ("t", "u", "v"), then all 20.
+    expect(accuracy.map((point) => point.value)).toEqual([
+      95, 95, 95, 100, 100, 100, 100,
+    ]);
+  });
+
+  it('counts a Miss on the 20th letter at once', () => {
+    const text = 'abcdefghijklmnopqrstu';
+    const presses = evenly(text, 6);
+    presses.splice(19, 0, ['x', 6]);
+    const { accuracy } = runReport(logOf(text, presses), STEADY).strips;
+
+    expect(accuracy[0].value).toBe(95);
+  });
+
+  it('marks each Miss on the axis and keeps every Keystroke as a moment', () => {
+    const text = 'abc';
+    const log = logOf(text, [
+      ['a', 10],
+      ['x', 10],
+      ['b', 10],
+      ['c', 10],
+    ]);
+    const strips = runReport(log, STEADY).strips;
+
+    expect(strips.misses).toEqual([20]);
+    expect(strips.moments).toEqual([
+      { step: 10, index: 0, hit: true },
+      { step: 20, index: 1, hit: false },
+      { step: 30, index: 1, hit: true },
+      { step: 40, index: 2, hit: true },
+    ]);
+    expect([strips.firstStep, strips.lastStep]).toEqual([10, 40]);
+  });
+});
+
+describe('the strips over a beginner typist Run', () => {
+  const TEXT =
+    'the quiet fox jumps over a lazy dog and the brave pilot flies past bright stars while the crew sings softly in the hold';
+  const log = beginnerFlightLog(TEXT, 3);
+  const { strips } = runReport(log, STEADY);
+
+  it('shows a beginner pace and a plausible accuracy throughout', () => {
+    expect(strips.speed.length).toBeGreaterThan(50);
+    for (const point of strips.speed) {
+      expect(point.value).toBeGreaterThan(3);
+      expect(point.value).toBeLessThan(40);
+    }
+    for (const point of strips.accuracy) {
+      expect(point.value).toBeGreaterThanOrEqual(50);
+      expect(point.value).toBeLessThanOrEqual(100);
+    }
+  });
+
+  it('puts a tick on every Miss and a moment on every Keystroke', () => {
+    const misses = log.filter((key) => key.pressed !== key.expected).length;
+
+    expect(misses).toBeGreaterThan(0);
+    expect(strips.misses).toHaveLength(misses);
+    expect(strips.moments).toHaveLength(log.length);
+  });
+
+  it('dips accuracy when a letter is missed, by 5 points for each Miss mark in the 20', () => {
+    const marks = new Set(
+      log.filter((key) => key.pressed !== key.expected).map((key) => key.index),
+    );
+    const last = strips.accuracy[strips.accuracy.length - 1];
+    const lastIndex = log[log.length - 1].index;
+    const inWindow = [...marks].filter((at) => at > lastIndex - 20).length;
+
+    expect(last.value).toBe(100 - inWindow * 5);
+  });
+});
+
 describe('the beginner typist', () => {
   const TEXT =
     'the quiet fox jumps over a lazy dog and the brave pilot flies past bright stars while the crew sings softly in the hold';
