@@ -34,7 +34,7 @@ export interface EntryJump {
 interface SectorEntriesProps {
   entries: readonly SectorSummary[];
   /**
-   * A entry's Stars, read live from Stage progress; null for a Sector that
+   * An entry's Stars, read live from Stage progress; null for a Sector that
    * is no longer in the game, which shows none.
    */
   starsOf: (sectorId: string) => EntryStars | null;

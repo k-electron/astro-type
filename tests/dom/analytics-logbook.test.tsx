@@ -72,7 +72,7 @@ describe('the logbook on Analytics', () => {
     expect(screen.queryByRole('region', { name: LOGBOOK_HEADING })).toBeNull();
   });
 
-  it('keeps a entry, with no Stars, for a Sector the game no longer has', () => {
+  it('keeps an entry, with no Stars, for a Sector the game no longer has', () => {
     const gone = foldRun(
       EMPTY_LOGBOOK,
       logOf('abc', evenly('abc', 12)),

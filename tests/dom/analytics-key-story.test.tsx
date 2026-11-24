@@ -9,6 +9,7 @@ import {
 } from '../../src/analytics/logbook';
 import { fingerWords } from '../../src/screens/debriefLabels';
 import {
+  KEY_NOT_TIMED,
   KEY_NOW,
   KEY_REBUILDING,
   KEY_STORY_HEADING,
@@ -22,6 +23,7 @@ import {
   VERY_SLOW_WORDS,
 } from '../../src/screens/journeyLabels';
 import { logOf } from '../shared/flightLog';
+import { BANNED_NAME } from '../shared/names';
 import { TEST_DAY } from '../shared/testHelpers';
 import { renderGame, screen, within } from './harness';
 
@@ -195,5 +197,30 @@ describe("a key's story on Analytics", () => {
     expect(keyboard.getByRole('button', { name: 'A key' }).title).not.toContain(
       VERY_SLOW_WORDS,
     );
+  });
+});
+
+describe('a key that was never timed', () => {
+  it('says so without an internal term', () => {
+    // Every A comes straight after a Miss on B, so no A is timed.
+    const log = logOf(
+      'ab'.repeat(10),
+      [...'ab'.repeat(10)].flatMap((key): [string, number][] =>
+        key === 'b'
+          ? [
+              ['x', 12],
+              ['b', 12],
+            ]
+          : [['a', 12]],
+      ),
+    );
+    const player = renderGame({ profile: { logbook: everyDay(3, log) } });
+    player.openHeader('Analytics');
+
+    fireEvent.click(within(KEYBOARD()).getByRole('button', { name: 'A key' }));
+
+    const story = STORY();
+    expect(within(story).getAllByText(new RegExp(KEY_NOT_TIMED)).length).toBeGreaterThan(0);
+    expect(story.textContent).not.toMatch(BANNED_NAME);
   });
 });
