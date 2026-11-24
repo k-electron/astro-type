@@ -60,6 +60,10 @@ _Avoid_: Correct Shift, cross Shift
 A wrong key pressed for the expected one, named as the pair: "e typed as r".
 _Avoid_: Confusion, substitution, swap
 
+**Shift hand**:
+How the player held Shift for capitals and symbols over the last eight weeks: with the Shift on the other side from the key (Opposite-hand Shift), the same side, both, none (Caps Lock) or one the game never saw go down. Analytics shows it as shares of the First attempts on shifted characters, and as a share a day on the timeline.
+_Avoid_: Shift habit, Shift balance
+
 **Letter pair**:
 Two characters next to each other in the text. Its speed is the time between their Keystrokes.
 _Avoid_: Bigram, digraph
@@ -121,6 +125,10 @@ _Avoid_: Chapter
 **Key story**:
 What Analytics tells of one key when the player clicks it: its finger, the day it was first typed, how often it has been typed, its first days against now, a smoothed speed and accuracy trend and what it gets typed as instead. The Logbook keeps the first day, the count, the key's tally over the first three days it was typed on and its best for good; the rest is read from the last eight weeks. It opens on the trickiest key.
 _Avoid_: Key profile, key stats
+
+**Timeline**:
+The strips on Analytics that draw the last eight weeks one point a day: Letter speed, accuracy, Rhythm and Shift hand, over the days played, with the days away shaded and the Sector reached behind each day. The player's cursor on it chooses the day the keyboard shows.
+_Avoid_: History chart, graph
 
 **Day**:
 The player's own local calendar date at the moment a Run is cleared, as the wall clock gives it. A Run that crosses midnight counts on the day it was cleared.
