@@ -157,16 +157,16 @@ describe('a Save with a field missing', () => {
     },
   );
 
-  it('takes the default for missing Credits, Stage progress and key stats', () => {
+  it('takes the default for missing Credits, Stage progress and Logbook', () => {
     const { game } = load(
-      without(completeSave(), 'totalCredits', 'stagesProgress', 'keyAnalytics'),
+      without(completeSave(), 'totalCredits', 'stagesProgress', 'logbook'),
     );
 
     const profile = game.getState().profile;
     expect(game.getState().loadNotice).toBeNull();
     expect(profile.totalCredits).toBe(0);
     expect(profile.stagesProgress).toEqual({});
-    expect(profile.keyAnalytics).toEqual({});
+    expect(profile.logbook).toEqual(DEFAULT_PROFILE.logbook);
     expect(profile.totalStars).toBe(0);
   });
 
@@ -191,10 +191,22 @@ describe('a Save with a wrong field', () => {
     ...save,
     stagesProgress,
   });
-  const withKeys = (keyAnalytics: Record<string, unknown>) => ({
+  // The Logbook is read slice by slice and summary by summary (#155): what it
+  // gives up is the damaged piece alone. These build a Save whose Logbook has
+  // one summary changed.
+  const [aKey] = Object.keys(save.logbook.runs[0].keys);
+  const withSummary = (changes: Record<string, unknown>) => ({
     ...save,
-    keyAnalytics,
+    logbook: {
+      ...save.logbook,
+      runs: [
+        { ...save.logbook.runs[0], ...changes },
+        ...save.logbook.runs.slice(1),
+      ],
+    },
   });
+  const withKeys = (keys: Record<string, unknown>) => withSummary({ keys });
+  const aKeyTally = save.logbook.runs[0].keys[aKey];
   const clamped: Array<[string, unknown, unknown]> = [
     // Wrong type: the field's default.
     [
@@ -213,9 +225,19 @@ describe('a Save with a wrong field', () => {
       without(save, 'musicVolume'),
     ],
     [
-      'a count that is null',
-      { ...save, totalCharactersTyped: null },
-      without(save, 'totalCharactersTyped'),
+      'a Logbook that is text',
+      { ...save, logbook: 'all of it' },
+      without(save, 'logbook'),
+    ],
+    [
+      'a lifetime part that is a list',
+      { ...save, logbook: { ...save.logbook, lifetime: [] } },
+      { ...save, logbook: { ...save.logbook, lifetime: {} } },
+    ],
+    [
+      'a count in a summary that is null',
+      withSummary({ words: null }),
+      withSummary({ words: 0 }),
     ],
     [
       'Stage progress that is a list',
@@ -234,9 +256,9 @@ describe('a Save with a wrong field', () => {
       { ...save, totalCredits: 0 },
     ],
     [
-      'a negative count',
-      { ...save, totalMissMarks: -1 },
-      { ...save, totalMissMarks: 0 },
+      'a negative count in a summary',
+      withSummary({ misses: -1 }),
+      withSummary({ misses: 0 }),
     ],
     [
       'a volume above 1',
@@ -282,9 +304,15 @@ describe('a Save with a wrong field', () => {
       }),
     ],
     [
-      'negative hits for a key',
-      withKeys({ ...save.keyAnalytics, f: { hits: -3, misses: 1 } }),
-      withKeys({ ...save.keyAnalytics, f: { hits: 0, misses: 1 } }),
+      'a negative tally for a key',
+      withKeys({
+        ...save.logbook.runs[0].keys,
+        [aKey]: { ...aKeyTally, firstAttempts: -3 },
+      }),
+      withKeys({
+        ...save.logbook.runs[0].keys,
+        [aKey]: { ...aKeyTally, firstAttempts: 0 },
+      }),
     ],
     // Not a whole number where one is needed: rounded down.
     [
@@ -310,14 +338,36 @@ describe('a Save with a wrong field', () => {
       withStages(save.stagesProgress),
     ],
     [
-      'a key-stats entry that is a number',
-      withKeys({ ...save.keyAnalytics, x: 5 }),
-      withKeys(save.keyAnalytics),
+      'a key tally that is a number',
+      withKeys({ ...save.logbook.runs[0].keys, '§': 5 }),
+      withKeys(save.logbook.runs[0].keys),
     ],
     [
-      'a key-stats entry that is a list',
-      withKeys({ ...save.keyAnalytics, x: [1, 2] }),
-      withKeys(save.keyAnalytics),
+      'a key tally that is a list',
+      withKeys({ ...save.logbook.runs[0].keys, '§': [1, 2] }),
+      withKeys(save.logbook.runs[0].keys),
+    ],
+    [
+      'a summary that is text',
+      {
+        ...save,
+        logbook: { ...save.logbook, runs: [...save.logbook.runs, 'a Run'] },
+      },
+      save,
+    ],
+    [
+      'a summary with a day that is not a date',
+      {
+        ...save,
+        logbook: {
+          ...save.logbook,
+          runs: [
+            ...save.logbook.runs,
+            { ...save.logbook.runs[0], day: 'soon' },
+          ],
+        },
+      },
+      save,
     ],
   ];
 
@@ -360,7 +410,21 @@ describe('a Save from before the game’s rules changed', () => {
     version: 3,
     upgrades: { deflectorShields: 1, overdriveReactor: 2, precisionSensors: 3 },
   };
+  // Version 5 was the last Save with lifetime totals and per-key hits and
+  // misses of its own (#155): the Logbook replaced them, so no Profile mixes
+  // the two.
+  const version5 = {
+    ...without(save, 'logbook'),
+    version: 5,
+    totalCharactersTyped: 154,
+    totalMissMarks: 3,
+    totalWordsTyped: 30,
+    totalPracticeSeconds: 120,
+    highestWpmAllTime: 31,
+    keyAnalytics: { f: { hits: 48, misses: 1 } },
+  };
   const older: Array<[string, unknown]> = [
+    ['version 5, with its lifetime totals and key stats', version5],
     // Version 4 was the last Save whose high scores came from graded hits
     // (#137): a score now means something else, so it starts fresh.
     ['version 4', { ...save, version: 4 }],

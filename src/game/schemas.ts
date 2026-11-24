@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { LogbookSchema } from '../analytics/logbook';
 import { MAX_STARS_PER_STAGE } from '../curriculum/curriculum';
 import {
   DEFAULT_BACKDROP,
@@ -162,11 +163,6 @@ export const StageProgressSchema = z.object({
   ),
 });
 
-export const KeyAnalyticsSchema = z.object({
-  hits: numberField({ min: 0, integer: true, fallback: 0 }),
-  misses: numberField({ min: 0, integer: true, fallback: 0 }),
-});
-
 /**
  * The settings the player changes in the header: sound, music, the beat, and
  * what the Action Deck shows. One group, spread into the Save below, so a new
@@ -193,7 +189,7 @@ const readStoredCosmetics = (cosmetics: unknown): unknown =>
  * the Save module discards an older Save and refuses an older Backup, so no
  * Profile ever mixes old and new numbers, and no code reads an old format.
  */
-export const SAVE_VERSION = 5;
+export const SAVE_VERSION = 6;
 
 /**
  * The Save: the only definition of what a Profile is. Unknown fields are
@@ -209,13 +205,8 @@ export const SAVE_VERSION = 5;
 export const SaveFieldsSchema = z.object({
   version: z.literal(SAVE_VERSION),
   totalCredits: numberField({ min: 0, integer: true, fallback: 0 }),
-  totalCharactersTyped: numberField({ min: 0, integer: true, fallback: 0 }),
-  totalMissMarks: numberField({ min: 0, integer: true, fallback: 0 }),
-  totalWordsTyped: numberField({ min: 0, integer: true, fallback: 0 }),
-  totalPracticeSeconds: numberField({ min: 0, fallback: 0 }),
-  highestWpmAllTime: numberField({ min: 0, fallback: 0 }),
   stagesProgress: entriesOf(StageProgressSchema),
-  keyAnalytics: entriesOf(KeyAnalyticsSchema),
+  logbook: LogbookSchema,
   cosmetics: z.preprocess(readStoredCosmetics, CosmeticsSchema),
   ...SettingsSchema.shape,
 });
@@ -250,7 +241,6 @@ export const DEFAULT_PROFILE: PlayerProfile = PlayerProfileSchema.parse({
 // The Profile and its parts. These are the only definitions of these types.
 export type PlayerProfile = z.output<typeof PlayerProfileSchema>;
 export type StageProgress = z.output<typeof StageProgressSchema>;
-export type KeyAnalytics = z.output<typeof KeyAnalyticsSchema>;
 export type TrailId = z.output<typeof TrailIdSchema>;
 export type SoundKit = z.output<typeof SoundKitSchema>;
 export type BurstId = z.output<typeof BurstIdSchema>;

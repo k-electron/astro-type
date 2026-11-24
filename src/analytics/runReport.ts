@@ -10,13 +10,17 @@ import {
 } from './keys';
 import type { FlightLog } from './keystroke';
 import { type LetterReport, letters } from './letters';
+import type { FoldFacts } from './logbook';
 import { type MixUp, mixUps } from './mixUps';
 import { type ShiftKeycap, shiftUses } from './shift';
 import { type RunStrips, runStrips } from './strips';
 import { type RhythmFacts, type WorkOn, workOn } from './workOn';
 
-/** What a Run knows beyond its Keystrokes. */
-export type RunFacts = RhythmFacts;
+/**
+ * What a Run knows beyond its Keystrokes: where it was flown and its own
+ * numbers. The report reads the Rhythm part and the fold reads the rest.
+ */
+export type RunFacts = RhythmFacts & FoldFacts;
 
 /** Everything the Debrief draws of a Run, worked out once at the clear. */
 export interface RunReport {
@@ -38,7 +42,7 @@ export interface RunReport {
 }
 
 /** The report on a Flight log, with the numbers the Run itself stamped. */
-export function runReport(log: FlightLog, facts: RunFacts): RunReport {
+export function runReport(log: FlightLog, facts: RhythmFacts): RunReport {
   const keys = keyTallies(log);
   const averageSteps = averageCleanSteps(keys);
   return {

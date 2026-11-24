@@ -5,7 +5,7 @@
  * harness both use it.
  */
 import { getStageById } from '../../src/curriculum/curriculum';
-import type { Clock } from '../../src/game/clock';
+import { type Clock, createSteppedClock } from '../../src/game/clock';
 import { createGame, type Game, type Sound } from '../../src/game/game';
 import { createMemoryStorage, type MemorySaveStorage } from './memoryStorage';
 import { asCurrentSave } from './saves';
@@ -35,6 +35,39 @@ export const WRONG_KEY = 'x';
 const STEPS_TO_REACH_LINE = 30;
 
 /**
+ * The day every test game starts on, unless told otherwise: a local calendar
+ * date, so no test depends on the machine's time zone. A seeded Logbook's days
+ * count back from it.
+ */
+export const TEST_DAY = '2026-11-23';
+
+/** A hand-stepped wall clock whose day can be set, as the player's own calendar moves. */
+export interface DayClock extends Clock {
+  /** Move to local noon of `day` (`YYYY-MM-DD`), from wherever the clock is. */
+  setDay(day: string): void;
+}
+
+/**
+ * A wall clock on `day` at local noon, so a Run of any length stays on its
+ * day and nothing depends on the time zone. Steps move it on like any
+ * hand-stepped clock; `setDay` moves it to another day.
+ */
+export function dayClock(day: string = TEST_DAY): DayClock {
+  const noonOf = (date: string) => {
+    const [year, month, dayOfMonth] = date.split('-').map(Number);
+    return new Date(year, month - 1, dayOfMonth, 12).getTime();
+  };
+  let inner = createSteppedClock(noonOf(day));
+  return {
+    now: () => inner.now(),
+    step: (count) => inner.step(count),
+    setDay: (next) => {
+      inner = createSteppedClock(noonOf(next));
+    },
+  };
+}
+
+/**
  * A game over an in-memory Save, with the Save's storage to look at. `seed` is
  * the Save the player already has, as the current game writes it: a plain
  * object with no `version` of its own is stamped with `SAVE_VERSION`
@@ -43,7 +76,7 @@ const STEPS_TO_REACH_LINE = 30;
  * older or unversioned Save raw uses `createGame({ storage:
  * createMemoryStorage(raw) })` instead. `sound` is where the game's
  * sound goes; `clock` is the wall clock the game stamps with (a hand-stepped
- * one when left out).
+ * one on `TEST_DAY` when left out; `dayClock(day)` starts it on another day).
  */
 export function loadGame(
   seed?: unknown,
@@ -51,7 +84,10 @@ export function loadGame(
   clock?: Clock,
 ): { game: Game; storage: MemorySaveStorage } {
   const storage = createMemoryStorage(asCurrentSave(seed));
-  return { game: createGame({ storage, sound, clock }), storage };
+  return {
+    game: createGame({ storage, sound, clock: clock ?? dayClock() }),
+    storage,
+  };
 }
 
 /** A fresh game over an in-memory Save, optionally seeded (merged over a fresh Profile). */

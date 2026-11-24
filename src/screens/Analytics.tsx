@@ -1,5 +1,6 @@
 import type React from 'react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { journeyReport } from '../analytics/logbook';
 import { useGame } from '../app/useGame';
 import { useGameState } from '../app/useGameState';
 import {
@@ -24,6 +25,16 @@ import {
 } from './confirmLabels';
 import { Download, Upload, RotateCcw } from 'lucide-react';
 import { DISMISS_NOTICE_LABEL } from './dismissLabel';
+import {
+  BEST_DAY_LABEL,
+  bestDaySpeedText,
+  DAYS_PLAYED_LABEL,
+  dayText,
+  NO_BEST_DAY,
+  PRACTICE_TIME_LABEL,
+  practiceTimeText,
+  WORDS_TYPED_LABEL,
+} from './journeyLabels';
 import { roundDown } from './roundDown';
 
 /**
@@ -66,23 +77,21 @@ export const Analytics: React.FC = () => {
     if (refusal) backupCardRef.current?.scrollIntoView?.({ block: 'nearest' });
   }, [refusal]);
 
-  const {
-    totalPracticeSeconds,
-    totalWordsTyped,
-    totalCharactersTyped,
-    totalMissMarks,
-    highestWpmAllTime,
-    keyAnalytics,
-  } = profile;
+  // The Journey as of today, worked out again only when the Logbook or the
+  // day changes, so a settings change doesn't recompute it.
+  const today = useGameState((state) => state.today);
+  const journey = useMemo(
+    () => journeyReport(profile.logbook, today),
+    [profile.logbook, today],
+  );
+  const { totals } = journey;
 
-  const totalMinutes = Math.floor(totalPracticeSeconds / 60);
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = totalMinutes % 60;
-  const timeFormatted = `${hours > 0 ? `${hours}h ` : ''}${minutes}m`;
-
-  const overallAccuracy = shareOf(
-    totalCharactersTyped - totalMissMarks,
-    totalCharactersTyped,
+  // Each key's First attempts by how they went, over the last 8 weeks.
+  const keyAnalytics = Object.fromEntries(
+    Object.entries(journey.keys).map(([character, tally]) => [
+      character,
+      { hits: tally.firstAttempts - tally.misses, misses: tally.misses },
+    ]),
   );
 
   // Calculate Left vs Right hand accuracy
@@ -178,50 +187,61 @@ export const Analytics: React.FC = () => {
 
         {/* Content */}
         <div className="p-4 sm:p-6 overflow-y-auto flex flex-col gap-6">
-          {/* Lifetime Metric Cards */}
+          {/* The totals row */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="p-3.5 rounded-xl border border-slate-800 bg-slate-950/60">
               <span className="text-[10px] uppercase font-mono text-slate-500 block mb-1">
-                Highest Speed
+                {DAYS_PLAYED_LABEL}
               </span>
               <div className="flex items-baseline gap-1 font-mono">
                 <span className="text-2xl font-bold text-cyan-400 tabular-nums">
-                  {roundDown(highestWpmAllTime)}
-                </span>
-                <span className="text-xs text-slate-500">WPM</span>
-              </div>
-            </div>
-
-            <div className="p-3.5 rounded-xl border border-slate-800 bg-slate-950/60">
-              <span className="text-[10px] uppercase font-mono text-slate-500 block mb-1">
-                Lifetime Accuracy
-              </span>
-              <div className="flex items-baseline gap-1 font-mono">
-                <span className="text-2xl font-bold text-emerald-400 tabular-nums">
-                  {overallAccuracy ?? 100}%
+                  {totals.daysPlayed.toLocaleString()}
                 </span>
               </div>
             </div>
 
             <div className="p-3.5 rounded-xl border border-slate-800 bg-slate-950/60">
               <span className="text-[10px] uppercase font-mono text-slate-500 block mb-1">
-                Words Typed
-              </span>
-              <div className="flex items-baseline gap-1 font-mono">
-                <span className="text-2xl font-bold text-white tabular-nums">
-                  {totalWordsTyped.toLocaleString()}
-                </span>
-              </div>
-            </div>
-
-            <div className="p-3.5 rounded-xl border border-slate-800 bg-slate-950/60">
-              <span className="text-[10px] uppercase font-mono text-slate-500 block mb-1">
-                Practice Time
+                {PRACTICE_TIME_LABEL}
               </span>
               <div className="flex items-baseline gap-1 font-mono">
                 <span className="text-2xl font-bold text-amber-400 tabular-nums">
-                  {timeFormatted}
+                  {practiceTimeText(totals.practiceSteps)}
                 </span>
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-xl border border-slate-800 bg-slate-950/60">
+              <span className="text-[10px] uppercase font-mono text-slate-500 block mb-1">
+                {WORDS_TYPED_LABEL}
+              </span>
+              <div className="flex items-baseline gap-1 font-mono">
+                <span className="text-2xl font-bold text-white tabular-nums">
+                  {totals.wordsTyped.toLocaleString()}
+                </span>
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-xl border border-slate-800 bg-slate-950/60">
+              <span className="text-[10px] uppercase font-mono text-slate-500 block mb-1">
+                {BEST_DAY_LABEL}
+              </span>
+              <div className="flex items-baseline gap-1 font-mono">
+                {totals.bestDay ? (
+                  <>
+                    <span className="text-2xl font-bold text-emerald-400 tabular-nums">
+                      {bestDaySpeedText(totals.bestDay.letterWpm)}
+                    </span>
+                    <span className="text-xs text-slate-500">WPM</span>
+                    <span className="text-xs text-slate-500 ml-1">
+                      {dayText(totals.bestDay.day)}
+                    </span>
+                  </>
+                ) : (
+                  <span className="text-2xl font-bold text-emerald-400">
+                    {NO_BEST_DAY}
+                  </span>
+                )}
               </div>
             </div>
           </div>

@@ -40,22 +40,22 @@ describe('importing a Backup', () => {
     expect(storage.saved?.totalCredits).toBe(900);
   });
 
-  it('brings back the lifetime characters typed and Miss marks it was exported with', () => {
+  it('carries the whole Logbook, so importing one restores it whole', () => {
+    // A Logbook with Run summaries, lifetime totals and a best day.
     const save = completeSave();
     const { game: playedGame } = gameWith(save);
     const backup = exportBackup(playedGame.getState().profile);
+    expect(JSON.parse(backup).logbook).toEqual(save.logbook);
 
+    // Another browser, with a Logbook of its own that the import replaces.
     const { game, storage } = gameWith();
     game.importBackup(backup);
 
-    const profile = game.getState().profile;
-    expect(profile.totalCharactersTyped).toBe(save.totalCharactersTyped);
-    expect(profile.totalMissMarks).toBe(save.totalMissMarks);
-    expect(storage.saved?.totalCharactersTyped).toBe(save.totalCharactersTyped);
-    expect(storage.saved?.totalMissMarks).toBe(save.totalMissMarks);
+    expect(game.getState().profile.logbook).toEqual(save.logbook);
+    expect(storage.saved?.logbook).toEqual(save.logbook);
   });
 
-  it('keeps the Credits, Cosmetics, settings and key stats of a Backup, and the next Save and Backup keep them', () => {
+  it('keeps the Credits, Cosmetics, settings and Logbook of a Backup, and the next Save and Backup keep them', () => {
     const save = completeSave();
     const { game, storage } = gameWith();
 
@@ -74,7 +74,7 @@ describe('importing a Backup', () => {
     const expectIntact = (profile: Profile | null) => {
       expect(profile?.totalCredits).toBe(save.totalCredits);
       expect(profile?.cosmetics).toEqual(save.cosmetics);
-      expect(profile?.keyAnalytics).toEqual(save.keyAnalytics);
+      expect(profile?.logbook).toEqual(save.logbook);
       expect(profile?.stagesProgress).toEqual(save.stagesProgress);
       for (const field of SETTINGS) {
         expect(profile?.[field], field).toEqual(save[field]);
@@ -160,6 +160,17 @@ describe('importing a Backup', () => {
   const refusals: Array<[string, string, string]> = [
     ...[
       ['a Backup exported before versions existed', OLD_LIVE_EXPORT],
+      [
+        'version 5, a Backup with lifetime totals and key stats of its own',
+        {
+          ...Object.fromEntries(
+            Object.entries(completeSave()).filter(([key]) => key !== 'logbook'),
+          ),
+          version: 5,
+          totalCharactersTyped: 154,
+          keyAnalytics: { f: { hits: 48, misses: 1 } },
+        },
+      ],
       [
         'version 4, a Backup with graded scores',
         { ...completeSave(), version: 4 },

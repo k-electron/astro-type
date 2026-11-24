@@ -9,9 +9,16 @@
  * Stage's result to the Profile's command. The Profile reads nothing of this
  * module.
  */
-import { type RunReport, runReport } from '../analytics/runReport';
-import { FIRST_STAGE } from '../curriculum/curriculum';
-import type { Stage } from '../curriculum/curriculum';
+import {
+  type RunFacts,
+  type RunReport,
+  runReport,
+} from '../analytics/runReport';
+import {
+  CURRICULUM_SECTORS,
+  FIRST_STAGE,
+  type Stage,
+} from '../curriculum/curriculum';
 import type { RunPhase } from './machine';
 import type { Clock, RunClock } from './clock';
 import type { Moment } from './moments';
@@ -67,6 +74,23 @@ export interface RunMoves {
 }
 
 export type RunSlice = RunSliceState & RunMoves;
+
+/** Steps of Run Time in a second. */
+const STEPS_PER_SECOND = 60;
+
+/**
+ * Where a Stage was flown, as the Logbook copies it at the clear: the
+ * Sector's and the Stage's ids and names as they are today. Null for a Free
+ * Flight. The Logbook never looks them up again.
+ */
+function whereOf(stage: Stage): RunFacts['where'] {
+  if (stage.origin !== 'sector') return null;
+  const sector = CURRICULUM_SECTORS.find(({ id }) => id === stage.sectorId);
+  return {
+    sector: { id: stage.sectorId, name: sector?.name ?? stage.sectorId },
+    stage: { id: stage.id, name: stage.title },
+  };
+}
 
 /** The store the Run lives in: its own state, and the Profile it reads. */
 export type RunStore = RunSlice & ProfileSlice;
@@ -161,13 +185,18 @@ export function createRunSlice(
       const { stage } = run;
 
       const now = clock.now();
-      const elapsedSeconds = Math.max(1, runClock.runTimeMs() / 1000);
 
       const outcome = scoreRun(run, stage);
-      const report = runReport(run.flightLog, {
+      const facts: RunFacts = {
+        where: whereOf(stage),
+        // A Run with no Run Time still counts as one second of practice, as it always has.
+        runSteps: Math.max(STEPS_PER_SECOND, runClock.steps()),
+        wpm: outcome.wpm,
+        accuracy: outcome.accuracy,
         rhythm: run.rhythm,
         rhythmBand: rhythmBand(run.rhythm),
-      });
+      };
+      const report = runReport(run.flightLog, facts);
 
       emit({ type: 'cleared', stars: outcome.starsEarned });
 
@@ -175,19 +204,8 @@ export function createRunSlice(
         ...outcome,
         score: run.score,
         maxStreak: run.maxStreak,
-        charactersTyped: run.currentCharIndex,
-        missMarks: run.errorIndices.size,
-        practiceSeconds: Math.round(elapsedSeconds),
-        // The Save counts hits and misses by First attempt, as it always has.
-        keyStats: Object.fromEntries(
-          Object.entries(report.keys).map(([character, tally]) => [
-            character,
-            {
-              hits: tally.firstAttempts - tally.misses,
-              misses: tally.misses,
-            },
-          ]),
-        ),
+        flightLog: run.flightLog,
+        facts,
       };
       const record = get().recordStageResult(
         stage.origin === 'sector' ? stage.id : null,

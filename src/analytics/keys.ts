@@ -207,3 +207,38 @@ export function leastAccurateKeys(
     )
     .slice(0, length);
 }
+
+/** The characters of a text that count as letters, for the speed the Journey follows. */
+export const isLetter = (character: string): boolean =>
+  /^[a-z]$/i.test(character);
+
+/**
+ * Words per minute over Clean hits: each hit is a character, five to a word,
+ * and `steps` is the Run Time they took together. Null with no time to measure.
+ */
+export function cleanHitWpm(cleanHits: number, steps: number): number | null {
+  if (cleanHits <= 0 || steps <= 0) return null;
+  return (cleanHits * (STEPS_PER_SECOND * 60)) / 5 / steps;
+}
+
+/**
+ * How many Clean hits on letters the Flight log has, and the Run Time they
+ * took. Speed over days counts letters only, so a day of number drills
+ * doesn't look like getting slower.
+ */
+export function letterCleanHits(log: FlightLog): {
+  hits: number;
+  steps: number;
+} {
+  const steps = cleanHitSteps(log);
+  let hits = 0;
+  let total = 0;
+  log.forEach((keystroke, position) => {
+    const took = steps[position];
+    if (took !== null && isLetter(keystroke.expected)) {
+      hits += 1;
+      total += took;
+    }
+  });
+  return { hits, steps: total };
+}

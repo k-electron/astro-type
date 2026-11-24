@@ -8,7 +8,8 @@
  *   Stars are measured against), Rhythm and keystroke intervals. Tests step
  *   it by hand.
  * - `Clock` is the date on the wall, used only for timestamps (when a Stage was
- *   last played, a Drone's id). It never measures how long anything took.
+ *   last played, a Drone's id) and for the player's local day (`localDay`:
+ *   what day a Run is cleared on). It never measures how long anything took.
  */
 export const STEP_MS = 1000 / 60;
 
@@ -23,11 +24,22 @@ export interface Clock {
   step(count: number): void;
 }
 
+/** Where a hand-stepped clock starts when it is not told: a realistic epoch, as 0 would read as "no start time" to a falsy check. */
+export const DEFAULT_STEPPED_START_MS = 1_700_000_000_000;
+
+/**
+ * The player's local calendar date at `ms` (on the scale of `Date.now()`) as
+ * `YYYY-MM-DD`: the day a Run is cleared on, and the day Analytics is read on.
+ */
+export function localDay(ms: number): string {
+  const date = new Date(ms);
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${date.getFullYear()}-${month}-${day}`;
+}
+
 /** Time only moves when `step` is called. */
-export function createSteppedClock(
-  // A realistic epoch: 0 would read as "no start time" to a falsy check.
-  startMs = 1_700_000_000_000,
-): Clock {
+export function createSteppedClock(startMs = DEFAULT_STEPPED_START_MS): Clock {
   let steps = 0;
   return {
     now: () => startMs + (steps * 1000) / 60,

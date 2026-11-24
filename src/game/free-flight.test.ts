@@ -16,8 +16,8 @@ import {
  * Free Flight is a curriculum concept (#73): the Game builds the Stage from
  * what the player sent, `{ text }` alone, and no screen builds one.
  * Free Flight is practice (#86): it earns no Stars and leaves no Stage entry,
- * it pays only the score part of the Credits, and its characters still count
- * in Analytics and the lifetime stats (#140). What the Debrief shows for it is
+ * it pays only the score part of the Credits, and its typing still goes into
+ * the Logbook (#140, #155). What the Debrief shows for it is
  * in tests/dom/debrief.test.tsx.
  */
 
@@ -98,7 +98,7 @@ describe('what a Free Flight pays', () => {
 });
 
 describe('the characters of a Free Flight', () => {
-  it('count in Analytics: each key by how its character went, and the wrong keys pressed gain nothing', () => {
+  it('count in the Logbook: each key by how its character went, and the wrong keys pressed gain nothing', () => {
     // A fresh Save, so the numbers are the Run's own.
     const game = newGame();
     startFreeFlight(game, 'ab');
@@ -106,16 +106,13 @@ describe('the characters of a Free Flight', () => {
 
     // "a" was typed right the first time; "b" got three wrong keys, which are
     // one Miss mark on "b" and leave no hit for it.
-    const { keyAnalytics } = game.getState().profile;
-    expect(keyAnalytics.a).toEqual({ hits: 1, misses: 0 });
-    expect(keyAnalytics.b).toEqual({ hits: 0, misses: 1 });
-    expect(keyAnalytics[WRONG_KEY] ?? { hits: 0, misses: 0 }).toEqual({
-      hits: 0,
-      misses: 0,
-    });
+    const [run] = game.getState().profile.logbook.runs;
+    expect(run.keys.a).toMatchObject({ firstAttempts: 1, misses: 0 });
+    expect(run.keys.b).toMatchObject({ firstAttempts: 1, misses: 1 });
+    expect(run.keys[WRONG_KEY]).toBeUndefined();
   });
 
-  it("add to the lifetime stats like a Sector Stage's: characters, Miss marks and words, with no Stage entry and no Stars", () => {
+  it("add to the Logbook like a Sector Stage's, as a Run with no Sector: characters, Miss marks and words, with no Stage entry and no Stars", () => {
     // 8 characters, 3 of them marked (two wrong keys on each): 1.6 words.
     const text = 'abababab';
     const save = completeSave();
@@ -125,18 +122,18 @@ describe('the characters of a Free Flight', () => {
 
     expect(game.getState().screen).toBe('debrief');
     const profile = game.getState().profile;
-    expect(profile.totalCharactersTyped - save.totalCharactersTyped).toBe(
-      text.length,
-    );
-    expect(profile.totalMissMarks - save.totalMissMarks).toBe(3);
-    expect(profile.totalWordsTyped - save.totalWordsTyped).toBe(
-      Math.round(text.length / 5),
-    );
+    expect(profile.logbook.runs.at(-1)).toMatchObject({
+      where: null,
+      characters: text.length,
+      misses: 3,
+      words: Math.round(text.length / 5),
+    });
+    expect(profile.logbook.lifetime.runs).toBe(save.logbook.lifetime.runs + 1);
     expect(profile.totalStars).toBe(save.totalStars);
     expect(profile.stagesProgress).toEqual(save.stagesProgress);
   });
 
-  it("make the lifetime accuracy the Free Flight's own accuracy when it is the first Run", () => {
+  it("give the Run's summary the Free Flight's own accuracy", () => {
     const text = 'abababab';
     const game = newGame();
     startFreeFlight(game, text);
@@ -144,9 +141,10 @@ describe('the characters of a Free Flight', () => {
 
     const debrief = game.getState().debrief;
     if (!debrief) throw new Error('expected a Debrief after the Free Flight');
-    const { totalCharactersTyped, totalMissMarks } = game.getState().profile;
-    expect(
-      ((totalCharactersTyped - totalMissMarks) / totalCharactersTyped) * 100,
-    ).toBeCloseTo(debrief.accuracy, 6);
+    const [run] = game.getState().profile.logbook.runs;
+    expect(((run.characters - run.misses) / run.characters) * 100).toBeCloseTo(
+      debrief.accuracy,
+      6,
+    );
   });
 });

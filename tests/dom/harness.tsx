@@ -42,7 +42,7 @@ import {
 } from '../shared/memoryStorage';
 import { FIRST_STAGE } from '../../src/curriculum/curriculum';
 import { asCurrentSave } from '../shared/saves';
-import { startStage as sendStartStage } from '../shared/testHelpers';
+import { dayClock, startStage as sendStartStage } from '../shared/testHelpers';
 import { GameProvider } from '../../src/app/useGame';
 import type { CosmeticKind } from '../../src/game/catalog';
 import { EQUIP, EQUIPPED } from '../../src/screens/hangarLabels';
@@ -75,6 +75,12 @@ export interface RenderGameOptions {
   storage?: MemorySaveStorage;
   /** Start a Free Flight Run of this text, through the Free Flight screen. */
   text?: string;
+  /**
+   * The player's calendar day when the game starts, as `YYYY-MM-DD` (the
+   * day Runs are logged on and Analytics is read on). Left out, `TEST_DAY`.
+   * `player.setToday` moves it on.
+   */
+  today?: string;
   /**
    * Where the game's sound goes, when a test listens to it (the recording
    * sound adapter's `effects` port). Left out, the game is silent.
@@ -126,6 +132,12 @@ export interface Player {
    * The last character of a Run's text clears it.
    */
   type(text: string, options?: { stepsPerKey?: number }): void;
+  /**
+   * The player's calendar moves to `day` (`YYYY-MM-DD`), as when they come
+   * back another day. The game reads it at its next move (opening a screen,
+   * a key), as it does the real clock. It survives `reload`.
+   */
+  setToday(day: string): void;
   /** Run the Run clock `steps` steps (60 to the second), as the frame loop would. */
   step(steps: number): void;
   /** The window loses focus. */
@@ -211,6 +223,7 @@ export function expectNoRefusedMove(where: string): void {
 export function renderGame(options: RenderGameOptions = {}): Player {
   const storage =
     options.storage ?? createMemoryStorage(asCurrentSave(options.profile));
+  const clock = dayClock(options.today);
   let game: Game;
   let unmount: () => void;
   let detachKeyboard: () => void;
@@ -219,6 +232,7 @@ export function renderGame(options: RenderGameOptions = {}): Player {
     game = createGame({
       storage,
       sound: options.sound,
+      clock,
       // A throw inside a React click handler would not reliably reach the
       // test, so a refused move is collected and fails the test when it ends.
       onRefusedMove: (error) => refusals.push(error),
@@ -283,6 +297,9 @@ export function renderGame(options: RenderGameOptions = {}): Player {
         player.step(steps);
         player.press(character);
       }
+    },
+    setToday(day) {
+      clock.setDay(day);
     },
     step(steps) {
       act(() => game.step(steps));
