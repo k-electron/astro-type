@@ -9,7 +9,7 @@
  * Stage's result to the Profile's command. The Profile reads nothing of this
  * module.
  */
-import { keyCounts } from '../analytics/keys';
+import { type RunReport, runReport } from '../analytics/runReport';
 import { FIRST_STAGE } from '../curriculum/curriculum';
 import type { Stage } from '../curriculum/curriculum';
 import type { RunPhase } from './machine';
@@ -22,18 +22,24 @@ import {
   idleRun,
   type KeyOptions,
   type Run,
+  rhythmBand,
   scoreRun,
   startRun,
   strike,
   tick,
 } from './rules';
 
-/** What the Debrief shows of a cleared Run: its result, what it did to the Profile, and its Rhythm. */
+/**
+ * What the Debrief shows of a cleared Run: its result, what it did to the
+ * Profile, its Rhythm, and the report on how it was typed, worked out once at
+ * the clear. The report lives and goes with the Debrief: the next Run, or
+ * leaving for Academy Home and starting one, drops it.
+ */
 export type DebriefResult = Pick<
   StageResult,
   'score' | 'wpm' | 'accuracy' | 'starsEarned' | 'creditsEarned'
 > &
-  StageRecord & { rhythm: number };
+  StageRecord & { rhythm: number; report: RunReport };
 
 /** The Run's state in the store. */
 export interface RunSliceState {
@@ -158,6 +164,10 @@ export function createRunSlice(
       const elapsedSeconds = Math.max(1, runClock.runTimeMs() / 1000);
 
       const outcome = scoreRun(run, stage);
+      const report = runReport(run.flightLog, {
+        rhythm: run.rhythm,
+        rhythmBand: rhythmBand(run.rhythm),
+      });
 
       emit({ type: 'cleared', stars: outcome.starsEarned });
 
@@ -168,7 +178,16 @@ export function createRunSlice(
         charactersTyped: run.currentCharIndex,
         missMarks: run.errorIndices.size,
         practiceSeconds: Math.round(elapsedSeconds),
-        keyStats: keyCounts(run.flightLog),
+        // The Save counts hits and misses by First attempt, as it always has.
+        keyStats: Object.fromEntries(
+          Object.entries(report.keys).map(([character, tally]) => [
+            character,
+            {
+              hits: tally.firstAttempts - tally.misses,
+              misses: tally.misses,
+            },
+          ]),
+        ),
       };
       const record = get().recordStageResult(
         stage.origin === 'sector' ? stage.id : null,
@@ -183,6 +202,7 @@ export function createRunSlice(
           score: result.score,
           ...record,
           rhythm: run.rhythm,
+          report,
         },
       });
     },

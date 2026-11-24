@@ -37,6 +37,9 @@
  *   earns nothing). Banned as a phrase, since "target" alone is fine. The
  *   Glossary also drops "Goal" for a Star bar, but it is not banned here: it
  *   is an ordinary word, and the Debrief's tips are not all reached by a test.
+ * - The analytics terms that stay inside the code and the Glossary (#153): Clean
+ *   hit, First attempt and Flight log. The screens say "letter", "key",
+ *   "time" and "Miss" instead.
  * - Analytics, not "Report". This one is a whole line only (`^reports?$`):
  *   each reader trims a piece of text before it tests, so a button or label
  *   that says just "Report" is caught, while "report" inside a sentence is
@@ -55,4 +58,4 @@
  * split "hyper space", "main menu" and "custom practice".
  */
 export const BANNED_NAME =
-  /\b(?:combos?|trail[\s-]?themes?|hyper[\s-]?space|warp(?:s|ed|ing)?|upgrades?|upgraded|shields?|perfect|great|good|missions?|highways?|(?:falling|laser|keystroke)[\s-]notes?|debriefings?|main[\s-]?menus?|cockpits?|drill(?:s|ed|ing)?|sessions?|storage|custom[\s-]?practices?|custom[\s-]?themes?|ratings?|tactile[\s-]rhythm|audio[\s-]flight[\s-]deck|custom[\s-]flights?|(?:hide|show)[\s-]+(?:the[\s-]+)?(?:action[\s-]+)?deck|audio[\s-]cores?|audio[\s-]synths?|synthesizers?|deep[\s-]space[\s-]drone|cadences?|target[\s-]?wpms?)\b|^reports?$/i;
+  /\b(?:combos?|trail[\s-]?themes?|hyper[\s-]?space|warp(?:s|ed|ing)?|upgrades?|upgraded|shields?|perfect|great|good|missions?|highways?|(?:falling|laser|keystroke)[\s-]notes?|debriefings?|main[\s-]?menus?|cockpits?|drill(?:s|ed|ing)?|sessions?|storage|custom[\s-]?practices?|custom[\s-]?themes?|ratings?|tactile[\s-]rhythm|audio[\s-]flight[\s-]deck|custom[\s-]flights?|(?:hide|show)[\s-]+(?:the[\s-]+)?(?:action[\s-]+)?deck|audio[\s-]cores?|audio[\s-]synths?|synthesizers?|deep[\s-]space[\s-]drone|cadences?|target[\s-]?wpms?|clean[\s-]hits?|first[\s-]attempts?|flight[\s-]logs?)\b|^reports?$/i;
