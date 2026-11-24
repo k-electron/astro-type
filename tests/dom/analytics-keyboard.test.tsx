@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { addDays } from '../../src/analytics/days';
+import { KEYBOARD_ROWS } from '../../src/curriculum/keyboardLayout';
+import {
+  EXPORT_BACKUP_LABEL,
+  FACTORY_RESET_LABEL,
+  IMPORT_BACKUP_LABEL,
+  TECHNIQUES_HEADING,
+  WIPE_STARS_LABEL,
+} from '../../src/screens/analyticsLabels';
 import {
   KEYBOARD_HEADING,
   KEYBOARD_REBUILDING,
@@ -30,25 +38,26 @@ describe("Analytics' keyboard and what stays on the page", () => {
     const player = renderGame({ profile: { logbook: fullLogbook() } });
     player.openHeader('Analytics');
 
-    expect(within(KEYBOARD()).getAllByRole('button').length).toBeGreaterThan(
-      40,
+    expect(within(KEYBOARD()).getAllByRole('button')).toHaveLength(
+      KEYBOARD_ROWS.flat().length,
     );
-    expect(screen.getByText(/Touch Typing Master Techniques/)).toBeTruthy();
+    expect(screen.getByText(TECHNIQUES_HEADING)).toBeTruthy();
     for (const name of [
-      'Export Backup',
-      'Import Backup',
-      'Wipe Stars',
-      'Factory Reset',
+      EXPORT_BACKUP_LABEL,
+      IMPORT_BACKUP_LABEL,
+      WIPE_STARS_LABEL,
+      FACTORY_RESET_LABEL,
     ]) {
       expect(screen.getByText(name), name).toBeTruthy();
     }
   });
 
   it('no longer has the heatmap, the hand balance or the struggling reaches', () => {
-    // What these guarded, and what guards it now: the per-key accuracy, the
-    // hand split and the trouble-key list were read from the lifetime totals of
-    // the old Save. The keys are now the keyboard here and the Debrief's lists;
-    // the hand split has no replacement (the Shift hand strip is the habit).
+    // These three were removed on purpose (ticket #158): the per-key accuracy,
+    // the hand split and the trouble-key list were read from the lifetime
+    // totals of the old Save. The keys are now the keyboard here and the
+    // Debrief's lists; the hand split has no replacement (the Shift hand strip
+    // is the habit). The test stays so none of them quietly comes back.
     const player = renderGame({ profile: { logbook: fullLogbook() } });
     player.openHeader('Analytics');
 

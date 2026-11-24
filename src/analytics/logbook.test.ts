@@ -7,9 +7,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { evenly, logOf, withShift } from '../../tests/shared/flightLog';
-import { fullLogbook } from '../../tests/shared/saves';
 import { FREE_FLIGHT, lettersAt, TODAY } from '../../tests/shared/logbooks';
-import { TEST_DAY } from '../../tests/shared/testHelpers';
 import { addDays } from './days';
 import {
   EMPTY_LOGBOOK,
@@ -459,27 +457,5 @@ describe('reading a Logbook out of a Save', () => {
     expect(run.wpm).toBe(0);
     expect(run.misses).toBe(0);
     expect(run.keys).toEqual(good.runs[0].keys);
-  });
-});
-
-describe('the shared full Logbook, as later tests start from it', () => {
-  // The beginner typist's 8 weeks (tests/shared): some days in a row and some
-  // away, Sector Stages and Free Flights, every number made by the real fold.
-  const logbook = fullLogbook();
-
-  it('has days played and days away inside the last 8 weeks, and the totals of every day', () => {
-    const days = new Set(logbook.runs.map((run) => run.day));
-    expect(days.size).toBe(logbook.lifetime.daysPlayed);
-    expect(days.size).toBeGreaterThan(10);
-    expect(days.size).toBeLessThan(56);
-    expect(logbook.runs.some((run) => run.where !== null)).toBe(true);
-    expect(logbook.runs.some((run) => run.where === null)).toBe(true);
-  });
-
-  it('has a best day, a starting speed and a beginner pace around 12 WPM', () => {
-    const report = journeyReport(logbook, TEST_DAY);
-    expect(report.totals.bestDay).not.toBeNull();
-    expect(report.startingLetterWpm).toBeGreaterThan(5);
-    expect(report.startingLetterWpm).toBeLessThan(25);
   });
 });

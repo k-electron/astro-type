@@ -31,6 +31,13 @@ import {
   practiceTimeText,
   WORDS_TYPED_LABEL,
 } from './journeyLabels';
+import {
+  EXPORT_BACKUP_LABEL,
+  FACTORY_RESET_LABEL,
+  IMPORT_BACKUP_LABEL,
+  TECHNIQUES_HEADING,
+  WIPE_STARS_LABEL,
+} from './analyticsLabels';
 import { AnalyticsKeyboard } from './AnalyticsKeyboard';
 import { JourneyTimeline } from './JourneyTimeline';
 import { KeyStoryPanel } from './KeyStoryPanel';
@@ -301,7 +308,7 @@ export const Analytics: React.FC = () => {
           {/* Touch typing techniques */}
           <div className="p-4 rounded-xl border border-slate-800 bg-slate-950/60">
             <h3 className="text-xs uppercase font-mono tracking-wider text-cyan-400 mb-2">
-              Touch Typing Master Techniques
+              {TECHNIQUES_HEADING}
             </h3>
             <ul className="text-xs text-slate-400 space-y-2 list-disc list-inside">
               <li>
@@ -344,12 +351,12 @@ export const Analytics: React.FC = () => {
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-800 text-xs font-medium text-slate-300 hover:text-white transition-colors cursor-pointer"
               >
                 <Download className="w-3.5 h-3.5" />
-                <span>Export Backup</span>
+                <span>{EXPORT_BACKUP_LABEL}</span>
               </button>
 
               <label className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-800 text-xs font-medium text-slate-300 hover:text-white transition-colors cursor-pointer">
                 <Upload className="w-3.5 h-3.5" />
-                <span>Import Backup</span>
+                <span>{IMPORT_BACKUP_LABEL}</span>
                 <input
                   type="file"
                   accept=".json"
@@ -365,7 +372,7 @@ export const Analytics: React.FC = () => {
                 title="Wipe your Stars and Stage records"
               >
                 <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
-                <span>Wipe Stars</span>
+                <span>{WIPE_STARS_LABEL}</span>
               </button>
 
               <button
@@ -375,7 +382,7 @@ export const Analytics: React.FC = () => {
                 title="Completely reset all starship stats, Credits and achievements"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
-                <span>Factory Reset</span>
+                <span>{FACTORY_RESET_LABEL}</span>
               </button>
             </div>
 

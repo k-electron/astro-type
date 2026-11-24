@@ -36,7 +36,7 @@ describe('the sentence Analytics opens with', () => {
     const player = renderGame({ profile: { logbook: fullLogbook() } });
     player.openHeader('Analytics');
 
-    // fullLogbook is 8 weeks of play with 23 days played, and a Stage of Sector 1 on some of them.
+    // fullLogbook is the beginner typist's 8 weeks of play, with a Stage of Sector 1 on some of the days.
     const sentence = screen.getByText(/ days of play /).textContent ?? '';
     expect(sentence).toContain(`In ${EIGHT_WEEKS_OF_PLAY.length} days of play`);
     expect(sentence).toContain(sectorName('s1-l1'));
