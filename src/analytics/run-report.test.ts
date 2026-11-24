@@ -11,6 +11,7 @@ import {
 import { evenly, logOf, withShift } from '../../tests/shared/flightLog';
 import type { FlightLog } from './keystroke';
 import { runReport } from './runReport';
+import { valueAt } from './strips';
 import type { RhythmFacts } from './workOn';
 
 const STEPS_PER_SECOND = 60;
@@ -536,6 +537,22 @@ describe('the strips over a beginner typist Run', () => {
     expect(misses).toBeGreaterThan(0);
     expect(strips.misses).toHaveLength(misses);
     expect(strips.moments).toHaveLength(log.length);
+  });
+
+  it('draws Rhythm and Streak as the Run stamped them on each Keystroke, so they are the HUD numbers', () => {
+    expect(strips.rhythm).toEqual(
+      log.map((key) => ({ step: key.step, value: key.rhythm })),
+    );
+    expect(strips.streak).toEqual(
+      log.map((key) => ({ step: key.step, value: key.streak })),
+    );
+    // A real Run: Rhythm moves and a Miss resets the Streak (a wrong key always does).
+    expect(
+      new Set(strips.rhythm.map((point) => point.value)).size,
+    ).toBeGreaterThan(1);
+    for (const step of strips.misses) {
+      expect(valueAt(strips.streak, step)).toBe(0);
+    }
   });
 
   it('dips accuracy when a letter is missed, by 5 points for each Miss mark in the 20', () => {
