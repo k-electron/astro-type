@@ -17,9 +17,17 @@ import {
   type Stage,
 } from '../curriculum/curriculum';
 import type { FingerZone } from '../curriculum/keyboardLayout';
+import {
+  type FlightLog,
+  type Keystroke,
+  recordKeystroke,
+  type ShiftSide,
+} from '../analytics/keystroke';
 import { STEP_MS } from './clock';
 import type { Moment } from './moments';
 import type { StageResult } from './profile';
+
+export type { ShiftSide } from '../analytics/keystroke';
 
 /** A Drone: one character of the Stage's text, falling down its lane. */
 export interface Drone {
@@ -94,6 +102,8 @@ export interface KeyOptions {
   ctrlKey?: boolean;
   metaKey?: boolean;
   altKey?: boolean;
+  /** Which Shift the player held, as the keyboard saw it. Left out, no Shift. */
+  shift?: ShiftSide;
 }
 
 /**
@@ -114,12 +124,9 @@ export function countsAsKeystroke(
 
 // ---- The Run's state ----------------------------------------------------
 
-/** What the rules read of the Run's key stats: how often a character was hit or missed. */
-export type KeyStats = StageResult['keyStats'];
-
 /**
  * Everything a Run is, as one value: the live numbers, the Drones, the Stage,
- * the typed position (`currentCharIndex`), the per-key stats, the last ten
+ * the typed position (`currentCharIndex`), the Flight log, the last ten
  * keystroke times and the Miss marks. `strike` and `tick` take one and give
  * the next; nothing in it is changed in place. It is also what the snapshot's
  * `run` is.
@@ -130,7 +137,8 @@ export type Run = LivePerformance & {
   stage: Stage;
   /** The positions in the text where a wrong key was pressed: the Miss marks. */
   errorIndices: ReadonlySet<number>;
-  keyStats: KeyStats;
+  /** Every Keystroke judged so far, in order. */
+  flightLog: FlightLog;
   /** Run Time (ms) of the last ten hits, for Rhythm. */
   recentKeystrokeTimes: number[];
   /** The key the player has down (the Action Deck's pressed keycap), or null. */
@@ -156,7 +164,7 @@ export function idleRun(stage: Stage): Run {
     drones: [],
     stage,
     errorIndices: new Set<number>(),
-    keyStats: {},
+    flightLog: [],
     recentKeystrokeTimes: [],
     lastPressedKey: null,
     firstKeystrokeStep: null,
@@ -442,7 +450,12 @@ export interface StrikeResult {
  * on, and the hit that finishes a clean word pays its bonus; a wrong key is a
  * Miss, which always breaks the Streak.
  */
-export function strike(run: Run, key: string, time: RunTime): StrikeResult {
+export function strike(
+  run: Run,
+  key: string,
+  time: RunTime,
+  shift: ShiftSide = 'none',
+): StrikeResult {
   const { stage } = run;
   const index = run.currentCharIndex;
   const target = stage.sampleText[index];
@@ -454,10 +467,26 @@ export function strike(run: Run, key: string, time: RunTime): StrikeResult {
     };
   }
 
-  const stats = run.keyStats[target] ?? { hits: 0, misses: 0 };
-  // The per-key stats count characters, as accuracy does: a character is one
-  // miss for its key if it carries a Miss mark, one hit if it doesn't.
-  const marked = run.errorIndices.has(index);
+  // Only a Miss can come before a hit on the same character, so a character
+  // with no Miss mark yet is getting its First attempt.
+  const firstAttempt = !run.errorIndices.has(index);
+  // The Keystroke carries the Run's numbers just after it, as the HUD shows
+  // them (`wpm` is the HUD's own, which only `tick` refreshes).
+  const stamped = (after: Run): Run => ({
+    ...after,
+    flightLog: recordKeystroke(after.flightLog, {
+      index,
+      expected: target,
+      pressed: key,
+      firstAttempt,
+      step: time.steps,
+      shift,
+      streak: after.currentStreak,
+      accuracy: after.accuracy,
+      rhythm: after.rhythm,
+      wpm: after.wpm,
+    } satisfies Keystroke),
+  });
   // Typing Time starts at the Run's first keystroke, right or wrong.
   const keystrokeSteps = {
     firstKeystrokeStep: run.firstKeystrokeStep ?? time.steps,
@@ -468,18 +497,14 @@ export function strike(run: Run, key: string, time: RunTime): StrikeResult {
     const missed = applyMiss(run, rhythmAfterMiss(run.rhythm));
     const judgement = { type: 'miss', key } as const;
     return {
-      run: {
+      run: stamped({
         ...withAccuracy({
           ...missed,
           errorIndices: new Set(run.errorIndices).add(index),
         }),
-        keyStats: {
-          ...run.keyStats,
-          [target]: { ...stats, misses: stats.misses + (marked ? 0 : 1) },
-        },
         lastPressedKey: key,
         ...keystrokeSteps,
-      },
+      }),
       moments: [judgement],
       cleared: false,
     };
@@ -535,34 +560,32 @@ export function strike(run: Run, key: string, time: RunTime): StrikeResult {
   if (charge.ignites) moments.push({ type: 'ignition' });
 
   return {
-    run: withAccuracy({
-      ...run,
-      score: run.score + points + (cleanWord?.bonus ?? 0),
-      cleanWords,
-      currentStreak: streak,
-      maxStreak: Math.max(run.maxStreak, streak),
-      multiplier,
-      overdriveActive: charge.ignites ? true : run.overdriveActive,
-      overdriveEnergy: charge.energy,
-      correctKeystrokes: run.correctKeystrokes + 1,
-      totalKeystrokes: run.totalKeystrokes + 1,
-      currentCharIndex: nextIndex,
-      rhythm: rhythmAfterHit(keystrokeTimes, run.rhythm),
-      drones: advanceDroneQueue(
-        run.drones,
-        drone,
-        nextIndex,
-        stage.sampleText,
-        time.now,
-      ),
-      keyStats: {
-        ...run.keyStats,
-        [target]: { ...stats, hits: stats.hits + (marked ? 0 : 1) },
-      },
-      recentKeystrokeTimes: keystrokeTimes,
-      lastPressedKey: key,
-      ...keystrokeSteps,
-    }),
+    run: stamped(
+      withAccuracy({
+        ...run,
+        score: run.score + points + (cleanWord?.bonus ?? 0),
+        cleanWords,
+        currentStreak: streak,
+        maxStreak: Math.max(run.maxStreak, streak),
+        multiplier,
+        overdriveActive: charge.ignites ? true : run.overdriveActive,
+        overdriveEnergy: charge.energy,
+        correctKeystrokes: run.correctKeystrokes + 1,
+        totalKeystrokes: run.totalKeystrokes + 1,
+        currentCharIndex: nextIndex,
+        rhythm: rhythmAfterHit(keystrokeTimes, run.rhythm),
+        drones: advanceDroneQueue(
+          run.drones,
+          drone,
+          nextIndex,
+          stage.sampleText,
+          time.now,
+        ),
+        recentKeystrokeTimes: keystrokeTimes,
+        lastPressedKey: key,
+        ...keystrokeSteps,
+      }),
+    ),
     moments,
     cleared: nextIndex >= stage.sampleText.length,
   };

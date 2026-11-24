@@ -9,6 +9,7 @@
  * Stage's result to the Profile's command. The Profile reads nothing of this
  * module.
  */
+import { keyCounts } from '../analytics/keys';
 import { FIRST_STAGE } from '../curriculum/curriculum';
 import type { Stage } from '../curriculum/curriculum';
 import type { RunPhase } from './machine';
@@ -117,10 +118,12 @@ export function createRunSlice(
       if (getPhase() !== 'running') return;
       if (!countsAsKeystroke(key, options)) return;
 
-      const result = strike(get().run, key, {
-        steps: runClock.steps(),
-        now: clock.now(),
-      });
+      const result = strike(
+        get().run,
+        key,
+        { steps: runClock.steps(), now: clock.now() },
+        options?.shift,
+      );
       set({ run: result.run });
       for (const moment of result.moments) emit(moment);
       if (result.cleared) reportRunCleared();
@@ -165,7 +168,7 @@ export function createRunSlice(
         charactersTyped: run.currentCharIndex,
         missMarks: run.errorIndices.size,
         practiceSeconds: Math.round(elapsedSeconds),
-        keyStats: run.keyStats,
+        keyStats: keyCounts(run.flightLog),
       };
       const record = get().recordStageResult(
         stage.origin === 'sector' ? stage.id : null,
