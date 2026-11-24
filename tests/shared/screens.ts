@@ -81,12 +81,37 @@ export const GALAXY_MAP = 'Galaxy Map';
  * exports both (`src/screens/debriefLabels.ts`) and tests import them from
  * here, so each is written once.
  */
-export { NEW_SECTOR_UNLOCKED, REPLAY } from '../../src/screens/debriefLabels';
+export {
+  DEBRIEF_ACTIONS,
+  NEW_SECTOR_UNLOCKED,
+  REPLAY,
+} from '../../src/screens/debriefLabels';
 
 /** The status a Debrief Star bar row ends in, for a bar the Run met and one it did not. */
 export {
   BAR_ACHIEVED,
   BAR_INCOMPLETE,
+} from '../../src/screens/debriefLabels';
+
+/**
+ * What the Debrief says of how the Run was typed: the plain sentence, the
+ * headings and words of the Run's text, and the keyboard and its lists. The
+ * source exports them (`src/screens/debriefLabels.ts`) and tests import them
+ * from here.
+ */
+export {
+  KEYS_HEADING,
+  LEAST_ACCURATE_KEYS_HEADING,
+  litLettersCaption,
+  MISSED,
+  MIX_UPS_HEADING,
+  mixUpLabel,
+  NO_MISSED_KEYS,
+  NO_MIX_UPS,
+  RUN_TEXT_HEADING,
+  SLOW,
+  SLOWEST_KEYS_HEADING,
+  workOnSentence,
 } from '../../src/screens/debriefLabels';
 
 /** The Debrief's button for the next Stage in the curriculum. */

@@ -18,6 +18,7 @@ import {
   ACADEMY_HOME_HEADING,
   BAR_ACHIEVED,
   BAR_INCOMPLETE,
+  DEBRIEF_ACTIONS,
   DEBRIEF_TITLE,
   GALAXY_MAP,
   HUD_NAME,
@@ -40,9 +41,14 @@ import {
   within,
 } from './harness';
 
-/** The names of the Debrief's buttons, in the order they are laid out. */
+/**
+ * The names of the Debrief's action buttons (the row at its foot, not the
+ * keys and lists above it), in the order they are laid out.
+ */
 function debriefButtons(): string[] {
-  return within(debriefCard())
+  return within(
+    within(debriefCard()).getByRole('group', { name: DEBRIEF_ACTIONS }),
+  )
     .getAllByRole('button')
     .map((button) => button.textContent?.trim() ?? '');
 }
