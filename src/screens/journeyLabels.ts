@@ -4,6 +4,7 @@ import { MIN_DAY_LETTER_HITS } from '../analytics/lifetime';
 import type { KeyOnDay } from '../analytics/keyboardDays';
 import type { Reading } from '../analytics/keyDays';
 import type { MixUpCause } from '../analytics/mixUps';
+import { MIN_PAIR_COUNT } from '../analytics/pairs';
 import type { ShiftTally } from '../analytics/shift';
 import type { KeyStory } from '../analytics/keyStory';
 import {
@@ -337,10 +338,14 @@ export const SHIFT_WAYS: {
 
 export const LETTER_PAIRS_SECTION = 'Your Letter pairs';
 export const LETTER_PAIRS_SECTION_HINT =
-  'How long the second letter takes after the first, from the last 8 weeks. A pair needs to be typed cleanly 8 times to count, and pairs with a Space in them are left out.';
+  'How long the second letter takes after the first, from the last 8 weeks. A pair needs to be typed cleanly 8 times to count, pairs with a Space in them are left out, and the slowest are only those slower than your average.';
 export const SLOWEST_PAIRS = 'Your slowest pairs';
 export const COMMON_PAIRS_HEADING = 'The most common pairs in English';
 export const NO_SLOW_PAIRS = 'No pair has been typed cleanly often enough yet.';
+/** Said when pairs were typed often enough to rank, and none is slower than the average. */
+export const NO_PAIR_SLOWER = 'None of your pairs is slower than your average.';
+/** Beside a common pair with no time: it was not typed often enough to tell. */
+export const COMMON_PAIRS_NO_TIME = `– = typed cleanly fewer than ${MIN_PAIR_COUNT} times`;
 export const pairTimeText = (ms: number): string => `${Math.round(ms)} ms`;
 export const NO_PAIR_TIME = 'not often enough to tell';
 export const pairAverage = (ms: number): string =>

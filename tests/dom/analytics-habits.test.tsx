@@ -9,12 +9,14 @@ import {
 } from '../../src/analytics/logbook';
 import { COMMON_PAIRS } from '../../src/analytics/pairs';
 import {
+  COMMON_PAIRS_NO_TIME,
   habitsRebuilding,
   KEY_STORY_HEADING,
   keyStoryTitle,
   LETTER_PAIRS_SECTION,
   MIX_UP_CAUSES,
   MIX_UPS_SECTION,
+  NO_PAIR_SLOWER,
   NO_PAIR_TIME,
   NOTHING_TO_SHOW_YET,
   pairTitle,
@@ -22,6 +24,7 @@ import {
   SHIFT_WAYS,
 } from '../../src/screens/journeyLabels';
 import { evenly, logOf, withShift } from '../shared/flightLog';
+import { typed } from '../shared/logbooks';
 import { TEST_DAY } from '../shared/testHelpers';
 import { renderGame, screen, within } from './harness';
 
@@ -95,17 +98,42 @@ describe('Mix-ups, Shift hand and Letter pairs on Analytics', () => {
     expect(share('shiftNone')).toBe('0%');
   });
 
-  it('shows the slowest Letter pairs and the time on each common English pair', () => {
+  it('shows the time on each common English pair, and says what a dash means', () => {
     const player = renderGame({ profile: { logbook: everyDay(3, HABITS) } });
     player.openHeader('Analytics');
 
     const pairs = section(LETTER_PAIRS_SECTION);
-    // "th" is in both lists, 27 clean tries at 200 ms.
-    expect(pairs.getAllByTitle(pairTitle('th', 200, 27))).toHaveLength(2);
+    // "th" is the common pair typed: 27 clean tries at 200 ms.
+    expect(pairs.getAllByTitle(pairTitle('th', 200, 27))).toHaveLength(1);
     // Every other common pair was never typed.
     expect(pairs.getAllByTitle(NO_PAIR_TIME)).toHaveLength(
       COMMON_PAIRS.length - 1,
     );
+    expect(pairs.getByText(COMMON_PAIRS_NO_TIME)).toBeTruthy();
+  });
+
+  it('says no pair is slower when every pair typed often is as quick as the average', () => {
+    // Every pair in HABITS takes 200 ms, so none is slower than the average.
+    const player = renderGame({ profile: { logbook: everyDay(3, HABITS) } });
+    player.openHeader('Analytics');
+
+    expect(
+      section(LETTER_PAIRS_SECTION).getByText(NO_PAIR_SLOWER),
+    ).toBeTruthy();
+  });
+
+  it('lists a pair slower than the average among the slowest', () => {
+    // "bb" at 200 ms 30 times a day and "cc" at 400 ms 9 times a day.
+    const quick = typed(`a${'b'.repeat(31)}`, 12);
+    const slow = typed(`x${'c'.repeat(10)}`, 24);
+    const player = renderGame({
+      profile: { logbook: everyDay(3, [quick, slow]) },
+    });
+    player.openHeader('Analytics');
+
+    const pairs = section(LETTER_PAIRS_SECTION);
+    expect(pairs.getByTitle(pairTitle('cc', 400, 27))).toBeTruthy();
+    expect(pairs.queryByTitle(pairTitle('bb', 200, 90))).toBeNull();
   });
 
   it.each([
