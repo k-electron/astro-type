@@ -9,7 +9,8 @@ import {
   BACK_TO_LATEST,
   KEYBOARD_HEADING,
   KEYBOARD_HINT,
-  KEYBOARD_REBUILDING,
+  isReturning,
+  keyboardRebuilding,
   keyboardAsOf,
   keyboardHeld,
   keyOnDayTitle,
@@ -128,7 +129,9 @@ export const AnalyticsKeyboard: React.FC<AnalyticsKeyboardProps> = ({
         )}
       </div>
       {report.rebuilding ? (
-        <p className="text-xs text-slate-400">{KEYBOARD_REBUILDING}</p>
+        <p className="text-xs text-slate-400">
+          {keyboardRebuilding(isReturning(report.sentence))}
+        </p>
       ) : (
         <>
           <Keyboard keyView={keyView} label={KEYBOARD_HEADING} />

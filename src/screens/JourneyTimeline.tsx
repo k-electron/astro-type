@@ -11,6 +11,7 @@ import {
   DAILY_OVER,
   DAY_AWAY,
   DAY_NOT_PLAYED,
+  isReturning,
   dailyAccuracyExplanation,
   dailyRhythmExplanation,
   dayText,
@@ -25,7 +26,7 @@ import {
   TIMELINE_EMPTY,
   TIMELINE_HEADING,
   TIMELINE_HINT,
-  TIMELINE_REBUILDING,
+  timelineRebuilding,
 } from './journeyLabels';
 import { roundDown } from './roundDown';
 import {
@@ -149,7 +150,9 @@ export const JourneyTimeline: React.FC<JourneyTimelineProps> = ({
         <h3 className="text-[10px] uppercase font-mono tracking-wider text-slate-400 mb-2">
           {TIMELINE_HEADING}
         </h3>
-        <p className="text-xs text-slate-400">{TIMELINE_REBUILDING}</p>
+        <p className="text-xs text-slate-400">
+          {timelineRebuilding(isReturning(report.sentence))}
+        </p>
       </section>
     );
   }

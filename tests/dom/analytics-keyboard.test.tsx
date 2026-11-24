@@ -10,7 +10,7 @@ import {
 } from '../../src/screens/analyticsLabels';
 import {
   KEYBOARD_HEADING,
-  KEYBOARD_REBUILDING,
+  keyboardRebuilding,
   OFTEN_MISSED,
 } from '../../src/screens/journeyLabels';
 import { fullLogbook, keysByDay, RETURNING_PLAYER } from '../shared/saves';
@@ -80,7 +80,7 @@ describe("Analytics' keyboard and what stays on the page", () => {
     });
     player.openHeader('Analytics');
 
-    expect(within(KEYBOARD()).getByText(KEYBOARD_REBUILDING)).toBeTruthy();
+    expect(within(KEYBOARD()).getByText(keyboardRebuilding(true))).toBeTruthy();
     expect(within(KEYBOARD()).queryAllByRole('button')).toHaveLength(0);
   });
 
@@ -90,7 +90,9 @@ describe("Analytics' keyboard and what stays on the page", () => {
     });
     player.openHeader('Analytics');
 
-    expect(within(KEYBOARD()).getByText(KEYBOARD_REBUILDING)).toBeTruthy();
+    expect(
+      within(KEYBOARD()).getByText(keyboardRebuilding(false)),
+    ).toBeTruthy();
   });
 });
 

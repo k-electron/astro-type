@@ -11,7 +11,7 @@ import { fingerWords } from '../../src/screens/debriefLabels';
 import {
   KEY_NOT_TIMED,
   KEY_NOW,
-  KEY_REBUILDING,
+  keyRebuilding,
   KEY_STORY_HEADING,
   KEY_STORY_PROMPT,
   KEYBOARD_HEADING,
@@ -130,7 +130,7 @@ describe("a key's story on Analytics", () => {
     expect(story.getByText(keyStoryTitle('f'))).toBeTruthy();
     expect(story.getByText(/200 ms a key.*its first 2 days/)).toBeTruthy();
     expect(story.getByText(KEY_NOW).nextElementSibling?.textContent).toBe(
-      KEY_REBUILDING,
+      keyRebuilding(false),
     );
     expect(story.queryByText(keyInsteadText('g', 8))).toBeNull();
   });

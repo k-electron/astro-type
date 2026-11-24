@@ -1,4 +1,7 @@
-import type { JourneySentence } from '../analytics/journeySentence';
+import {
+  type JourneySentence,
+  MIN_DAYS_FOR_PICTURE,
+} from '../analytics/journeySentence';
 import { STEPS_PER_SECOND } from '../analytics/keys';
 import { MIN_DAY_LETTER_HITS } from '../analytics/lifetime';
 import type { KeyOnDay } from '../analytics/keyboardDays';
@@ -68,7 +71,18 @@ const awayText = (away: { days: number; atLeast: boolean }): string =>
       : `at least ${away.days} days`
     : `${away.days} ${away.days === 1 ? 'day' : 'days'}`;
 
+/**
+ * Where the picture of how the player types now is not drawn yet, a player
+ * who has been away has it rebuilt, and a new player has it built up: the
+ * screens say "rebuilding" only to the first.
+ */
+export const isReturning = (sentence: JourneySentence): boolean =>
+  sentence.kind === 'rebuilding' && sentence.away !== null;
+
+const BUILDS_UP = `builds up after ${MIN_DAYS_FOR_PICTURE} days of play`;
+
 const REBUILD = 'A few days of play will rebuild the picture of how you type.';
+const BUILD = `The picture of how you type ${BUILDS_UP}.`;
 
 /**
  * The plain sentence on top of Analytics. The report picks which of three
@@ -80,7 +94,7 @@ export function journeySentence(sentence: JourneySentence): string {
       return NOTHING_TO_SHOW_YET;
     case 'rebuilding':
       return sentence.away === null
-        ? `Your journey has just begun. ${REBUILD}`
+        ? `Your journey has just begun. ${BUILD}`
         : `Welcome back! You have been away for ${awayText(sentence.away)}. ${REBUILD}`;
     case 'journey': {
       const { startingLetterWpm: from, nowLetterWpm: to } = sentence;
@@ -113,8 +127,11 @@ export const TIMELINE_HEADING = 'Your last 8 weeks';
 export const TIMELINE_HINT =
   'Hover a day to read it. Click a day or a Sector band to hold that day on the keyboard below and to jump to its Sector entry; click it again to let go. Each dot is a day you played. Shaded days are days away: nothing is lost while you are away.';
 export const AWAY_MARK = 'nothing is lost while you are away';
-export const TIMELINE_REBUILDING =
-  'The timeline is rebuilding. A few days of play will draw it.';
+/** What the timeline says in place of its strips: `returning` is a player who has been away. */
+export const timelineRebuilding = (returning: boolean): string =>
+  returning
+    ? 'The timeline is rebuilding. A few days of play will draw it.'
+    : `The timeline ${BUILDS_UP}.`;
 export const TIMELINE_EMPTY = 'No dot yet';
 
 /** The timeline's strips, in the order they are drawn. */
@@ -162,8 +179,10 @@ export const BACK_TO_LATEST = 'Back to latest';
 export const keyboardHeld = (day: string): string => `Holding ${dayText(day)}`;
 /** What a key's tooltip adds when it is ringed red: it is missed often. */
 export const OFTEN_MISSED = 'often missed';
-export const KEYBOARD_REBUILDING =
-  'Your keys are rebuilding. A few days of play will show how each key is going now.';
+export const keyboardRebuilding = (returning: boolean): string =>
+  returning
+    ? 'Your keys are rebuilding. A few days of play will show how each key is going now.'
+    : `Your keys build up after ${MIN_DAYS_FOR_PICTURE} days of play.`;
 
 /** The day the keyboard is showing: the one under the timeline's cursor, or the latest. */
 export const keyboardAsOf = (day: string): string => `As of ${dayText(day)}`;
@@ -208,7 +227,8 @@ export const keyTimesTyped = (count: number): string =>
 export const KEY_FIRST_DAYS = 'Its first days';
 export const KEY_NOW = 'Now';
 export const KEY_BEST = 'Your best';
-export const KEY_REBUILDING = 'rebuilding';
+export const keyRebuilding = (returning: boolean): string =>
+  returning ? 'rebuilding' : BUILDS_UP;
 export const KEY_NOT_ENOUGH_LATELY = 'not typed often enough lately to tell';
 export const KEY_NOT_TIMED = 'too few timed hits';
 
@@ -299,8 +319,10 @@ export const ENTRY_SPARKLINE = 'Run speeds';
 // ---- Mix-ups, Shift hand and Letter pairs ------------------------------------
 
 /** What each section says while the picture of how the player types now is rebuilding. */
-export const habitsRebuilding = (what: string): string =>
-  `Your ${what} are rebuilding. A few days of play will show them.`;
+export const habitsRebuilding = (what: string, returning: boolean): string =>
+  returning
+    ? `Your ${what} are rebuilding. A few days of play will show them.`
+    : `Your ${what} build up after ${MIN_DAYS_FOR_PICTURE} days of play.`;
 
 export const MIX_UPS_SECTION = 'Your Mix-ups';
 export const MIX_UPS_SECTION_HINT =
