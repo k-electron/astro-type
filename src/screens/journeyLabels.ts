@@ -205,7 +205,7 @@ export const KEY_NOW = 'Now';
 export const KEY_BEST = 'Your best';
 export const KEY_REBUILDING = 'rebuilding';
 export const KEY_NOT_ENOUGH_LATELY = 'not typed often enough lately to tell';
-export const KEY_NOT_TIMED = 'too few clean hits to time';
+export const KEY_NOT_TIMED = 'too few timed hits';
 
 /** A key's speed and accuracy as a line: "420 ms a key, 83% right". */
 export function keyReadingText(reading: {
@@ -253,7 +253,7 @@ export const LOGBOOK_HEADING = 'Your logbook';
 export const LOGBOOK_HINT =
   'One entry for each Sector you have flown, in the order you reached them. They stay here even when the days behind them have faded.';
 
-/** The days a entry covers: "Nov 3" for one day, "Nov 3 to Nov 20" for more. */
+/** The days an entry covers: "Nov 3" for one day, "Nov 3 to Nov 20" for more. */
 export const entryDates = (firstDay: string, lastDay: string): string =>
   firstDay === lastDay
     ? dayText(firstDay)
@@ -265,12 +265,12 @@ export const entryDays = (days: number): string =>
 export const entryRuns = (runs: number): string =>
   `${runs} ${runs === 1 ? 'Run' : 'Runs'}`;
 
-/** A entry's Stars as they are now, read live; only for a Sector that still exists. */
+/** An entry's Stars as they are now, read live; only for a Sector that still exists. */
 export const entryStars = (earned: number, most: number): string =>
   `${earned} of ${most} Stars`;
 
 /**
- * A number at the start of a entry and at its end: "12 to 23 WPM", or just
+ * A number at the start of an entry and at its end: "12 to 23 WPM", or just
  * "23 WPM" when they read the same. `whole` makes each a whole number.
  */
 export function fromTo(

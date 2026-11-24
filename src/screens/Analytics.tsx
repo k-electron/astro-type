@@ -37,7 +37,7 @@ import { KeyStoryPanel } from './KeyStoryPanel';
 import { type EntryJump, SectorEntries } from './SectorEntries';
 import { LetterPairs, MixUps, ShiftHand } from './TypingHabits';
 
-/** How long a entry stays ringed after the timeline sent the player to it. */
+/** How long an entry stays ringed after the timeline sent the player to it. */
 const RING_MS = 3000;
 
 export const Analytics: React.FC = () => {
@@ -106,7 +106,7 @@ export const Analytics: React.FC = () => {
     });
   };
 
-  // A entry's Stars are read live from Stage progress, joined by id to the
+  // An entry's Stars are read live from Stage progress, joined by id to the
   // Sectors the game has today: a Sector that has gone has none to show.
   const starsOf = (sectorId: string) => {
     const sector = CURRICULUM_SECTORS.find(({ id }) => id === sectorId);
