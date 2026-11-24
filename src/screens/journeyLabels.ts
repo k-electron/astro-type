@@ -2,7 +2,14 @@ import type { JourneySentence } from '../analytics/journeySentence';
 import { STEPS_PER_SECOND } from '../analytics/keys';
 import { MIN_DAY_LETTER_HITS } from '../analytics/lifetime';
 import type { KeyOnDay } from '../analytics/keyboardDays';
-import { fingerWords, keyLabel, keycapLabel } from './debriefLabels';
+import type { Reading } from '../analytics/keyDays';
+import type { KeyStory } from '../analytics/keyStory';
+import {
+  fingerWords,
+  keyLabel,
+  keycapLabel,
+  typedLabel,
+} from './debriefLabels';
 import { NO_SPEED } from './hudLabels';
 import { roundDown } from './roundDown';
 
@@ -97,7 +104,7 @@ export function journeySentence(sentence: JourneySentence): string {
 
 export const TIMELINE_HEADING = 'Your last 8 weeks';
 export const TIMELINE_HINT =
-  'Hover a day to read it, and click a day or a Sector band to jump to its entry below. Each dot is a day you played. Shaded days are days away: nothing is lost while you are away.';
+  'Hover a day to read it. Click a day or a Sector band to hold that day on the keyboard below and to jump to its Sector entry; click it again to let go. Each dot is a day you played. Shaded days are days away: nothing is lost while you are away.';
 export const AWAY_MARK = 'nothing is lost while you are away';
 export const TIMELINE_REBUILDING =
   'The timeline is rebuilding. A few days of play will draw it.';
@@ -140,7 +147,12 @@ export const shiftHandExplanation = (): string =>
 
 export const KEYBOARD_HEADING = 'Your keys over time';
 export const KEYBOARD_HINT =
-  'Move along the timeline to see each key as it was on that day. Green is quick, amber is slow, a red key is very slow, a red ring means often missed and a dark key is not typed yet.';
+  'Move along the timeline to see each key as it was on that day, and click a day to hold it. Green is quick, amber is slow, a red key marked !! is very slow, a red ring means often missed, a dashed outline means not typed often enough lately to tell and a dark key is not typed yet. Click a key to read its story.';
+/** The mark in the corner of a very slow key, so it is told from a slow one by more than its colour. */
+export const VERY_SLOW_MARK = '!!';
+/** The button that lets go of a day the player clicked, and the line saying one is held. */
+export const BACK_TO_LATEST = 'Back to latest';
+export const keyboardHeld = (day: string): string => `Holding ${dayText(day)}`;
 /** What a key's tooltip adds when it is ringed red: it is missed often. */
 export const OFTEN_MISSED = 'often missed';
 export const KEYBOARD_REBUILDING =
@@ -165,6 +177,67 @@ export function keyOnDayTitle(
   const missed = oftenMissed ? `, ${OFTEN_MISSED}` : '';
   return `${name}: ${speed}${roundDown(key.accuracy)}% right, over its last ${days} played${missed}`;
 }
+
+// ---- One key's story ----------------------------------------------------------
+
+export const KEY_STORY_HEADING = "One key's story";
+export const KEY_STORY_PROMPT =
+  'Click a key on the keyboard, or one in your logbook, to read its story.';
+export const keyStoryTitle = (keycap: string): string =>
+  `The ${keycapLabel(keycap)} key`;
+export const keyStoryFinger = (story: KeyStory): string =>
+  story.finger === null ? '' : `Typed with your ${fingerWords(story.finger)}`;
+export const keyFirstTyped = (day: string): string =>
+  `First typed ${dayText(day)}`;
+export const keyTimesTyped = (count: number): string =>
+  `Typed ${count.toLocaleString()} ${count === 1 ? 'time' : 'times'}`;
+
+export const KEY_FIRST_DAYS = 'Its first days';
+export const KEY_NOW = 'Now';
+export const KEY_BEST = 'Your best';
+export const KEY_REBUILDING = 'rebuilding';
+export const KEY_NOT_ENOUGH_LATELY = 'not typed often enough lately to tell';
+export const KEY_NOT_TIMED = 'too few clean hits to time';
+
+/** A key's speed and accuracy as a line: "420 ms a key, 83% right". */
+export function keyReadingText(reading: {
+  ms: number | null;
+  accuracy: number | null;
+}): string {
+  const speed =
+    reading.ms === null ? KEY_NOT_TIMED : `${Math.round(reading.ms)} ms a key`;
+  return reading.accuracy === null
+    ? speed
+    : `${speed}, ${roundDown(reading.accuracy)}% right`;
+}
+
+/** Its first days' line, with how many days they were. */
+export const keyFirstDaysText = (first: Reading): string =>
+  first.tries === 0
+    ? KEY_NOT_ENOUGH_LATELY
+    : `${keyReadingText(first)}, over ${first.days === 1 ? 'its first day' : `its first ${first.days} days`}`;
+
+/** The best line: both numbers are the best over any run of days, so they may come from different ones. */
+export const keyBestText = (best: KeyStory['best']): string | null =>
+  best.ms === null && best.accuracy === null ? null : keyReadingText(best);
+
+export const KEY_SPEED_TREND = 'Speed trend';
+export const KEY_ACCURACY_TREND = 'Accuracy trend';
+export const KEY_TREND_HINT =
+  'Each point is the key over its last 5 days played with at least 10 tries. Higher is quicker, and higher is more accurate.';
+export const KEY_NO_TREND = 'not enough days to draw yet';
+export const keyTrendPointText = (day: string, value: string): string =>
+  `${dayText(day)}: ${value}`;
+
+export const KEY_MIX_UPS_NONE = 'No Mix-ups lately.';
+/** A Mix-up of a key: what it was typed as, and how often. */
+export const keyInsteadText = (pressed: string, count: number): string =>
+  `${typedLabel(pressed)} ×${count}`;
+export const KEY_MIX_UPS_HINT = 'Typed as, in the last 8 weeks:';
+
+/** What a keycap in the logbook says it will do. */
+export const openKeyStoryTitle = (keycap: string): string =>
+  `Read the story of the ${keycapLabel(keycap)} key`;
 
 // ---- The logbook: one entry for each Sector --------------------------------
 

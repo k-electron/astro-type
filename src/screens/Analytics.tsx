@@ -33,6 +33,7 @@ import {
 } from './journeyLabels';
 import { AnalyticsKeyboard } from './AnalyticsKeyboard';
 import { JourneyTimeline } from './JourneyTimeline';
+import { KeyStoryPanel } from './KeyStoryPanel';
 import { type EntryJump, SectorEntries } from './SectorEntries';
 
 /** How long a entry stays ringed after the timeline sent the player to it. */
@@ -68,8 +69,19 @@ export const Analytics: React.FC = () => {
   );
   const { totals } = journey;
   // The day under the timeline's cursor, kept here so the parts of the page
-  // that follow it (the entries, the keyboard) can read it too.
-  const [cursorDay, setCursorDay] = useState<string | null>(null);
+  // that follow it (the keyboard, the key story) can read it too. It is held
+  // while the pointer is anywhere over the timeline, the keyboard and the key
+  // story as one block, gaps between them included, and let go only when the
+  // pointer leaves the whole block. A day the player clicked is held until
+  // they click it again or ask for the latest.
+  const [hoverDay, setHoverDay] = useState<string | null>(null);
+  const [heldDay, setHeldDay] = useState<string | null>(null);
+  const cursorDay = hoverDay ?? heldDay;
+  // The key whose story is open: the one the player picked, else the one the
+  // report starts on.
+  const [pickedKey, setPickedKey] = useState<string | null>(null);
+  const storyKey = pickedKey ?? journey.startKey;
+  const storyRef = useRef<HTMLElement>(null);
   // The entry the timeline last sent the player to: it is scrolled to and
   // ringed for a moment.
   const [jump, setJump] = useState<EntryJump | null>(null);
@@ -80,6 +92,18 @@ export const Analytics: React.FC = () => {
   }, [jump]);
   const jumpToEntry = (id: string) =>
     setJump((last) => ({ id, count: (last?.count ?? 0) + 1 }));
+  const selectDay = (day: string, sectorId: string | null) => {
+    setHeldDay((held) => (held === day ? null : day));
+    if (sectorId !== null) jumpToEntry(sectorId);
+  };
+  // A key in the logbook is far below its story, so bring the story into view.
+  const pickFromLogbook = (keycap: string) => {
+    setPickedKey(keycap);
+    storyRef.current?.scrollIntoView?.({
+      block: 'nearest',
+      behavior: 'smooth',
+    });
+  };
 
   // A entry's Stars are read live from Stage progress, joined by id to the
   // Sectors the game has today: a Sector that has gone has none to show.
@@ -217,19 +241,40 @@ export const Analytics: React.FC = () => {
             </div>
           </div>
 
-          {/* The last 8 weeks, day by day */}
+          {/* The last 8 weeks, the keyboard and one key's story: one block to
+              hover, so the cursor day is held across the gaps between them */}
           {journey.sentence.kind !== 'empty' && (
-            <JourneyTimeline
-              report={journey}
-              cursor={cursorDay}
-              onCursor={setCursorDay}
-              onSelectSector={jumpToEntry}
-            />
-          )}
-
-          {/* The keyboard, as it was on the day under the timeline's cursor */}
-          {journey.sentence.kind !== 'empty' && (
-            <AnalyticsKeyboard report={journey} cursor={cursorDay} />
+            // biome-ignore lint/a11y/noStaticElementInteractions: the pointer leaving the block lets go of the day the timeline's cursor was on; it is a pointer-only convenience, and the day can also be held with a click
+            <div
+              className="flex flex-col gap-6"
+              onMouseLeave={() => setHoverDay(null)}
+            >
+              <JourneyTimeline
+                report={journey}
+                cursor={cursorDay}
+                onCursor={setHoverDay}
+                onSelectDay={selectDay}
+              />
+              <AnalyticsKeyboard
+                report={journey}
+                cursor={cursorDay}
+                held={heldDay}
+                onLetGo={() => {
+                  // The pointer is on the button, so the hover is let go too.
+                  setHeldDay(null);
+                  setHoverDay(null);
+                }}
+                selected={storyKey}
+                onPick={setPickedKey}
+              />
+              <KeyStoryPanel
+                panelRef={storyRef}
+                story={
+                  storyKey === null ? undefined : journey.keyStories[storyKey]
+                }
+                rebuilding={journey.rebuilding}
+              />
+            </div>
           )}
 
           {/* One entry for each Sector flown */}
@@ -238,6 +283,8 @@ export const Analytics: React.FC = () => {
               entries={journey.sectors}
               starsOf={starsOf}
               jump={jump}
+              selected={storyKey}
+              onPickKey={pickFromLogbook}
             />
           )}
 
