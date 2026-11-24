@@ -1,0 +1,250 @@
+<title>Analytics Journey Prototype</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+  /* Layout: one centred column, the video first, chapters as a strip under it, then the five calls to make. Deliberately one dark look, like the game. */
+  :root {
+    --bg: #070b14;
+    --panel: #0f1625;
+    --line: #1e293b;
+    --fg: #e2e8f0;
+    --muted: #8b98ad;
+    --accent: #22d3ee;
+    --accent-ink: #04212a;
+    --miss: #fb7185;
+    --font-display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+    --font-body: "Inter", system-ui, -apple-system, sans-serif;
+    --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+    color-scheme: dark;
+  }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.55;
+  }
+  .wrap {
+    max-width: 1040px;
+    margin: 0 auto;
+    padding-block: 32px 56px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    display: grid;
+    gap: 22px;
+  }
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  h1 {
+    font-family: var(--font-display);
+    font-size: clamp(26px, 4vw, 36px);
+    line-height: 1.15;
+    margin: 4px 0 6px;
+    text-wrap: balance;
+  }
+  .lede { color: var(--muted); max-width: 68ch; margin: 0; }
+  .player {
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    overflow: hidden;
+    background: #000;
+  }
+  video { display: block; width: 100%; height: auto; max-width: 100%; aspect-ratio: 16 / 10; }
+  .chapters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .chapters button {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    color: var(--fg);
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 6px 12px;
+    cursor: pointer;
+    display: inline-flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .chapters button .t { color: var(--muted); font-variant-numeric: tabular-nums; }
+  .chapters button:hover { border-color: #334155; }
+  .chapters button[aria-current="true"] { border-color: var(--accent); color: var(--accent); }
+  .chapters button:focus-visible, video:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .variants {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 12px;
+  }
+  .variant {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 14px 16px;
+    min-width: 0;
+  }
+  .variant h3 {
+    font-family: var(--font-display);
+    font-size: 16px;
+    margin: 0 0 4px;
+  }
+  .variant h3 span { font-family: var(--font-mono); color: var(--accent); margin-right: 6px; }
+  .variant p { margin: 0; color: var(--muted); font-size: 14px; }
+  h2 {
+    font-family: var(--font-display);
+    font-size: 20px;
+    margin: 10px 0 0;
+  }
+  .calls { display: grid; gap: 10px; counter-reset: none; }
+  .call {
+    display: grid;
+    grid-template-columns: 44px 1fr;
+    gap: 4px 12px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 14px 16px;
+  }
+  .call .q {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    color: var(--accent);
+    grid-row: span 2;
+  }
+  .call strong { font-weight: 600; }
+  .call p { margin: 0; color: var(--muted); font-size: 14px; min-width: 0; }
+  .call .rec { color: var(--fg); }
+  .call .rec::before { content: "Recommended: "; color: var(--accent); font-family: var(--font-mono); font-size: 12px; }
+  .note { color: var(--muted); font-size: 13px; margin: 0; }
+  code { font-family: var(--font-mono); font-size: 0.92em; color: #cbd5e1; }
+  @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .tablewrap { overflow-x: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; }
+  th, td { text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--line); }
+  th { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  td.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  tr.pick td { color: var(--accent); }
+  .layers { display: grid; gap: 10px; }
+  details { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 16px; }
+  summary { cursor: pointer; font-weight: 600; }
+</style>
+
+<main class="wrap">
+  <header>
+    <div class="eyebrow">astro-type · What Analytics shows of the journey</div>
+    <h1>Analytics Journey Prototype</h1>
+    <p class="lede">Two made-up months of a beginner: 43 days played out of 56, with days away, typed key by key by the same beginner model as the Debrief video, through the real Sectors and Stages and their real Star bars. They go from about 8 to 21 WPM and reach Event Horizon. Three versions of Analytics show that journey, each opening with one plain sentence. Today's Analytics screen sits unchanged under each one.</p>
+  </header>
+
+  <h2>D · Together</h2>
+  <p class="lede">Everything from A, B and C on one page, linked, with today's screen trimmed to what still matters. Narrated, with captions and a yellow highlight on whatever the voice is talking about.</p>
+  <div class="player">
+    <video id="vidD" src="analytics-together.mp4" controls playsinline preload="metadata"></video>
+  </div>
+  <nav class="chapters" data-for="vidD" aria-label="Chapters of version D"></nav>
+
+  <details>
+    <summary>The first narrated walkthrough: versions A, B and C</summary>
+    <div class="player" style="margin-top:12px">
+    <video id="vidAn" src="analytics-narrated.mp4" controls playsinline preload="metadata"></video>
+  </div>
+  <p class="note">Narrated, with captions and a yellow highlight on whatever the voice is talking about. Press play for sound.</p>
+  <nav class="chapters" data-for="vidAn" aria-label="Chapters"></nav>
+
+    </details>
+
+<section class="variants" aria-label="The three versions">
+    <article class="variant">
+      <h3><span>A</span>Timeline</h3>
+      <p>Four strips over the calendar: speed, accuracy, Rhythm and Shift hand. Sectors are coloured bands, days away are shaded. Moving along the strips turns the keyboard back to how the keys were on that day. Mix-ups, Shift hand and Letter pairs sit underneath.</p>
+    </article>
+    <article class="variant">
+      <h3><span>B</span>Keys first</h3>
+      <p>One small speed strip, then a big keyboard. Pick a key, or one from "Needs work" or "Most improved", to see its finger, then versus now, its trend, what it gets pressed as, and its slowest Letter pairs.</p>
+    </article>
+    <article class="variant">
+      <h3><span>C</span>Logbook</h3>
+      <p>The journey as chapters, one per Sector: dates, days, Runs, Stars, speed and accuracy from start to end, a speed sparkline, and the keys that Sector brought in, coloured by how they are now.</p>
+    </article>
+  </section>
+
+  <h2>What the made-up months showed</h2>
+  <div class="calls">
+    <div class="call">
+      <span class="q">!</span>
+      <strong>Speed dips on number Stages</strong>
+      <p>Daily WPM fell from about 18 to 13 when the player reached Pulsar Core's number drills, then rose again. Read naively, the line says the player got worse. A raw WPM line mixes easy and hard Stages.</p>
+    </div>
+    <div class="call">
+      <span class="q">!</span>
+      <strong>One key's daily trend is noisy</strong>
+      <p>A key typed only a handful of times on a day swings wildly (see <b>p</b> in B). Per-key trends need a minimum count per point, or a rolling window.</p>
+    </div>
+    <div class="call">
+      <span class="q">!</span>
+      <strong>Gates send players back</strong>
+      <p>Star gates sent the player back to earlier Stages for days, so "the Sector you're in" isn't one band. The prototype colours each day by the furthest Sector reached.</p>
+    </div>
+  </div>
+
+  <p class="note">The code is on the throwaway branch <code>prototype/debrief-flight-log</code>, which never merges. In the dev build, open Analytics with <code>?analytics=A|B|C</code>.</p>
+</main>
+
+<script>
+  const CHAPTERS = {
+    vidD: [
+      { label: "Sentence and totals", t: 1.7 },
+      { label: "Timeline, letter speed", t: 12.3 },
+      { label: "Click a Sector", t: 20.9 },
+      { label: "Keyboard back in time", t: 30.9 },
+      { label: "One key's story", t: 38.7 },
+      { label: "Mix-ups, Shift, pairs", t: 51.0 },
+      { label: "Logbook", t: 57.3 },
+      { label: "What's gone, what stays", t: 65.8 },
+    ],
+    vidAn: [
+      { label: "The plain sentence", t: 1.8 },
+      { label: "A · the timeline", t: 13.9 },
+      { label: "Sector bands", t: 24.3 },
+      { label: "Days away", t: 34.1 },
+      { label: "Targets", t: 40.1 },
+      { label: "The speed dip", t: 50.1 },
+      { label: "Keyboard back in time", t: 64.3 },
+      { label: "Mix-ups", t: 77.2 },
+      { label: "Shift hand", t: 84.8 },
+      { label: "Letter pairs", t: 92.6 },
+      { label: "B · keys first", t: 104.5 },
+      { label: "B · one key", t: 112.7 },
+      { label: "C · logbook", t: 127.7 },
+      { label: "Today's screen", t: 142.1 },
+      { label: "My suggestion", t: 155.6 },
+    ],
+  };
+  const fmt = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
+  document.querySelectorAll("nav.chapters").forEach((nav) => {
+    const vid = document.getElementById(nav.dataset.for);
+    const list = CHAPTERS[nav.dataset.for];
+    const buttons = list.map((c) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.innerHTML = `<span class="t">${fmt(c.t)}</span><span></span>`;
+      b.lastChild.textContent = c.label;
+      b.addEventListener("click", () => { vid.currentTime = c.t; vid.play().catch(() => {}); });
+      nav.appendChild(b);
+      return b;
+    });
+    vid.addEventListener("timeupdate", () => {
+      let current = 0;
+      list.forEach((c, i) => { if (vid.currentTime >= c.t) current = i; });
+      buttons.forEach((b, i) => b.setAttribute("aria-current", String(i === current)));
+    });
+  });
+</script>
