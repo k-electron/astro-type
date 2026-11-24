@@ -210,13 +210,13 @@ export interface StripNumbers {
 
 /** The Speed strip's value, as it reads beside the strip. */
 export const speedValue = (value: number | null): string =>
-  value === null ? NO_SPEED : `${Math.round(value)} WPM`;
+  value === null ? NO_SPEED : `${roundDown(value)} WPM`;
 
 export const accuracyValue = (value: number | null): string =>
   value === null ? NO_SPEED : `${roundDown(value)}%`;
 
 export const rhythmValue = (value: number | null): string =>
-  value === null ? NO_SPEED : `${Math.round(value)}%`;
+  value === null ? NO_SPEED : `${roundDown(value)}%`;
 
 export const streakValue = (value: number | null): string =>
   value === null ? NO_SPEED : String(value);
@@ -230,7 +230,7 @@ export function speedExplanation(
   if (value === null || range === null) {
     return `${what} It shows once you have hit ${ROLLING_HITS + 1} keys.`;
   }
-  return `${what} ${atMoment(seconds)}: ${Math.round(value)} WPM. Your fastest stretch was ${Math.round(range.fastest)} WPM and your slowest ${Math.round(range.slowest)} WPM.`;
+  return `${what} ${atMoment(seconds)}: ${roundDown(value)} WPM. Your fastest stretch was ${roundDown(range.fastest)} WPM and your slowest ${roundDown(range.slowest)} WPM.`;
 }
 
 /** What the Accuracy strip says of itself on hover; `bars` are the Star accuracy bars. */
@@ -253,7 +253,7 @@ export function rhythmExplanation(
   const what = `Rhythm is how evenly your last 10 hits were spaced, as the HUD shows it: Steady from ${floors.Steady}%, Paced from ${floors.Paced}%, Uneven below.`;
   return value === null || band === null
     ? what
-    : `${what} ${atMoment(seconds)}: ${Math.round(value)}% (${band}).`;
+    : `${what} ${atMoment(seconds)}: ${roundDown(value)}% (${band}).`;
 }
 
 /** What the Streak strip says of itself on hover; `steps` are the Multiplier's steps. */

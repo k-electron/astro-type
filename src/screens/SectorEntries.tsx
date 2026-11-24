@@ -71,7 +71,7 @@ const Sparkline: React.FC<{ speeds: readonly number[] }> = ({ speeds }) => {
       viewBox={`0 0 ${SPARK_WIDTH} ${SPARK_HEIGHT}`}
     >
       <title>
-        {`${ENTRY_SPARKLINE}: ${Math.round(speeds[0])} to ${Math.round(speeds[speeds.length - 1])} WPM`}
+        {`${ENTRY_SPARKLINE}: ${roundDown(speeds[0])} to ${roundDown(speeds[speeds.length - 1])} WPM`}
       </title>
       {speeds.length === 1 ? (
         // One Run draws no line: a dot says where it is.
@@ -172,12 +172,7 @@ export const SectorEntries: React.FC<SectorEntriesProps> = ({
                   </dd>
                   <dt className="text-slate-500">{ENTRY_ACCURACY}</dt>
                   <dd className="text-emerald-300">
-                    {fromTo(
-                      entry.start.accuracy,
-                      entry.end.accuracy,
-                      '%',
-                      roundDown,
-                    )}
+                    {fromTo(entry.start.accuracy, entry.end.accuracy, '%')}
                   </dd>
                 </dl>
                 <Sparkline speeds={entry.sparkline} />

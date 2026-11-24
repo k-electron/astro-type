@@ -40,6 +40,10 @@ export function bestDaySpeedText(letterWpm: number): string {
   return `${roundDown(letterWpm)}`;
 }
 
+/** A letter speed as every screen of the Journey reads it: rounded down, so a day says the same everywhere. */
+export const letterSpeedText = (letterWpm: number): string =>
+  `${roundDown(letterWpm)} WPM`;
+
 /** A day (`YYYY-MM-DD`) as the player reads it, in their own language: "Nov 12". */
 export function dayText(day: string): string {
   const [year, month, date] = day.split('-').map(Number);
@@ -82,9 +86,9 @@ export function journeySentence(sentence: JourneySentence): string {
       const speed =
         from === null || to === null
           ? null
-          : Math.round(from) === Math.round(to)
-            ? `held your speed at about ${Math.round(to)} WPM`
-            : `went from about ${Math.round(from)} to ${Math.round(to)} WPM`;
+          : roundDown(from) === roundDown(to)
+            ? `held your speed at about ${roundDown(to)} WPM`
+            : `went from about ${roundDown(from)} to ${roundDown(to)} WPM`;
       const progress = [
         speed,
         sentence.furthestSector === null
@@ -271,16 +275,15 @@ export const entryStars = (earned: number, most: number): string =>
 
 /**
  * A number at the start of an entry and at its end: "12 to 23 WPM", or just
- * "23 WPM" when they read the same. `whole` makes each a whole number.
+ * "23 WPM" when they read the same. Each is rounded down, as every screen does.
  */
 export function fromTo(
   from: number | null,
   to: number | null,
   unit: string,
-  whole: (value: number) => number = Math.round,
 ): string {
-  const start = from === null ? null : whole(from);
-  const end = to === null ? null : whole(to);
+  const start = from === null ? null : roundDown(from);
+  const end = to === null ? null : roundDown(to);
   if (start === null && end === null) return NO_SPEED;
   if (start === end) return `${end}${unit}`;
   return `${start ?? NO_SPEED} to ${end ?? NO_SPEED}${unit}`;
