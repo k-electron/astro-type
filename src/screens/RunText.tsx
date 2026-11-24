@@ -29,8 +29,10 @@ interface RunTextProps {
   averageMs: number | null;
   /** The keycap whose letters are lit while the rest dim, or null. */
   lit: string | null;
-  /** The pointer is over a letter: its keycap, or null when it leaves. */
-  onLetterHover: (keycap: string | null) => void;
+  /** The character the strips' cursor is on, to outline, or null. */
+  cursorIndex: number | null;
+  /** The pointer is over a letter, or has left it (null). */
+  onLetterHover: (letter: LetterReport | null) => void;
 }
 
 /** The Run's words, as lists of letters: each word keeps the space that ends it. */
@@ -52,6 +54,7 @@ export const RunText: React.FC<RunTextProps> = ({
   letters,
   averageMs,
   lit,
+  cursorIndex,
   onLetterHover,
 }) => {
   const litCount =
@@ -76,16 +79,18 @@ export const RunText: React.FC<RunTextProps> = ({
                 <Tag
                   key={letter.index}
                   title={letterTitle(letter)}
-                  onMouseEnter={() => onLetterHover(keycapOf(letter.character))}
+                  aria-current={cursorIndex === letter.index || undefined}
+                  onMouseEnter={() => onLetterHover(letter)}
                   onMouseLeave={() => onLetterHover(null)}
                   className={[
                     'rounded-sm px-px transition-opacity',
-                    letter.character === ' ' || letter.pace === null
-                      ? ''
-                      : SHADE[letter.pace],
+                    letter.pace === null ? '' : SHADE[letter.pace],
                     letter.missed ? MISSED_LETTER : 'text-slate-100',
                     lit !== null && !isLit ? 'opacity-25' : '',
                     isLit ? 'ring-2 ring-cyan-300 bg-transparent' : '',
+                    cursorIndex === letter.index
+                      ? 'outline outline-2 outline-white'
+                      : '',
                   ].join(' ')}
                 >
                   {letter.character === ' ' ? ' ' : letter.character}

@@ -100,6 +100,9 @@ export {
  * from here.
  */
 export {
+  ACCURACY_STRIP,
+  accuracyExplanation,
+  inaccurateKeyLabel,
   KEYS_HEADING,
   LEAST_ACCURATE_KEYS_HEADING,
   litLettersCaption,
@@ -112,6 +115,10 @@ export {
   RUN_TEXT_HEADING,
   SLOW,
   SLOWEST_KEYS_HEADING,
+  slowKeyLabel,
+  STREAK_STRIP,
+  streakExplanation,
+  streakValue,
   workOnSentence,
 } from '../../src/screens/debriefLabels';
 

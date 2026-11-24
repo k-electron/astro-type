@@ -411,10 +411,13 @@ function rhythmAfterMiss(previous: number): number {
 /** How even a Rhythm is, as the HUD and the Debrief name it. */
 export type RhythmBand = 'Steady' | 'Paced' | 'Uneven';
 
-/** Steady from 85%, Paced from 70%, Uneven below. */
+/** Where the bands start: Steady from 85%, Paced from 70%, Uneven below. */
+export const RHYTHM_BAND_FLOORS = { Steady: 85, Paced: 70 } as const;
+
+/** The band a Rhythm falls in. */
 export function rhythmBand(rhythm: number): RhythmBand {
-  if (rhythm >= 85) return 'Steady';
-  if (rhythm >= 70) return 'Paced';
+  if (rhythm >= RHYTHM_BAND_FLOORS.Steady) return 'Steady';
+  if (rhythm >= RHYTHM_BAND_FLOORS.Paced) return 'Paced';
   return 'Uneven';
 }
 

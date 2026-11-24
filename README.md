@@ -38,7 +38,7 @@ A Run also pauses when the tab or window loses focus. The Pause Menu offers resu
 
 ## Stack
 
-React, Tailwind CSS, PixiJS for the Action Deck, a Zustand store for the game's data and an XState machine for the screens, built with Vite. The built `dist/` is served as static assets from Cloudflare Workers. The package manager is pnpm.
+React, Tailwind CSS, PixiJS for the Action Deck, visx for the Debrief's charts, a Zustand store for the game's data and an XState machine for the screens, built with Vite. The built `dist/` is served as static assets from Cloudflare Workers. The package manager is pnpm.
 
 ## Development
 
