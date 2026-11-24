@@ -114,7 +114,9 @@ export interface Game {
   send(event: PlayerEvent): void;
   /**
    * Press a key, as a keydown does; `key` is a `KeyboardEvent.key` value and
-   * `options` are the keydown's `repeat`, `ctrlKey`, `metaKey` and `altKey`.
+   * `options` are the keydown's `repeat`, `ctrlKey`, `metaKey` and `altKey`,
+   * and `shift`, the side of Shift it was typed with (`left`, `right`,
+   * `both`, `none` or `unknown`; `none` when left out).
    * Only a key that types one character is judged. Everything else (Escape,
    * Backspace, Enter, arrows, function keys, Tab, modifiers), every
    * auto-repeat keydown and every Cmd or Ctrl shortcut is ignored and changes
