@@ -13,7 +13,11 @@ import { entriesOf } from '../../../src/game/catalog';
 import { trailEquipped } from '../../shared/saves';
 import { PAUSE_FLIGHT } from '../../shared/screens';
 import { drone, keycap, pauseMenu, seedSave } from '../helpers';
-import { launchOnStoppedClock, resumeButton } from '../journey-helpers';
+import {
+  launchWithLeadDroneSettled,
+  resumeButton,
+  STILL_CLOCK_WAIT,
+} from '../journey-helpers';
 
 // LOCAL ONLY (run by `pnpm verify`, not in CI; docs/agents/testing.md): hundreds of drawn
 // frames per test, too heavy for CI's runner. The old browser tests guarded
@@ -218,37 +222,9 @@ test.use({ viewport: { width: 1280, height: 1200 } });
 test.describe.configure({ mode: 'parallel' });
 
 async function box(element: Locator): Promise<Rect> {
-  const b = await element.boundingBox({ timeout: 2000 });
+  const b = await element.boundingBox({ timeout: STILL_CLOCK_WAIT });
   if (!b) throw new Error('Nothing is drawn there');
   return b;
-}
-
-/**
- * Free Flight with the PixiJS deck on a clock that stands still, with the lead
- * Drone settled at the Strike Line. From here the test decides when time moves.
- */
-async function launchWithLeadDroneSettled(page: Page, text: string) {
-  await launchOnStoppedClock(page, text);
-
-  // PixiJS draws on animation frames, which only come when the clock moves.
-  await expect(async () => {
-    await page.clock.runFor(50);
-    await expect(drone(page, text[1])).toBeVisible({ timeout: 250 });
-  }).toPass({ timeout: 30_000 });
-  // Settle the lead Drone at the Strike Line (it needs about half a second of
-  // frames), then see that it has stopped: the lane the tests measure is
-  // computed from where it waits.
-  await page.clock.runFor(600);
-  const lead = drone(page, text[0]);
-  let last = Number.NaN;
-  await expect(async () => {
-    await page.clock.runFor(100);
-    const b = await box(lead);
-    const bottom = b.y + b.height;
-    const still = bottom === last;
-    last = bottom;
-    expect(still, 'the lead Drone has stopped at the Strike Line').toBe(true);
-  }).toPass({ timeout: 30_000, intervals: [50] });
 }
 
 /** The Action Deck's canvas: the one place PixiJS draws. */

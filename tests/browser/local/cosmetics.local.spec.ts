@@ -18,7 +18,10 @@ import {
   seedSave,
   textPrompt,
 } from '../helpers';
-import { launchOnStoppedClock } from '../journey-helpers';
+import {
+  launchWithLeadDroneSettled,
+  STILL_CLOCK_WAIT,
+} from '../journey-helpers';
 import {
   hueOfHex,
   openPixels,
@@ -54,7 +57,7 @@ const LEAD_FINGER = fingerColour(LEAD);
 const OTHER_FINGER = fingerColour('j');
 
 async function box(element: Locator): Promise<Rect> {
-  const b = await element.boundingBox({ timeout: 2000 });
+  const b = await element.boundingBox({ timeout: STILL_CLOCK_WAIT });
   if (!b) throw new Error('Nothing is drawn there');
   return b;
 }
@@ -106,20 +109,7 @@ async function inRun<T>(
       route.abort(),
     );
     if (save) await seedSave(page, save);
-    await launchOnStoppedClock(page, TEXT);
-    await expect(async () => {
-      await page.clock.runFor(50);
-      await expect(drone(page, TEXT[1])).toBeVisible({ timeout: 250 });
-    }).toPass({ timeout: 30_000 });
-    await page.clock.runFor(600);
-    let last = Number.NaN;
-    await expect(async () => {
-      await page.clock.runFor(100);
-      const b = await box(drone(page, LEAD));
-      const still = b.y + b.height === last;
-      last = b.y + b.height;
-      expect(still, 'the lead Drone has stopped at the Strike Line').toBe(true);
-    }).toPass({ timeout: 30_000, intervals: [50] });
+    await launchWithLeadDroneSettled(page, TEXT);
     return await journey({ page, geometry: await geometryOf(page) });
   } finally {
     await context.close();

@@ -115,9 +115,57 @@ export async function waitForDeck(page: Page, first: string) {
  * wherever its Drone is, so that changes nothing a journey reads).
  */
 export async function launchOnStoppedClock(page: Page, text: string) {
-  await page.clock.install({ time: 0 });
+  // `pauseAt` alone installs the clock already stopped. An `install` first
+  // would let the clock run, in real time, until `pauseAt`: a few
+  // milliseconds, more on a busy machine, that the page would start with.
   await page.clock.pauseAt(1000);
   await launchFreeFlight(page, text);
+}
+
+/**
+ * How long a journey on a stopped clock waits for the page. The clock stands
+ * still meanwhile, so a long wait changes nothing on screen; it only lets a
+ * busy machine catch up: headless Chromium draws WebGL in software, so on a
+ * loaded machine the page can take tens of seconds to draw the frames one
+ * `runFor` stepped over. Half the local suite's test timeout.
+ */
+export const STILL_CLOCK_WAIT = 120_000;
+
+/**
+ * Free Flight on a stopped clock, with the Action Deck up and the lead Drone
+ * settled at the Strike Line, for the journeys that compare pictures of two
+ * Runs. The clock moves only by fixed amounts, and every wait is for the page
+ * on a still clock, so each Run reaches the same moment however busy the
+ * machine is. (A retry that moved the clock would leave a busy Run later than
+ * a quiet one, and the two would draw different pictures.)
+ */
+export async function launchWithLeadDroneSettled(page: Page, text: string) {
+  await launchOnStoppedClock(page, text);
+  // The deck starts in the background. Waiting for its accessibility layer
+  // with the clock still has it draw its first frame at the same moment of
+  // every Run.
+  await expect(page.locator('[data-deck-a11y]')).toBeAttached({
+    timeout: STILL_CLOCK_WAIT,
+  });
+  // PixiJS draws on animation frames, which only come when the clock moves.
+  await page.clock.runFor(50);
+  await expect(drone(page, text[1])).toBeVisible({
+    timeout: STILL_CLOCK_WAIT,
+  });
+  // Settle the lead Drone at the Strike Line (it needs about half a second of
+  // frames), then see that it has stopped.
+  const lead = drone(page, text[0]);
+  const bottom = async () => {
+    const box = await lead.boundingBox({ timeout: STILL_CLOCK_WAIT });
+    if (!box) throw new Error('The lead Drone is not drawn');
+    return box.y + box.height;
+  };
+  await page.clock.runFor(700);
+  const settled = await bottom();
+  await page.clock.runFor(100);
+  expect(await bottom(), 'the lead Drone has stopped at the Strike Line').toBe(
+    settled,
+  );
 }
 
 /**

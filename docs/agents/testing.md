@@ -123,7 +123,7 @@ Playwright, in `tests/browser/*.spec.ts`, Chromium only, against the production 
 Two exceptions to "read nothing but the screen, on the real clock" are sanctioned, both for the canvas:
 
 - `tests/browser/local/effects.local.spec.ts` checks the Action Deck's effects (lasers, explosions, a clean word's bigger one, the milestone banner, the ship, the guidance beam, keycap glow) by comparing the pixels of captures taken within the same run. There are no stored baselines, so it runs on any machine, but only in the `local` project, which `pnpm verify` runs and CI does not. It uses `page.clock` so an effect is caught mid-flight, and its thresholds are wide: the effects have to be there and run their course, not match a picture. Its last step, the deck following the screen's pixel density, also reads the one number a drawing can't show: the deck canvas element's backing width (its `width` attribute), which must be the CSS width times the density. It sets the density through a Chrome DevTools Protocol device-metrics override (`Emulation.setDeviceMetricsOverride`), clears it when done, and runs last so the override can't touch the pictures before it.
-- The screenshot specs and `tests/browser/local/cosmetics.local.spec.ts` stub `AudioContext` and `Math.random` and block web fonts, so the same frame draws the same pixels on every run: the sound engine draws random numbers on its own real-time schedule, and a font arriving mid-run would redraw the text. (The Cosmetics spec compares two looks within one run, so it needs the same frame twice; it keeps no baselines.) Nothing else in the browser tests does this.
+- The screenshot specs and `tests/browser/local/cosmetics.local.spec.ts` stub `AudioContext` and `Math.random` and block web fonts, so the same frame draws the same pixels on every run: the sound engine draws random numbers on its own real-time schedule, and a font arriving mid-run would redraw the text. (The Cosmetics spec compares two looks within one run, so it needs the same frame twice; it keeps no baselines.) Nothing else in the browser tests does this. Both local specs set up a Run with `launchWithLeadDroneSettled` (`tests/browser/journey-helpers.ts`), so two Runs reach the same moment on a busy machine too: the clock moves only by fixed amounts, and every wait is for the page with the clock still. A retry that moves the clock (`runFor` inside `toPass`) lands a busy Run later than a quiet one, and its pictures differ.
 
 ## Clocks
 
@@ -139,6 +139,8 @@ Playwright, in `tests/browser/local/*.local.spec.ts`, run by `pnpm verify`, in t
 ## Flaky tests
 
 CI never retries, and neither does the local suite. A test that fails without a code change is a bug: fix it or delete it the same day.
+
+A flaky test gets its own issue, labelled `needs-triage`, the day it is seen; a comment on another issue is not enough.
 
 ## Building a ticket
 
