@@ -32,6 +32,31 @@ export function keyLabel(character: string): string {
   return /^[a-z]$/.test(character) ? character.toUpperCase() : character;
 }
 
+/** What was actually typed, as the player pressed it: Space by name, anything else as it is, so "D as d" keeps its case. */
+export function typedLabel(character: string): string {
+  return character === ' ' ? 'Space' : character;
+}
+
+/** The names of the keycaps that aren't a character, as a player says them. */
+const KEYCAP_NAMES: Record<string, string> = {
+  Backspace: 'Backspace',
+  Tab: 'Tab',
+  CapsLock: 'Caps Lock',
+  Enter: 'Enter',
+  ShiftLeft: 'Left Shift',
+  ShiftRight: 'Right Shift',
+  ControlLeft: 'Left Ctrl',
+  ControlRight: 'Right Ctrl',
+  AltLeft: 'Left Alt',
+  AltRight: 'Right Alt',
+  MetaLeft: 'Left Cmd',
+  MetaRight: 'Right Cmd',
+};
+
+/** How the Debrief names a keycap: a character's key as `keyLabel`, a modifier by its readable name. */
+export const keycapLabel = (keycap: string): string =>
+  KEYCAP_NAMES[keycap] ?? keyLabel(keycap);
+
 /** A finger as a sentence says it: "left pinky", and the thumb for Space. */
 function fingerWords(finger: FingerZone): string {
   return finger === 'THUMB'
@@ -78,7 +103,7 @@ export const shadingNote = (averageMs: number): string =>
 export function letterTitle(letter: LetterReport): string {
   const parts = [
     letter.ms === null
-      ? `${keyLabel(letter.character)}: no time`
+      ? `${keyLabel(letter.character)}: no speed to show`
       : `${keyLabel(letter.character)}: ${Math.round(letter.ms)} ms`,
   ];
   if (letter.pace === 'quick') parts.push(QUICK);
@@ -86,7 +111,7 @@ export function letterTitle(letter: LetterReport): string {
   if (letter.pace === 'very slow') parts.push(VERY_SLOW);
   if (letter.missed) {
     parts.push(
-      `${MISSED}, typed as ${letter.wrongKeys.map(keyLabel).join(', ')} first`,
+      `${MISSED}, typed as ${letter.wrongKeys.map(typedLabel).join(', ')} first`,
     );
   }
   return parts.join(', ');
@@ -116,16 +141,16 @@ export const inaccurateKeyLabel = (key: InaccurateKey): string =>
 
 /** A Mix-up's entry: the key wanted, typed as another, and how often. */
 export const mixUpLabel = (mixUp: MixUp): string =>
-  `${keyLabel(mixUp.expected)} as ${keyLabel(mixUp.pressed)}${mixUp.count > 1 ? ` ×${mixUp.count}` : ''}`;
+  `${typedLabel(mixUp.expected)} as ${typedLabel(mixUp.pressed)}${mixUp.count > 1 ? ` ×${mixUp.count}` : ''}`;
 
 /** The tooltip of a keycap on the Debrief's keyboard: how it went, or that the Run never used it. */
 export function keycapTitle(
   keycap: string,
   tally: KeyTally | undefined,
 ): string {
-  if (!tally) return `${keyLabel(keycap)}: not in this Run`;
+  if (!tally) return `${keycapLabel(keycap)}: not in this Run`;
   const parts = [
-    `${keyLabel(keycap)}: typed ${tally.firstAttempts} ${tally.firstAttempts === 1 ? 'time' : 'times'}`,
+    `${keycapLabel(keycap)}: typed ${tally.firstAttempts} ${tally.firstAttempts === 1 ? 'time' : 'times'}`,
   ];
   if (tally.misses > 0) parts.push(`${MISSED} ${tally.misses}`);
   if (tally.cleanHits > 0) {
@@ -135,3 +160,7 @@ export function keycapTitle(
   }
   return parts.join(', ');
 }
+
+/** The tooltip of a Shift keycap the Run held: how many characters it typed. */
+export const shiftKeycapTitle = (keycap: string, uses: number): string =>
+  `${keycapLabel(keycap)}: held for ${uses} ${uses === 1 ? 'character' : 'characters'}`;

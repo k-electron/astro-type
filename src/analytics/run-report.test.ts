@@ -174,6 +174,50 @@ describe('Mix-ups', () => {
   });
 });
 
+describe('Mix-ups of equal count', () => {
+  it('keep the order they first happened in the Run, and the list stops at five', () => {
+    // Six different slips, once each: "z" as "a" came first, then "y" as "b"...
+    const text = 'zyxwvu';
+    const wrong = ['a', 'b', 'c', 'd', 'e', 'f'];
+    const log = logOf(
+      text,
+      [...text].flatMap((key, at): [string, number][] => [
+        [wrong[at], 10],
+        [key, 10],
+      ]),
+    );
+
+    expect(
+      runReport(log, STEADY).mixUps.map(({ expected }) => expected),
+    ).toEqual(['z', 'y', 'x', 'w', 'v']);
+  });
+});
+
+describe('the Shift keys a Run held', () => {
+  const withShift = (log: FlightLog, sides: Keystroke['shift'][]): FlightLog =>
+    log.map((key, at) => ({ ...key, shift: sides[at] ?? 'none' }));
+
+  it('counts the characters typed with each side; both counts for both, none and unknown for neither', () => {
+    const log = withShift(logOf('ABCD', evenly('ABCD', 20)), [
+      'left',
+      'both',
+      'unknown',
+      'none',
+    ]);
+
+    expect(runReport(log, STEADY).shiftUses).toEqual({
+      ShiftLeft: 2,
+      ShiftRight: 1,
+    });
+  });
+
+  it('is empty for a Run that held no Shift', () => {
+    expect(runReport(logOf('ab', evenly('ab', 20)), STEADY).shiftUses).toEqual(
+      {},
+    );
+  });
+});
+
 describe('the ranking of keys', () => {
   it('ranks a key slow only from 3 Clean hits, slowest first', () => {
     // "f" 4 Clean hits at 10 steps, "j" 3 at 30, "k" 2 at 90 (too few).

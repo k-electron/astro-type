@@ -137,7 +137,9 @@ test('the first Stage played for real from a fresh Save: its Debrief, and the St
 const DEBRIEF_WINDOWS = [
   { width: 1400, height: 900 },
   { width: 1440, height: 800 },
+  { width: 1280, height: 800 },
   { width: 1280, height: 720 },
+  { width: 900, height: 700 },
   { width: 768, height: 720 },
 ] as const;
 
@@ -240,6 +242,53 @@ test('the Debrief that opens a Sector shows its unlock banner and keeps its acti
       expect
         .soft(where.reachable, `${label} is not covered by anything`)
         .toBe(true);
+    });
+
+    await test.step(`the plain sentence is fully visible as the Debrief opens, with more below it to scroll to, at ${size.width}x${size.height}`, async () => {
+      await page.setViewportSize(size);
+      // The card holding the sentence and the Rhythm badge beside it.
+      const sentence = result.getByText(/^Rhythm:/).locator('..');
+      const where = await sentence.evaluate(async (element) => {
+        await new Promise((resolve) =>
+          requestAnimationFrame(() => requestAnimationFrame(resolve)),
+        );
+        const box = element.getBoundingClientRect();
+        let scroller: HTMLElement | null = null;
+        for (
+          let parent = element.parentElement;
+          parent && !scroller;
+          parent = parent.parentElement
+        ) {
+          const overflowY = getComputedStyle(parent).overflowY;
+          if (overflowY === 'auto' || overflowY === 'scroll') scroller = parent;
+        }
+        const body = scroller?.getBoundingClientRect();
+        return {
+          top: Math.round(box.top),
+          bottom: Math.round(box.bottom),
+          visibleTop: body ? Math.round(body.top) : null,
+          visibleBottom: body ? Math.round(body.bottom) : null,
+          scrolled: scroller?.scrollTop ?? -1,
+          moreBelow: scroller
+            ? scroller.scrollHeight - scroller.clientHeight > 1
+            : null,
+        };
+      });
+      const label = `sentence at ${size.width}x${size.height}: y ${where.top}-${where.bottom}, scrolling body shows ${where.visibleTop}-${where.visibleBottom}`;
+      expect
+        .soft(where.scrolled, `${label}: the body starts unscrolled`)
+        .toBe(0);
+      expect
+        .soft(
+          where.visibleTop !== null &&
+            where.visibleBottom !== null &&
+            where.top >= where.visibleTop &&
+            where.bottom <= where.visibleBottom,
+          `${label} lies inside the visible part of the scrolling body`,
+        )
+        .toBe(true);
+      // The Debrief of a Stage is taller than any of these windows.
+      expect.soft(where.moreBelow, `${label}: there is more below`).toBe(true);
     });
 
     await test.step(`every action button is on screen and reachable at ${size.width}x${size.height}`, async () => {

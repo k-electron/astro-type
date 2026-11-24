@@ -87,6 +87,8 @@ export interface PressOptions {
   repeat?: boolean;
   ctrlKey?: boolean;
   metaKey?: boolean;
+  /** The Shift flag of the key event, as when a Shift key is held. */
+  shiftKey?: boolean;
 }
 
 export interface Player {

@@ -9,8 +9,9 @@ export interface MixUp {
 }
 
 /**
- * The Run's Mix-ups, most frequent first. Only First attempts count: a
- * player flailing on one character after the first slip adds nothing.
+ * The Run's Mix-ups, most frequent first, a tie going to the one that came
+ * first in the Run. Only First attempts count: a player flailing on one
+ * character after the first slip adds nothing.
  */
 export function mixUps(log: FlightLog, length = LIST_LENGTH): MixUp[] {
   const counts = new Map<string, MixUp>();
@@ -21,12 +22,8 @@ export function mixUps(log: FlightLog, length = LIST_LENGTH): MixUp[] {
     mixUp.count += 1;
     counts.set(id, mixUp);
   }
+  // The map keeps first-seen order and the sort is stable, so ties stay in it.
   return [...counts.values()]
-    .sort(
-      (a, b) =>
-        b.count - a.count ||
-        a.expected.localeCompare(b.expected) ||
-        a.pressed.localeCompare(b.pressed),
-    )
+    .sort((a, b) => b.count - a.count)
     .slice(0, length);
 }
