@@ -10,7 +10,7 @@ import {
   KEY_NO_TREND,
   KEY_NOT_ENOUGH_LATELY,
   KEY_NOW,
-  KEY_REBUILDING,
+  keyRebuilding,
   KEY_SPEED_TREND,
   KEY_STORY_HEADING,
   KEY_STORY_PROMPT,
@@ -32,6 +32,8 @@ interface KeyStoryPanelProps {
   story: KeyStory | undefined;
   /** The picture of how the player types now is rebuilding: "now", the trend and the Mix-ups wait. */
   rebuilding: boolean;
+  /** The player has been away (so it is rebuilding), not new (so it builds up). */
+  returning: boolean;
   /** The panel, so the page can bring it into view when a key in the logbook is clicked. */
   panelRef?: React.Ref<HTMLElement>;
 }
@@ -122,6 +124,7 @@ const Trend: React.FC<{
 export const KeyStoryPanel: React.FC<KeyStoryPanelProps> = ({
   story,
   rebuilding,
+  returning,
   panelRef,
 }) => {
   if (story === undefined) {
@@ -166,7 +169,7 @@ export const KeyStoryPanel: React.FC<KeyStoryPanelProps> = ({
         <dt className="text-slate-500">{KEY_NOW}</dt>
         <dd className="text-cyan-300">
           {rebuilding
-            ? KEY_REBUILDING
+            ? keyRebuilding(returning)
             : story.now === null
               ? KEY_NOT_ENOUGH_LATELY
               : keyReadingText(story.now)}
@@ -182,7 +185,7 @@ export const KeyStoryPanel: React.FC<KeyStoryPanelProps> = ({
         {rebuilding ? (
           <p className="text-xs text-slate-400">
             {KEY_SPEED_TREND} and {KEY_ACCURACY_TREND.toLowerCase()}:{' '}
-            {KEY_REBUILDING}
+            {keyRebuilding(returning)}
           </p>
         ) : (
           <>
@@ -220,7 +223,7 @@ export const KeyStoryPanel: React.FC<KeyStoryPanelProps> = ({
           {MIX_UPS_HEADING}
         </h4>
         {rebuilding ? (
-          <p className="text-xs text-slate-400">{KEY_REBUILDING}</p>
+          <p className="text-xs text-slate-400">{keyRebuilding(returning)}</p>
         ) : story.mixUps.length === 0 ? (
           <p className="text-xs text-slate-400">{KEY_MIX_UPS_NONE}</p>
         ) : (

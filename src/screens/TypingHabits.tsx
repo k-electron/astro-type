@@ -5,6 +5,7 @@ import {
   COMMON_PAIRS_HEADING,
   COMMON_PAIRS_NO_TIME,
   habitsRebuilding,
+  isReturning,
   LETTER_PAIRS_SECTION,
   LETTER_PAIRS_SECTION_HINT,
   MIX_UP_CAUSES,
@@ -77,7 +78,9 @@ export const MixUps: React.FC<MixUpsProps> = ({ report, onPickKey }) => {
   return (
     <Section heading={MIX_UPS_SECTION} hint={MIX_UPS_SECTION_HINT}>
       {report.rebuilding ? (
-        <p className="text-xs text-slate-400">{habitsRebuilding('Mix-ups')}</p>
+        <p className="text-xs text-slate-400">
+          {habitsRebuilding('Mix-ups', isReturning(report.sentence))}
+        </p>
       ) : report.mixUps.length === 0 ? (
         <p className="text-xs text-slate-400">{KEY_MIX_UPS_NONE}</p>
       ) : (
@@ -111,7 +114,7 @@ export const ShiftHand: React.FC<HabitProps> = ({ report }) => {
     <Section heading={SHIFT_HAND_SECTION} hint={SHIFT_HAND_SECTION_HINT}>
       {report.rebuilding ? (
         <p className="text-xs text-slate-400">
-          {habitsRebuilding('Shift habits')}
+          {habitsRebuilding('Shift habits', isReturning(report.sentence))}
         </p>
       ) : shiftHand.total === 0 ? (
         <p className="text-xs text-slate-400">{SHIFT_HAND_NONE}</p>
@@ -145,7 +148,7 @@ export const LetterPairs: React.FC<HabitProps> = ({ report }) => {
     <Section heading={LETTER_PAIRS_SECTION} hint={LETTER_PAIRS_SECTION_HINT}>
       {report.rebuilding ? (
         <p className="text-xs text-slate-400">
-          {habitsRebuilding('Letter pairs')}
+          {habitsRebuilding('Letter pairs', isReturning(report.sentence))}
         </p>
       ) : (
         <>

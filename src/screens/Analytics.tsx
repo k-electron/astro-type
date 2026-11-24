@@ -26,6 +26,7 @@ import {
   DAYS_PLAYED_LABEL,
   dayText,
   NO_BEST_DAY,
+  isReturning,
   journeySentence,
   PRACTICE_TIME_LABEL,
   practiceTimeText,
@@ -281,6 +282,7 @@ export const Analytics: React.FC = () => {
                   storyKey === null ? undefined : journey.keyStories[storyKey]
                 }
                 rebuilding={journey.rebuilding}
+                returning={isReturning(journey.sentence)}
               />
             </div>
           )}

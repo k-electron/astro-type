@@ -1,6 +1,7 @@
 import { fireEvent } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { addDays } from '../../src/analytics/days';
+import { MIN_DAYS_FOR_PICTURE } from '../../src/analytics/journeySentence';
 import { STAR_ACCURACY_BARS } from '../../src/game/rules';
 import { RHYTHM_STRIP } from '../../src/screens/debriefLabels';
 import {
@@ -13,7 +14,7 @@ import {
   shiftHandExplanation,
   SHIFT_HAND_STRIP,
   TIMELINE_HEADING,
-  TIMELINE_REBUILDING,
+  timelineRebuilding,
 } from '../../src/screens/journeyLabels';
 import { EIGHT_WEEKS_OF_PLAY } from '../shared/beginnerTypist';
 import { daysAgo, flown, lettersAt } from '../shared/logbooks';
@@ -102,7 +103,7 @@ describe('the timeline of the last 8 weeks', () => {
     player.openHeader('Analytics');
 
     expect(TIMELINE()).toBeTruthy();
-    expect(screen.getByText(TIMELINE_REBUILDING)).toBeTruthy();
+    expect(screen.getByText(timelineRebuilding(true))).toBeTruthy();
     expect(
       screen.queryByRole('region', { name: LETTER_SPEED_STRIP }),
     ).toBeNull();
@@ -131,6 +132,41 @@ function sectorName(stageId: string): string {
   if (!run?.where) throw new Error(`${stageId} was not flown in the Logbook`);
   return run.where.sector.name;
 }
+
+describe('the picture that is not drawn yet', () => {
+  const REBUILDING = /rebuil/i;
+
+  it('is never called rebuilding for a new player, who has nothing to rebuild', () => {
+    const player = renderGame({
+      profile: {
+        logbook: flown(
+          [1, 0].map((back) => ({
+            day: daysAgo(back),
+            log: lettersAt(51, 12),
+          })),
+        ),
+      },
+    });
+    player.openHeader('Analytics');
+
+    expect(document.body.textContent).not.toMatch(REBUILDING);
+    expect(
+      screen.getAllByText(
+        new RegExp(`build(s)? up after ${MIN_DAYS_FOR_PICTURE} days`),
+      ).length,
+    ).toBeGreaterThan(1);
+  });
+
+  it('is rebuilding for a player who has been away', () => {
+    const player = renderGame({
+      profile: { logbook: fullLogbook() },
+      today: addDays(TEST_DAY, 100),
+    });
+    player.openHeader('Analytics');
+
+    expect(document.body.textContent).toMatch(REBUILDING);
+  });
+});
 
 describe('a speed reads the same on every screen of the Journey', () => {
   // 51 letters 52 steps apart is 13.85 WPM: a screen that rounds up says 14.

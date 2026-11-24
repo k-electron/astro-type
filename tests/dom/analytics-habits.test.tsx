@@ -147,7 +147,7 @@ describe('Mix-ups, Shift hand and Letter pairs on Analytics', () => {
       player.openHeader('Analytics');
 
       const rebuilding = section(name);
-      expect(rebuilding.getByText(habitsRebuilding(what))).toBeTruthy();
+      expect(rebuilding.getByText(habitsRebuilding(what, false))).toBeTruthy();
       expect(rebuilding.queryByText(MIX_UP_CAUSES['next door'])).toBeNull();
       expect(rebuilding.queryByText('75%')).toBeNull();
       expect(rebuilding.queryByTitle(pairTitle('th', 200, 18))).toBeNull();
