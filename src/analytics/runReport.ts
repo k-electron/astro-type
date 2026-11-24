@@ -11,6 +11,7 @@ import {
 import type { FlightLog } from './keystroke';
 import { type LetterReport, letters } from './letters';
 import { type MixUp, mixUps } from './mixUps';
+import { type ShiftKeycap, shiftUses } from './shift';
 import { type RhythmFacts, type WorkOn, workOn } from './workOn';
 
 /** What a Run knows beyond its Keystrokes. */
@@ -27,6 +28,8 @@ export interface RunReport {
   slowestKeys: SlowKey[];
   leastAccurateKeys: InaccurateKey[];
   mixUps: MixUp[];
+  /** How many characters were typed with each Shift held; a side never held is absent. */
+  shiftUses: Partial<Record<ShiftKeycap, number>>;
   /** The one thing the plain sentence says to work on. */
   workOn: WorkOn;
 }
@@ -42,6 +45,7 @@ export function runReport(log: FlightLog, facts: RunFacts): RunReport {
     slowestKeys: slowestKeys(keys),
     leastAccurateKeys: leastAccurateKeys(keys),
     mixUps: mixUps(log),
+    shiftUses: shiftUses(log),
     workOn: workOn(keys, averageSteps, facts),
   };
 }

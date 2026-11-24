@@ -8,19 +8,21 @@ import {
 } from '../analytics/keys';
 import { paceOf, type Pace } from '../analytics/letters';
 import type { RunReport } from '../analytics/runReport';
+import { SHIFT_KEYCAPS } from '../analytics/shift';
 import type { KeySpec } from '../curriculum/keyboardLayout';
 import {
   inaccurateKeyLabel,
   KEYS_HEADING,
   KEYS_HINT,
+  keycapLabel,
   keycapTitle,
-  keyLabel,
   LEAST_ACCURATE_KEYS_HEADING,
   MIX_UPS_HEADING,
   mixUpLabel,
   NO_MISSED_KEYS,
   NO_MIX_UPS,
   NO_SLOW_KEYS,
+  shiftKeycapTitle,
   slowKeyLabel,
   SLOWEST_KEYS_HEADING,
 } from './debriefLabels';
@@ -53,11 +55,11 @@ interface RunKeysProps {
   linking: KeyLinking;
 }
 
-/** The accessible name of a keycap: the key's own name, or what a modifier is printed with. */
+/** The accessible name of a keycap: a character's key ("F key") or a modifier's own name ("Left Shift"). */
 function keycapName(spec: KeySpec): string {
   return spec.key.length === 1
-    ? `${keyLabel(spec.key)} key`
-    : spec.display.replace(/[^\w ]/gu, '').trim();
+    ? `${keycapLabel(spec.key)} key`
+    : keycapLabel(spec.key);
 }
 
 const ENTRY =
@@ -85,6 +87,16 @@ export const RunKeys: React.FC<RunKeysProps> = ({ report, linking }) => {
   };
 
   const keyView = (spec: KeySpec): KeyView => {
+    // A Shift the Run held is a key it used, though it types no character: lit,
+    // not shaded, and with nothing to link in the text.
+    const shiftHeld = SHIFT_KEYCAPS.find((side) => side === spec.key);
+    if (shiftHeld && report.shiftUses[shiftHeld]) {
+      return {
+        title: shiftKeycapTitle(spec.key, report.shiftUses[shiftHeld]),
+        'aria-label': keycapName(spec),
+        className: 'border-slate-600 text-white',
+      };
+    }
     const tally = tallies[spec.key];
     const title = keycapTitle(spec.key, tally);
     if (!tally) {

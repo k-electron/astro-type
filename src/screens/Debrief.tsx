@@ -36,6 +36,19 @@ const RHYTHM_PILL: Record<RhythmBand, string> = {
 };
 
 /**
+ * A glow along the foot of the scrolling body while there is more below it:
+ * the classic scroll shadow. The glow stays put (`scroll`) and a strip of the
+ * card's own colour scrolls with the content (`local`) and covers it once the
+ * end is reached, so it shows only while the body can scroll further.
+ */
+const MORE_BELOW = {
+  background: [
+    'linear-gradient(#0f172a, #0f172a) bottom / 100% 1rem no-repeat local',
+    'radial-gradient(farthest-side at 50% 100%, rgb(34 211 238 / 0.35), transparent) bottom / 100% 1rem no-repeat scroll',
+  ].join(', '),
+} as const;
+
+/**
  * The Debrief whose confetti has played. A cleared Run's result is one object
  * until the next Run begins, and this screen unmounts when the Galaxy Map
  * opens over it, so "Back to Debrief" mounts it again with the same result:
@@ -98,7 +111,10 @@ export const Debrief: React.FC = () => {
   return (
     <OverlayShell variant="debrief" width="4xl" labelledBy="debrief-title">
       {/* Everything above the action buttons scrolls here when the window is too short */}
-      <div className="flex-1 min-h-0 overflow-y-auto px-6 pt-6 pb-2.5 sm:px-8 sm:pt-8 flex flex-col items-center [&>*:last-child]:mb-0">
+      <div
+        style={MORE_BELOW}
+        className="flex-1 min-h-0 overflow-y-auto px-6 pt-6 pb-2.5 sm:px-8 sm:pt-8 flex flex-col items-center [&>*:last-child]:mb-0"
+      >
         {/* Stage Badge & Title */}
         <span
           id="debrief-title"
@@ -113,6 +129,18 @@ export const Debrief: React.FC = () => {
         <p className="text-xs font-mono text-slate-400 mb-5">
           {stage.subtitle}
         </p>
+
+        {/* The one thing to work on, and the Run's Rhythm: first, so it is read before anything scrolls */}
+        <div className="w-full bg-slate-950/70 border border-slate-800 rounded-xl p-3.5 mb-5 text-left flex flex-wrap items-start justify-between gap-2">
+          <p className="flex-1 min-w-[16rem] text-sm text-slate-200 leading-relaxed">
+            {workOnSentence(result.report.workOn)}
+          </p>
+          <span
+            className={`shrink-0 text-[10px] font-mono px-2 py-0.5 rounded border ${RHYTHM_PILL[band]}`}
+          >
+            Rhythm: {result.rhythm}% ({band})
+          </span>
+        </div>
 
         {bars && (
           <>
@@ -263,18 +291,6 @@ export const Debrief: React.FC = () => {
               <span>+{creditsEarned}</span>
             </div>
           </div>
-        </div>
-
-        {/* The one thing to work on, and the Run's Rhythm */}
-        <div className="w-full bg-slate-950/70 border border-slate-800 rounded-xl p-3.5 mb-3 text-left flex flex-wrap items-start justify-between gap-2">
-          <p className="flex-1 min-w-[16rem] text-sm text-slate-200 leading-relaxed">
-            {workOnSentence(result.report.workOn)}
-          </p>
-          <span
-            className={`shrink-0 text-[10px] font-mono px-2 py-0.5 rounded border ${RHYTHM_PILL[band]}`}
-          >
-            Rhythm: {result.rhythm}% ({band})
-          </span>
         </div>
 
         <RunDetails report={result.report} />

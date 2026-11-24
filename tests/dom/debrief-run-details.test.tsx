@@ -213,6 +213,80 @@ describe('linking the keys to the text', () => {
   });
 });
 
+describe('what the Mix-ups say was typed', () => {
+  it('keeps the case: a lower-case d for a capital D reads "D as d"', () => {
+    const player = renderGame({ text: 'Dfdf' });
+    typeAt(player, [
+      ['d', 20],
+      ['D', 20],
+      ...[...'fdf'].map((key): [string, number] => [key, 20]),
+    ]);
+
+    expect(
+      within(
+        card().getByRole('heading', { name: MIX_UPS_HEADING }).parentElement ??
+          debriefCard(),
+      ).getByRole('button', { name: 'D as d' }),
+    ).toBeTruthy();
+    expect(within(textOfRun()).getAllByTitle(/typed as d first/).length).toBe(
+      1,
+    );
+  });
+});
+
+describe('the Shift keys on the Debrief keyboard', () => {
+  /** Type "Df" holding `side` Shift for the capital, or no Shift at all. */
+  function typeCapital(side: 'ShiftLeft' | 'ShiftRight' | null) {
+    const player = renderGame({ text: 'Df' });
+    player.step(20);
+    if (side)
+      fireEvent.keyDown(window, { key: 'Shift', code: side, shiftKey: true });
+    player.press('D', { shiftKey: side !== null });
+    if (side) fireEvent.keyUp(window, { key: 'Shift', code: side });
+    player.step(20);
+    player.press('f');
+  }
+  const shiftKey = (name: string) =>
+    within(card().getByRole('group', { name: KEYS_HEADING })).getByRole(
+      'button',
+      { name },
+    ) as HTMLButtonElement;
+
+  it('lights the side the Run held, and dims the other', () => {
+    typeCapital('ShiftLeft');
+
+    expect(shiftKey('Left Shift').disabled).toBe(false);
+    expect(shiftKey('Right Shift').disabled).toBe(true);
+  });
+
+  it('lights the right side for a Run that held the right Shift', () => {
+    typeCapital('ShiftRight');
+
+    expect(shiftKey('Left Shift').disabled).toBe(true);
+    expect(shiftKey('Right Shift').disabled).toBe(false);
+  });
+
+  it('dims both for a Run that used no Shift, with their names in the tooltips', () => {
+    typeCapital(null);
+
+    expect(shiftKey('Left Shift').disabled).toBe(true);
+    expect(shiftKey('Right Shift').disabled).toBe(true);
+    expect(shiftKey('Left Shift').title).toMatch(/^Left Shift: /);
+    expect(shiftKey('Right Shift').title).toMatch(/^Right Shift: /);
+  });
+});
+
+describe('the tooltip of a letter with no speed', () => {
+  it('says there is no speed to show, not that it has no time', () => {
+    flyWithRepeatedMisses();
+
+    // The Run's first letter has no Clean-hit time.
+    const first = within(textOfRun()).getAllByTitle(/^F: /)[0];
+    expect(first.title).toContain('no speed to show');
+    expect(first.title).not.toContain('no time');
+  });
+});
+
 describe('a beginner typist Run', () => {
   const TEXT = 'the quiet fox jumps over a lazy dog and the brave pilot';
 
