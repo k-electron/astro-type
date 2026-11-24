@@ -87,8 +87,8 @@ export interface PressOptions {
   repeat?: boolean;
   ctrlKey?: boolean;
   metaKey?: boolean;
-  /** The Shift flag of the key event, as when a Shift key is held. */
-  shiftKey?: boolean;
+  /** Hold this Shift key down for the key: its keydown first, the key with the Shift flag, then the Shift's keyup. */
+  shift?: 'left' | 'right';
 }
 
 export interface Player {
@@ -263,9 +263,14 @@ export function renderGame(options: RenderGameOptions = {}): Player {
       });
       player.click(START_FREE_FLIGHT);
     },
-    press(key, pressOptions = {}) {
-      fireEvent.keyDown(window, { key, ...pressOptions });
-      fireEvent.keyUp(window, { key, ...pressOptions });
+    press(key, { shift, ...pressOptions } = {}) {
+      const shiftKey = shift
+        ? { key: 'Shift', code: shift === 'left' ? 'ShiftLeft' : 'ShiftRight' }
+        : null;
+      if (shiftKey) fireEvent.keyDown(window, { ...shiftKey, shiftKey: true });
+      fireEvent.keyDown(window, { key, shiftKey: !!shift, ...pressOptions });
+      fireEvent.keyUp(window, { key, shiftKey: !!shift, ...pressOptions });
+      if (shiftKey) fireEvent.keyUp(window, shiftKey);
     },
     pressWhereFocusIs(key, pressOptions = {}) {
       const target = document.activeElement ?? document.body;

@@ -28,7 +28,7 @@ export interface RunReport {
   slowestKeys: SlowKey[];
   leastAccurateKeys: InaccurateKey[];
   mixUps: MixUp[];
-  /** How many characters were typed with each Shift held; a side never held is absent. */
+  /** How many keys were pressed with each Shift held; a side never held is absent. */
   shiftUses: Partial<Record<ShiftKeycap, number>>;
   /** The one thing the plain sentence says to work on. */
   workOn: WorkOn;

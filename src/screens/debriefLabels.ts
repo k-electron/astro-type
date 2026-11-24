@@ -94,6 +94,8 @@ export const QUICK = 'quick';
 export const SLOW = 'slow';
 export const VERY_SLOW = 'very slow';
 export const MISSED = 'missed';
+/** What a letter's tooltip says when no time could be given for it. */
+export const NO_SPEED_TO_SHOW = 'no speed to show';
 
 /** What the shading is measured against. */
 export const shadingNote = (averageMs: number): string =>
@@ -103,7 +105,7 @@ export const shadingNote = (averageMs: number): string =>
 export function letterTitle(letter: LetterReport): string {
   const parts = [
     letter.ms === null
-      ? `${keyLabel(letter.character)}: no speed to show`
+      ? `${keyLabel(letter.character)}: ${NO_SPEED_TO_SHOW}`
       : `${keyLabel(letter.character)}: ${Math.round(letter.ms)} ms`,
   ];
   if (letter.pace === 'quick') parts.push(QUICK);
@@ -161,6 +163,6 @@ export function keycapTitle(
   return parts.join(', ');
 }
 
-/** The tooltip of a Shift keycap the Run held: how many characters it typed. */
+/** The tooltip of a Shift keycap the Run held: how many keys were pressed with it down. */
 export const shiftKeycapTitle = (keycap: string, uses: number): string =>
-  `${keycapLabel(keycap)}: held for ${uses} ${uses === 1 ? 'character' : 'characters'}`;
+  `${keycapLabel(keycap)}: held for ${uses} ${uses === 1 ? 'key' : 'keys'}`;

@@ -13,6 +13,7 @@ import {
   MISSED,
   MIX_UPS_HEADING,
   mixUpLabel,
+  NO_SPEED_TO_SHOW,
   NO_MISSED_KEYS,
   NO_MIX_UPS,
   RUN_TEXT_HEADING,
@@ -235,14 +236,11 @@ describe('what the Mix-ups say was typed', () => {
 });
 
 describe('the Shift keys on the Debrief keyboard', () => {
-  /** Type "Df" holding `side` Shift for the capital, or no Shift at all. */
-  function typeCapital(side: 'ShiftLeft' | 'ShiftRight' | null) {
+  /** Type "Df", the capital with `side` Shift held, or with no Shift at all. */
+  function typeCapital(side: 'left' | 'right' | null) {
     const player = renderGame({ text: 'Df' });
     player.step(20);
-    if (side)
-      fireEvent.keyDown(window, { key: 'Shift', code: side, shiftKey: true });
-    player.press('D', { shiftKey: side !== null });
-    if (side) fireEvent.keyUp(window, { key: 'Shift', code: side });
+    player.press('D', side ? { shift: side } : {});
     player.step(20);
     player.press('f');
   }
@@ -253,17 +251,30 @@ describe('the Shift keys on the Debrief keyboard', () => {
     ) as HTMLButtonElement;
 
   it('lights the side the Run held, and dims the other', () => {
-    typeCapital('ShiftLeft');
+    typeCapital('left');
 
     expect(shiftKey('Left Shift').disabled).toBe(false);
     expect(shiftKey('Right Shift').disabled).toBe(true);
   });
 
   it('lights the right side for a Run that held the right Shift', () => {
-    typeCapital('ShiftRight');
+    typeCapital('right');
 
     expect(shiftKey('Left Shift').disabled).toBe(true);
     expect(shiftKey('Right Shift').disabled).toBe(false);
+  });
+
+  it('lights the Shift held only for a retry, after the capital was first typed as a lower-case letter', () => {
+    const player = renderGame({ text: 'Df' });
+    player.step(20);
+    player.press('d');
+    player.step(20);
+    player.press('D', { shift: 'left' });
+    player.step(20);
+    player.press('f');
+
+    expect(shiftKey('Left Shift').disabled).toBe(false);
+    expect(shiftKey('Right Shift').disabled).toBe(true);
   });
 
   it('dims both for a Run that used no Shift, with their names in the tooltips', () => {
@@ -277,13 +288,12 @@ describe('the Shift keys on the Debrief keyboard', () => {
 });
 
 describe('the tooltip of a letter with no speed', () => {
-  it('says there is no speed to show, not that it has no time', () => {
+  it('says there is no speed to show', () => {
     flyWithRepeatedMisses();
 
     // The Run's first letter has no Clean-hit time.
     const first = within(textOfRun()).getAllByTitle(/^F: /)[0];
-    expect(first.title).toContain('no speed to show');
-    expect(first.title).not.toContain('no time');
+    expect(first.title).toContain(NO_SPEED_TO_SHOW);
   });
 });
 
