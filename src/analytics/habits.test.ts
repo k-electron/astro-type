@@ -7,43 +7,21 @@
  */
 import { describe, expect, it } from 'vitest';
 import { evenly, logOf, withShift } from '../../tests/shared/flightLog';
-import { addDays } from './days';
-import type { ShiftSide } from './keystroke';
 import {
-  EMPTY_LOGBOOK,
-  type FoldFacts,
-  foldRun,
-  journeyReport,
-  type Logbook,
-} from './logbook';
-
-const TODAY = '2026-11-23';
-const daysAgo = (count: number) => addDays(TODAY, -count);
-
-const FREE_FLIGHT: FoldFacts = {
-  where: null,
-  runSteps: 600,
-  wpm: 20,
-  accuracy: 100,
-  rhythm: 90,
-};
-
-type Log = ReturnType<typeof logOf>;
-
-/** `text` typed right, `gap` steps between keys. */
-const typed = (text: string, gap = 12): Log => logOf(text, evenly(text, gap));
+  daysAgo,
+  FREE_FLIGHT,
+  flown,
+  type Log,
+  TODAY,
+  typed,
+} from '../../tests/shared/logbooks';
+import type { ShiftSide } from './keystroke';
+import { EMPTY_LOGBOOK, foldRun, journeyReport, type Logbook } from './logbook';
 
 /** The same Log on each of the last `days` days (3 is enough to be out of "rebuilding"). */
 const everyDay = (log: Log, days = 3): Logbook =>
   Array.from({ length: days }, (_, at) => daysAgo(days - 1 - at)).reduce(
     (logbook, day) => foldRun(logbook, log, FREE_FLIGHT, day),
-    EMPTY_LOGBOOK,
-  );
-
-/** The Logbook after each Run, on its day. */
-const flown = (runs: { day: string; log: Log }[]): Logbook =>
-  runs.reduce(
-    (logbook, { day, log }) => foldRun(logbook, log, FREE_FLIGHT, day),
     EMPTY_LOGBOOK,
   );
 

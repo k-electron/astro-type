@@ -220,7 +220,9 @@ describe('a key that was never timed', () => {
     fireEvent.click(within(KEYBOARD()).getByRole('button', { name: 'A key' }));
 
     const story = STORY();
-    expect(within(story).getAllByText(new RegExp(KEY_NOT_TIMED)).length).toBeGreaterThan(0);
+    expect(
+      within(story).getAllByText(new RegExp(KEY_NOT_TIMED)).length,
+    ).toBeGreaterThan(0);
     expect(story.textContent).not.toMatch(BANNED_NAME);
   });
 });

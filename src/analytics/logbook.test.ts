@@ -8,6 +8,7 @@
 import { describe, expect, it } from 'vitest';
 import { evenly, logOf, withShift } from '../../tests/shared/flightLog';
 import { fullLogbook } from '../../tests/shared/saves';
+import { FREE_FLIGHT, lettersAt, TODAY } from '../../tests/shared/logbooks';
 import { TEST_DAY } from '../../tests/shared/testHelpers';
 import { addDays } from './days';
 import {
@@ -18,20 +19,6 @@ import {
   type Logbook,
   LogbookSchema,
 } from './logbook';
-
-const TODAY = '2026-11-23';
-
-const FREE_FLIGHT: FoldFacts = {
-  where: null,
-  runSteps: 600,
-  wpm: 20,
-  accuracy: 100,
-  rhythm: 90,
-};
-
-/** A log of `letters` letters of "a", `gap` steps apart: `letters - 1` timed hits. */
-const lettersAt = (letters: number, gap: number) =>
-  logOf('a'.repeat(letters), evenly('a'.repeat(letters), gap));
 
 /** The Logbook after one Run of `log` on each of the `days`, oldest first. */
 function flownOn(
