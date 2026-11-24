@@ -197,7 +197,7 @@ describe('the Shift keys a Run held', () => {
   const withShift = (log: FlightLog, sides: Keystroke['shift'][]): FlightLog =>
     log.map((key, at) => ({ ...key, shift: sides[at] ?? 'none' }));
 
-  it('counts the characters typed with each side; both counts for both, none and unknown for neither', () => {
+  it('counts the keys pressed with each side; both counts for both, none and unknown for neither', () => {
     const log = withShift(logOf('ABCD', evenly('ABCD', 20)), [
       'left',
       'both',
@@ -209,6 +209,19 @@ describe('the Shift keys a Run held', () => {
       ShiftLeft: 2,
       ShiftRight: 1,
     });
+  });
+
+  it('counts a Shift held for a retry after a Miss', () => {
+    // "a" typed as "s" first, then the capital "A" retyped with left Shift.
+    const log = withShift(
+      logOf('A', [
+        ['s', 20],
+        ['A', 20],
+      ]),
+      ['none', 'left'],
+    );
+
+    expect(runReport(log, STEADY).shiftUses).toEqual({ ShiftLeft: 1 });
   });
 
   it('is empty for a Run that held no Shift', () => {
