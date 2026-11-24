@@ -3,6 +3,7 @@ import type { JourneyReport } from '../analytics/logbook';
 import { keycapLabel, typedLabel } from './debriefLabels';
 import {
   COMMON_PAIRS_HEADING,
+  COMMON_PAIRS_NO_TIME,
   habitsRebuilding,
   LETTER_PAIRS_SECTION,
   LETTER_PAIRS_SECTION_HINT,
@@ -11,6 +12,7 @@ import {
   MIX_UPS_SECTION,
   MIX_UPS_SECTION_HINT,
   KEY_MIX_UPS_NONE,
+  NO_PAIR_SLOWER,
   NO_PAIR_TIME,
   NO_SLOW_PAIRS,
   openKeyStoryTitle,
@@ -156,7 +158,9 @@ export const LetterPairs: React.FC<HabitProps> = ({ report }) => {
             {SLOWEST_PAIRS}
           </h4>
           {pairs.slowest.length === 0 ? (
-            <p className="text-xs text-slate-400">{NO_SLOW_PAIRS}</p>
+            <p className="text-xs text-slate-400">
+              {pairs.oftenTyped === 0 ? NO_SLOW_PAIRS : NO_PAIR_SLOWER}
+            </p>
           ) : (
             <ul className="flex flex-wrap gap-1.5 mt-1 mb-3">
               {pairs.slowest.map(({ pair, ms, count }) => (
@@ -174,6 +178,7 @@ export const LetterPairs: React.FC<HabitProps> = ({ report }) => {
           <h4 className="text-[10px] uppercase font-mono text-slate-500">
             {COMMON_PAIRS_HEADING}
           </h4>
+          <p className="text-[11px] text-slate-500">{COMMON_PAIRS_NO_TIME}</p>
           <ul className="flex flex-wrap gap-1.5 mt-1">
             {pairs.common.map(({ pair, ms, count }) => (
               <li

@@ -76,8 +76,14 @@ export interface CommonPairTime {
 
 /** What Analytics shows of the player's Letter pairs over the last 8 weeks. */
 export interface LetterPairs {
-  /** The slowest pairs, slowest first, each typed cleanly at least 8 times. */
+  /**
+   * The slowest pairs, slowest first, each typed cleanly at least 8 times and
+   * slower than the average over every pair, so the list never reads as a
+   * contradiction of `averageMs`.
+   */
   slowest: PairTime[];
+  /** How many pairs were typed cleanly at least 8 times (so a list with none slower is told from one with none to rank). */
+  oftenTyped: number;
   /** The 10 most common English pairs, in their order. */
   common: CommonPairTime[];
   /** The mean time over every pair that has one, in ms, or null with none. */
@@ -123,11 +129,14 @@ export function letterPairs(
   const everyStep = [...total]
     .filter(([pair]) => !hasSpace(pair))
     .reduce((sum, [, { steps }]) => sum + steps, 0);
+  const averageMs = everyHit === 0 ? null : stepsToMs(everyStep / everyHit);
+  const often = timed.filter(({ count }) => count >= MIN_PAIR_COUNT);
   return {
-    slowest: timed
-      .filter(({ count }) => count >= MIN_PAIR_COUNT)
+    slowest: often
+      .filter(({ ms }) => averageMs !== null && ms > averageMs)
       .sort((a, b) => b.ms - a.ms || a.pair.localeCompare(b.pair))
       .slice(0, length),
+    oftenTyped: often.length,
     common: COMMON_PAIRS.map((pair) => {
       const tally = total.get(pair);
       const count = tally?.count ?? 0;
@@ -140,6 +149,6 @@ export function letterPairs(
             : null,
       };
     }),
-    averageMs: everyHit === 0 ? null : stepsToMs(everyStep / everyHit),
+    averageMs,
   };
 }

@@ -187,38 +187,64 @@ describe('Letter pairs', () => {
   const bbTimedOver = (times: number): Log =>
     typed(`a${'b'.repeat(times + 1)}`);
 
-  it('rank a pair only once it was typed cleanly 8 times', () => {
-    const seven = journeyReport(
-      foldRun(EMPTY_LOGBOOK, bbTimedOver(7), FREE_FLIGHT, TODAY),
-      TODAY,
-    );
-    const eight = journeyReport(
-      foldRun(EMPTY_LOGBOOK, bbTimedOver(8), FREE_FLIGHT, TODAY),
-      TODAY,
-    );
-
-    expect(seven.pairs.slowest).toEqual([]);
-    expect(eight.pairs.slowest).toEqual([{ pair: 'bb', count: 8, ms: 200 }]);
-  });
-
-  it('add up over the days, the slowest first', () => {
-    // bb at 200 ms and dd at 400 ms, 4 times a day for 2 days.
-    const fast = typed(`a${'b'.repeat(5)}`, 12);
-    const slow = typed(`c${'d'.repeat(5)}`, 24);
-    const logbook = foldRun(
-      foldRun(everyDay(fast, 2), slow, FREE_FLIGHT, daysAgo(1)),
-      slow,
+  /** One Run of "bb" at 200 ms, typed 30 times, and one of "cc" at 400 ms, typed `times` times. */
+  const quickBbAndSlowCc = (times: number): Logbook =>
+    foldRun(
+      foldRun(EMPTY_LOGBOOK, typed(`a${'b'.repeat(31)}`), FREE_FLIGHT, TODAY),
+      typed(`x${'c'.repeat(times + 1)}`, 24),
       FREE_FLIGHT,
       TODAY,
     );
 
-    const { pairs } = journeyReport(logbook, TODAY);
+  it('rank a pair only once it was typed cleanly 8 times', () => {
+    const seven = journeyReport(quickBbAndSlowCc(7), TODAY);
+    const eight = journeyReport(quickBbAndSlowCc(8), TODAY);
+
+    expect(seven.pairs.slowest).toEqual([]);
+    expect(eight.pairs.slowest).toEqual([{ pair: 'cc', count: 8, ms: 400 }]);
+  });
+
+  it('list only pairs slower than the average over every pair, so the list never contradicts it', () => {
+    // "bb" at 200 ms and "cc" at 400 ms are both typed often; the average,
+    // over every pair, sits between them.
+    const { pairs } = journeyReport(quickBbAndSlowCc(9), TODAY);
+
+    expect(pairs.oftenTyped).toBe(2);
+    expect(pairs.slowest.map(({ pair }) => pair)).toEqual(['cc']);
+    expect(pairs.averageMs).toBeLessThan(pairs.slowest[0].ms);
+    expect(pairs.averageMs).toBeGreaterThan(200);
+  });
+
+  it('list none, though pairs were ranked, when none is slower than the average', () => {
+    // Every pair at 200 ms: "bb" is the average, not slower than it.
+    const { pairs } = journeyReport(
+      foldRun(EMPTY_LOGBOOK, bbTimedOver(8), FREE_FLIGHT, TODAY),
+      TODAY,
+    );
+
+    expect(pairs.slowest).toEqual([]);
+    expect(pairs.oftenTyped).toBe(1);
+  });
+
+  it('add up over the days, the slowest first', () => {
+    // On each of 2 days: "bb" at 200 ms 12 times, "ee" at 400 ms 4 times and
+    // "ff" at 600 ms 4 times. The average over every pair is about 330 ms.
+    const quick = typed(`a${'b'.repeat(13)}`, 12);
+    const mid = typed(`c${'e'.repeat(5)}`, 24);
+    const slow = typed(`d${'f'.repeat(5)}`, 36);
+    const day = (logbook: Logbook, ago: number) =>
+      [quick, mid, slow].reduce(
+        (so_far, log) => foldRun(so_far, log, FREE_FLIGHT, daysAgo(ago)),
+        logbook,
+      );
+
+    const { pairs } = journeyReport(day(day(EMPTY_LOGBOOK, 1), 0), TODAY);
 
     expect(
       pairs.slowest.map(({ pair, count, ms }) => [pair, count, ms]),
     ).toEqual([
-      ['dd', 8, 400],
-      ['bb', 8, 200],
+      ['ff', 8, 600],
+      ['ee', 8, 400],
     ]);
   });
 
