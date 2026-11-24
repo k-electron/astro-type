@@ -324,6 +324,22 @@ describe('what the Logbook keeps for good', () => {
       expect(second.lifetime.bestDay).toEqual({ day: TODAY, letterWpm: 20 });
     });
 
+    it("is not lost to a later day's best, which a slower Run then pulls down", () => {
+      // Day A, a good while ago: 30 WPM. It fades while day B (60 WPM) is held.
+      const a = flownOn(['2026-01-10'], lettersAt(51, 24));
+      const b = foldRun(a, lettersAt(51, 12), FREE_FLIGHT, '2026-03-20');
+      expect(b.runs.map((run) => run.day)).toEqual(['2026-03-20']);
+      expect(b.lifetime.bestDay).toEqual({ day: '2026-03-20', letterWpm: 60 });
+
+      // A slower Run later on day B brings that day down to 20 WPM, below A's 30.
+      const slowerB = foldRun(b, lettersAt(51, 60), FREE_FLIGHT, '2026-03-20');
+
+      expect(slowerB.lifetime.bestDay).toEqual({
+        day: '2026-01-10',
+        letterWpm: 30,
+      });
+    });
+
     it('survives its own day fading from the Logbook', () => {
       const fast = flownOn(['2026-01-10'], lettersAt(51, 12));
 

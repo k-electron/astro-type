@@ -52,10 +52,12 @@ export function foldRun(
   today: Day,
 ): Logbook {
   const summary = summariseRun(log, facts, today);
-  const runs = [...recentRuns(logbook.runs, today), summary];
+  const kept = recentRuns(logbook.runs, today);
+  const faded = logbook.runs.filter((run) => !kept.includes(run));
+  const runs = [...kept, summary];
   return {
     runs,
-    lifetime: foldLifetime(logbook.lifetime, summary, runs, today),
+    lifetime: foldLifetime(logbook.lifetime, summary, runs, faded, today),
   };
 }
 

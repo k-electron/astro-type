@@ -17,6 +17,14 @@ export const STARTING_DAYS = 3;
 
 const dayField = z.string().refine(isDay).nullable().catch(null);
 
+const bestDayField = z
+  .object({
+    day: z.string().refine(isDay),
+    letterWpm: z.number().min(0).catch(0),
+  })
+  .nullable()
+  .catch(null);
+
 export const LifetimeSchema = z.preprocess(
   (value) => (isRecord(value) ? value : {}),
   z.object({
@@ -28,13 +36,9 @@ export const LifetimeSchema = z.preprocess(
     practiceSteps: countField,
     wordsTyped: countField,
     /** The day of the fastest letter typing, and its speed. */
-    bestDay: z
-      .object({
-        day: z.string().refine(isDay),
-        letterWpm: z.number().min(0).catch(0),
-      })
-      .nullable()
-      .catch(null),
+    bestDay: bestDayField,
+    /** The best day among the days whose Run summaries have been deleted, kept so the best day can't be lost. */
+    fadedBestDay: bestDayField,
     /** The letter Clean hits, and the Run Time they took, over the first 3 days played. */
     startingLetterCleanHits: countField,
     startingLetterCleanSteps: countField,
@@ -65,33 +69,37 @@ function bestDayOf(
   return best;
 }
 
+/** The better of two best days: the faster, and the earlier on a tie. */
+function better(
+  first: { day: Day; letterWpm: number } | null,
+  second: { day: Day; letterWpm: number } | null,
+): { day: Day; letterWpm: number } | null {
+  if (first === null || second === null) return first ?? second;
+  return second.letterWpm > first.letterWpm ? second : first;
+}
+
 /**
  * The lifetime part after `summary` joined the Logbook on `today`. `recent`
- * are the summaries still in the Logbook, this one included. A day counts
- * once, and only when it is later than the last day played, so a clock moved
- * back can't count a day twice.
+ * are the summaries still in the Logbook, this one included, and `faded` the
+ * ones this fold deletes. A day counts once, and only when it is later than
+ * the last day played, so a clock moved back can't count a day twice.
  */
 export function foldLifetime(
   lifetime: Lifetime,
   summary: RunSummary,
   recent: readonly RunSummary[],
+  faded: readonly RunSummary[],
   today: Day,
 ): Lifetime {
   const newDay = lifetime.lastDay === null || today > lifetime.lastDay;
   const daysPlayed = lifetime.daysPlayed + (newDay ? 1 : 0);
   const starting = daysPlayed <= STARTING_DAYS;
 
-  // The best day is worked out afresh over the days still held, as a day's
-  // speed moves with each Run flown on it. The one stored is kept only when
-  // its day is gone from the Logbook.
-  const held = bestDayOf(recent);
-  const stored = lifetime.bestDay;
-  const storedIsGone =
-    stored !== null && !recent.some((run) => run.day === stored.day);
-  const bestDay =
-    storedIsGone && (held === null || stored.letterWpm >= held.letterWpm)
-      ? stored
-      : held;
+  // A day's speed moves with each Run flown on it, so the days still held are
+  // worked out afresh; a day is final once it fades, and only then is its
+  // speed kept for good.
+  const fadedBestDay = better(lifetime.fadedBestDay, bestDayOf(faded));
+  const bestDay = better(fadedBestDay, bestDayOf(recent));
 
   return {
     firstDay:
@@ -104,6 +112,7 @@ export function foldLifetime(
     practiceSteps: lifetime.practiceSteps + summary.runSteps,
     wordsTyped: lifetime.wordsTyped + summary.words,
     bestDay,
+    fadedBestDay,
     startingLetterCleanHits:
       lifetime.startingLetterCleanHits +
       (starting ? summary.letterCleanHits : 0),

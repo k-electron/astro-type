@@ -1,8 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  CURRICULUM_SECTORS,
-  getStageById,
-} from '../../src/curriculum/curriculum';
+import { CURRICULUM_SECTORS, getStageById } from '../curriculum/curriculum';
 import { completeSave } from '../../tests/shared/saves';
 import {
   clearStage,
