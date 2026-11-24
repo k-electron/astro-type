@@ -6,12 +6,20 @@
  * 12 steps after the one before is 60 WPM).
  */
 import { describe, expect, it } from 'vitest';
+import { addDays } from './days';
 import { evenly, logOf, withShift } from '../../tests/shared/flightLog';
+import {
+  daysAgo,
+  FREE_FLIGHT,
+  inSector,
+  lettersAt,
+  type Log,
+  TODAY,
+} from '../../tests/shared/logbooks';
 import {
   beginnerLogbook,
   EIGHT_WEEKS_OF_PLAY,
 } from '../../tests/shared/beginnerTypist';
-import { addDays } from './days';
 import {
   EMPTY_LOGBOOK,
   type FoldFacts,
@@ -20,32 +28,11 @@ import {
   type Logbook,
 } from './logbook';
 
-const TODAY = '2026-11-23';
-const daysAgo = (count: number) => addDays(TODAY, -count);
-
-const FREE_FLIGHT: FoldFacts = {
-  where: null,
-  runSteps: 600,
-  wpm: 20,
-  accuracy: 100,
-  rhythm: 90,
-};
-
-/** A Run flown in a Sector, by the id and name it copies. */
-const inSector = (id: string, name = id): FoldFacts => ({
-  ...FREE_FLIGHT,
-  where: { sector: { id, name }, stage: { id: `${id}-1`, name: `${id} one` } },
-});
-
-/** A log of `letters` letters of "a", `gap` steps apart: `letters - 1` timed hits. */
-const lettersAt = (letters: number, gap: number) =>
-  logOf('a'.repeat(letters), evenly('a'.repeat(letters), gap));
-
 /** The Logbook after each Run in turn: the day it was flown, its log and its facts. */
 function flown(
   runs: {
     day: string;
-    log?: ReturnType<typeof lettersAt>;
+    log?: Log;
     facts?: FoldFacts;
   }[],
 ): Logbook {

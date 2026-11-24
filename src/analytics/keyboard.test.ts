@@ -7,35 +7,8 @@
  */
 import { describe, expect, it } from 'vitest';
 import { evenly, logOf } from '../../tests/shared/flightLog';
-import { addDays } from './days';
-import {
-  EMPTY_LOGBOOK,
-  type FoldFacts,
-  foldRun,
-  journeyReport,
-  type Logbook,
-} from './logbook';
-
-const TODAY = '2026-11-23';
-const daysAgo = (count: number) => addDays(TODAY, -count);
-
-const FREE_FLIGHT: FoldFacts = {
-  where: null,
-  runSteps: 600,
-  wpm: 20,
-  accuracy: 100,
-  rhythm: 90,
-};
-
-/** `text` typed right, `gap` steps between keys. */
-const typed = (text: string, gap = 12) => logOf(text, evenly(text, gap));
-
-/** The Logbook after each Run in turn (its day and its log). */
-const flown = (runs: { day: string; log: ReturnType<typeof typed> }[]) =>
-  runs.reduce(
-    (logbook: Logbook, { day, log }) => foldRun(logbook, log, FREE_FLIGHT, day),
-    EMPTY_LOGBOOK,
-  );
+import { daysAgo, flown, TODAY, typed } from '../../tests/shared/logbooks';
+import { journeyReport, type Logbook } from './logbook';
 
 /** What the keyboard says of `keycap` on `day`, looking from `today`. */
 const keyOn = (logbook: Logbook, keycap: string, day: string, today = TODAY) =>

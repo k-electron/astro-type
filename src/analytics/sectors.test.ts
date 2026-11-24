@@ -6,8 +6,13 @@
  * steps after the one before is 60 WPM, 24 steps is 30 WPM).
  */
 import { describe, expect, it } from 'vitest';
-import { evenly, logOf } from '../../tests/shared/flightLog';
-import { addDays } from './days';
+import {
+  daysAgo,
+  FREE_FLIGHT,
+  inSector,
+  TODAY,
+  typed,
+} from '../../tests/shared/logbooks';
 import {
   EMPTY_LOGBOOK,
   type FoldFacts,
@@ -15,31 +20,6 @@ import {
   journeyReport,
   type Logbook,
 } from './logbook';
-
-const TODAY = '2026-11-23';
-const daysAgo = (count: number) => addDays(TODAY, -count);
-
-const FREE_FLIGHT: FoldFacts = {
-  where: null,
-  runSteps: 600,
-  wpm: 20,
-  accuracy: 100,
-  rhythm: 90,
-};
-
-/** A Run flown in a Sector, by the id and name it copies. */
-const inSector = (
-  id: string,
-  name = id,
-  numbers: Partial<FoldFacts> = {},
-): FoldFacts => ({
-  ...FREE_FLIGHT,
-  ...numbers,
-  where: { sector: { id, name }, stage: { id: `${id}-1`, name: `${id} one` } },
-});
-
-/** A log of `text` typed right, `gap` steps apart. */
-const typed = (text: string, gap = 12) => logOf(text, evenly(text, gap));
 
 interface Flown {
   /** How many days before TODAY. */

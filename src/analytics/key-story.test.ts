@@ -7,8 +7,15 @@
  * took 200 ms, and the first letter of a Run is not timed).
  */
 import { describe, expect, it } from 'vitest';
-import { evenly, logOf } from '../../tests/shared/flightLog';
-import { addDays } from './days';
+import { logOf } from '../../tests/shared/flightLog';
+import {
+  daysAgo,
+  FREE_FLIGHT,
+  flown,
+  type Log,
+  TODAY,
+  typed,
+} from '../../tests/shared/logbooks';
 import {
   EMPTY_LOGBOOK,
   type FoldFacts,
@@ -16,20 +23,6 @@ import {
   journeyReport,
   type Logbook,
 } from './logbook';
-
-const TODAY = '2026-11-23';
-const daysAgo = (count: number) => addDays(TODAY, -count);
-
-const FREE_FLIGHT: FoldFacts = {
-  where: null,
-  runSteps: 600,
-  wpm: 20,
-  accuracy: 100,
-  rhythm: 90,
-};
-
-/** `text` typed right, `gap` steps between keys. */
-const typed = (text: string, gap = 12) => logOf(text, evenly(text, gap));
 
 /** `text` typed right except for a wrong `x` before its first `misses` characters. */
 const typedWithMisses = (text: string, misses: number, gap = 12) =>
@@ -45,13 +38,7 @@ const typedWithMisses = (text: string, misses: number, gap = 12) =>
     ),
   );
 
-type Run = { day: string; log: ReturnType<typeof typed> };
-
-const flown = (runs: Run[]) =>
-  runs.reduce(
-    (logbook: Logbook, { day, log }) => foldRun(logbook, log, FREE_FLIGHT, day),
-    EMPTY_LOGBOOK,
-  );
+type Run = { day: string; log: Log };
 
 const storyOf = (logbook: Logbook, keycap: string, today = TODAY) =>
   journeyReport(logbook, today).keyStories[keycap];
