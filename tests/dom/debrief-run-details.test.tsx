@@ -89,7 +89,7 @@ describe('the Debrief says what to work on', () => {
     );
 
     expect(
-      card().getByText(workOnSentence({ kind: 'clean run' })),
+      card().getByText(workOnSentence({ kind: 'even run', misses: 0 })),
     ).toBeTruthy();
   });
 });
