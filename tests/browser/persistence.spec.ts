@@ -72,7 +72,7 @@ test('the Save outlives a reload: Stars, a Backup round trip, a Free Flight, and
   await test.step('Export Backup downloads a file that says which version it is', async () => {
     await page.getByRole('button', { name: 'Analytics', exact: true }).click();
     await expect(
-      page.getByRole('heading', { name: 'Typing Analytics & Heatmap' }),
+      page.getByRole('heading', { name: MENU_HEADINGS.Analytics }),
     ).toBeVisible();
 
     const download = page.waitForEvent('download');

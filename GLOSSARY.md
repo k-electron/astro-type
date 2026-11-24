@@ -193,7 +193,7 @@ The screen for spending Credits on Cosmetics.
 _Avoid_: Shop, upgrades screen
 
 **Analytics**:
-The screen showing the player's lifetime totals, hand balance and per-key stats.
+The screen showing the player's Journey: a plain sentence, lifetime totals, a timeline of the last eight weeks, a keyboard as it was on the day under the timeline's cursor, and a logbook entry for each Sector flown. It also holds Backup, Wipe Stars and Factory Reset.
 _Avoid_: Telemetry, stats screen, Report
 
 **Free Flight**:

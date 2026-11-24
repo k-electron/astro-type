@@ -15,7 +15,7 @@ The capitalised terms are defined in [`GLOSSARY.md`](GLOSSARY.md).
 - **Streak, Multiplier and Overdrive:** correct keystrokes in a row build the Streak, which raises the Multiplier from x1 to x4. Correct keystrokes also fill the Overdrive meter, and a full meter starts Overdrive, which doubles the score of each hit. A Miss resets the Streak and ends Overdrive.
 - **Debrief:** when a Run is cleared, it shows the result, the Stars earned and the Credits paid.
 - **Hangar:** spend Credits on Cosmetics (Trails, Sound Kits, Bursts, Backdrops, Ships and Hulls).
-- **Analytics:** lifetime totals (highest speed, accuracy, words typed, practice time), hand balance and a per-key accuracy heatmap, with exporting and importing a Backup.
+- **Analytics:** your journey over the last 8 weeks (a timeline of speed, accuracy and Rhythm, and a keyboard that turns back in time with it), lifetime totals and a logbook of the Sectors you have flown, with exporting and importing a Backup.
 - **Free Flight:** set up a Stage from your own text.
 - **Sound:** sound effects and the beat are synthesized with the Web Audio API. There are no audio files.
 - **Your data:** your Profile is saved in this browser's localStorage. There are no accounts and no analytics.

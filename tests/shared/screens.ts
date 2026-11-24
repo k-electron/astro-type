@@ -13,7 +13,7 @@ import type { SoundKit } from '../../src/game/schemas';
 export const MENU_HEADINGS = {
   'Galaxy Map': 'Galaxy Map',
   Hangar: 'Starship Hangar',
-  Analytics: 'Typing Analytics & Heatmap',
+  Analytics: 'Typing Analytics',
   'Free Flight': 'Free Flight',
 } as const;
 

@@ -1,7 +1,8 @@
 import type { JourneySentence } from '../analytics/journeySentence';
 import { STEPS_PER_SECOND } from '../analytics/keys';
 import { MIN_DAY_LETTER_HITS } from '../analytics/lifetime';
-import { fingerWords, keyLabel } from './debriefLabels';
+import type { KeyOnDay } from '../analytics/keyboardDays';
+import { fingerWords, keyLabel, keycapLabel } from './debriefLabels';
 import { NO_SPEED } from './hudLabels';
 import { roundDown } from './roundDown';
 
@@ -134,6 +135,32 @@ export const dailyRhythmExplanation = (floors: {
 /** What the Shift hand strip says of itself on hover. */
 export const shiftHandExplanation = (): string =>
   `Shift hand is the share of your capitals and symbols typed with the Shift key on the other side from the key, as touch typists do. The dashed line is ${OPPOSITE_SHIFT_GUIDE}%.`;
+
+// ---- The keyboard as it was on a day ----------------------------------------
+
+export const KEYBOARD_HEADING = 'Your keys over time';
+export const KEYBOARD_HINT =
+  'Move along the timeline to see each key as it was on that day. Green is quick, amber is slow, a red ring is often missed and a dark key is not typed yet.';
+export const KEYBOARD_REBUILDING =
+  'Your keys are rebuilding. A few days of play will show how each key is going now.';
+
+/** The day the keyboard is showing: the one under the timeline's cursor, or the latest. */
+export const keyboardAsOf = (day: string): string => `As of ${dayText(day)}`;
+
+/** The tooltip of a typed keycap, or of one that is not yet typed (`key` is undefined). */
+export function keyOnDayTitle(
+  keycap: string,
+  key: KeyOnDay | undefined,
+): string {
+  const name = keycapLabel(keycap);
+  if (key === undefined) return `${name}: not typed yet`;
+  if (key.accuracy === null) {
+    return `${name}: not typed often enough lately to tell`;
+  }
+  const speed = key.ms === null ? '' : `${Math.round(key.ms)} ms a key, `;
+  const days = key.days === 1 ? 'day' : `${key.days} days`;
+  return `${name}: ${speed}${roundDown(key.accuracy)}% right, over its last ${days} played`;
+}
 
 // ---- The logbook: one entry for each Sector --------------------------------
 

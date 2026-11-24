@@ -17,6 +17,7 @@
  * `version` key is left as it is, so a Save from a newer game can go through a
  * seam with its `version` spelled out.
  */
+import { addDays } from '../../src/analytics/days';
 import { type Logbook, LogbookSchema } from '../../src/analytics/logbook';
 import { CURRICULUM_SECTORS } from '../../src/curriculum/curriculum';
 import {
@@ -241,27 +242,35 @@ export function fullLogbook(): Logbook {
 }
 
 /**
- * A Save whose Logbook has these key stats, from one Run summary on `TEST_DAY`:
- * for each key, how many of its characters were typed right first time (`hits`)
- * and how many were missed first time (`misses`). Everything else about the
- * Logbook is empty.
+ * A Save whose Logbook has one Run summary a day for each of `days`, on
+ * consecutive days ending `TEST_DAY` (the last element is `TEST_DAY`). Each
+ * says, for each key, how many of its characters were typed right first time
+ * (`hits`) and how many were missed first time (`misses`) that day. Everything
+ * else about the Logbook is empty, so the Journey reads "rebuilding"
+ * unless there are 3 days or more. Keys are the characters the Runs typed, so a
+ * capital is its own entry (and one key with its lower case on the keyboard).
  */
-export function keyStats(
-  stats: Record<string, [hits: number, misses: number]>,
+export function keysByDay(
+  days: Record<string, [hits: number, misses: number]>[],
 ) {
+  const dayOf = (at: number) => addDays(TEST_DAY, at + 1 - days.length);
   return {
     logbook: LogbookSchema.parse({
-      runs: [
-        {
-          day: TEST_DAY,
-          keys: Object.fromEntries(
-            Object.entries(stats).map(([key, [hits, misses]]) => [
-              key,
-              { firstAttempts: hits + misses, misses },
-            ]),
-          ),
-        },
-      ],
+      runs: days.map((stats, at) => ({
+        day: dayOf(at),
+        keys: Object.fromEntries(
+          Object.entries(stats).map(([key, [hits, misses]]) => [
+            key,
+            { firstAttempts: hits + misses, misses },
+          ]),
+        ),
+      })),
+      lifetime: {
+        firstDay: dayOf(0),
+        lastDay: TEST_DAY,
+        daysPlayed: days.length,
+        runs: days.length,
+      },
     }),
   };
 }
