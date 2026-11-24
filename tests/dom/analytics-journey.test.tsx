@@ -13,6 +13,7 @@ import {
   TIMELINE_HEADING,
   TIMELINE_REBUILDING,
 } from '../../src/screens/journeyLabels';
+import { EIGHT_WEEKS_OF_PLAY } from '../shared/beginnerTypist';
 import { fullLogbook } from '../shared/saves';
 import { ACCURACY_STRIP } from '../shared/screens';
 import { TEST_DAY } from '../shared/testHelpers';
@@ -37,7 +38,7 @@ describe('the sentence Analytics opens with', () => {
 
     // fullLogbook is 8 weeks of play with 23 days played, and a Stage of Sector 1 on some of them.
     const sentence = screen.getByText(/ days of play /).textContent ?? '';
-    expect(sentence).toContain('In 23 days of play');
+    expect(sentence).toContain(`In ${EIGHT_WEEKS_OF_PLAY.length} days of play`);
     expect(sentence).toContain(sectorName('s1-l1'));
     expect(sentence).toMatch(/Your trickiest key now is /);
   });

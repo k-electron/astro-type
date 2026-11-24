@@ -1,4 +1,4 @@
-import { type Day, daysBetween, WINDOW_DAYS } from './days';
+import { addDays, type Day, daysBetween, WINDOW_DAYS } from './days';
 import { cleanHitWpm, type TrickiestKey } from './keys';
 import { MIN_DAY_LETTER_HITS, STARTING_DAYS } from './lifetime';
 import type { RunSummary } from './runs';
@@ -18,7 +18,7 @@ const MIN_AWAY_DAYS = 2;
 /** How long the player has been away, when they have been. */
 export interface Away {
   days: number;
-  /** The gap is longer than `days`: it began before the 8 weeks the Logbook still holds. */
+  /** The gap is at least `days`: it began before the 8 weeks the Logbook still holds. */
   atLeast: boolean;
 }
 
@@ -45,10 +45,14 @@ export type JourneySentence =
     };
 
 /**
- * How long the player has been away, from the days they played. After a
+ * How long the player has been away, from the days they played: the latest
+ * gap of at least 2 days between the days played, today included. After a
  * return the Logbook's last day is today again, so the gap is read from the
- * days played before it; a gap that began before the window is only known to
- * be at least the window long.
+ * days played before it. When the days played in the window show no such gap
+ * but days have faded from it, the player began again after a gap that began
+ * before the window, which is only known to be at least as long as from the
+ * window's start to their first day back. Null only when there was no gap and
+ * nothing has faded: a new player.
  */
 export function awayFor(
   runs: readonly RunSummary[],
@@ -58,19 +62,16 @@ export function awayFor(
 ): Away | null {
   if (lastDay === null) return null;
   const played = [...new Set(runs.map((run) => run.day))].sort();
-  if (lastDay < today) {
-    const days = daysBetween(lastDay, today);
-    return days >= MIN_AWAY_DAYS ? { days, atLeast: false } : null;
+  // Summaries older than the window may be all that is left of the last day.
+  const seen = played.length === 0 ? [lastDay] : played;
+  const sequence = seen.at(-1) === today ? seen : [...seen, today];
+  for (let at = sequence.length - 1; at >= 1; at--) {
+    const days = daysBetween(sequence[at - 1], sequence[at]);
+    if (days >= MIN_AWAY_DAYS) return { days, atLeast: false };
   }
-  const before = played.at(-2);
-  if (before !== undefined) {
-    const days = daysBetween(before, lastDay);
-    return days >= MIN_AWAY_DAYS ? { days, atLeast: false } : null;
-  }
-  // Only today is left in the window: the day before it faded, if there was one.
-  return daysPlayedInAll > played.length
-    ? { days: WINDOW_DAYS, atLeast: true }
-    : null;
+  if (daysPlayedInAll <= played.length) return null;
+  const days = daysBetween(addDays(today, -WINDOW_DAYS), sequence[0]);
+  return days >= MIN_AWAY_DAYS ? { days, atLeast: true } : null;
 }
 
 /**
