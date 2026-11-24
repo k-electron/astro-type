@@ -4,9 +4,11 @@ import { addDays } from '../../src/analytics/days';
 import { STAR_ACCURACY_BARS } from '../../src/game/rules';
 import { RHYTHM_STRIP } from '../../src/screens/debriefLabels';
 import {
+  BEST_DAY_LABEL,
   dailyAccuracyExplanation,
   journeySentence,
   LETTER_SPEED_STRIP,
+  letterSpeedText,
   NOTHING_TO_SHOW_YET,
   shiftHandExplanation,
   SHIFT_HAND_STRIP,
@@ -14,6 +16,7 @@ import {
   TIMELINE_REBUILDING,
 } from '../../src/screens/journeyLabels';
 import { EIGHT_WEEKS_OF_PLAY } from '../shared/beginnerTypist';
+import { daysAgo, flown, lettersAt } from '../shared/logbooks';
 import { fullLogbook } from '../shared/saves';
 import { ACCURACY_STRIP } from '../shared/screens';
 import { TEST_DAY } from '../shared/testHelpers';
@@ -128,3 +131,22 @@ function sectorName(stageId: string): string {
   if (!run?.where) throw new Error(`${stageId} was not flown in the Logbook`);
   return run.where.sector.name;
 }
+
+describe('a speed reads the same on every screen of the Journey', () => {
+  // 51 letters 52 steps apart is 13.85 WPM: a screen that rounds up says 14.
+  const SPEED = 13.85;
+  const logbook = flown(
+    [2, 1, 0].map((back) => ({ day: daysAgo(back), log: lettersAt(51, 52) })),
+  );
+
+  it('rounds the same down in the sentence, the Best Day and the timeline', () => {
+    const player = renderGame({ profile: { logbook } });
+    player.openHeader('Analytics');
+
+    const sentence = screen.getByText(/ days of play /).textContent ?? '';
+    expect(sentence).toContain(`about ${letterSpeedText(SPEED)}`);
+    const bestDay = screen.getByText(BEST_DAY_LABEL).parentElement;
+    expect(bestDay?.textContent).toMatch(/13\s*WPM/);
+    expect(letterSpeedText(SPEED)).toBe('13 WPM');
+  });
+});
