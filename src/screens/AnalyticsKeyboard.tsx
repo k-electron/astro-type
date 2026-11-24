@@ -14,6 +14,7 @@ import {
   keyboardHeld,
   keyOnDayTitle,
   VERY_SLOW_MARK,
+  VERY_SLOW_MARK_LABEL,
 } from './journeyLabels';
 
 interface AnalyticsKeyboardProps {
@@ -79,7 +80,12 @@ export const AnalyticsKeyboard: React.FC<AnalyticsKeyboardProps> = ({
       onClick: () => onPick(spec.key),
       // A key with no numbers lately is told by a dashed outline, a very slow
       // one by a mark as well as its colour.
-      badge: key.pace === 'very slow' ? VERY_SLOW_MARK : undefined,
+      badge:
+        key.pace === 'very slow' ? (
+          <span role="img" aria-label={VERY_SLOW_MARK_LABEL}>
+            {VERY_SLOW_MARK}
+          </span>
+        ) : undefined,
       className: [
         'text-white cursor-pointer',
         key.accuracy === null

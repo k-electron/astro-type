@@ -259,15 +259,12 @@ describe("the plain sentence's facts", () => {
 
   it('tells how far speed has come, the furthest Sector and the trickiest key', () => {
     // 3 early days at 24 steps a letter (30 WPM), then 3 recent days at 12 (60 WPM).
-    // "k" is missed once in three First attempts on the later days.
     const slow = lettersAt(51, 24);
     const quick = lettersAt(51, 12);
-    const text = 'kkk';
+    const text = 'k'.repeat(10);
     const tricky = logOf(text, [
       ['x', 5],
-      ['k', 15],
-      ['k', 30],
-      ['k', 45],
+      ...[...text].map((key, at): [string, number] => [key, 15 + at]),
     ]);
     const logbook = flown([
       { day: daysAgo(40), log: slow, facts: inSector('s1', 'Start') },

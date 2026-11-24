@@ -1,5 +1,6 @@
-import { cleanHitSteps } from './keys';
+import { cleanHitSteps, LIST_LENGTH, stepsToMs } from './keys';
 import type { FlightLog } from './keystroke';
+import type { RunSummary } from './runs';
 
 /**
  * What a Run says of one Letter pair: two characters next to each other in
@@ -39,4 +40,106 @@ export function pairTallies(log: FlightLog): Record<string, PairTally> {
     }
   });
   return tallies;
+}
+
+/** A pair is ranked, and its time told, only once it was typed cleanly this often. */
+export const MIN_PAIR_COUNT = 8;
+
+/** The 10 most common pairs in English, most common first. */
+export const COMMON_PAIRS = [
+  'th',
+  'he',
+  'in',
+  'er',
+  'an',
+  're',
+  'on',
+  'at',
+  'en',
+  'nd',
+] as const;
+
+/** A Letter pair and how long it takes the player. */
+export interface PairTime {
+  pair: string;
+  /** How many times it was typed cleanly: what the time is made of. */
+  count: number;
+  ms: number;
+}
+
+/** A common English pair: the player's time on it, or null when it was typed too seldom to tell. */
+export interface CommonPairTime {
+  pair: string;
+  count: number;
+  ms: number | null;
+}
+
+/** What Analytics shows of the player's Letter pairs over the last 8 weeks. */
+export interface LetterPairs {
+  /** The slowest pairs, slowest first, each typed cleanly at least 8 times. */
+  slowest: PairTime[];
+  /** The 10 most common English pairs, in their order. */
+  common: CommonPairTime[];
+  /** The mean time over every pair that has one, in ms, or null with none. */
+  averageMs: number | null;
+}
+
+/** A pair with a Space in it is the start or end of a word, not a move between two keys. */
+const hasSpace = (pair: string): boolean => pair.includes(' ');
+
+/** The Run summaries' Letter pairs, added up. */
+function totalPairs(runs: readonly RunSummary[]): Map<string, PairTally> {
+  const total = new Map<string, PairTally>();
+  for (const run of runs) {
+    for (const [pair, tally] of Object.entries(run.pairs)) {
+      const sum = total.get(pair) ?? { count: 0, steps: 0, misses: 0 };
+      sum.count += tally.count;
+      sum.steps += tally.steps;
+      sum.misses += tally.misses;
+      total.set(pair, sum);
+    }
+  }
+  return total;
+}
+
+/**
+ * The Letter pairs of the Run summaries given: the slowest, the common English
+ * pairs and the average. A pair is timed by its Clean hits, so they are what
+ * the 8-try floor counts. Pairs with a Space in them are left out of all three.
+ */
+export function letterPairs(
+  runs: readonly RunSummary[],
+  length = LIST_LENGTH,
+): LetterPairs {
+  const total = totalPairs(runs);
+  const timed = [...total]
+    .filter(([pair, { count }]) => count > 0 && !hasSpace(pair))
+    .map(([pair, { count, steps }]) => ({
+      pair,
+      count,
+      ms: stepsToMs(steps / count),
+    }));
+  const everyHit = timed.reduce((sum, { count }) => sum + count, 0);
+  const everyStep = [...total]
+    .filter(([pair]) => !hasSpace(pair))
+    .reduce((sum, [, { steps }]) => sum + steps, 0);
+  return {
+    slowest: timed
+      .filter(({ count }) => count >= MIN_PAIR_COUNT)
+      .sort((a, b) => b.ms - a.ms || a.pair.localeCompare(b.pair))
+      .slice(0, length),
+    common: COMMON_PAIRS.map((pair) => {
+      const tally = total.get(pair);
+      const count = tally?.count ?? 0;
+      return {
+        pair,
+        count,
+        ms:
+          tally !== undefined && count >= MIN_PAIR_COUNT
+            ? stepsToMs(tally.steps / count)
+            : null,
+      };
+    }),
+    averageMs: everyHit === 0 ? null : stepsToMs(everyStep / everyHit),
+  };
 }

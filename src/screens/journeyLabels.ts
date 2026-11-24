@@ -3,6 +3,8 @@ import { STEPS_PER_SECOND } from '../analytics/keys';
 import { MIN_DAY_LETTER_HITS } from '../analytics/lifetime';
 import type { KeyOnDay } from '../analytics/keyboardDays';
 import type { Reading } from '../analytics/keyDays';
+import type { MixUpCause } from '../analytics/mixUps';
+import type { ShiftTally } from '../analytics/shift';
 import type { KeyStory } from '../analytics/keyStory';
 import {
   fingerWords,
@@ -161,6 +163,11 @@ export const KEYBOARD_REBUILDING =
 /** The day the keyboard is showing: the one under the timeline's cursor, or the latest. */
 export const keyboardAsOf = (day: string): string => `As of ${dayText(day)}`;
 
+/** The words a very slow key's tooltip and corner mark say, beside its colour. */
+export const VERY_SLOW_WORDS = 'very slow';
+/** The accessible name of the corner mark on a very slow key. */
+export const VERY_SLOW_MARK_LABEL = 'very slow';
+
 /** The tooltip of a typed keycap, or of one that is not yet typed (`key` is undefined). */
 export function keyOnDayTitle(
   keycap: string,
@@ -175,7 +182,8 @@ export function keyOnDayTitle(
   const speed = key.ms === null ? '' : `${Math.round(key.ms)} ms a key, `;
   const days = key.days === 1 ? 'day' : `${key.days} days`;
   const missed = oftenMissed ? `, ${OFTEN_MISSED}` : '';
-  return `${name}: ${speed}${roundDown(key.accuracy)}% right, over its last ${days} played${missed}`;
+  const pace = key.pace === 'very slow' ? `${VERY_SLOW_WORDS}, ` : '';
+  return `${name}: ${pace}${speed}${roundDown(key.accuracy)}% right, over its last ${days} played${missed}`;
 }
 
 // ---- One key's story ----------------------------------------------------------
@@ -283,3 +291,56 @@ export const ENTRY_ACCURACY = 'Accuracy';
 export const ENTRY_KEYS = 'Keys it brought in';
 export const NO_KEYS_BROUGHT_IN = 'No new keys';
 export const ENTRY_SPARKLINE = 'Run speeds';
+
+// ---- Mix-ups, Shift hand and Letter pairs ------------------------------------
+
+/** What each section says while the picture of how the player types now is rebuilding. */
+export const habitsRebuilding = (what: string): string =>
+  `Your ${what} are rebuilding. A few days of play will show them.`;
+
+export const MIX_UPS_SECTION = 'Your Mix-ups';
+export const MIX_UPS_SECTION_HINT =
+  'The key you meant and the key you pressed instead, with why it probably happened. From the last 8 weeks; click a key to read its story.';
+export const MIX_UPS_AS = 'as';
+
+/** Why a Mix-up probably happened, as it reads next to the pair. */
+export const MIX_UP_CAUSES: Record<MixUpCause, string> = {
+  shift: 'right key, wrong Shift',
+  'next door': 'the key next door',
+  'same finger': 'the same finger',
+  'other hand': 'the other hand',
+  'same hand': 'the same hand, another finger',
+};
+
+export const SHIFT_HAND_SECTION = 'Your Shift hand';
+export const SHIFT_HAND_SECTION_HINT =
+  'How you held Shift for capitals and symbols in the last 8 weeks. Touch typists use the Shift on the other side from the key.';
+export const SHIFT_HAND_NONE = 'No capitals or symbols typed lately.';
+export const shiftHandTotal = (total: number): string =>
+  `${total.toLocaleString()} capitals and symbols`;
+
+/** The ways to hold Shift, in the order shown; the last two show only when there were some. */
+export const SHIFT_WAYS: {
+  field: keyof ShiftTally;
+  label: string;
+  always: boolean;
+}[] = [
+  { field: 'shiftOpposite', label: 'Other hand', always: true },
+  { field: 'shiftSame', label: 'Same hand', always: true },
+  { field: 'shiftNone', label: 'Caps Lock', always: true },
+  { field: 'shiftBoth', label: 'Both Shift keys', always: false },
+  { field: 'shiftUnknown', label: 'Not seen', always: false },
+];
+
+export const LETTER_PAIRS_SECTION = 'Your Letter pairs';
+export const LETTER_PAIRS_SECTION_HINT =
+  'How long the second letter takes after the first, from the last 8 weeks. A pair needs to be typed cleanly 8 times to count, and pairs with a Space in them are left out.';
+export const SLOWEST_PAIRS = 'Your slowest pairs';
+export const COMMON_PAIRS_HEADING = 'The most common pairs in English';
+export const NO_SLOW_PAIRS = 'No pair has been typed cleanly often enough yet.';
+export const pairTimeText = (ms: number): string => `${Math.round(ms)} ms`;
+export const NO_PAIR_TIME = 'not often enough to tell';
+export const pairAverage = (ms: number): string =>
+  `${Math.round(ms)} ms on average over your pairs`;
+export const pairTitle = (pair: string, ms: number, count: number): string =>
+  `${pair}: ${Math.round(ms)} ms, over ${count} times typed cleanly`;

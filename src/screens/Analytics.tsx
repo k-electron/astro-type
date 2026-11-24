@@ -35,6 +35,7 @@ import { AnalyticsKeyboard } from './AnalyticsKeyboard';
 import { JourneyTimeline } from './JourneyTimeline';
 import { KeyStoryPanel } from './KeyStoryPanel';
 import { type EntryJump, SectorEntries } from './SectorEntries';
+import { LetterPairs, MixUps, ShiftHand } from './TypingHabits';
 
 /** How long a entry stays ringed after the timeline sent the player to it. */
 const RING_MS = 3000;
@@ -96,7 +97,7 @@ export const Analytics: React.FC = () => {
     setHeldDay((held) => (held === day ? null : day));
     if (sectorId !== null) jumpToEntry(sectorId);
   };
-  // A key in the logbook is far below its story, so bring the story into view.
+  // A key in the logbook or a Mix-up is far below its story, so bring the story into view.
   const pickFromLogbook = (keycap: string) => {
     setPickedKey(keycap);
     storyRef.current?.scrollIntoView?.({
@@ -274,6 +275,15 @@ export const Analytics: React.FC = () => {
                 }
                 rebuilding={journey.rebuilding}
               />
+            </div>
+          )}
+
+          {/* Mix-ups, Shift hand and Letter pairs */}
+          {journey.sentence.kind !== 'empty' && (
+            <div className="flex flex-col gap-6">
+              <MixUps report={journey} onPickKey={pickFromLogbook} />
+              <ShiftHand report={journey} />
+              <LetterPairs report={journey} />
             </div>
           )}
 
