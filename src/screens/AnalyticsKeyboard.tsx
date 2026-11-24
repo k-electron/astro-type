@@ -47,10 +47,9 @@ export const AnalyticsKeyboard: React.FC<AnalyticsKeyboardProps> = ({
       };
     }
     const key = keyboard?.keys[spec.key];
-    const title = keyOnDayTitle(spec.key, key);
     if (key === undefined) {
       return {
-        title,
+        title: keyOnDayTitle(spec.key, undefined),
         disabled: true,
         'aria-label': keycapName(spec),
         className: 'border-slate-800 bg-slate-950 text-slate-700',
@@ -59,7 +58,7 @@ export const AnalyticsKeyboard: React.FC<AnalyticsKeyboardProps> = ({
     const oftenMissed =
       key.accuracy !== null && key.accuracy < OFTEN_MISSED_BELOW;
     return {
-      title,
+      title: keyOnDayTitle(spec.key, key, oftenMissed),
       'aria-label': keycapName(spec),
       className: [
         'border-slate-600 text-white cursor-pointer',

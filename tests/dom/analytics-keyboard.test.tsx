@@ -3,6 +3,7 @@ import { addDays } from '../../src/analytics/days';
 import {
   KEYBOARD_HEADING,
   KEYBOARD_REBUILDING,
+  OFTEN_MISSED,
 } from '../../src/screens/journeyLabels';
 import { fullLogbook, keysByDay, RETURNING_PLAYER } from '../shared/saves';
 import { TEST_DAY } from '../shared/testHelpers';
@@ -146,6 +147,40 @@ describe("Analytics' keys as of the latest day", () => {
 
     expect(keyNamed('F key').title).toContain(`${shown}% right`);
   });
+
+  it.each([
+    // The first Star bar is 90%: a key right less often than that is often missed.
+    [
+      '89 of 100 right',
+      [
+        [30, 4],
+        [30, 4],
+        [29, 3],
+      ],
+      true,
+    ],
+    [
+      '90 of 100 right',
+      [
+        [30, 3],
+        [30, 3],
+        [30, 4],
+      ],
+      false,
+    ],
+  ] as const)(
+    'marks a key as often missed below the first Star bar: %s',
+    (_, days, marked) => {
+      const player = renderGame({
+        profile: keysByDay(
+          days.map(([hits, misses]) => ({ f: [hits, misses] })),
+        ),
+      });
+      player.openHeader('Analytics');
+
+      expect(keyNamed('F key').title.includes(OFTEN_MISSED)).toBe(marked);
+    },
+  );
 
   it('says a key typed too few times a day has too few tries to tell, not 100%', () => {
     const player = renderGame({
