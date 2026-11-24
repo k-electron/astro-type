@@ -21,7 +21,7 @@ import { daysAgo, flown, lettersAt } from '../shared/logbooks';
 import { fullLogbook } from '../shared/saves';
 import { ACCURACY_STRIP } from '../shared/screens';
 import { TEST_DAY } from '../shared/testHelpers';
-import { renderGame, screen } from './harness';
+import { renderGame, screen, within } from './harness';
 
 // Analytics opens with the Journey's plain sentence, then the last 8 weeks.
 
@@ -183,6 +183,11 @@ describe('a speed reads the same on every screen of the Journey', () => {
     expect(sentence).toContain(`about ${letterSpeedText(SPEED)}`);
     const bestDay = screen.getByText(BEST_DAY_LABEL).parentElement;
     expect(bestDay?.textContent).toMatch(/13\s*WPM/);
-    expect(letterSpeedText(SPEED)).toBe('13 WPM');
+    // The strip reads the latest day beside its name.
+    expect(
+      within(
+        screen.getByRole('region', { name: LETTER_SPEED_STRIP }),
+      ).getByText(/13\s*WPM/),
+    ).toBeTruthy();
   });
 });
