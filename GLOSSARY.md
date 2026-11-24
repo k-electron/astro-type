@@ -62,7 +62,7 @@ _Avoid_: Confusion, substitution, swap
 
 **Shift hand**:
 How the player held Shift for capitals and symbols over the last eight weeks: with the Shift on the other side from the key (Opposite-hand Shift), the same side, both, none (Caps Lock) or one the game never saw go down. Analytics shows it as shares of the First attempts on shifted characters, and as a share a day on the timeline.
-_Avoid_: Shift habit, Shift balance
+_Avoid_: Shift balance
 
 **Letter pair**:
 Two characters next to each other in the text. Its speed is the time between their Keystrokes.
