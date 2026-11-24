@@ -2,6 +2,7 @@ import type { JourneySentence } from '../analytics/journeySentence';
 import { STEPS_PER_SECOND } from '../analytics/keys';
 import { MIN_DAY_LETTER_HITS } from '../analytics/lifetime';
 import { fingerWords, keyLabel } from './debriefLabels';
+import { NO_SPEED } from './hudLabels';
 import { roundDown } from './roundDown';
 
 /**
@@ -85,7 +86,7 @@ export function journeySentence(sentence: JourneySentence): string {
       const trickiest =
         key === null
           ? ''
-          : ` Your trickiest key now is ${keyLabel(key.character)}${key.finger === null ? '' : `, your ${fingerWords(key.finger)}`}.`;
+          : ` Your trickiest key now is the ${keyLabel(key.character)} key${key.finger === null ? '' : `, your ${fingerWords(key.finger)}`}.`;
       return `${days} you ${progress.length === 0 ? 'kept practising' : progress.join(' and ')}.${trickiest}`;
     }
   }
@@ -95,7 +96,7 @@ export function journeySentence(sentence: JourneySentence): string {
 
 export const TIMELINE_HEADING = 'Your last 8 weeks';
 export const TIMELINE_HINT =
-  'Hover a day to read it. Each dot is a day you played. Shaded days are days away: nothing is lost while you are away.';
+  'Hover a day to read it, and click a day or a Sector band to jump to its entry below. Each dot is a day you played. Shaded days are days away: nothing is lost while you are away.';
 export const AWAY_MARK = 'nothing is lost while you are away';
 export const TIMELINE_REBUILDING =
   'The timeline is rebuilding. A few days of play will draw it.';
@@ -133,3 +134,48 @@ export const dailyRhythmExplanation = (floors: {
 /** What the Shift hand strip says of itself on hover. */
 export const shiftHandExplanation = (): string =>
   `Shift hand is the share of your capitals and symbols typed with the Shift key on the other side from the key, as touch typists do. The dashed line is ${OPPOSITE_SHIFT_GUIDE}%.`;
+
+// ---- The logbook: one entry for each Sector --------------------------------
+
+export const LOGBOOK_HEADING = 'Your logbook';
+export const LOGBOOK_HINT =
+  'One entry for each Sector you have flown, in the order you reached them. They stay here even when the days behind them have faded.';
+
+/** The days a entry covers: "Nov 3" for one day, "Nov 3 to Nov 20" for more. */
+export const entryDates = (firstDay: string, lastDay: string): string =>
+  firstDay === lastDay
+    ? dayText(firstDay)
+    : `${dayText(firstDay)} to ${dayText(lastDay)}`;
+
+export const entryDays = (days: number): string =>
+  `${days} ${days === 1 ? 'day' : 'days'}`;
+
+export const entryRuns = (runs: number): string =>
+  `${runs} ${runs === 1 ? 'Run' : 'Runs'}`;
+
+/** A entry's Stars as they are now, read live; only for a Sector that still exists. */
+export const entryStars = (earned: number, most: number): string =>
+  `${earned} of ${most} Stars`;
+
+/**
+ * A number at the start of a entry and at its end: "12 to 23 WPM", or just
+ * "23 WPM" when they read the same. `whole` makes each a whole number.
+ */
+export function fromTo(
+  from: number | null,
+  to: number | null,
+  unit: string,
+  whole: (value: number) => number = Math.round,
+): string {
+  const start = from === null ? null : whole(from);
+  const end = to === null ? null : whole(to);
+  if (start === null && end === null) return NO_SPEED;
+  if (start === end) return `${end}${unit}`;
+  return `${start ?? NO_SPEED} to ${end ?? NO_SPEED}${unit}`;
+}
+
+export const ENTRY_SPEED = 'Speed';
+export const ENTRY_ACCURACY = 'Accuracy';
+export const ENTRY_KEYS = 'Keys it brought in';
+export const NO_KEYS_BROUGHT_IN = 'No new keys';
+export const ENTRY_SPARKLINE = 'Run speeds';

@@ -46,6 +46,27 @@ describe('a cleared Run', () => {
     expect(storage.saved?.version).toBe(SAVE_VERSION);
   });
 
+  it("starts its Sector's summary, with the Stage's own keys as the ones the Sector brought in, and saves it", () => {
+    const { game, storage } = loadGame();
+    startStage(game, STAGE_ID);
+
+    clearStage(game, { seconds: 60 });
+
+    const stage = getStageById(STAGE_ID);
+    const sector = CURRICULUM_SECTORS.find(({ id }) => id === stage?.sectorId);
+    const [summary] = logbookOf(game).sectors;
+    expect(logbookOf(game).sectors).toHaveLength(1);
+    expect(summary).toMatchObject({
+      id: sector?.id,
+      name: sector?.name,
+      days: 1,
+      runs: 1,
+    });
+    // Every key of a new player's first Run is new to them.
+    expect(summary.keysBroughtIn.length).toBeGreaterThan(0);
+    expect(storage.saved?.logbook.sectors).toEqual(logbookOf(game).sectors);
+  });
+
   it('is a Free Flight with no Sector, and still in the Logbook', () => {
     const game = newGame();
     startFreeFlight(game, 'ab ba');
@@ -55,6 +76,7 @@ describe('a cleared Run', () => {
     expect(logbookOf(game).runs).toHaveLength(1);
     expect(logbookOf(game).runs[0].where).toBeNull();
     expect(logbookOf(game).lifetime.runs).toBe(1);
+    expect(logbookOf(game).sectors).toEqual([]);
   });
 
   it('is logged on the day it was cleared, even when it began the day before', () => {
