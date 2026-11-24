@@ -383,3 +383,28 @@ for (const keycap of KEYBOARD_ROWS.flat()) {
 export function keyForCharacter(character: string): CharacterKey | undefined {
   return CHARACTER_KEYS.get(character);
 }
+
+/** Where a keycap sits: its row, and the span it covers along it in key units. */
+const KEY_SPANS = new Map<string, { row: number; from: number; to: number }>();
+KEYBOARD_ROWS.forEach((row, at) => {
+  let from = 0;
+  for (const { key, units } of row) {
+    KEY_SPANS.set(key, { row: at, from, to: from + units });
+    from += units;
+  }
+});
+
+/**
+ * Whether two different keycaps are next door to each other: touching on the
+ * same row, or on neighbouring rows with some of their width in common (the
+ * keys of a row are staggered, so a key has two above it and two below it).
+ * Space is under the bottom row's keys it covers.
+ */
+export function nextDoor(keycap: string, other: string): boolean {
+  const a = KEY_SPANS.get(keycap);
+  const b = KEY_SPANS.get(other);
+  if (a === undefined || b === undefined || keycap === other) return false;
+  const shared = Math.min(a.to, b.to) - Math.max(a.from, b.from);
+  if (a.row === b.row) return shared === 0;
+  return Math.abs(a.row - b.row) === 1 && shared > 0;
+}

@@ -1,5 +1,6 @@
 import { keyForCharacter } from '../curriculum/keyboardLayout';
 import type { FlightLog } from './keystroke';
+import type { LogbookKeyTally } from './runs';
 
 /** The two Shift keycaps, as the curriculum's key table names them. */
 export const SHIFT_KEYCAPS = ['ShiftLeft', 'ShiftRight'] as const;
@@ -68,4 +69,33 @@ export function shiftTallies(log: FlightLog): Record<string, ShiftTally> {
     else tally.shiftSame += 1;
   }
   return tallies;
+}
+
+/**
+ * How the player used Shift over the last 8 weeks: the First attempts on
+ * shifted characters, counted by the Shift held, and each as a share of them
+ * (0 to 100). Caps Lock is `shiftNone` and a Shift the game never saw go down
+ * stays `shiftUnknown`: neither is guessed into another. With no shifted
+ * character typed, the total and every share are 0.
+ */
+export interface ShiftHand {
+  total: number;
+  counts: ShiftTally;
+  shares: ShiftTally;
+}
+
+/** The Shift hand of key tallies, as `journeyReport` sums them over the window. */
+export function shiftHand(keys: Record<string, LogbookKeyTally>): ShiftHand {
+  const counts = noShiftTally();
+  for (const tally of Object.values(keys)) {
+    for (const field of Object.keys(counts) as (keyof ShiftTally)[]) {
+      counts[field] += tally[field];
+    }
+  }
+  const total = Object.values(counts).reduce((sum, count) => sum + count, 0);
+  const shares = noShiftTally();
+  for (const field of Object.keys(counts) as (keyof ShiftTally)[]) {
+    shares[field] = total === 0 ? 0 : (counts[field] * 100) / total;
+  }
+  return { total, counts, shares };
 }

@@ -58,7 +58,7 @@ Big visual payoff, smooth transitions and satisfying feedback are core features,
 
 ### P10. An honest mirror
 
-The game measures how the player types, key by key and finger by finger, and shows it in a form they enjoy reading. The same data decides what the game asks them to practice next. Numbers are measured honestly: accuracy counts first attempts, and WPM counts typing time, not time spent away.
+The game measures how the player types, key by key and finger by finger, and shows it in a form they enjoy reading. The same data decides what the game asks them to practice next. Numbers are measured honestly: accuracy counts first attempts, and WPM counts typing time, not time spent away. The mirror shows how you type now: detail older than eight weeks fades, as unpractised skill does.
 
 ### P11. Your data stays with you
 
@@ -119,7 +119,7 @@ Rules the game has today that conflict with the principles above. They stay unti
 | Every Stage is one fixed text, so practice can't target the player's weak keys and a replay can earn Stars on a text the player has memorised | P4, P10               |
 | The Action Deck shows the full keyboard from the first Stage                                                                                  | P3                    |
 | The lit keycap and the hands stay the same however well a key is known                                                                        | P3                    |
-| Analytics shows per-key hits and misses only, and nothing reads it to choose practice                                                         | P10                   |
+| Nothing reads Analytics' data to choose practice                                                                                              | P10                   |
 | A day's play has no shape, and there is no warm-up                                                                                            | P6, P7                |
 | Capitals come after numbers; Backspace, Enter and Tab are never taught                                                                        | P12, success criteria |
 

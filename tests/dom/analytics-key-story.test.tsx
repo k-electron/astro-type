@@ -18,6 +18,8 @@ import {
   keyStoryTitle,
   LOGBOOK_HEADING,
   VERY_SLOW_MARK,
+  VERY_SLOW_MARK_LABEL,
+  VERY_SLOW_WORDS,
 } from '../../src/screens/journeyLabels';
 import { logOf } from '../shared/flightLog';
 import { TEST_DAY } from '../shared/testHelpers';
@@ -175,5 +177,23 @@ describe("a key's story on Analytics", () => {
     expect(
       keyboard.getByRole('button', { name: 'A key' }).textContent,
     ).not.toContain(VERY_SLOW_MARK);
+  });
+
+  it('says in words that a very slow key is very slow, in its tooltip and on its mark', () => {
+    const text = `${'a'.repeat(30)}${'k'.repeat(10)}`;
+    const slow = logOf(
+      text,
+      [...text].map((key): [string, number] => [key, key === 'k' ? 60 : 12]),
+    );
+    const player = renderGame({ profile: { logbook: everyDay(3, slow) } });
+    player.openHeader('Analytics');
+
+    const keyboard = within(KEYBOARD());
+    const k = keyboard.getByRole('button', { name: 'K key' });
+    expect(k.title).toContain(VERY_SLOW_WORDS);
+    expect(within(k).getByLabelText(VERY_SLOW_MARK_LABEL)).toBeTruthy();
+    expect(keyboard.getByRole('button', { name: 'A key' }).title).not.toContain(
+      VERY_SLOW_WORDS,
+    );
   });
 });
