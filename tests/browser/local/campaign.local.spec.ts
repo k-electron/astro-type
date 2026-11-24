@@ -91,6 +91,11 @@ test('the first Stage played for real from a fresh Save: its Debrief, and the St
         .soft(dialog.getByRole('button', { name, exact: true }))
         .toBeInViewport({ ratio: 1 });
     }
+    // The one thing to work on is on view as the Debrief opens, unscrolled:
+    // its Rhythm badge sits beside the sentence.
+    await expect
+      .soft(dialog.getByText(/^Rhythm:/))
+      .toBeInViewport({ ratio: 1 });
   });
 
   await test.step('the confetti of a 3-Star Debrief stops falling when the Debrief closes', async () => {

@@ -54,8 +54,10 @@ export function workOnSentence(workOn: WorkOn): string {
       return `Work on the ${keyLabel(workOn.character)} key: it was your slowest, at ${Math.round(workOn.ms)} ms a key against ${Math.round(workOn.averageMs)} ms for your whole Run.${typedWith(workOn.finger)}`;
     case 'uneven rhythm':
       return 'Your keys were accurate and quick, but your Rhythm was uneven. Try to give every key the same steady beat.';
-    case 'clean run':
-      return 'A clean, even Run: no key stood out as one to fix. Keep it up.';
+    case 'even run':
+      return workOn.misses === 0
+        ? 'A clean, even Run: every key was right first time and none stood out as slow. Keep it up.'
+        : `An even Run with no key to single out, but ${workOn.misses} ${workOn.misses === 1 ? 'key was' : 'keys were'} missed once. Slow down a little to catch ${workOn.misses === 1 ? 'it' : 'them'}.`;
   }
 }
 

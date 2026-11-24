@@ -230,6 +230,12 @@ test('the Debrief of a cleared Run', async ({ page }) => {
 
   await expect(card).toHaveScreenshot('debrief.png', {
     ...COMPARE,
-    mask: [tile(/^speed$/i), tile(/^credits$/i)],
+    mask: [
+      tile(/^speed$/i),
+      tile(/^credits$/i),
+      // What the letters' shading is measured against comes from timing too.
+      card.getByText(/^against your average/),
+      card.getByRole('button', { name: / \d+ ms$/ }),
+    ],
   });
 });

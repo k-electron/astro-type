@@ -4,7 +4,8 @@ import { SLOW_FROM } from './letters';
 
 /**
  * The one thing to work on after a Run, as the plain sentence says it: the
- * key missed most, else the slowest key, else uneven Rhythm, else praise.
+ * key missed most, else the slowest key, else uneven Rhythm, else an even Run
+ * (praised only as far as its Misses allow).
  * The report chooses and gives the facts; the screen words them.
  */
 export type WorkOn =
@@ -23,7 +24,8 @@ export type WorkOn =
       finger: FingerZone | null;
     }
   | { kind: 'uneven rhythm'; rhythm: number }
-  | { kind: 'clean run' };
+  /** No key stood out. `misses` are the Run's Misses, each on a different key, so praise stays honest. */
+  | { kind: 'even run'; misses: number };
 
 /** A Miss repeated on one key: two or more in the Run. */
 export const REPEATED_MISSES = 2;
@@ -65,6 +67,10 @@ export function workOn(
     };
   }
 
+  const totalMisses = Object.values(tallies).reduce(
+    (sum, tally) => sum + tally.misses,
+    0,
+  );
   const slowest = slowestKeys(tallies, 1)[0];
   if (
     slowest &&
@@ -81,5 +87,5 @@ export function workOn(
   }
 
   if (rhythmBand === 'Uneven') return { kind: 'uneven rhythm', rhythm };
-  return { kind: 'clean run' };
+  return { kind: 'even run', misses: totalMisses };
 }

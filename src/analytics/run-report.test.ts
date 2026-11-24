@@ -325,10 +325,34 @@ describe('the one thing to work on', () => {
     });
   });
 
-  it('is praise for a clean, even Run', () => {
+  it('is an even Run with no Misses to mention when the Run was clean and even', () => {
     const log = logOf('ffffjjjj', evenly('ffffjjjj', 10));
 
-    expect(runReport(log, STEADY).workOn).toEqual({ kind: 'clean run' });
+    expect(runReport(log, STEADY).workOn).toEqual({
+      kind: 'even run',
+      misses: 0,
+    });
+  });
+
+  it('counts single Misses on different keys, so an even Run is not called clean', () => {
+    // "f", "j" and "d" each missed once; nothing slow, Rhythm steady.
+    const text = 'ffjjdd';
+    const log = logOf(text, [
+      ['x', 10],
+      ['f', 10],
+      ['f', 10],
+      ['y', 10],
+      ['j', 10],
+      ['j', 10],
+      ['z', 10],
+      ['d', 10],
+      ['d', 10],
+    ]);
+
+    expect(runReport(log, STEADY).workOn).toEqual({
+      kind: 'even run',
+      misses: 3,
+    });
   });
 
   it('puts accuracy before speed: a repeated Miss beats a slower key', () => {
