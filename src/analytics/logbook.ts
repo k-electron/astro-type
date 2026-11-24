@@ -6,6 +6,7 @@ import {
   MIN_DAYS_FOR_PICTURE,
   nowLetterWpm,
 } from './journeySentence';
+import { type KeyboardOnDay, keyboardDays } from './keyboardDays';
 import { foldKeyFirsts, KeyFirstsSchema } from './keyFirsts';
 import { keycapsTyped, trickiestKey } from './keys';
 import type { FlightLog } from './keystroke';
@@ -103,6 +104,8 @@ export interface JourneyReport {
   sentence: JourneySentence;
   /** The last 56 days, oldest first, one point each. */
   timeline: TimelineDay[];
+  /** The keyboard as it was on each of those days: the one under the timeline's cursor. */
+  keyboards: Record<Day, KeyboardOnDay>;
   /** Every Sector flown, kept for good, in the order first reached. */
   sectors: SectorSummary[];
 }
@@ -119,6 +122,12 @@ export function journeyReport(logbook: Logbook, today: Day): JourneyReport {
   // The Sectors are kept for good, so a Sector reached before the window
   // still has its band.
   const sectors = sectorSummaries(logbook.sectors);
+  const timeline = buildTimeline(runs, today, lifetime.firstDay, sectors);
+  const keyboards = keyboardDays(
+    runs,
+    logbook.keys,
+    timeline.map(({ day }) => day),
+  );
   return {
     totals: {
       daysPlayed: lifetime.daysPlayed,
@@ -131,7 +140,10 @@ export function journeyReport(logbook: Logbook, today: Day): JourneyReport {
     keys,
     rebuilding,
     sentence: sentenceOf(logbook, runs, keys, sectors, rebuilding, today),
-    timeline: buildTimeline(runs, today, lifetime.firstDay, sectors),
+    timeline,
+    keyboards: Object.fromEntries(
+      timeline.map(({ day }, at) => [day, keyboards[at]]),
+    ),
     sectors,
   };
 }

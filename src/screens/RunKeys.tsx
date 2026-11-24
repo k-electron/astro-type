@@ -6,7 +6,7 @@ import {
   MIN_CLEAN_HITS,
   stepsToMs,
 } from '../analytics/keys';
-import { paceOf, type Pace } from '../analytics/letters';
+import { paceOf } from '../analytics/letters';
 import type { RunReport } from '../analytics/runReport';
 import { SHIFT_KEYCAPS } from '../analytics/shift';
 import type { KeySpec } from '../curriculum/keyboardLayout';
@@ -14,7 +14,6 @@ import {
   inaccurateKeyLabel,
   KEYS_HEADING,
   KEYS_HINT,
-  keycapLabel,
   keycapTitle,
   LEAST_ACCURATE_KEYS_HEADING,
   MIX_UPS_HEADING,
@@ -27,14 +26,7 @@ import {
   SLOWEST_KEYS_HEADING,
 } from './debriefLabels';
 import { Keyboard, type KeyView } from './Keyboard';
-
-/** The tint of a keycap, by how long the key took against the Run's average. */
-const TINT: Record<Pace, string> = {
-  quick: 'bg-emerald-500/25',
-  steady: '',
-  slow: 'bg-amber-500/30',
-  'very slow': 'bg-rose-500/40',
-};
+import { keycapName, TINT } from './keycapLooks';
 
 /** How a key in a list or on the keyboard reaches the Debrief's linking. */
 export interface KeyLinking {
@@ -53,13 +45,6 @@ export interface KeyLinking {
 interface RunKeysProps {
   report: RunReport;
   linking: KeyLinking;
-}
-
-/** The accessible name of a keycap: a character's key ("F key") or a modifier's own name ("Left Shift"). */
-function keycapName(spec: KeySpec): string {
-  return spec.key.length === 1
-    ? `${keycapLabel(spec.key)} key`
-    : keycapLabel(spec.key);
 }
 
 const ENTRY =
