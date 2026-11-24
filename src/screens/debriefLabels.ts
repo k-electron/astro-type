@@ -226,7 +226,7 @@ export function speedExplanation(
   { seconds, value }: StripNumbers,
   range: { fastest: number; slowest: number } | null,
 ): string {
-  const what = `Speed is your pace over your last ${ROLLING_HITS} hits, so the start of a Run is not a spike.`;
+  const what = `Speed is your pace over your last ${ROLLING_HITS} hits.`;
   if (value === null || range === null) {
     return `${what} It shows once you have hit ${ROLLING_HITS + 1} keys.`;
   }
@@ -262,7 +262,10 @@ export function streakExplanation(
   longest: number,
   steps: readonly { streak: number; multiplier: number }[],
 ): string {
-  const what = `Streak is the keys you got right in a row. A Miss ends it. The dashed lines are where your Multiplier goes up: ${steps.map((step) => `x${step.multiplier} at ${step.streak}`).join(', ')}.`;
+  const what = `Streak is the keys you got right in a row. A Miss ends it. The dashed lines are where your Multiplier goes up: ${steps
+    .filter((step) => step.streak > 0)
+    .map((step) => `x${step.multiplier} at ${step.streak}`)
+    .join(', ')}.`;
   return value === null
     ? what
     : `${what} ${atMoment(seconds)}: ${value} in a row. Your longest was ${longest}.`;
