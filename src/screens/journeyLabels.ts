@@ -47,7 +47,9 @@ export const NOTHING_TO_SHOW_YET =
 /** How long a returning player has been away, as the sentence says it. */
 const awayText = (away: { days: number; atLeast: boolean }): string =>
   away.atLeast
-    ? 'more than 8 weeks'
+    ? away.days >= 56
+      ? 'at least 8 weeks'
+      : `at least ${away.days} days`
     : `${away.days} ${away.days === 1 ? 'day' : 'days'}`;
 
 const REBUILD = 'A few days of play will rebuild the picture of how you type.';

@@ -339,7 +339,7 @@ describe("the plain sentence's facts", () => {
     });
   });
 
-  it('says only that it is more than 8 weeks when the days before the return have faded', () => {
+  it('says only that it is at least 8 weeks when the days before the return have faded', () => {
     const logbook = flown([
       { day: daysAgo(100) },
       { day: daysAgo(99) },
@@ -351,6 +351,39 @@ describe("the plain sentence's facts", () => {
     expect(journeyReport(logbook, TODAY).sentence).toMatchObject({
       kind: 'rebuilding',
       away: { atLeast: true },
+    });
+  });
+
+  it('still welcomes back a player who was away for months and is back since yesterday', () => {
+    const faded = [
+      { day: daysAgo(100) },
+      { day: daysAgo(99) },
+      { day: daysAgo(98) },
+    ];
+    const lastSeenYesterday = flown([...faded, { day: daysAgo(1) }]);
+    const backTwoDays = flown([...faded, { day: daysAgo(1) }, { day: TODAY }]);
+
+    // The gap began before the window: only that it was at least from its start to the first day back.
+    for (const logbook of [lastSeenYesterday, backTwoDays]) {
+      expect(journeyReport(logbook, TODAY).sentence).toEqual({
+        kind: 'rebuilding',
+        away: { days: 55, atLeast: true },
+      });
+    }
+  });
+
+  it('reads the exact gap when the days before it faded but the player has been back some days', () => {
+    const logbook = flown([
+      { day: daysAgo(100) },
+      { day: daysAgo(99) },
+      { day: daysAgo(98) },
+      { day: daysAgo(5) },
+      { day: TODAY },
+    ]);
+
+    expect(journeyReport(logbook, TODAY).sentence).toEqual({
+      kind: 'rebuilding',
+      away: { days: 5, atLeast: false },
     });
   });
 
