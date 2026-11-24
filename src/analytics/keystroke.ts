@@ -37,6 +37,11 @@ export interface Keystroke {
   wpm: number | null;
 }
 
+/** The key pressed was the one the text wanted. */
+export const isHit = (
+  keystroke: Pick<Keystroke, 'expected' | 'pressed'>,
+): boolean => keystroke.expected === keystroke.pressed;
+
 /** A Run's Keystrokes, in the order they were pressed. */
 export type FlightLog = readonly Keystroke[];
 

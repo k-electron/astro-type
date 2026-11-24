@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { STEPS_PER_SECOND } from '../analytics/keys';
 import {
   clearStage,
   clearStageTypingSteps,
@@ -343,5 +344,11 @@ describe('a pause in the middle of a Run leaves WPM, accuracy and Rhythm unchang
 
     expect(unevenTyping(5).getState().run.rhythm).toBe(straight);
     expect(unevenTyping(6).getState().run.rhythm).toBe(straight);
+  });
+});
+
+describe('the steps a second the analytics count in', () => {
+  it("are the Run clock's own: 60 steps are a second of Run Time", () => {
+    expect(STEPS_PER_SECOND * STEP_MS).toBeCloseTo(1000);
   });
 });

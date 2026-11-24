@@ -1,6 +1,12 @@
 import { z } from 'zod';
 import { type Day, isDay, isInWindow } from './days';
-import { keyTallies, letterCleanHits, type KeyTally } from './keys';
+import {
+  CHARACTERS_PER_WORD,
+  emptyTally,
+  type KeyTally,
+  keyTallies,
+  letterCleanHits,
+} from './keys';
 import type { FlightLog } from './keystroke';
 import { mixUpTallies } from './mixUps';
 import { pairTallies } from './pairs';
@@ -118,7 +124,8 @@ export interface RunNumbers {
 }
 
 /** Words typed, as the Save has always counted them: the characters over 5, rounded. */
-const wordsOf = (characters: number): number => Math.round(characters / 5);
+const wordsOf = (characters: number): number =>
+  Math.round(characters / CHARACTERS_PER_WORD);
 
 /** Each key's tally in a Flight log, with the Shift it was typed with. */
 function logbookKeys(log: FlightLog): Record<string, LogbookKeyTally> {
@@ -179,13 +186,7 @@ export function sumKeys(
   const total: Record<string, LogbookKeyTally> = {};
   for (const run of runs) {
     for (const [character, tally] of Object.entries(run.keys)) {
-      total[character] ??= {
-        firstAttempts: 0,
-        misses: 0,
-        cleanHits: 0,
-        cleanSteps: 0,
-        ...noShiftTally(),
-      };
+      total[character] ??= { ...emptyTally(), ...noShiftTally() };
       const sum = total[character];
       for (const field of Object.keys(sum) as (keyof LogbookKeyTally)[]) {
         sum[field] += tally[field];

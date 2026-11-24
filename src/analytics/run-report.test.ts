@@ -10,11 +10,11 @@ import {
 } from '../../tests/shared/beginnerTypist';
 import { evenly, logOf, withShift } from '../../tests/shared/flightLog';
 import type { FlightLog } from './keystroke';
+import { STEPS_PER_SECOND } from './keys';
 import { runReport } from './runReport';
 import { valueAt } from './strips';
 import type { RhythmFacts } from './workOn';
 
-const STEPS_PER_SECOND = 60;
 const STEADY: RhythmFacts = { rhythm: 90, rhythmBand: 'Steady' };
 const UNEVEN: RhythmFacts = { rhythm: 50, rhythmBand: 'Uneven' };
 

@@ -7,7 +7,7 @@ import {
 } from './keyDays';
 import type { KeyHistory } from './keyHistory';
 import { MIN_CLEAN_HITS, stepsToMs } from './keys';
-import { type Pace, paceOf } from './letters';
+import { keyPace, type Pace } from './letters';
 import type { RunSummary } from './runs';
 
 /**
@@ -68,7 +68,7 @@ function keyboardOf(sums: readonly Sum[]): KeyboardOnDay {
       days: sum.days,
       ms,
       accuracy: sum.accuracy,
-      pace: ms !== null && averageMs !== null ? paceOf(ms, averageMs) : null,
+      pace: keyPace(ms, averageMs),
       cleanHits: sum.cleanHits,
       cleanSteps: sum.cleanSteps,
     };

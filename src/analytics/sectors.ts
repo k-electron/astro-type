@@ -22,7 +22,7 @@ export const SPARKLINE_POINTS = 48;
 const dayField = z.string().refine(isDay);
 
 /** What the Runs of one day in a Sector add up to. */
-const DayTallySchema = z.object({
+const SectorDaySchema = z.object({
   day: dayField,
   letterCleanHits: countField,
   letterCleanSteps: countField,
@@ -30,7 +30,7 @@ const DayTallySchema = z.object({
   /** The Runs' accuracy times their characters, so a day's accuracy is the mean weighted by characters. */
   accuracyPoints: measureField,
 });
-type DayTally = z.output<typeof DayTallySchema>;
+type SectorDay = z.output<typeof SectorDaySchema>;
 
 /** One point of the sparkline: a speed, and how many Runs it is the mean of. */
 const SparkPointSchema = z.object({
@@ -49,9 +49,9 @@ const SectorTallySchema = z.object({
   /** Run Time over the Sector's Runs, in steps. */
   runSteps: countField,
   /** The tallies of the first 3 days played in the Sector. */
-  startDays: itemsOf(DayTallySchema),
+  startDays: itemsOf(SectorDaySchema),
   /** The tallies of the last 3 days played in the Sector. */
-  endDays: itemsOf(DayTallySchema),
+  endDays: itemsOf(SectorDaySchema),
   /** The keycaps first typed while in the Sector, in the order typed. */
   keysBroughtIn: itemsOf(z.string()),
   sparkline: itemsOf(SparkPointSchema),
@@ -88,8 +88,8 @@ export interface SectorSummary {
   sparkline: number[];
 }
 
-function readingOf(days: readonly DayTally[]): SectorReading {
-  const sum = (pick: (day: DayTally) => number) =>
+function sectorReadingOf(days: readonly SectorDay[]): SectorReading {
+  const sum = (pick: (day: SectorDay) => number) =>
     days.reduce((total, day) => total + pick(day), 0);
   const characters = sum((day) => day.characters);
   return {
@@ -112,14 +112,14 @@ export function sectorSummaries(sectors: Sectors): SectorSummary[] {
     days: sector.days,
     runs: sector.runs,
     runSteps: sector.runSteps,
-    start: readingOf(sector.startDays),
-    end: readingOf(sector.endDays),
+    start: sectorReadingOf(sector.startDays),
+    end: sectorReadingOf(sector.endDays),
     keysBroughtIn: sector.keysBroughtIn,
     sparkline: sector.sparkline.map((point) => point.wpm),
   }));
 }
 
-const tallyOf = (summary: RunSummary): DayTally => ({
+const tallyOf = (summary: RunSummary): SectorDay => ({
   day: summary.day,
   letterCleanHits: summary.letterCleanHits,
   letterCleanSteps: summary.letterCleanSteps,
@@ -127,7 +127,7 @@ const tallyOf = (summary: RunSummary): DayTally => ({
   accuracyPoints: summary.accuracy * summary.characters,
 });
 
-const addTally = (to: DayTally, summary: RunSummary): DayTally => ({
+const addTally = (to: SectorDay, summary: RunSummary): SectorDay => ({
   ...to,
   letterCleanHits: to.letterCleanHits + summary.letterCleanHits,
   letterCleanSteps: to.letterCleanSteps + summary.letterCleanSteps,
@@ -192,7 +192,7 @@ export function foldSectors(
   const newDay = found === undefined || summary.day > before.lastDay;
   const days = before.days + (newDay ? 1 : 0);
   // The Run joins the Sector's current day, or starts a new one.
-  const joinDay = (list: readonly DayTally[], keep: number): DayTally[] => {
+  const joinDay = (list: readonly SectorDay[], keep: number): SectorDay[] => {
     const current = list.at(-1);
     return newDay || current === undefined
       ? [...list, tallyOf(summary)].slice(-keep)
