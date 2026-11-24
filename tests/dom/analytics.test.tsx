@@ -1,3 +1,4 @@
+import { cleanup } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { FINGER_DISPLAY_NAMES } from '../../src/curriculum/curriculum';
 import {
@@ -8,7 +9,15 @@ import { SAVE_VERSION } from '../../src/game/schemas';
 import { closeLabel } from '../../src/screens/closeLabel';
 import { DISMISS_NOTICE_LABEL } from '../../src/screens/dismissLabel';
 import {
+  BEST_DAY_LABEL,
+  DAYS_PLAYED_LABEL,
+  NO_BEST_DAY,
+  PRACTICE_TIME_LABEL,
+  WORDS_TYPED_LABEL,
+} from '../../src/screens/journeyLabels';
+import {
   asCurrentSave,
+  completeSave,
   keyStats,
   lifetimeTotals,
   RETURNING_PLAYER,
@@ -31,17 +40,17 @@ const handAccuracy = (hand: 'Left' | 'Right') =>
 describe('Analytics and the characters that need Shift', () => {
   // "!" is typed on the left pinky's "1", "B" on the left index's "b", "?" on
   // the right pinky's "/", and "(", "{" and '"' on the right hand's keys.
-  const KEY_ANALYTICS = {
-    '!': { hits: 3, misses: 3 },
-    B: { hits: 1, misses: 3 },
-    '?': { hits: 2, misses: 2 },
-    '(': { hits: 4, misses: 0 },
-    '{': { hits: 1, misses: 0 },
-    '"': { hits: 1, misses: 0 },
-  };
+  const KEY_STATS = keyStats({
+    '!': [3, 3],
+    B: [1, 3],
+    '?': [2, 2],
+    '(': [4, 0],
+    '{': [1, 0],
+    '"': [1, 0],
+  });
 
   it('names the finger of the key each struggling shifted character is typed on', () => {
-    const player = renderGame({ profile: { keyAnalytics: KEY_ANALYTICS } });
+    const player = renderGame({ profile: KEY_STATS });
     player.openHeader('Analytics');
 
     const reaches = sectionText(/Struggling Reaches/);
@@ -57,7 +66,7 @@ describe('Analytics and the characters that need Shift', () => {
   });
 
   it('counts each shifted character for the hand that types its key', () => {
-    const player = renderGame({ profile: { keyAnalytics: KEY_ANALYTICS } });
+    const player = renderGame({ profile: KEY_STATS });
     player.openHeader('Analytics');
 
     // Left: "!" 3 of 6 and "B" 1 of 4 hit, 4 of 10. Right: 8 of 10.
@@ -110,37 +119,6 @@ describe('Analytics rounds accuracy down', () => {
     player.openHeader('Analytics');
 
     expect(screen.getByTitle(/^F: 57%/)).toBeTruthy();
-  });
-
-  it('shows the lifetime accuracy rounded down: 3 characters with 1 Miss mark is 66%', () => {
-    const player = renderGame({
-      profile: lifetimeTotals(3, 1),
-    });
-    player.openHeader('Analytics');
-
-    const reading = sectionText(/^Lifetime Accuracy/);
-    expect(reading).toMatch(/66%/);
-    expect(reading).not.toMatch(/67/);
-  });
-
-  it('shows the lifetime accuracy as the whole share it is: 100 characters with 43 Miss marks is 57%', () => {
-    const player = renderGame({
-      profile: lifetimeTotals(100, 43),
-    });
-    player.openHeader('Analytics');
-
-    expect(sectionText(/^Lifetime Accuracy/)).toMatch(/57%/);
-  });
-
-  it('never shows 100% while a Miss mark is on record: 1,000 characters with 1 Miss mark is 99%', () => {
-    const player = renderGame({
-      profile: lifetimeTotals(1000, 1),
-    });
-    player.openHeader('Analytics');
-
-    const reading = sectionText(/^Lifetime Accuracy/);
-    expect(reading).toMatch(/99%/);
-    expect(reading).not.toMatch(/100/);
   });
 
   it('shows each hand rounded down: 2 hits and 1 miss on the left is 66%, 7 and 1 on the right is 87%', () => {
@@ -239,14 +217,103 @@ describe('Analytics refusing a Backup', () => {
   });
 });
 
-describe("Analytics' highest speed", () => {
-  it('is shown rounded down, so a 37.9 WPM best never reads as 38', () => {
-    const player = renderGame({ profile: { highestWpmAllTime: 37.9 } });
+describe("Analytics' totals row", () => {
+  // The totals row replaced the lifetime cards (#155). The old Highest Speed
+  // card's rounding guard (37.9 never reads 38) now guards the Best Day. The
+  // old Lifetime Accuracy card is gone: accuracy is read from the last 8 weeks
+  // now, in the key blocks, whose rounding tests above stay (a share rounds
+  // down, and a Miss never leaves a key at 100%).
+  const reading = (label: string) => sectionText(new RegExp(`^${label}`));
+
+  it('shows the days played, practice time, words typed and best day of Runs cleared on two days', () => {
+    // Two Free Flights of 10 characters, a day apart: 2 words each.
+    const player = renderGame({ today: '2026-11-20' });
+    player.launchFreeFlight('ff jj ff j');
+    player.type('ff jj ff j');
+    player.setToday('2026-11-22');
+    player.launchFreeFlight('ff jj ff j');
+    player.type('ff jj ff j');
+
     player.openHeader('Analytics');
 
-    const reading = sectionText(/^Highest Speed/);
-    expect(reading).toMatch(/37\s*WPM/);
-    expect(reading).not.toMatch(/38/);
+    expect(reading(DAYS_PLAYED_LABEL)).toMatch(/2$/);
+    expect(reading(WORDS_TYPED_LABEL)).toMatch(/4$/);
+    // 10 keys at half a second each, twice: 10 s, under a minute.
+    expect(reading(PRACTICE_TIME_LABEL)).toMatch(/0m$/);
+    // Too few letters in a day for a best day.
+    expect(reading(BEST_DAY_LABEL)).toContain(NO_BEST_DAY);
+  });
+
+  it('shows no days and no best day before any Run is cleared', () => {
+    const player = renderGame();
+    player.openHeader('Analytics');
+
+    expect(reading(DAYS_PLAYED_LABEL)).toMatch(/0$/);
+    expect(reading(BEST_DAY_LABEL)).toContain(NO_BEST_DAY);
+  });
+
+  it('keeps the totals through Wipe Stars and clears them with Factory Reset', () => {
+    const { daysPlayed } = completeSave().logbook.lifetime;
+    const player = renderGame({ profile: completeSave() });
+    player.openHeader('Analytics');
+    expect(daysPlayed).toBeGreaterThan(0);
+    expect(reading(DAYS_PLAYED_LABEL)).toMatch(new RegExp(`${daysPlayed}$`));
+
+    player.click('Wipe Stars');
+    player.click('Confirm Wipe');
+    expect(reading(DAYS_PLAYED_LABEL)).toMatch(new RegExp(`${daysPlayed}$`));
+
+    player.click('Factory Reset');
+    player.click('Confirm Reset');
+    expect(reading(DAYS_PLAYED_LABEL)).toMatch(/0$/);
+  });
+
+  it('shows practice time in hours and minutes', () => {
+    // 65 minutes of Run Time, in steps.
+    const player = renderGame({
+      profile: lifetimeTotals({ practiceSteps: 65 * 60 * 60 }),
+    });
+    player.openHeader('Analytics');
+
+    expect(reading(PRACTICE_TIME_LABEL)).toMatch(/1h 5m$/);
+  });
+
+  it("shows the best day's speed rounded down, so a 37.9 WPM day never reads as 38", () => {
+    const player = renderGame({
+      profile: lifetimeTotals({
+        bestDay: { day: '2026-11-02', letterWpm: 37.9 },
+      }),
+    });
+    player.openHeader('Analytics');
+
+    expect(reading(BEST_DAY_LABEL)).toMatch(/37\s*WPM/);
+    expect(reading(BEST_DAY_LABEL)).not.toMatch(/38/);
+  });
+});
+
+describe("Analytics' key blocks read the last 8 weeks of Runs", () => {
+  it('show how the keys of Runs just cleared went: a Miss on f is 50% for f', () => {
+    const player = renderGame({ text: 'ff' });
+    player.press('x');
+    player.type('ff');
+
+    player.openHeader('Analytics');
+
+    expect(screen.getByTitle(/^F: 50%/)).toBeTruthy();
+  });
+
+  it('forget a Run from 56 days before, but keep it at 55', () => {
+    // `keyStats` logs its Run on the test day, 2026-11-23: 55 days on is 2027-01-17.
+    const logged = keyStats({ f: [48, 1] });
+
+    const kept = renderGame({ profile: logged, today: '2027-01-17' });
+    kept.openHeader('Analytics');
+    expect(screen.getByTitle(/^F: 97%/)).toBeTruthy();
+    cleanup();
+
+    const faded = renderGame({ profile: logged, today: '2027-01-18' });
+    faded.openHeader('Analytics');
+    expect(screen.getByTitle(/^F: Not tested yet/)).toBeTruthy();
   });
 });
 

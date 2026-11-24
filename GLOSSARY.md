@@ -110,6 +110,14 @@ _Avoid_: Account, player data, user
 The player's typing, kept in the Profile: a summary of each cleared Run from the last eight weeks, plus lifetime totals, Sector summaries and each key's beginnings and best. It records how the player types, not their progress: Stars and unlocks stay outside it.
 _Avoid_: Key stats, telemetry, analytics data, typing record
 
+**Run summary**:
+What the Logbook keeps of one cleared Run: its day, where it was flown (copies of the Sector's and Stage's ids and names, or none for a Free Flight), its numbers and its tallies by key, Mix-up and Letter pair. Summaries older than eight weeks are deleted.
+_Avoid_: Run record, run log
+
+**Day**:
+The player's own local calendar date at the moment a Run is cleared, as the wall clock gives it. A Run that crosses midnight counts on the day it was cleared.
+_Avoid_: Session, 24 hours
+
 **Journey**:
 The player's whole history of play as Analytics shows it, by day played, Sector and Stage. Its detail covers the last eight weeks; older play survives only as Sector summaries and lifetime totals.
 _Avoid_: History, progress log

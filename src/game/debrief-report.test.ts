@@ -57,16 +57,21 @@ describe('the Debrief of a cleared Run', () => {
     });
   });
 
-  it('leaves the Profile its per-key hits and misses, as First attempts', () => {
+  it("leaves the Logbook a summary with the report's per-key First attempts and Misses", () => {
     const game = clearedBeginnerRun();
 
     const report = game.getState().debrief?.report;
-    const { keyAnalytics } = game.getState().profile;
+    const [run] = game.getState().profile.logbook.runs;
 
+    expect(Object.keys(run.keys).sort()).toEqual(
+      Object.keys(report?.keys ?? {}).sort(),
+    );
     for (const [character, tally] of Object.entries(report?.keys ?? {})) {
-      expect(keyAnalytics[character]).toEqual({
-        hits: tally.firstAttempts - tally.misses,
+      expect(run.keys[character]).toMatchObject({
+        firstAttempts: tally.firstAttempts,
         misses: tally.misses,
+        cleanHits: tally.cleanHits,
+        cleanSteps: tally.cleanSteps,
       });
     }
   });

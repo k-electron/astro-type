@@ -213,22 +213,24 @@ describe('a cleared Run with no Typing Time to measure', () => {
   });
 });
 
-describe('practice seconds follow Run Time, not Typing Time', () => {
+// The Logbook counts practice time in steps of Run Time (60 to the second),
+// where the Profile used to count whole seconds (#155). What the old tests
+// guarded (Run Time, not Typing Time, and one second for a Run with none) is
+// guarded here, in steps.
+describe('practice time follows Run Time, not Typing Time', () => {
   it('counts the time before the first key, which Typing Time leaves out', () => {
     const game = flyingOn(TEXT);
-    const before = game.getState().profile.totalPracticeSeconds;
     game.step(60); // one second before the first key
     typeText(game, TEXT); // 6 keys, 30 steps each: three more seconds
 
-    // Run Time is 4 s; Typing Time is 2.5 s.
-    expect(game.getState().profile.totalPracticeSeconds - before).toBe(4);
+    // Run Time is 4 s, 240 steps; Typing Time is 2.5 s.
+    expect(game.getState().profile.logbook.lifetime.practiceSteps).toBe(240);
   });
 
   it('counts a Run with no Run Time as one second, as it always has', () => {
     const game = flyingOn(TEXT);
-    const before = game.getState().profile.totalPracticeSeconds;
     typeText(game, TEXT, 0);
 
-    expect(game.getState().profile.totalPracticeSeconds - before).toBe(1);
+    expect(game.getState().profile.logbook.lifetime.practiceSteps).toBe(60);
   });
 });

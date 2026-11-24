@@ -115,8 +115,12 @@ describe('Stars from accuracy and WPM', () => {
     const profile = game.getState().profile;
     expect(profile.totalCredits).toBe(616);
     expect(profile.totalStars).toBe(3);
-    expect(profile.totalCharactersTyped).toBe(77);
-    expect(profile.totalMissMarks).toBe(0);
+    // The Logbook holds the Run: its 77 characters, no Miss marks.
+    expect(profile.logbook.runs).toHaveLength(1);
+    expect(profile.logbook.runs[0]).toMatchObject({
+      characters: 77,
+      misses: 0,
+    });
     expect(profile.stagesProgress[STAGE_ID]).toMatchObject({
       completed: true,
       starsEarned: 3,
@@ -413,7 +417,7 @@ describe('what a clear pays and keeps', () => {
     const profile = game.getState().profile;
     expect(profile.totalCredits).toBe(debrief.creditsEarned);
     expect(profile.totalStars).toBe(0);
-    expect(profile.totalMissMarks).toBe(12);
+    expect(profile.logbook.runs[0].misses).toBe(12);
     expect(profile.stagesProgress[STAGE_ID]).toMatchObject({
       completed: true,
       starsEarned: 0,

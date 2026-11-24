@@ -8,52 +8,14 @@ import {
   beginnerFlightLog,
   beginnerPresses,
 } from '../../tests/shared/beginnerTypist';
-import type { FlightLog, Keystroke } from './keystroke';
-import { type RunFacts, runReport } from './runReport';
+import { evenly, logOf, withShift } from '../../tests/shared/flightLog';
+import type { FlightLog } from './keystroke';
+import { runReport } from './runReport';
+import type { RhythmFacts } from './workOn';
 
 const STEPS_PER_SECOND = 60;
-const STEADY: RunFacts = { rhythm: 90, rhythmBand: 'Steady' };
-const UNEVEN: RunFacts = { rhythm: 50, rhythmBand: 'Uneven' };
-
-/**
- * A Flight log of `text` from presses of `[key, steps since the last key]`. A
- * right key moves on to the next character; a wrong one stays, and the next
- * key on that character is not a First attempt. The Run's own numbers are
- * not what this measures, so they are zero.
- */
-function logOf(text: string, presses: [string, number][]): FlightLog {
-  const log: Keystroke[] = [];
-  let index = 0;
-  let firstAttempt = true;
-  let step = 0;
-  for (const [pressed, gap] of presses) {
-    step += gap;
-    log.push({
-      index,
-      expected: text[index],
-      pressed,
-      firstAttempt,
-      step,
-      shift: 'none',
-      streak: 0,
-      accuracy: 100,
-      rhythm: 100,
-      wpm: null,
-    });
-    if (pressed === text[index]) {
-      index += 1;
-      firstAttempt = true;
-    } else {
-      firstAttempt = false;
-    }
-  }
-  return log;
-}
-
-/** Every character of `text` typed right, `gap` steps apart. */
-function evenly(text: string, gap: number): [string, number][] {
-  return [...text].map((key) => [key, gap]);
-}
+const STEADY: RhythmFacts = { rhythm: 90, rhythmBand: 'Steady' };
+const UNEVEN: RhythmFacts = { rhythm: 50, rhythmBand: 'Uneven' };
 
 /** The Clean-hit time (ms) the report gives each character of the text, in order. */
 function timesOf(log: FlightLog): (number | null)[] {
@@ -194,9 +156,6 @@ describe('Mix-ups of equal count', () => {
 });
 
 describe('the Shift keys a Run held', () => {
-  const withShift = (log: FlightLog, sides: Keystroke['shift'][]): FlightLog =>
-    log.map((key, at) => ({ ...key, shift: sides[at] ?? 'none' }));
-
   it('counts the keys pressed with each side; both counts for both, none and unknown for neither', () => {
     const log = withShift(logOf('ABCD', evenly('ABCD', 20)), [
       'left',

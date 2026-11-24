@@ -17,6 +17,7 @@
  * `version` key is left as it is, so a Save from a newer game can go through a
  * seam with its `version` spelled out.
  */
+import { type Logbook, LogbookSchema } from '../../src/analytics/logbook';
 import { CURRICULUM_SECTORS } from '../../src/curriculum/curriculum';
 import {
   type CosmeticKind,
@@ -32,6 +33,8 @@ import {
   SoundKitSchema,
   type TrailId,
 } from '../../src/game/schemas';
+import { beginnerLogbook, EIGHT_WEEKS_OF_PLAY } from './beginnerTypist';
+import { TEST_DAY } from './testHelpers';
 
 /**
  * The free default of each kind of Cosmetic: the one every player owns and
@@ -189,24 +192,15 @@ export function trailEquipped(id: TrailId) {
  * A complete Save in today's format, `version: SAVE_VERSION` and all:
  * RETURNING_PLAYER's 5 Stars and 1,234 Credits, plus every other field, each
  * set to something other than its default so a load that dropped it would
- * show: the settings, and a Cosmetic of every kind owned and worn alongside its
- * free default.
+ * show: the Logbook (`fullLogbook`), the settings, and a Cosmetic of every kind
+ * owned and worn alongside its free default.
  */
 export function completeSave() {
   return {
     version: SAVE_VERSION,
     ...RETURNING_PLAYER,
     totalStars: 5,
-    totalCharactersTyped: 154,
-    totalMissMarks: 3,
-    totalWordsTyped: 30,
-    totalPracticeSeconds: 120,
-    highestWpmAllTime: 31,
-    keyAnalytics: {
-      f: { hits: 48, misses: 1 },
-      j: { hits: 48, misses: 2 },
-      ' ': { hits: 58, misses: 0 },
-    },
+    logbook: fullLogbook(),
     cosmetics: {
       trail: { owned: ['CYAN', 'AMBER'], equipped: 'AMBER' },
       soundKit: {
@@ -230,30 +224,62 @@ export function completeSave() {
   };
 }
 
+let cachedFullLogbook: Logbook | undefined;
+
 /**
- * A Save with these lifetime totals: the characters typed over every cleared
- * Run, and how many of them carried a Miss mark. Lifetime accuracy is the
- * share without one.
+ * A full Logbook, as 8 weeks of a beginner's play leave it (`EIGHT_WEEKS_OF_PLAY`,
+ * today `TEST_DAY`, every third day a Stage of Sector 1, the rest Free Flights).
+ * It is made by playing, once, then copied: a test may change what it gets.
  */
-export function lifetimeTotals(characters: number, missMarks: number) {
-  return { totalCharactersTyped: characters, totalMissMarks: missMarks };
+export function fullLogbook(): Logbook {
+  cachedFullLogbook ??= beginnerLogbook(
+    EIGHT_WEEKS_OF_PLAY.map((day, index) =>
+      index % 3 === 0 ? { ...day, stageId: 's1-l1' } : day,
+    ),
+  );
+  return structuredClone(cachedFullLogbook);
 }
 
 /**
- * A Save with these key stats: for each key, how many of its characters were
- * typed right first time (`hits`) and how many carried a Miss mark (`misses`).
+ * A Save whose Logbook has these key stats, from one Run summary on `TEST_DAY`:
+ * for each key, how many of its characters were typed right first time (`hits`)
+ * and how many were missed first time (`misses`). Everything else about the
+ * Logbook is empty.
  */
 export function keyStats(
   stats: Record<string, [hits: number, misses: number]>,
 ) {
   return {
-    keyAnalytics: Object.fromEntries(
-      Object.entries(stats).map(([key, [hits, misses]]) => [
-        key,
-        { hits, misses },
-      ]),
-    ),
+    logbook: LogbookSchema.parse({
+      runs: [
+        {
+          day: TEST_DAY,
+          keys: Object.fromEntries(
+            Object.entries(stats).map(([key, [hits, misses]]) => [
+              key,
+              { firstAttempts: hits + misses, misses },
+            ]),
+          ),
+        },
+      ],
+    }),
   };
+}
+
+/**
+ * A Save whose Logbook has these lifetime totals (the fields left out are
+ * empty), for the totals row. `practiceSteps` is Run Time in steps, 60 to the
+ * second.
+ */
+export function lifetimeTotals(
+  totals: Partial<{
+    daysPlayed: number;
+    practiceSteps: number;
+    wordsTyped: number;
+    bestDay: { day: string; letterWpm: number };
+  }>,
+) {
+  return { logbook: LogbookSchema.parse({ lifetime: totals }) };
 }
 
 /**

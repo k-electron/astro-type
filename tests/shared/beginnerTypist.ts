@@ -25,9 +25,19 @@
 import { KEYBOARD_ROWS } from '../../src/curriculum/keyboardLayout';
 import type { FingerZone } from '../../src/curriculum/keyboardLayout';
 import { keyForCharacter } from '../../src/curriculum/keyboardLayout';
+import { addDays, type Day } from '../../src/analytics/days';
 import type { FlightLog, ShiftSide } from '../../src/analytics/keystroke';
+import type { Logbook } from '../../src/analytics/logbook';
+import { getStageById } from '../../src/curriculum/curriculum';
 import type { Game } from '../../src/game/game';
-import { newGame, startFreeFlight } from './testHelpers';
+import {
+  dayClock,
+  loadGame,
+  newGame,
+  startFreeFlight,
+  startStage,
+  TEST_DAY,
+} from './testHelpers';
 
 /** One key the typist presses, and how long (in Run Time steps) after the one before. */
 export interface Press {
@@ -219,4 +229,63 @@ export function beginnerFlightLog(
   startFreeFlight(game, text);
   playPresses(typingOn(game), beginnerPresses(text, seed, tuning));
   return game.getState().run.flightLog;
+}
+
+/** One day the beginner plays: how many days before today, and what they fly. */
+export interface PlayedDay {
+  /** 0 is today. */
+  daysAgo: number;
+  /** A Sector Stage to fly (its own text); left out, a Free Flight of `PRACTICE_TEXT`. */
+  stageId?: string;
+  /** How many Runs that day. Left out, 1. */
+  runs?: number;
+}
+
+/** A Free Flight text long enough for a day of it to have well over 50 letters timed. */
+export const PRACTICE_TEXT =
+  'the quiet fox jumps over a lazy dog and the brave pilot reads the old star charts at dawn while the crew sleeps';
+
+/**
+ * The beginner's days played, as a player's Logbook has them: some days in a
+ * row, some away. Over 8 weeks, ending today, with the days away in between.
+ */
+export const EIGHT_WEEKS_OF_PLAY: readonly PlayedDay[] = [
+  0, 1, 2, 4, 5, 9, 10, 11, 15, 16, 22, 23, 24, 30, 31, 37, 38, 39, 44, 45, 50,
+  52, 55,
+].map((daysAgo) => ({ daysAgo }));
+
+/**
+ * The Logbook of a beginner who played `days` (the days away are the ones not
+ * listed), made by playing each Run on a game whose calendar is moved day by
+ * day, oldest first, so every Run is folded by the game itself and nothing of
+ * the fold is copied here. What fades is whatever the last fold deleted, as in
+ * a real Save: a day away at the end leaves older summaries until the next
+ * fold, and `journeyReport` reads only the last 56 days. `seed` varies the typist from one Logbook to the next.
+ */
+export function beginnerLogbook(
+  days: readonly PlayedDay[],
+  {
+    today = TEST_DAY,
+    seed = 1,
+    tuning,
+  }: { today?: Day; seed?: number; tuning?: Tuning } = {},
+): Logbook {
+  const clock = dayClock(today);
+  const { game } = loadGame(undefined, undefined, clock);
+  const oldestFirst = [...days].sort((a, b) => b.daysAgo - a.daysAgo);
+  oldestFirst.forEach(({ daysAgo, stageId, runs = 1 }, dayNumber) => {
+    clock.setDay(addDays(today, -daysAgo));
+    const text = stageId
+      ? (getStageById(stageId)?.sampleText ?? PRACTICE_TEXT)
+      : PRACTICE_TEXT;
+    for (let run = 0; run < runs; run++) {
+      if (stageId) startStage(game, stageId);
+      else startFreeFlight(game, text);
+      playPresses(
+        typingOn(game),
+        beginnerPresses(text, seed + dayNumber * 10 + run, tuning),
+      );
+    }
+  });
+  return game.getState().profile.logbook;
 }

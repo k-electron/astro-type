@@ -1,16 +1,17 @@
 /**
  * The Profile module: the player's Credits, Stars, Cosmetics,
- * settings and Stage progress, and the commands that change them. Every
+ * settings, Stage progress and Logbook, and the commands that change them. Every
  * command saves through the one `updateProfile`.
  *
  * The Run reads this module and this module reads nothing of the Run: no
  * phase, no current Stage, no Drone.
  */
+import type { FlightLog } from '../analytics/keystroke';
+import { foldRun } from '../analytics/logbook';
+import type { RunFacts } from '../analytics/runReport';
 import { unlocksSector } from '../curriculum/curriculum';
 import {
   DEFAULT_PROFILE,
-  type KeyAnalytics,
-  KeyAnalyticsSchema,
   type PlayerProfile,
   type Settings,
   type StageProgress,
@@ -23,7 +24,7 @@ import {
   catalogEntry,
   type CosmeticEntry,
 } from './catalog';
-import type { Clock } from './clock';
+import { type Clock, localDay } from './clock';
 import type { Moment } from './moments';
 import {
   type BackupImport,
@@ -40,19 +41,17 @@ export interface StageResult {
   maxStreak: number;
   starsEarned: number;
   creditsEarned: number;
-  /** The characters of the text, all typed by the clear. */
-  charactersTyped: number;
-  /** The characters that carry a Miss mark. */
-  missMarks: number;
-  practiceSeconds: number;
-  keyStats: Record<string, KeyAnalytics>;
+  /** The Run's Keystrokes and what else it knows, which the Logbook folds in. */
+  flightLog: FlightLog;
+  facts: RunFacts;
 }
 
 /**
  * The Profile after a cleared Run, and what the clear means for the Debrief.
  * `stageId` is the Sector Stage that was cleared, whose entry keeps the best
  * result and its Stars; null for a Free Flight, which is practice: it leaves no
- * Stage entry and earns no Stars, but its Credits and characters count.
+ * Stage entry and earns no Stars, but its Credits count and its typing folds
+ * into the Logbook like any cleared Run's, on the local day of `now`.
  */
 export function recordStageResult(
   currentProfile: PlayerProfile,
@@ -60,30 +59,15 @@ export function recordStageResult(
   result: StageResult,
   now: number,
 ): { updatedProfile: PlayerProfile } & Omit<StageRecord, 'unlockedSector'> {
-  // Merge key analytics
-  const mergedKeyAnalytics: Record<string, KeyAnalytics> = {
-    ...currentProfile.keyAnalytics,
-  };
-  Object.entries(result.keyStats).forEach(([char, stats]) => {
-    const existing = mergedKeyAnalytics[char] ?? KeyAnalyticsSchema.parse({});
-    mergedKeyAnalytics[char] = {
-      hits: existing.hits + stats.hits,
-      misses: existing.misses + stats.misses,
-    };
-  });
-
   const afterRun: PlayerProfile = {
     ...currentProfile,
     totalCredits: currentProfile.totalCredits + result.creditsEarned,
-    totalCharactersTyped:
-      currentProfile.totalCharactersTyped + result.charactersTyped,
-    totalMissMarks: currentProfile.totalMissMarks + result.missMarks,
-    totalWordsTyped:
-      currentProfile.totalWordsTyped + Math.round(result.charactersTyped / 5),
-    totalPracticeSeconds:
-      currentProfile.totalPracticeSeconds + result.practiceSeconds,
-    highestWpmAllTime: Math.max(currentProfile.highestWpmAllTime, result.wpm),
-    keyAnalytics: mergedKeyAnalytics,
+    logbook: foldRun(
+      currentProfile.logbook,
+      result.flightLog,
+      result.facts,
+      localDay(now),
+    ),
   };
   if (stageId === null) {
     return {
@@ -243,14 +227,14 @@ export interface ProfileCommands {
    * the Save's checks is refused: the Profile and the Save are left as they were.
    */
   importProfile: (text: string) => BackupImport;
-  /** Wipes Stars and Stage progress; Credits and Cosmetics stay. */
+  /** Wipes Stars and Stage progress; Credits, Cosmetics and the Logbook stay. */
   wipeCurriculumAchievements: () => void;
   /** Back to a fresh Profile. */
   resetProgress: () => void;
   /** Clears the notice that a Save was moved aside, for good (it stays gone after a reload). */
   dismissLoadNotice: () => void;
   /**
-   * Takes in a cleared Run's result: Credits, key analytics and, for a Sector
+   * Takes in a cleared Run's result: Credits, the Logbook and, for a Sector
    * Stage, its Stars and bests. `stageId` is null for a Free Flight, which
    * leaves no Stage entry.
    */

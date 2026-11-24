@@ -9,6 +9,22 @@ export interface MixUp {
 }
 
 /**
+ * Every Mix-up of the Run as counts, for the Logbook: for each character the
+ * text wanted, the wrong keys pressed on its First attempt and how often.
+ */
+export function mixUpTallies(
+  log: FlightLog,
+): Record<string, Record<string, number>> {
+  const tallies: Record<string, Record<string, number>> = {};
+  for (const { firstAttempt, expected, pressed } of log) {
+    if (!firstAttempt || expected === pressed) continue;
+    tallies[expected] ??= {};
+    tallies[expected][pressed] = (tallies[expected][pressed] ?? 0) + 1;
+  }
+  return tallies;
+}
+
+/**
  * The Run's Mix-ups, most frequent first, a tie going to the one that came
  * first in the Run. Only First attempts count: a player flailing on one
  * character after the first slip adds nothing.

@@ -21,7 +21,12 @@ import {
   type RunPhase,
   type Screen,
 } from './machine';
-import { type Clock, createRunClock, createSteppedClock } from './clock';
+import {
+  type Clock,
+  createRunClock,
+  createSteppedClock,
+  localDay,
+} from './clock';
 import type { KeyOptions, Run } from './rules';
 import type { Moment } from './moments';
 import {
@@ -62,8 +67,8 @@ export interface GameOptions {
   /** Where the game's sound goes. Absent means silent. */
   sound?: Sound;
   /**
-   * The wall clock, for timestamps only (when a Stage was last played). Run
-   * Time doesn't come from it. Defaults to a hand-stepped one; the app passes
+   * The wall clock, for timestamps and the local day only (when a Stage was
+   * last played, what day a Run is cleared on). Run Time doesn't come from it. Defaults to a hand-stepped one; the app passes
    * the real one.
    */
   clock?: Clock;
@@ -107,6 +112,12 @@ export interface GameState {
   loadNotice: string | null;
   /** Run Time in milliseconds: how long the Run has been running, pauses left out. */
   runTime: number;
+  /**
+   * The player's local calendar date (`YYYY-MM-DD`) as the wall Clock reads it,
+   * the day a Run cleared now is logged on. It is read when the snapshot is
+   * built, so it changes with the next move after midnight.
+   */
+  today: string;
 }
 
 export interface Game {
@@ -160,9 +171,9 @@ export interface Game {
   buy(itemId: CatalogItemId): boolean;
   /** Replace the Profile with a Backup's, if it passes the Save's checks. */
   importBackup(text: string): BackupImport;
-  /** Wipe Stars and Stage progress; Credits and Cosmetics stay. */
+  /** Wipe Stars and Stage progress; Credits, Cosmetics and the Logbook stay. */
   wipeAchievements(): void;
-  /** Back to a fresh Profile. */
+  /** Back to a fresh Profile, the Logbook included. */
   resetProgress(): void;
   /** Dismiss Academy Home's notice that the Save was moved aside; it stays gone after a reload. */
   dismissLoadNotice(): void;
@@ -299,6 +310,7 @@ export function createGame(options: GameOptions): Game {
       profile,
       loadNotice: state.loadNotice,
       runTime: runClock.runTimeMs(),
+      today: localDay(clock.now()),
     };
     // Unchanged when every field is the very object it was: the snapshot is
     // then the same one, and nobody is told.
