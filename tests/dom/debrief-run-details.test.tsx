@@ -385,7 +385,6 @@ describe('the strips', () => {
     expect(
       card().getByText(
         streakExplanation({ seconds: null, value: 8 }, 8, [
-          { streak: 0, multiplier: 1 },
           { streak: 10, multiplier: 2 },
           { streak: 20, multiplier: 3 },
           { streak: 30, multiplier: 4 },
