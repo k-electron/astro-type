@@ -61,7 +61,7 @@ export const keycapLabel = (keycap: string): string =>
   KEYCAP_NAMES[keycap] ?? keyLabel(keycap);
 
 /** A finger as a sentence says it: "left pinky", and the thumb for Space. */
-function fingerWords(finger: FingerZone): string {
+export function fingerWords(finger: FingerZone): string {
   return finger === 'THUMB'
     ? 'thumb'
     : FINGER_DISPLAY_NAMES[finger].toLowerCase();
@@ -250,7 +250,7 @@ export function rhythmExplanation(
   band: string | null,
   floors: { Steady: number; Paced: number },
 ): string {
-  const what = `Rhythm is how evenly your last 10 keys were spaced, as the HUD shows it: Steady from ${floors.Steady}%, Paced from ${floors.Paced}%, Uneven below.`;
+  const what = `Rhythm is how evenly your last 10 hits were spaced, as the HUD shows it: Steady from ${floors.Steady}%, Paced from ${floors.Paced}%, Uneven below.`;
   return value === null || band === null
     ? what
     : `${what} ${atMoment(seconds)}: ${Math.round(value)}% (${band}).`;

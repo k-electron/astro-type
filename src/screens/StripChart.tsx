@@ -14,6 +14,22 @@ export interface StripSeries {
   stepped?: boolean;
   /** Fill down to the foot of the strip. */
   area?: boolean;
+  /** Draw each point as a dot (the Journey's days), and the cursor marks only a point it sits on. */
+  dots?: boolean;
+  /** Don't join two points further apart than this on x (a day away is a gap, not a slope). */
+  breakAbove?: number;
+}
+
+/** A shaded stretch of x behind the lines, with an optional name in its top corner. */
+export interface StripBand {
+  from: number;
+  to: number;
+  fill: string;
+  opacity?: number;
+  /** Written at the band's top: the first of these that fits the band's width. */
+  labels?: readonly string[];
+  /** Which line of labels it is written on (0 is the top), so two bands' names don't overlap. */
+  labelLine?: number;
 }
 
 /** A dashed line across the strip at a value of the game's rules, named at its right end. */
@@ -33,6 +49,8 @@ export interface StripChartProps {
   /** The y values to label down the left edge. */
   yTicks: readonly number[];
   guides?: readonly StripGuide[];
+  /** Shaded stretches behind the lines. */
+  bands?: readonly StripBand[];
   /** Short ticks along the foot of the strip, at these x values. */
   ticks?: readonly number[];
   /** Where the cursor sits on x, or null. */
@@ -45,7 +63,7 @@ export interface StripChartProps {
   empty: string;
 }
 
-const MARGIN = { top: 4, right: 40, left: 34 } as const;
+const MARGIN = { top: 8, right: 40, bottom: 8, left: 34 } as const;
 const AXIS_HEIGHT = 22;
 
 /** Guides closer than this many pixels share one label, so their names never overlap. */
@@ -75,14 +93,32 @@ export const StripChart: React.FC<StripChartProps> = (props) => (
   </div>
 );
 
-/** The point of a series at or before `x`, for the cursor's dot. */
-function pointAt(series: StripSeries, x: number) {
+/**
+ * The point of a series at or before `x`, for the cursor's dot, or, when
+ * `exact`, only a point that is at `x` (a day with no dot has none to mark).
+ */
+function pointAt(series: StripSeries, x: number, exact: boolean) {
   let found: { x: number; y: number } | null = null;
   for (const point of series.points) {
     if (point.x > x) break;
     found = point;
   }
-  return found;
+  return exact && found?.x !== x ? null : found;
+}
+
+/** The runs of a series' points that are joined: split wherever two are further apart than `breakAbove`. */
+function joinedRuns(series: StripSeries) {
+  const runs: { x: number; y: number }[][] = [];
+  for (const point of series.points) {
+    const run = runs.at(-1);
+    const last = run?.at(-1);
+    if (run && last && point.x - last.x <= (series.breakAbove ?? Infinity)) {
+      run.push(point);
+    } else {
+      runs.push([point]);
+    }
+  }
+  return runs;
 }
 
 const Strip: React.FC<StripChartProps & { width: number }> = ({
@@ -94,6 +130,7 @@ const Strip: React.FC<StripChartProps & { width: number }> = ({
   yDomain,
   yTicks,
   guides = [],
+  bands = [],
   ticks = [],
   cursor,
   onCursor,
@@ -103,7 +140,7 @@ const Strip: React.FC<StripChartProps & { width: number }> = ({
   const innerWidth = Math.max(1, width - MARGIN.left - MARGIN.right);
   const innerHeight = Math.max(
     1,
-    height - MARGIN.top - (xAxis ? AXIS_HEIGHT : 0) - 2,
+    height - MARGIN.top - MARGIN.bottom - (xAxis ? AXIS_HEIGHT : 0),
   );
   const xScale = scaleLinear({
     domain: [...xDomain],
@@ -130,7 +167,13 @@ const Strip: React.FC<StripChartProps & { width: number }> = ({
   const hasPoints = series.some((line) => line.points.length > 0);
 
   return (
-    <svg width={width} height={height} role="img" aria-label={label}>
+    <svg
+      width={width}
+      height={height}
+      role="img"
+      aria-label={label}
+      style={{ overflow: 'visible' }}
+    >
       <Group left={MARGIN.left} top={MARGIN.top}>
         <AxisLeft
           scale={yScale}
@@ -139,49 +182,80 @@ const Strip: React.FC<StripChartProps & { width: number }> = ({
           hideTicks
           tickLabelProps={{ ...TEXT, textAnchor: 'end', dx: -4, dy: 3 }}
         />
-        {guides.map((guide, position) => (
-          <g key={`${guide.y}${guide.label}`}>
-            <line
-              x1={0}
-              x2={innerWidth}
-              y1={yScale(guide.y)}
-              y2={yScale(guide.y)}
-              stroke={GRID}
-              strokeDasharray="3 4"
-            />
-            {labelled.has(position) && (
-              <text
-                x={innerWidth + 4}
-                y={yScale(guide.y)}
-                dy={3}
-                {...TEXT}
-                fill="#94a3b8"
-              >
-                {guide.label}
-              </text>
-            )}
-          </g>
-        ))}
-        {ticks.map((x) => (
-          <g key={x}>
-            <line
-              x1={xScale(x)}
-              x2={xScale(x)}
-              y1={0}
-              y2={innerHeight}
-              stroke={TICK}
-              strokeOpacity={0.25}
-            />
-            <line
-              x1={xScale(x)}
-              x2={xScale(x)}
-              y1={innerHeight - 6}
-              y2={innerHeight}
-              stroke={TICK}
-              strokeWidth={2}
-            />
-          </g>
-        ))}
+        {bands.map((band) => {
+          const width = xScale(band.to) - xScale(band.from);
+          const name = band.labels?.find(
+            (candidate) => candidate.length * 5.5 + 6 <= width,
+          );
+          return (
+            <g key={`${band.from}-${band.to}-${band.fill}`}>
+              <rect
+                x={xScale(band.from)}
+                y={0}
+                width={Math.max(0, xScale(band.to) - xScale(band.from))}
+                height={innerHeight}
+                fill={band.fill}
+                fillOpacity={band.opacity ?? 0.12}
+              />
+              {name && (
+                <text
+                  x={xScale(band.from) + 3}
+                  y={9 + 10 * (band.labelLine ?? 0)}
+                  {...TEXT}
+                  fill="#cbd5e1"
+                  pointerEvents="none"
+                >
+                  {name}
+                </text>
+              )}
+            </g>
+          );
+        })}
+        {hasPoints &&
+          guides.map((guide, position) => (
+            <g key={`${guide.y}${guide.label}`}>
+              <line
+                x1={0}
+                x2={innerWidth}
+                y1={yScale(guide.y)}
+                y2={yScale(guide.y)}
+                stroke={GRID}
+                strokeDasharray="3 4"
+              />
+              {labelled.has(position) && (
+                <text
+                  x={innerWidth + 4}
+                  y={yScale(guide.y)}
+                  dy={3}
+                  {...TEXT}
+                  fill="#94a3b8"
+                >
+                  {guide.label}
+                </text>
+              )}
+            </g>
+          ))}
+        {hasPoints &&
+          ticks.map((x) => (
+            <g key={x}>
+              <line
+                x1={xScale(x)}
+                x2={xScale(x)}
+                y1={0}
+                y2={innerHeight}
+                stroke={TICK}
+                strokeOpacity={0.25}
+              />
+              <line
+                x1={xScale(x)}
+                x2={xScale(x)}
+                y1={innerHeight - 6}
+                y2={innerHeight}
+                stroke={TICK}
+                strokeWidth={2}
+              />
+            </g>
+          ))}
         {series.map((line) => {
           const curve = line.stepped ? curveStepAfter : curveLinear;
           return (
@@ -197,15 +271,28 @@ const Strip: React.FC<StripChartProps & { width: number }> = ({
                   fillOpacity={0.15}
                 />
               )}
-              <LinePath
-                data={[...line.points]}
-                x={(point) => xScale(point.x)}
-                y={(point) => yScale(point.y)}
-                curve={curve}
-                stroke={line.color}
-                strokeWidth={2}
-                strokeLinejoin="round"
-              />
+              {joinedRuns(line).map((run) => (
+                <LinePath
+                  key={run[0].x}
+                  data={run}
+                  x={(point) => xScale(point.x)}
+                  y={(point) => yScale(point.y)}
+                  curve={curve}
+                  stroke={line.color}
+                  strokeWidth={2}
+                  strokeLinejoin="round"
+                />
+              ))}
+              {line.dots &&
+                line.points.map((point) => (
+                  <circle
+                    key={point.x}
+                    cx={xScale(point.x)}
+                    cy={yScale(point.y)}
+                    r={2.5}
+                    fill={line.color}
+                  />
+                ))}
             </g>
           );
         })}
@@ -220,7 +307,7 @@ const Strip: React.FC<StripChartProps & { width: number }> = ({
             {empty}
           </text>
         )}
-        {cursor !== null && (
+        {hasPoints && cursor !== null && (
           <g pointerEvents="none">
             <line
               x1={xScale(cursor)}
@@ -231,7 +318,7 @@ const Strip: React.FC<StripChartProps & { width: number }> = ({
               strokeWidth={1.5}
             />
             {series.map((line) => {
-              const point = pointAt(line, cursor);
+              const point = pointAt(line, cursor, line.dots === true);
               return point ? (
                 <circle
                   key={line.color}

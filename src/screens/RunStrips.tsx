@@ -50,7 +50,7 @@ interface RunStripsProps {
   onCursor: (cursor: RunCursor | null) => void;
 }
 
-const STRIP_HEIGHT = 60;
+const STRIP_HEIGHT = 70;
 const AXIS_EXTRA = 22;
 
 /** A strip as laid out: its name and the value beside it, how it explains itself, and what it draws. */

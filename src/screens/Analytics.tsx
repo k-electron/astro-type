@@ -31,10 +31,12 @@ import {
   DAYS_PLAYED_LABEL,
   dayText,
   NO_BEST_DAY,
+  journeySentence,
   PRACTICE_TIME_LABEL,
   practiceTimeText,
   WORDS_TYPED_LABEL,
 } from './journeyLabels';
+import { JourneyTimeline } from './JourneyTimeline';
 import { roundDown } from './roundDown';
 
 /**
@@ -85,6 +87,9 @@ export const Analytics: React.FC = () => {
     [profile.logbook, today],
   );
   const { totals } = journey;
+  // The day under the timeline's cursor, kept here so the parts of the page
+  // that follow it (the chapters, the keyboard) can read it too.
+  const [cursorDay, setCursorDay] = useState<string | null>(null);
 
   // Each key's First attempts by how they went, over the last 8 weeks.
   const keyAnalytics = Object.fromEntries(
@@ -187,6 +192,11 @@ export const Analytics: React.FC = () => {
 
         {/* Content */}
         <div className="p-4 sm:p-6 overflow-y-auto flex flex-col gap-6">
+          {/* The Journey in one plain sentence */}
+          <p className="text-base sm:text-lg leading-snug text-slate-200">
+            {journeySentence(journey.sentence)}
+          </p>
+
           {/* The totals row */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="p-3.5 rounded-xl border border-slate-800 bg-slate-950/60">
@@ -245,6 +255,15 @@ export const Analytics: React.FC = () => {
               </div>
             </div>
           </div>
+
+          {/* The last 8 weeks, day by day */}
+          {journey.sentence.kind !== 'empty' && (
+            <JourneyTimeline
+              report={journey}
+              cursor={cursorDay}
+              onCursor={setCursorDay}
+            />
+          )}
 
           {/* Hand Balance Breakdown */}
           <div className="p-4 rounded-xl border border-slate-800 bg-slate-950/60">
