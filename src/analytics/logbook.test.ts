@@ -214,9 +214,11 @@ describe('what the Logbook lets fade', () => {
 
     const report = journeyReport(stale, TODAY);
 
-    expect(report.daysPlayedInWindow).toBe(1);
-    // Only the Run of the 20th: 51 letters, one "a" each.
-    expect(report.keys.a.firstAttempts).toBe(51);
+    // Only the Run of the 20th: 51 letters, one "a" each, on one day.
+    expect(report.keyboards[TODAY]?.keys.a).toMatchObject({
+      days: 1,
+      tries: 51,
+    });
   });
 });
 
@@ -390,8 +392,11 @@ describe('the Journey', () => {
       practiceSteps: 1200,
       wordsTyped: 20,
     });
-    expect(report.daysPlayedInWindow).toBe(2);
-    expect(report.keys.a).toMatchObject({ firstAttempts: 102, misses: 0 });
+    expect(report.keyboards[TODAY]?.keys.a).toMatchObject({
+      days: 2,
+      tries: 102,
+      misses: 0,
+    });
   });
 
   it('is empty for a player who has not cleared a Run', () => {
@@ -403,7 +408,7 @@ describe('the Journey', () => {
       wordsTyped: 0,
       bestDay: null,
     });
-    expect(report.keys).toEqual({});
+    expect(report.keyboards[TODAY]?.keys ?? {}).toEqual({});
   });
 });
 

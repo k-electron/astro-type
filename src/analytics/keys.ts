@@ -1,6 +1,6 @@
 import { keyForCharacter } from '../curriculum/keyboardLayout';
 import type { FingerZone } from '../curriculum/keyboardLayout';
-import type { FlightLog, Keystroke } from './keystroke';
+import { type FlightLog, isHit } from './keystroke';
 
 /**
  * The key measures of a Flight log: how often each key was typed right or
@@ -9,7 +9,7 @@ import type { FlightLog, Keystroke } from './keystroke';
  * Save has always counted them: a capital and its lower case are two.
  */
 
-/** Steps of Run Time in a second. Restated here: analytics imports nothing from the game. */
+/** Steps of Run Time in a second. The game's Run reads it from here: analytics imports nothing from the game. */
 export const STEPS_PER_SECOND = 60;
 
 /** Run Time steps as milliseconds. */
@@ -29,6 +29,9 @@ export const MIN_FIRST_ATTEMPTS = 3;
 /** How many keys a ranking lists. */
 export const LIST_LENGTH = 5;
 
+/** The characters in a word, for WPM and for words typed. */
+export const CHARACTERS_PER_WORD = 5;
+
 /** What a Run's Flight log says of one key. */
 export interface KeyTally {
   /** The key's characters that were typed, counting only the first Keystroke on each. */
@@ -41,8 +44,27 @@ export interface KeyTally {
   cleanSteps: number;
 }
 
-const isHit = (keystroke: Keystroke) =>
-  keystroke.expected === keystroke.pressed;
+/** A tally with nothing counted. */
+export const emptyTally = (): KeyTally => ({
+  firstAttempts: 0,
+  misses: 0,
+  cleanHits: 0,
+  cleanSteps: 0,
+});
+
+/** Two tallies added up. */
+export const addTallies = (a: KeyTally, b: KeyTally): KeyTally => ({
+  firstAttempts: a.firstAttempts + b.firstAttempts,
+  misses: a.misses + b.misses,
+  cleanHits: a.cleanHits + b.cleanHits,
+  cleanSteps: a.cleanSteps + b.cleanSteps,
+});
+
+/** A tally's mean Clean-hit time in ms, or null with fewer than 3 Clean hits. */
+export const tallyMs = (tally: KeyTally): number | null =>
+  tally.cleanHits >= MIN_CLEAN_HITS
+    ? stepsToMs(tally.cleanSteps / tally.cleanHits)
+    : null;
 
 /**
  * The time a Keystroke took, in steps, when it was a Clean hit: a First
@@ -77,12 +99,7 @@ export function keyTallies(log: FlightLog): Record<string, KeyTally> {
   const tallies: Record<string, KeyTally> = {};
   const steps = cleanHitSteps(log);
   log.forEach((keystroke, position) => {
-    const tally = tallies[keystroke.expected] ?? {
-      firstAttempts: 0,
-      misses: 0,
-      cleanHits: 0,
-      cleanSteps: 0,
-    };
+    const tally = tallies[keystroke.expected] ?? emptyTally();
     tallies[keystroke.expected] = tally;
     if (keystroke.firstAttempt) {
       tally.firstAttempts += 1;
@@ -106,13 +123,6 @@ export function keycapOf(character: string): string {
   return keyForCharacter(character)?.keycap.key ?? character;
 }
 
-/** The keycaps a Flight log typed, each once, in the order the text first wanted them. */
-export function keycapsTyped(log: FlightLog): string[] {
-  const keycaps = new Set<string>();
-  for (const keystroke of log) keycaps.add(keycapOf(keystroke.expected));
-  return [...keycaps];
-}
-
 /** The tallies added up by keycap, so "A" and "a" are one key, as on the keyboard. */
 export function keycapTallies(
   tallies: Record<string, KeyTally>,
@@ -120,18 +130,7 @@ export function keycapTallies(
   const byKeycap: Record<string, KeyTally> = {};
   for (const [character, tally] of Object.entries(tallies)) {
     const keycap = keycapOf(character);
-    const total = byKeycap[keycap] ?? {
-      firstAttempts: 0,
-      misses: 0,
-      cleanHits: 0,
-      cleanSteps: 0,
-    };
-    byKeycap[keycap] = {
-      firstAttempts: total.firstAttempts + tally.firstAttempts,
-      misses: total.misses + tally.misses,
-      cleanHits: total.cleanHits + tally.cleanHits,
-      cleanSteps: total.cleanSteps + tally.cleanSteps,
-    };
+    byKeycap[keycap] = addTallies(byKeycap[keycap] ?? emptyTally(), tally);
   }
   return byKeycap;
 }
@@ -247,7 +246,7 @@ export const isLetter = (character: string): boolean =>
  */
 export function cleanHitWpm(cleanHits: number, steps: number): number | null {
   if (cleanHits <= 0 || steps <= 0) return null;
-  return (cleanHits * (STEPS_PER_SECOND * 60)) / 5 / steps;
+  return (cleanHits * (STEPS_PER_SECOND * 60)) / CHARACTERS_PER_WORD / steps;
 }
 
 /**

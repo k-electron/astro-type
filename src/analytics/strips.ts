@@ -1,5 +1,5 @@
-import { STEPS_PER_SECOND } from './keys';
-import type { FlightLog } from './keystroke';
+import { CHARACTERS_PER_WORD, STEPS_PER_SECOND } from './keys';
+import { type FlightLog, isHit } from './keystroke';
 
 /**
  * The series behind the Debrief's four strips, over Run Time: how fast the
@@ -14,9 +14,6 @@ export const ROLLING_HITS = 10;
 
 /** Accuracy is measured over this many of the latest characters reached. */
 export const ROLLING_LETTERS = 20;
-
-/** The words in a character count, for WPM. */
-const CHARACTERS_PER_WORD = 5;
 
 /** One value of a strip, at a step of Run Time. */
 export interface StripPoint {
@@ -61,8 +58,6 @@ export interface RunStrips {
   moments: StripMoment[];
 }
 
-const isHit = (expected: string, pressed: string) => expected === pressed;
-
 /** The Run's strips from its Flight log. */
 export function runStrips(log: FlightLog): RunStrips {
   const first = log[0];
@@ -80,7 +75,7 @@ export function runStrips(log: FlightLog): RunStrips {
   const hitSteps: number[] = [];
   const marked = new Set<number>();
   for (const keystroke of log) {
-    const hit = isHit(keystroke.expected, keystroke.pressed);
+    const hit = isHit(keystroke);
     const { step, index } = keystroke;
     strips.moments.push({ step, index, hit });
     strips.rhythm.push({ step, value: keystroke.rhythm });

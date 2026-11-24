@@ -1,12 +1,7 @@
 import type React from 'react';
 import { useMemo } from 'react';
-import {
-  keycapOf,
-  keycapTallies,
-  MIN_CLEAN_HITS,
-  stepsToMs,
-} from '../analytics/keys';
-import { paceOf } from '../analytics/letters';
+import { keycapOf, keycapTallies, tallyMs } from '../analytics/keys';
+import { keyPace } from '../analytics/letters';
 import type { RunReport } from '../analytics/runReport';
 import { SHIFT_KEYCAPS } from '../analytics/shift';
 import type { KeySpec } from '../curriculum/keyboardLayout';
@@ -92,10 +87,8 @@ export const RunKeys: React.FC<RunKeysProps> = ({ report, linking }) => {
         className: 'border-slate-800 text-slate-700',
       };
     }
-    const tint =
-      averageMs !== null && tally.cleanHits >= MIN_CLEAN_HITS
-        ? TINT[paceOf(stepsToMs(tally.cleanSteps / tally.cleanHits), averageMs)]
-        : '';
+    const pace = keyPace(tallyMs(tally), averageMs);
+    const tint = pace === null ? '' : TINT[pace];
     return {
       title,
       'aria-label': keycapName(spec),

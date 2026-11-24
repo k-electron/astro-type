@@ -27,8 +27,6 @@ import { STEP_MS } from './clock';
 import type { Moment } from './moments';
 import type { StageResult } from './profile';
 
-export type { ShiftSide } from '../analytics/keystroke';
-
 /** A Drone: one character of the Stage's text, falling down its lane. */
 export interface Drone {
   id: string;

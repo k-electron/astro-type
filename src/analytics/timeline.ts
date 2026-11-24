@@ -3,6 +3,7 @@ import { cleanHitWpm } from './keys';
 import { MIN_DAY_LETTER_HITS } from './lifetime';
 import type { RunSummary } from './runs';
 import { type ReachedSector, sectorOn } from './sectorBands';
+import { shiftedTotal } from './shift';
 
 /**
  * The Journey's timeline: one point for each of the 56 local days ending
@@ -57,12 +58,7 @@ function measuresOf(runs: readonly RunSummary[]) {
     letterSteps += run.letterCleanSteps;
     for (const tally of Object.values(run.keys)) {
       opposite += tally.shiftOpposite;
-      shifted +=
-        tally.shiftOpposite +
-        tally.shiftSame +
-        tally.shiftBoth +
-        tally.shiftNone +
-        tally.shiftUnknown;
+      shifted += shiftedTotal(tally);
     }
   }
   const weights = (pick: (run: RunSummary) => number) =>

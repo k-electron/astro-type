@@ -40,6 +40,14 @@ export interface ShiftTally {
   shiftUnknown: number;
 }
 
+/** How many shifted characters a tally counts, however they were typed. */
+export const shiftedTotal = (tally: ShiftTally): number =>
+  tally.shiftOpposite +
+  tally.shiftSame +
+  tally.shiftBoth +
+  tally.shiftNone +
+  tally.shiftUnknown;
+
 export const noShiftTally = (): ShiftTally => ({
   shiftOpposite: 0,
   shiftSame: 0,
@@ -92,7 +100,7 @@ export function shiftHand(keys: Record<string, LogbookKeyTally>): ShiftHand {
       counts[field] += tally[field];
     }
   }
-  const total = Object.values(counts).reduce((sum, count) => sum + count, 0);
+  const total = shiftedTotal(counts);
   const shares = noShiftTally();
   for (const field of Object.keys(counts) as (keyof ShiftTally)[]) {
     shares[field] = total === 0 ? 0 : (counts[field] * 100) / total;

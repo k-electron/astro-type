@@ -9,6 +9,7 @@
  * Stage's result to the Profile's command. The Profile reads nothing of this
  * module.
  */
+import { STEPS_PER_SECOND } from '../analytics/keys';
 import {
   type RunFacts,
   type RunReport,
@@ -74,9 +75,6 @@ export interface RunMoves {
 }
 
 export type RunSlice = RunSliceState & RunMoves;
-
-/** Steps of Run Time in a second. */
-const STEPS_PER_SECOND = 60;
 
 /**
  * Where a Stage was flown, as the Logbook copies it at the clear: the

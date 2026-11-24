@@ -98,10 +98,6 @@ export interface JourneyReport {
   };
   /** Letter speed over the first 3 days played, or null before any letter was timed. */
   startingLetterWpm: number | null;
-  /** How many different days were played in the last 56. */
-  daysPlayedInWindow: number;
-  /** Each key's tallies over the last 56 days, by character. */
-  keys: Record<string, LogbookKeyTally>;
   /** Fewer than 3 days were played in the last 56: "how you type now" is rebuilding. */
   rebuilding: boolean;
   /** What the plain sentence on top says: its case and its facts. */
@@ -152,17 +148,8 @@ export function journeyReport(logbook: Logbook, today: Day): JourneyReport {
       bestDay: lifetime.bestDay,
     },
     startingLetterWpm: startingLetterWpm(lifetime),
-    daysPlayedInWindow,
-    keys,
     rebuilding,
-    sentence: sentenceOf(
-      logbook,
-      runs,
-      trickiestNow(keys, stories),
-      sectors,
-      rebuilding,
-      today,
-    ),
+    sentence: sentenceOf(logbook, runs, trickiest, sectors, rebuilding, today),
     timeline,
     keyboards: Object.fromEntries(
       timeline.map(({ day }, at) => [day, keyboards[at]]),

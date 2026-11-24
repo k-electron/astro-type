@@ -20,6 +20,14 @@ export function paceOf(time: number, average: number): Pace {
   return 'steady';
 }
 
+/** The pace of a key's mean time against the average, or null when either is unknown. */
+export function keyPace(
+  ms: number | null,
+  averageMs: number | null,
+): Pace | null {
+  return ms !== null && averageMs !== null ? paceOf(ms, averageMs) : null;
+}
+
 /** One character of the Run's text, and how it went. */
 export interface LetterReport {
   /** Its place in the text. */

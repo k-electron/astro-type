@@ -1,5 +1,11 @@
 import type { Day } from './days';
-import { keycapOf, MIN_CLEAN_HITS, stepsToMs } from './keys';
+import {
+  addTallies,
+  emptyTally,
+  keycapOf,
+  type KeyTally,
+  tallyMs,
+} from './keys';
 import type { RunSummary } from './runs';
 
 /**
@@ -16,12 +22,8 @@ export const TREND_DAYS = 5;
 export const MIN_DAY_TRIES = 10;
 
 /** What one keycap did on one day, its Runs added together. */
-export interface DayTally {
+export interface DayTally extends KeyTally {
   day: Day;
-  firstAttempts: number;
-  misses: number;
-  cleanHits: number;
-  cleanSteps: number;
 }
 
 /** Each keycap's tallies for each day it was typed on, summed over the day's Runs, oldest day first. */
@@ -34,18 +36,8 @@ export function dayTalliesByKeycap(
       const keycap = keycapOf(character);
       const days = byKeycap.get(keycap) ?? new Map<Day, DayTally>();
       byKeycap.set(keycap, days);
-      const total = days.get(run.day) ?? {
-        day: run.day,
-        firstAttempts: 0,
-        misses: 0,
-        cleanHits: 0,
-        cleanSteps: 0,
-      };
-      total.firstAttempts += tally.firstAttempts;
-      total.misses += tally.misses;
-      total.cleanHits += tally.cleanHits;
-      total.cleanSteps += tally.cleanSteps;
-      days.set(run.day, total);
+      const total = days.get(run.day) ?? { day: run.day, ...emptyTally() };
+      days.set(run.day, { ...total, ...addTallies(total, tally) });
     }
   }
   return new Map(
@@ -84,28 +76,17 @@ export interface Reading {
 
 /** The numbers of some days' tallies added up. */
 export function readingOf(tallies: readonly DayTally[]): Reading {
-  const reading = {
-    days: tallies.length,
-    tries: 0,
-    misses: 0,
-    cleanHits: 0,
-    cleanSteps: 0,
-  };
-  for (const tally of tallies) {
-    reading.tries += tally.firstAttempts;
-    reading.misses += tally.misses;
-    reading.cleanHits += tally.cleanHits;
-    reading.cleanSteps += tally.cleanSteps;
-  }
+  const sum = tallies.reduce(addTallies, emptyTally());
   return {
-    ...reading,
-    ms:
-      reading.cleanHits >= MIN_CLEAN_HITS
-        ? stepsToMs(reading.cleanSteps / reading.cleanHits)
-        : null,
+    days: tallies.length,
+    tries: sum.firstAttempts,
+    misses: sum.misses,
+    cleanHits: sum.cleanHits,
+    cleanSteps: sum.cleanSteps,
+    ms: tallyMs(sum),
     accuracy:
-      reading.tries === 0
+      sum.firstAttempts === 0
         ? null
-        : (100 * (reading.tries - reading.misses)) / reading.tries,
+        : (100 * (sum.firstAttempts - sum.misses)) / sum.firstAttempts,
   };
 }
