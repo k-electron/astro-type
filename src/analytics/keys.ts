@@ -106,6 +106,13 @@ export function keycapOf(character: string): string {
   return keyForCharacter(character)?.keycap.key ?? character;
 }
 
+/** The keycaps a Flight log typed, each once, in the order the text first wanted them. */
+export function keycapsTyped(log: FlightLog): string[] {
+  const keycaps = new Set<string>();
+  for (const keystroke of log) keycaps.add(keycapOf(keystroke.expected));
+  return [...keycaps];
+}
+
 /** The tallies added up by keycap, so "A" and "a" are one key, as on the keyboard. */
 export function keycapTallies(
   tallies: Record<string, KeyTally>,

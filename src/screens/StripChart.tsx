@@ -57,6 +57,8 @@ export interface StripChartProps {
   cursor: number | null;
   /** The pointer is at this x, or it has left (null). */
   onCursor: (x: number | null) => void;
+  /** The strip was clicked at this x. A strip with no use for a click leaves it out. */
+  onSelect?: (x: number) => void;
   /** Draw an x axis under the strip, labelling x with this. */
   xAxis?: { format: (x: number) => string; tickValues: readonly number[] };
   /** Said over the strip when it has no points. */
@@ -134,6 +136,7 @@ const Strip: React.FC<StripChartProps & { width: number }> = ({
   ticks = [],
   cursor,
   onCursor,
+  onSelect,
   xAxis,
   empty,
 }) => {
@@ -343,7 +346,7 @@ const Strip: React.FC<StripChartProps & { width: number }> = ({
             tickLabelProps={{ ...TEXT, textAnchor: 'middle' }}
           />
         )}
-        {/* biome-ignore lint/a11y/noStaticElementInteractions: the strip is a pointer-only way to scrub the Run; the same moments are in the text, the lists and the keyboard around it */}
+        {/* biome-ignore lint/a11y/noStaticElementInteractions: the strip is a pointer-only way to scrub the Run, or to jump to a Sector's entry in the logbook; the same moments are in the text, the lists and the keyboard around it, and the entries are on the page */}
         <rect
           width={innerWidth}
           height={innerHeight}
@@ -354,6 +357,10 @@ const Strip: React.FC<StripChartProps & { width: number }> = ({
             onCursor(xScale.invert(event.clientX - box.left));
           }}
           onMouseLeave={() => onCursor(null)}
+          onClick={(event) => {
+            const box = event.currentTarget.getBoundingClientRect();
+            onSelect?.(xScale.invert(event.clientX - box.left));
+          }}
         />
       </Group>
     </svg>

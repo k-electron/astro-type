@@ -114,6 +114,10 @@ _Avoid_: Key stats, telemetry, analytics data, typing record
 What the Logbook keeps of one cleared Run: its day, where it was flown (copies of the Sector's and Stage's ids and names, or none for a Free Flight), its numbers and its tallies by key, Mix-up and Letter pair. Summaries older than eight weeks are deleted.
 _Avoid_: Run record, run log
 
+**Sector summary**:
+What the Logbook keeps for good of one Sector the player has flown: its first and last day, days, Runs and Run Time, speed and accuracy over its first and last three days, the keys first typed in it and a sparkline of its Run speeds. It is keyed by the Sector's id and name as its Runs copied them, in the order the player first reached the Sectors, and a Free Flight never touches one. Analytics shows each as an entry of the logbook.
+_Avoid_: Chapter
+
 **Day**:
 The player's own local calendar date at the moment a Run is cleared, as the wall clock gives it. A Run that crosses midnight counts on the day it was cleared.
 _Avoid_: Session, 24 hours

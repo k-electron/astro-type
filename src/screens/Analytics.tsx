@@ -10,9 +10,11 @@ import {
   OverlayShell,
 } from './OverlayShell';
 import {
+  CURRICULUM_SECTORS,
   keyForCharacter,
   FINGER_COLOR_MAP,
   FINGER_DISPLAY_NAMES,
+  maxStarsOf,
 } from '../curriculum/curriculum';
 import { KEYBOARD_ROWS } from '../curriculum/keyboardLayout';
 import { exportBackup, NOT_A_BACKUP_MESSAGE } from '../game/save';
@@ -38,6 +40,10 @@ import {
 } from './journeyLabels';
 import { JourneyTimeline } from './JourneyTimeline';
 import { roundDown } from './roundDown';
+import { type EntryJump, SectorEntries } from './SectorEntries';
+
+/** How long a entry stays ringed after the timeline sent the player to it. */
+const RING_MS = 3000;
 
 /**
  * The keyboard's keys for the heatmap, row by row: the letters, the digits and
@@ -88,8 +94,32 @@ export const Analytics: React.FC = () => {
   );
   const { totals } = journey;
   // The day under the timeline's cursor, kept here so the parts of the page
-  // that follow it (the chapters, the keyboard) can read it too.
+  // that follow it (the entries, the keyboard) can read it too.
   const [cursorDay, setCursorDay] = useState<string | null>(null);
+  // The entry the timeline last sent the player to: it is scrolled to and
+  // ringed for a moment.
+  const [jump, setJump] = useState<EntryJump | null>(null);
+  useEffect(() => {
+    if (jump === null) return;
+    const timer = setTimeout(() => setJump(null), RING_MS);
+    return () => clearTimeout(timer);
+  }, [jump]);
+  const jumpToEntry = (id: string) =>
+    setJump((last) => ({ id, count: (last?.count ?? 0) + 1 }));
+
+  // A entry's Stars are read live from Stage progress, joined by id to the
+  // Sectors the game has today: a Sector that has gone has none to show.
+  const starsOf = (sectorId: string) => {
+    const sector = CURRICULUM_SECTORS.find(({ id }) => id === sectorId);
+    if (sector === undefined) return null;
+    return {
+      earned: sector.stages.reduce(
+        (sum, { id }) => sum + (profile.stagesProgress[id]?.starsEarned ?? 0),
+        0,
+      ),
+      most: maxStarsOf(sector),
+    };
+  };
 
   // Each key's First attempts by how they went, over the last 8 weeks.
   const keyAnalytics = Object.fromEntries(
@@ -262,6 +292,16 @@ export const Analytics: React.FC = () => {
               report={journey}
               cursor={cursorDay}
               onCursor={setCursorDay}
+              onSelectSector={jumpToEntry}
+            />
+          )}
+
+          {/* One entry for each Sector flown */}
+          {journey.sectors.length > 0 && (
+            <SectorEntries
+              entries={journey.sectors}
+              starsOf={starsOf}
+              jump={jump}
             />
           )}
 

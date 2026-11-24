@@ -36,9 +36,11 @@ import {
 
 interface JourneyTimelineProps {
   report: JourneyReport;
-  /** The day under the pointer, or null. Page state: the chapters and the keyboard will read it too. */
+  /** The day under the pointer, or null. Page state: the entries and the keyboard will read it too. */
   cursor: Day | null;
   onCursor: (day: Day | null) => void;
+  /** A band or a day was clicked: the id of the Sector the player had reached by then. */
+  onSelectSector: (id: string) => void;
 }
 
 const STRIP_HEIGHT = 70;
@@ -133,6 +135,7 @@ export const JourneyTimeline: React.FC<JourneyTimelineProps> = ({
   report,
   cursor,
   onCursor,
+  onSelectSector,
 }) => {
   const [hovered, setHovered] = useState<string | null>(null);
   if (report.rebuilding) {
@@ -252,10 +255,13 @@ export const JourneyTimeline: React.FC<JourneyTimelineProps> = ({
   const axisDays = days
     .map((_, at) => at)
     .filter((at) => (days.length - 1 - at) % AXIS_GAP_DAYS === 0);
-  const onPointer = (x: number | null) => {
-    if (x === null) return onCursor(null);
-    const at = Math.min(days.length - 1, Math.max(0, Math.round(x)));
-    onCursor(days[at].day);
+  const dayAt = (x: number) =>
+    days[Math.min(days.length - 1, Math.max(0, Math.round(x)))];
+  const onPointer = (x: number | null) =>
+    onCursor(x === null ? null : dayAt(x).day);
+  const onSelect = (x: number) => {
+    const sector = dayAt(x).sector;
+    if (sector) onSelectSector(sector.id);
   };
 
   const heading = shown
@@ -319,6 +325,7 @@ export const JourneyTimeline: React.FC<JourneyTimelineProps> = ({
                 ]}
                 cursor={cursorAt >= 0 ? cursorAt : null}
                 onCursor={onPointer}
+                onSelect={onSelect}
                 xAxis={
                   row.xAxis
                     ? {

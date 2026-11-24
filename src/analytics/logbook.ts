@@ -6,7 +6,8 @@ import {
   MIN_DAYS_FOR_PICTURE,
   nowLetterWpm,
 } from './journeySentence';
-import { trickiestKey } from './keys';
+import { foldKeyFirsts, KeyFirstsSchema } from './keyFirsts';
+import { keycapsTyped, trickiestKey } from './keys';
 import type { FlightLog } from './keystroke';
 import {
   type Lifetime,
@@ -24,20 +25,28 @@ import {
   sumKeys,
   summariseRun,
 } from './runs';
-import { type ReachedSector, sectorsReached } from './sectorBands';
+import {
+  foldSectors,
+  type SectorSummary,
+  SectorsSchema,
+  sectorSummaries,
+} from './sectors';
 import { buildTimeline, type TimelineDay } from './timeline';
 
 /**
  * The player's Logbook: their typing, kept in the Profile. It records how the
  * player types, not their progress, so a revamp of the Stages and Sectors
- * leaves it as it is (ADR-0004). This part holds the summary of each cleared
- * Run of the last 56 days and the lifetime part kept for good.
+ * leaves it as it is (ADR-0004). It holds the summary of each cleared Run of
+ * the last 56 days, and the parts kept for good: the lifetime totals, the day
+ * each key was first typed and a summary of each Sector.
  */
 export const LogbookSchema = z.preprocess(
   (value) => (isRecord(value) ? value : {}),
   z.object({
     runs: RunsSchema,
     lifetime: LifetimeSchema,
+    keys: KeyFirstsSchema,
+    sectors: SectorsSchema,
   }),
 );
 export type Logbook = z.output<typeof LogbookSchema>;
@@ -64,9 +73,12 @@ export function foldRun(
   const kept = recentRuns(logbook.runs, today);
   const faded = logbook.runs.filter((run) => !kept.includes(run));
   const runs = [...kept, summary];
+  const { keys, fresh } = foldKeyFirsts(logbook.keys, keycapsTyped(log), today);
   return {
     runs,
     lifetime: foldLifetime(logbook.lifetime, summary, runs, faded, today),
+    keys,
+    sectors: foldSectors(logbook.sectors, summary, fresh),
   };
 }
 
@@ -91,8 +103,8 @@ export interface JourneyReport {
   sentence: JourneySentence;
   /** The last 56 days, oldest first, one point each. */
   timeline: TimelineDay[];
-  /** The Sectors reached in the last 56 days, in the order first reached. */
-  sectors: ReachedSector[];
+  /** Every Sector flown, kept for good, in the order first reached. */
+  sectors: SectorSummary[];
 }
 
 /** The Journey as of `today`: detail from the last 56 days, and the totals kept for good. */
@@ -104,10 +116,9 @@ export function journeyReport(logbook: Logbook, today: Day): JourneyReport {
   const keys = sumKeys(runs);
   const daysPlayedInWindow = new Set(runs.map((run) => run.day)).size;
   const rebuilding = daysPlayedInWindow < MIN_DAYS_FOR_PICTURE;
-  // The Sectors come from the Runs' copies, so only those flown in the last
-  // 56 days are known: a Sector reached earlier shows from its first Run in
-  // the window.
-  const sectors = sectorsReached(runs);
+  // The Sectors are kept for good, so a Sector reached before the window
+  // still has its band.
+  const sectors = sectorSummaries(logbook.sectors);
   return {
     totals: {
       daysPlayed: lifetime.daysPlayed,
@@ -129,7 +140,7 @@ function sentenceOf(
   { lifetime }: Logbook,
   runs: readonly RunSummary[],
   keys: Record<string, LogbookKeyTally>,
-  sectors: readonly ReachedSector[],
+  sectors: readonly SectorSummary[],
   rebuilding: boolean,
   today: Day,
 ): JourneySentence {

@@ -32,7 +32,7 @@ export interface TimelineDay {
    * Shift of the opposite hand, 0 to 100; null on a day with none.
    */
   oppositeShiftShare: number | null;
-  /** The latest new Sector reached by this day, or null before the window's first Sector Run. */
+  /** The latest new Sector reached by this day, or null before the first Sector Run ever. */
   sector: ReachedSector | null;
 }
 
