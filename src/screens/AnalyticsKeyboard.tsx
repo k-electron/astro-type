@@ -106,7 +106,8 @@ export const AnalyticsKeyboard: React.FC<AnalyticsKeyboardProps> = ({
       aria-label={KEYBOARD_HEADING}
       className="w-full bg-slate-950/60 border border-slate-800 rounded-xl p-3 text-left"
     >
-      <div className="flex items-baseline justify-between gap-3 mb-2">
+      {/* The header keeps the height of the "Back to latest" button, so holding a day does not push the keyboard down. */}
+      <div className="flex min-h-[1.5rem] items-center justify-between gap-3 mb-2">
         <h3 className="text-[10px] uppercase font-mono tracking-wider text-slate-400">
           {KEYBOARD_HEADING}
         </h3>

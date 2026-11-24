@@ -72,9 +72,10 @@ const Trend: React.FC<{
   }
   const numbers = drawn.map((point) => point.value ?? 0);
   const low = Math.min(...numbers);
-  const span = Math.max(...numbers) - low || 1;
+  const span = Math.max(...numbers) - low;
   const place = (point: TrendValue, at: number) => {
-    const share = ((point.value ?? 0) - low) / span;
+    // A flat trend (every point the same) is drawn mid-height, not on an edge.
+    const share = span === 0 ? 0.5 : ((point.value ?? 0) - low) / span;
     return {
       x: PAD + (at * (TREND_WIDTH - 2 * PAD)) / (drawn.length - 1),
       y: PAD + (lowerIsBetter ? share : 1 - share) * (TREND_HEIGHT - 2 * PAD),
