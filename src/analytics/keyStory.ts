@@ -57,7 +57,7 @@ export interface KeyStory {
   mixUps: InsteadOf[];
 }
 
-/** The Mix-ups of the Runs for a keycap: the keys pressed on it, left out when they are the same keycap (a capital without Shift). */
+/** The Mix-ups of the Runs for a keycap (a capital or a symbol counts with its key): the keys pressed on it, as typed, so a capital without Shift reads "a". */
 function insteadOf(runs: readonly RunSummary[]): Map<string, InsteadOf[]> {
   const counts = new Map<string, Map<string, number>>();
   for (const run of runs) {
@@ -66,7 +66,6 @@ function insteadOf(runs: readonly RunSummary[]): Map<string, InsteadOf[]> {
       const pressed = counts.get(keycap) ?? new Map<string, number>();
       counts.set(keycap, pressed);
       for (const [key, count] of Object.entries(wrong)) {
-        if (keycapOf(key) === keycap) continue;
         pressed.set(key, (pressed.get(key) ?? 0) + count);
       }
     }
