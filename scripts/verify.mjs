@@ -71,11 +71,16 @@ const changedFiles = () => {
   }
   const base = git('merge-base', 'HEAD', 'origin/main')?.trim();
   if (!base) return null;
-  // From the merge-base to the working tree: the commits, staged and unstaged.
-  const tracked = git('diff', '--name-only', '--no-renames', '-z', base);
-  const untracked = git('ls-files', '--others', '--exclude-standard', '-z');
-  if (tracked === null || untracked === null) return null;
-  return `${tracked}${untracked}`.split('\0').filter(Boolean);
+  // The commits (merge-base to HEAD), what isn't committed yet (HEAD to the
+  // working tree, staged and unstaged), and untracked files. Each on its own:
+  // a commit that a later edit undoes in the working tree is still pushed.
+  const lists = [
+    git('diff', '--name-only', '--no-renames', '-z', base, 'HEAD'),
+    git('diff', '--name-only', '--no-renames', '-z', 'HEAD'),
+    git('ls-files', '--others', '--exclude-standard', '-z'),
+  ];
+  if (lists.includes(null)) return null;
+  return [...new Set(lists.join('\0').split('\0').filter(Boolean))];
 };
 
 const changed = process.env.CI ? null : changedFiles();
