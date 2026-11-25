@@ -1,13 +1,12 @@
-import { test } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import { drone, hud, pauseMenu } from './helpers';
 import {
   bottomEdge,
-  expectOnStillClock,
+  deckUp,
   hudSpeed,
   launchOnStoppedClock,
   pauseButton,
   resumeButton,
-  STILL_CLOCK_WAIT,
   typeKeys,
 } from './journey-helpers';
 
@@ -22,43 +21,34 @@ import {
 // Menu, and then a fall that carries on.
 
 test.use({ viewport: { width: 1280, height: 1100 } });
-// Every frame stepped over is drawn for real, in software GL on a CI runner.
-test.setTimeout(120_000);
-// The clock stands still whenever this journey waits for the page, so a wait
-// changes nothing on screen, and a busy machine can take many seconds to draw
-// the frames a `runFor` stepped over: every wait takes STILL_CLOCK_WAIT (#163).
-const expect = expectOnStillClock;
 
 test('the paused deck is frozen: Drones and the Speed stand still, and carry on after Resume', async ({
   page,
 }) => {
   await launchOnStoppedClock(page, 'abcdefgh');
 
-  // PixiJS draws on animation frames, which only come when the clock moves.
-  // Give it frames until the deck is up, then let the lead Drone settle.
-  await expect(async () => {
-    await page.clock.runFor(50);
-    await expect(drone(page, 'b')).toBeVisible({ timeout: 250 });
-  }).toPass({ timeout: 10_000 });
+  // Once the deck is up and drawn, let the lead Drone settle.
+  await deckUp(page);
+  await expect(drone(page, 'b')).toBeVisible();
   await page.clock.runFor(600);
 
   await test.step('the HUD shows a Speed once the Run has gone on a little', async () => {
     // Four hits with no time passing, then a second of Run Time: the HUD
     // refreshes its Speed on a tick, and four characters typed in that time
     // are a Speed.
-    await typeKeys(page, 'abcd', STILL_CLOCK_WAIT);
+    await typeKeys(page, 'abcd');
     await page.clock.runFor(1000);
 
     await expect.poll(() => hudSpeed(page)).toBeGreaterThan(0);
   });
 
-  const settled = await bottomEdge(drone(page, 'f'), STILL_CLOCK_WAIT);
+  const settled = await bottomEdge(drone(page, 'f'));
   let midFall = settled;
   await test.step('typing the lead sends the Drone behind it down: two frames in, it is on its way', async () => {
     await page.keyboard.press('e');
     await page.clock.runFor(32);
 
-    midFall = await bottomEdge(drone(page, 'f'), STILL_CLOCK_WAIT);
+    midFall = await bottomEdge(drone(page, 'f'));
     expect.soft(midFall).toBeGreaterThan(settled);
   });
 
@@ -74,9 +64,7 @@ test('the paused deck is frozen: Drones and the Speed stand still, and carry on 
     await page.clock.fastForward(5 * 60_000);
     await page.clock.runFor(500);
 
-    expect
-      .soft(await bottomEdge(drone(page, 'f'), STILL_CLOCK_WAIT))
-      .toBe(midFall);
+    expect.soft(await bottomEdge(drone(page, 'f'))).toBe(midFall);
     expect.soft(await hudSpeed(page)).toBe(speedAtPause);
   });
 
@@ -85,9 +73,7 @@ test('the paused deck is frozen: Drones and the Speed stand still, and carry on 
     await expect(pauseMenu(page)).toBeHidden();
     await page.clock.runFor(300);
 
-    expect
-      .soft(await bottomEdge(drone(page, 'f'), STILL_CLOCK_WAIT))
-      .toBeGreaterThan(midFall);
+    expect.soft(await bottomEdge(drone(page, 'f'))).toBeGreaterThan(midFall);
     await expect.soft(hud(page)).toContainText(/Streak\s*5(?!\d)/i);
   });
 });

@@ -155,8 +155,17 @@ export async function seedSave(page: Page, save: unknown): Promise<void> {
   );
 }
 
-/** Types the first Stage to its last character; the Debrief follows. */
+/**
+ * Types the first Stage to its last character, on a page clock stopped before
+ * the page loaded; the Debrief follows. A second of the Run passes after the
+ * first key and the rest are typed with the clock still, so the Run's Typing
+ * Time is that second on every machine (on the real clock, a fast machine
+ * could type every key inside one step of the Run, which is no Speed at all),
+ * and its Speed earns 3 Stars.
+ */
 export async function clearFirstStage(page: Page) {
-  await typeText(page, FIRST_STAGE_TEXT);
+  await typeText(page, FIRST_STAGE_TEXT[0]);
+  await page.clock.runFor(1000);
+  await typeText(page, FIRST_STAGE_TEXT.slice(1));
   await expect(page.getByText(DEBRIEF_TITLE)).toBeVisible();
 }

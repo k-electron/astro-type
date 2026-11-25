@@ -20,8 +20,9 @@ import {
 } from '../helpers';
 
 // LOCAL ONLY (run by `pnpm verify`, not in CI; docs/agents/testing.md): one full
-// Stage played for real. The Stage is 77 keys on a real clock with a real
-// deck, which took about 50 s on CI's runner. What the Debrief and the screens
+// Stage played for real. The Stage is 77 keys typed into the real page, on a
+// page clock the test moves (see `clearFirstStage`), so the Run's Speed and
+// Stars are the same on every machine. What the Debrief and the screens
 // around it do is checked in the DOM tests (tests/dom/debrief.test.tsx,
 // profile.test.tsx, names.test.tsx) and the rules in the unit tests
 // (stars.test.ts, sector-unlock.test.ts); this plays the first Stage typed
@@ -38,10 +39,20 @@ const NO_BANNER_WINDOW = { width: 1400, height: 900 } as const;
 test('the first Stage played for real from a fresh Save: its Debrief, and the Stars kept after a reload', async ({
   page,
 }) => {
-  // The window the Debrief fits in without its Sector banner (set before the
-  // Stage starts: the confetti step below has one second after it opens).
+  // The window the Debrief fits in without its Sector banner.
   await page.setViewportSize(NO_BANNER_WINDOW);
   const size = `${NO_BANNER_WINDOW.width}x${NO_BANNER_WINDOW.height}`;
+  // The Debrief's confetti falls in a worker when it can, on the real time,
+  // which the page's clock cannot hold. Without `transferControlToOffscreen`
+  // the library draws it on the page, on animation frames, which come only
+  // when the clock moves (the confetti step below).
+  await page.addInitScript(() =>
+    Reflect.deleteProperty(
+      HTMLCanvasElement.prototype,
+      'transferControlToOffscreen',
+    ),
+  );
+  await page.clock.pauseAt(1000);
   await startFirstStage(page);
   await expect(
     page.getByRole('button', { name: '0 ★', exact: true }),
@@ -100,22 +111,22 @@ test('the first Stage played for real from a fresh Save: its Debrief, and the St
 
   await test.step('the confetti of a 3-Star Debrief stops falling when the Debrief closes', async () => {
     // The library draws it on a canvas of its own, fixed over the page, and
-    // takes the canvas away when it is done (a few seconds) or is reset. The
-    // Debrief has just opened with 3 Stars, so it is still falling.
+    // takes the canvas away when it is done (a few seconds of frames) or is
+    // reset. The Debrief opened with 3 Stars, and the clock stands still, so
+    // the confetti cannot finish on its own.
     const confetti = page.locator('body > canvas');
     await expect(confetti, 'confetti is falling over the Debrief').toHaveCount(
       1,
-      { timeout: 1000 },
     );
 
     await result.getByRole('button', { name: REPLAY, exact: true }).click();
     await expect(page.getByText(DEBRIEF_TITLE)).toBeHidden();
 
-    // Well inside the few seconds it would otherwise take to fall.
+    // The clock has not moved, so only the Debrief closing can have done it.
     await expect(
       confetti,
       'no confetti is left once the Debrief is gone',
-    ).toHaveCount(0, { timeout: 500 });
+    ).toHaveCount(0);
   });
 
   await test.step('the Save outlives the page: the Stars are still there after a reload', async () => {
@@ -165,8 +176,12 @@ test('the Debrief that opens a Sector shows its unlock banner and keeps its acti
     clearedStages({ [CURRICULUM_SECTORS[0].stages[1].id]: starsBefore }),
   );
   await page.setViewportSize(DEBRIEF_WINDOWS[0]);
+  await page.clock.pauseAt(1000);
   await startFirstStage(page);
   await clearFirstStage(page);
+  // The Run is over: the clock runs on, for the frames the measurements below
+  // wait for after each resize.
+  await page.clock.resume();
   const result = debrief(page);
   // The banner is the point of this Debrief; without it the sizes below prove less.
   await expect(result.getByText(NEW_SECTOR_UNLOCKED)).toBeVisible();

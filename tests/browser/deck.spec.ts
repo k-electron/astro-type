@@ -18,10 +18,7 @@ import { bottomEdge, launchOnStoppedClock } from './journey-helpers';
 
 /** How far the middle of an element is from the middle of another, sideways. */
 async function sidewaysGap(a: Locator, b: Locator): Promise<number> {
-  const [first, second] = await Promise.all([
-    a.boundingBox({ timeout: 2000 }),
-    b.boundingBox({ timeout: 2000 }),
-  ]);
+  const [first, second] = await Promise.all([a.boundingBox(), b.boundingBox()]);
   if (!first || !second) return Number.POSITIVE_INFINITY;
   return Math.abs(first.x + first.width / 2 - (second.x + second.width / 2));
 }
@@ -72,7 +69,7 @@ async function lowestKeycapBottom(page: Page): Promise<number> {
 
 /** How tall a keycap is drawn, to a tenth of a pixel, or -1 while it isn't. */
 async function keycapHeight(page: Page, character: string): Promise<number> {
-  const box = await keycap(page, character).boundingBox({ timeout: 2000 });
+  const box = await keycap(page, character).boundingBox();
   return box ? Math.round(box.height * 10) / 10 : -1;
 }
 
@@ -91,7 +88,7 @@ async function settledKeycapHeight(
         last = height;
         return reads;
       },
-      { intervals: [100], timeout: 5000 },
+      { intervals: [100] },
     )
     .toBeGreaterThanOrEqual(3);
   return last;

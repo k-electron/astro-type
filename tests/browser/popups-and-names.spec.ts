@@ -25,23 +25,24 @@ import {
 const TEXT = 'abcde fghij klmno pqrst uvwy1 abcde';
 
 test.use({ viewport: { width: 1280, height: 1100 } });
-test.setTimeout(120_000);
 
 /** An Overdrive badge on the HUD: "OVERDRIVE x8". */
 const BADGE = /^overdrive\s*x(\d+)$/i;
 
 /**
- * Gives the deck frames until it names something matching `name` (a popup or a
- * banner is named only while it is drawn, and it is drawn on frames). The deck
- * spells the gap between a label's parts with two spaces: match it with `\s+`.
+ * How long the clock runs after a step's hits: every laser has reached its
+ * Drone (a laser flies for 24 Run clock steps at most), and the popup and the
+ * banner it set off are still on show (a popup is for 40 steps, a banner for
+ * 70). A popup or a banner is named only while it is drawn, on frames.
  */
-async function shownOnDeck(page: Page, name: RegExp) {
-  const shown = labelled(page, name).first();
-  await expect(async () => {
-    await page.clock.runFor(50);
-    await expect(shown).toBeVisible({ timeout: 250 });
-  }).toPass({ timeout: 20_000 });
-}
+const LASERS_LANDED_MS = 500;
+
+/**
+ * Waits until the deck names something matching `name`. The deck spells the
+ * gap between a label's parts with two spaces: match it with `\s+`.
+ */
+const shownOnDeck = (page: Page, name: RegExp) =>
+  expect(labelled(page, name).first()).toBeVisible();
 
 test('hit popups name what a hit scored, a clean word and a milestone are announced, and the deck labels use the glossary names', async ({
   page,
@@ -64,6 +65,7 @@ test('hit popups name what a hit scored, a clean word and a milestone are announ
     for (let key = 0; key < 6; key++) await hitNext();
     await expect.poll(() => hudScore(page)).toBe(6 * 100 + 5 * 50);
 
+    await page.clock.runFor(LASERS_LANDED_MS);
     await shownOnDeck(page, /^CLEAN\s+\+250$/);
     // The first clean words of a Run are announced by a banner with the word.
     await shownOnDeck(page, /CLEAN\s+abcde/);
@@ -77,6 +79,7 @@ test('hit popups name what a hit scored, a clean word and a milestone are announ
     // Six hits and their bonus, then three at x1 and the tenth at x2.
     await expect.poll(() => hudScore(page)).toBe(850 + 3 * 100 + 200);
 
+    await page.clock.runFor(LASERS_LANDED_MS);
     await shownOnDeck(page, /\+200\s*$/);
     await shownOnDeck(page, /x2 MULTIPLIER — STREAK 10/);
   });
@@ -99,6 +102,7 @@ test('hit popups name what a hit scored, a clean word and a milestone are announ
       .poll(() => hudScore(page))
       .toBe(before + 100 * 4 * 2 + 50 * 5 * 4 * 2);
 
+    await page.clock.runFor(LASERS_LANDED_MS);
     await shownOnDeck(page, /^CLEAN\s+\+2000$/);
     await shownOnDeck(page, /x4 MULTIPLIER — STREAK 30/);
   });
@@ -110,6 +114,7 @@ test('hit popups name what a hit scored, a clean word and a milestone are announ
     const gained = (await hudScore(page)) - before;
 
     expect(gained, 'a letter at x4, doubled').toBe(800);
+    await page.clock.runFor(LASERS_LANDED_MS);
     await shownOnDeck(page, /x4\s+\+800\s*$/);
   });
 

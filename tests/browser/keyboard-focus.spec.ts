@@ -239,10 +239,6 @@ test('native keys and focus: Space, Esc, Enter and the window losing focus', asy
   page,
   browser,
 }) => {
-  // The most real-clock keys of any journey, and the header measured in four
-  // profiles (one launch each): a busy machine can double its time. Under
-  // `verify`'s five workers it took 66 s, so 120 s was too thin.
-  test.setTimeout(180_000);
   await test.step('the header fits from 768px up, with no Run, a running Run and a paused Run', async () => {
     await expectHeaderFitsInEveryState(page, 'a new player');
   });
@@ -569,11 +565,9 @@ test('native keys and focus: Space, Esc, Enter and the window losing focus', asy
       page.getByRole('heading', { name: MENU_HEADINGS.Hangar }),
     ).toBeVisible();
     await page.getByRole('button', { name: OPEN_AUDIO_PANEL }).click();
-    // Playwright refuses to click what another element covers, so this click
+    // Playwright waits to click what another element covers, so this click
     // lands only if the panel is on top of the Hangar.
-    await page
-      .getByRole('button', { name: laserSfxLabel(true) })
-      .click({ timeout: 5_000 });
+    await page.getByRole('button', { name: laserSfxLabel(true) }).click();
     await expect(
       page.getByRole('button', { name: laserSfxLabel(false) }),
     ).toBeVisible();

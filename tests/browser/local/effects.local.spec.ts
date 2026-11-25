@@ -1,4 +1,9 @@
-import { type Browser, type Page, test as base } from '@playwright/test';
+import {
+  type Browser,
+  expect,
+  type Page,
+  test as base,
+} from '@playwright/test';
 import {
   FINGER_LANES,
   keyForCharacter,
@@ -9,7 +14,6 @@ import { PAUSE_FLIGHT } from '../../shared/screens';
 import { drone, keycap, pauseMenu, seedSave } from '../helpers';
 import {
   box,
-  expectOnStillClock,
   launchWithLeadDroneSettled,
   resumeButton,
 } from '../journey-helpers';
@@ -210,14 +214,10 @@ test.skip(
 // screen at once, and that the Action Deck is drawn at full size (it scales
 // down when the Flight Deck doesn't fit, which is about 1,144 px tall), so the
 // pixel counts below don't depend on the deck's scale. (The local project sets
-// the same viewport and a timeout of 240 s, since every frame stepped under a
-// stopped clock is drawn.)
+// the same viewport.)
 test.use({ viewport: { width: 1280, height: 1200 } });
 // The tests are independent, so they can run on separate workers.
 test.describe.configure({ mode: 'parallel' });
-// The clock stands still whenever a test waits for the page, so every wait
-// takes as long as a busy machine needs (STILL_CLOCK_WAIT).
-const expect = expectOnStillClock;
 
 /** The Action Deck's canvas: the one place PixiJS draws. */
 async function deckArea(page: Page): Promise<Rect> {
@@ -639,14 +639,12 @@ test('the ship, the guidance beam and the Drone lights are drawn, and the deck k
         mobile: false,
         deviceScaleFactor,
       });
-    // PixiJS draws on animation frames, which only come when the clock moves.
+    // The deck resizes its canvas as the page hears of the change, with no
+    // frame needed, so the clock stays still.
     const backingTracks = (css: number, ratio: number) =>
-      expect(async () => {
-        await page.clock.runFor(50);
-        expect(Math.abs((await backing()) - css * ratio)).toBeLessThanOrEqual(
-          1,
-        );
-      }).toPass({ timeout: 10_000, intervals: [50] });
+      expect
+        .poll(async () => Math.abs((await backing()) - css * ratio))
+        .toBeLessThanOrEqual(1);
 
     try {
       // At 1x the backing size is the CSS size (the override itself is sound).

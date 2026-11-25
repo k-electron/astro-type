@@ -18,7 +18,6 @@ test.skip(
 );
 
 test.use({ viewport: { width: 1280, height: 1100 } });
-test.setTimeout(120_000);
 
 /** Characters that need Shift and are not letters (the US layout, the oracle). */
 const SHIFTED_SYMBOL = /[~!@#$%^&*()_+{}|:"<>?]/;

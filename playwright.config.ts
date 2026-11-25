@@ -39,9 +39,20 @@ const softwareVulkan = [
 
 export default defineConfig({
   testDir: 'tests/browser',
-  // The Action Deck is drawn with WebGL, in software on a machine with no GPU,
-  // and a test that moves a stopped clock draws every frame it steps over.
-  timeout: 60_000,
+  // A test gives the same result on any machine, idle or busy: a busy one only
+  // takes longer. So nothing else waits with a limit of its own: an assertion,
+  // a poll or a `toPass` waits until the page is right (0 is no limit), and
+  // an action already waits until it can act. The test timeout is the one
+  // hang guard, far above any test's time on a busy machine; a test that
+  // reaches it has a page that never got there. (The Action Deck is drawn
+  // with WebGL, in software with no GPU, and a stopped clock's frames are all
+  // drawn when it moves, so a test can take minutes under load.)
+  timeout: 10 * 60_000,
+  expect: { timeout: 0 },
+  // The same number of browsers here and on CI's runner (4 vCPUs, where
+  // Playwright's default of half the cores was 2 already), so a test meets
+  // the same competition for the CPU in both places.
+  workers: 2,
   // The screenshot checks' baselines (tests/browser/screenshots.spec.ts-snapshots)
   // are made in CI's Playwright image and only ever written on purpose, by
   // `pnpm screenshots:update` (see scripts/screenshots.mjs).
@@ -74,7 +85,6 @@ export default defineConfig({
           {
             name: 'local',
             testMatch: /\.local\.spec\.ts$/,
-            timeout: 240_000,
             use: {
               ...devices['Desktop Chrome'],
               viewport: { width: 1280, height: 1200 },

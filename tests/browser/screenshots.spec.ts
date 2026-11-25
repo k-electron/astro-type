@@ -12,6 +12,7 @@ import {
   PAUSE_FLIGHT,
   START_FREE_FLIGHT,
 } from '../shared/screens';
+import { blockWebFonts } from './journey-helpers';
 
 // Three screenshot checks on the PixiJS Action Deck: the Flight Deck at Run
 // start, the deck frozen mid-explosion, and the Debrief. A screenshot is the
@@ -65,14 +66,7 @@ test.use({
   locale: 'en-US',
   timezoneId: 'UTC',
 });
-// Every frame of a stopped clock is drawn for real, in software on CI.
-test.setTimeout(180_000);
-
 const COMPARE = {
-  // Capturing a frame of the software-drawn deck can take over the default 5 s
-  // on a busy CI runner (#137's push failed twice on it with no picture
-  // difference), so a capture gets longer before it counts as a failure.
-  timeout: 30_000,
   animations: 'disabled',
   caret: 'hide',
   scale: 'css',
@@ -119,9 +113,7 @@ function useSeededRandom(seed: number) {
  * only then lets the first frame come. That frame draws the deck.
  */
 async function launchOnFixedClock(page: Page, text: string) {
-  await page.route(/fonts\.(googleapis|gstatic)\.com/, (route) =>
-    route.abort(),
-  );
+  await blockWebFonts(page);
   await page.addInitScript(useSeededRandom, 0x5eed);
   await page.addInitScript(() => {
     Object.assign(window, {
