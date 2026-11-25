@@ -16,6 +16,12 @@
 //
 // Under `CI` the local suite doesn't exist (playwright.config.ts), so CI's run
 // is a strict subset of a local verify.
+//
+// When every file the push would change is Markdown, only step 2 runs, and
+// verify says so. The changed files are the commits on HEAD that origin/main
+// doesn't have (after a `git fetch origin`), staged and unstaged changes, and
+// untracked files that aren't ignored. Under `CI`, when nothing has changed,
+// or when git can't tell (the fetch fails), every step runs.
 
 import { spawnSync } from 'node:child_process';
 import { dirname, resolve } from 'node:path';
@@ -43,6 +49,45 @@ const run = (label, command, args) => {
   console.log(`verify: ${label} passed in ${seconds}s`);
 };
 
+const check = () =>
+  run('check (typecheck, Biome, unit and DOM tests)', 'pnpm', ['check']);
+
+/**
+ * Every file this push would change, or null when git can't tell. Deletions
+ * and both sides of a rename count, so a code file renamed to `.md` is code.
+ */
+const changedFiles = () => {
+  const git = (...args) => {
+    const result = spawnSync('git', args, {
+      cwd: root,
+      encoding: 'utf8',
+      env: { ...process.env, GIT_TERMINAL_PROMPT: '0' },
+    });
+    return result.status === 0 ? result.stdout : null;
+  };
+  if (git('fetch', '--quiet', 'origin') === null) {
+    console.log('verify: `git fetch origin` failed, so every step runs');
+    return null;
+  }
+  const base = git('merge-base', 'HEAD', 'origin/main')?.trim();
+  if (!base) return null;
+  // From the merge-base to the working tree: the commits, staged and unstaged.
+  const tracked = git('diff', '--name-only', '--no-renames', '-z', base);
+  const untracked = git('ls-files', '--others', '--exclude-standard', '-z');
+  if (tracked === null || untracked === null) return null;
+  return `${tracked}${untracked}`.split('\0').filter(Boolean);
+};
+
+const changed = process.env.CI ? null : changedFiles();
+if (changed?.length && changed.every((file) => file.endsWith('.md'))) {
+  console.log(
+    '\nverify: only Markdown changed since origin/main, so only check runs',
+  );
+  check();
+  console.log('\nverify: all green (check only: only Markdown changed)');
+  process.exit(0);
+}
+
 if (withScreenshots) {
   // Fails early, with the screenshots script's own message, when Docker isn't
   // running or the baselines don't match the installed Playwright.
@@ -59,7 +104,7 @@ if (withScreenshots) {
   }
 }
 
-run('check (typecheck, Biome, unit and DOM tests)', 'pnpm', ['check']);
+check();
 run(
   'build and browser tests (CI journeys, and the local-only suite off CI)',
   'pnpm',
