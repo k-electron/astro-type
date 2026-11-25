@@ -540,17 +540,10 @@ test('the paused deck is frozen mid-explosion, and the explosion carries on from
   await page.getByRole('button', { name: PAUSE_FLIGHT, exact: true }).click();
   await expect(pauseMenu(page)).toBeVisible();
 
-  // The Pause Menu fades in on the real clock. Once it has settled, the
-  // explosion's lane behind it is what is being compared.
-  let frozen = await look(page, deck, pixels);
-  for (let tries = 0; tries < 20; tries++) {
-    const again = await look(page, deck, pixels);
-    if ((await pixels.changed(frozen, again, lane)) === 0) {
-      frozen = again;
-      break;
-    }
-    frozen = again;
-  }
+  // The Pause Menu appears at once (it has no fade), and the deck draws
+  // nothing until the clock moves: the explosion's lane behind the menu is
+  // what is compared.
+  const frozen = await look(page, deck, pixels);
 
   // Minutes of frames go by behind the Pause Menu: nothing has moved.
   await page.clock.runFor(1000);

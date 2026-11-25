@@ -126,8 +126,21 @@ export async function deckUp(page: Page) {
  * page loads. Nothing moves until a journey runs the clock: the Drones stay
  * where the Run seeded them, far above the Strike Line (a hit scores the same
  * wherever its Drone is, so that changes nothing a journey reads).
+ *
+ * Web fonts are blocked: the Action Deck waits for its fonts before it starts,
+ * with a fallback on the page's clock that never fires while the clock stands
+ * still, so a journey that waits for the deck (`deckUp`, `waitForDeck`) would
+ * otherwise wait on the font server. The deck sizes what it draws from its
+ * layout, not its text, so no check of the deck depends on the font. A journey
+ * that measures the page's text, and never waits for the deck, passes
+ * `{ webFonts: true }` to keep the fonts a player sees.
  */
-export async function launchOnStoppedClock(page: Page, text: string) {
+export async function launchOnStoppedClock(
+  page: Page,
+  text: string,
+  { webFonts = false }: { webFonts?: boolean } = {},
+) {
+  if (!webFonts) await blockWebFonts(page);
   // `pauseAt` alone installs the clock already stopped. An `install` first
   // would let the clock run, in real time, until `pauseAt`: a few
   // milliseconds, more on a busy machine, that the page would start with.
@@ -149,9 +162,7 @@ export async function box(element: Locator): Promise<Rect> {
 
 /**
  * Blocks web fonts, so the page draws its text in the browser's own fonts.
- * Call it before the page loads. The Action Deck waits for its fonts before it
- * starts, with a fallback on the page's clock, so on a stopped clock a slow
- * font server would hold the deck back however long a journey waited.
+ * Call it before the page loads.
  */
 export async function blockWebFonts(page: Page): Promise<void> {
   await page.route(/fonts\.(googleapis|gstatic)\.com/, (route) =>
@@ -166,10 +177,10 @@ export async function blockWebFonts(page: Page): Promise<void> {
  * on a still clock, so each Run reaches the same moment however busy the
  * machine is. (A retry that moved the clock would leave a busy Run later than
  * a quiet one, and the two would draw different pictures.) Web fonts are
- * blocked, so nothing the deck waits for runs on the stopped clock.
+ * blocked (`launchOnStoppedClock`), so nothing the deck waits for runs on the
+ * stopped clock.
  */
 export async function launchWithLeadDroneSettled(page: Page, text: string) {
-  await blockWebFonts(page);
   await launchOnStoppedClock(page, text);
   await deckUp(page);
   await expect(drone(page, text[1])).toBeVisible();

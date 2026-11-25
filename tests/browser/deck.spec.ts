@@ -12,7 +12,7 @@ import {
   textPrompt,
   typeText,
 } from './helpers';
-import { KEY_H } from '../../src/deck/layout';
+import { KEY_H, MIN_STAGE_HEIGHT, STAGE_HEIGHT } from '../../src/deck/layout';
 import { DEBRIEF_TITLE } from '../shared/screens';
 import { bottomEdge, launchOnStoppedClock } from './journey-helpers';
 
@@ -30,6 +30,14 @@ async function sidewaysGap(a: Locator, b: Locator): Promise<number> {
  * smaller does.
  */
 const KEYCAP_HEIGHT = KEY_H;
+
+/**
+ * A keycap's height (CSS px, to a tenth) at the deck's smallest size, which a
+ * window too short for the deck shows: the deck's own space drawn on its
+ * shortest stage (`deckScale` in src/deck/layout.ts).
+ */
+const SMALLEST_KEYCAP_HEIGHT =
+  Math.round(((KEY_H * MIN_STAGE_HEIGHT) / STAGE_HEIGHT) * 10) / 10;
 
 /** Tall enough for the whole Flight Deck with the deck at full size (about 1,144). */
 const TALL_WINDOW = { width: 1440, height: 1200 };
@@ -71,27 +79,6 @@ async function lowestKeycapBottom(page: Page): Promise<number> {
 async function keycapHeight(page: Page, character: string): Promise<number> {
   const box = await keycap(page, character).boundingBox();
   return box ? Math.round(box.height * 10) / 10 : -1;
-}
-
-/** A keycap's height once the deck has stopped redrawing: the same three reads in a row. */
-async function settledKeycapHeight(
-  page: Page,
-  character: string,
-): Promise<number> {
-  let last = Number.NaN;
-  let reads = 0;
-  await expect.soft
-    .poll(
-      async () => {
-        const height = await keycapHeight(page, character);
-        reads = height === last ? reads + 1 : 1;
-        last = height;
-        return reads;
-      },
-      { intervals: [100] },
-    )
-    .toBeGreaterThanOrEqual(3);
-  return last;
 }
 
 /** How far the page is taller than the window (0 or less: it doesn't scroll). */
@@ -237,42 +224,34 @@ test('the Action Deck draws, moves and answers keys and clicks', async ({
   });
 
   // The window sizes below are set mid-Run: the deck redraws on a resize, so
-  // each step waits for the redraw to land before it reads anything. They run
-  // short, then tall, then 1440x900, then 1280x800, so each step starts from a
-  // deck that a stale read could only make fail, never pass (a stale deck is
-  // too small for tall, and too big for 1440x900 and for 1280x800).
+  // each step waits for the redraw to land before it reads anything. Each
+  // starts from a deck of another size, so a stale read can only fail, never
+  // pass: each short window from a full-size deck, the tall window from the
+  // smallest deck, and 1440x900 and 1280x800 from bigger decks than they fit.
   await test.step('on a window too short for the deck, the page scrolls as before and the deck stops shrinking', async () => {
-    const heights: number[] = [];
     for (const shortWindow of SHORT_WINDOWS) {
       const size = `${shortWindow.width}x${shortWindow.height}`;
+      // Both short windows draw the smallest deck, so the one before this
+      // would read the same: go through a full-size deck first.
+      await page.setViewportSize(TALL_WINDOW);
+      await expect
+        .poll(async () => Math.round(await keycapHeight(page, MEASURED_KEY)), {
+          message: `the deck is back at full size before ${size}`,
+        })
+        .toBe(KEYCAP_HEIGHT);
+
       await page.setViewportSize(shortWindow);
       await expect.soft
         .poll(() => pageOverflow(page), {
           message: `${size}: the page scrolls`,
         })
         .toBeGreaterThan(0);
-      // The redraw has landed once the keycap is smaller than on a tall window;
-      // without this a deck that never redraws would read the same at both sizes.
       await expect.soft
-        .poll(
-          async () => {
-            const height = await keycapHeight(page, MEASURED_KEY);
-            // -1 is "no keycap drawn", which is not a smaller deck.
-            return height > 0 && height < KEYCAP_HEIGHT;
-          },
-          {
-            message: `${size}: the deck is drawn, and smaller than on a tall window`,
-          },
-        )
-        .toBe(true);
-      heights.push(await settledKeycapHeight(page, MEASURED_KEY));
+        .poll(() => keycapHeight(page, MEASURED_KEY), {
+          message: `${size}: the deck is drawn at its smallest, a keycap ${SMALLEST_KEYCAP_HEIGHT} px tall`,
+        })
+        .toBe(SMALLEST_KEYCAP_HEIGHT);
     }
-    expect
-      .soft(
-        heights[1],
-        `a shorter window (${SHORT_WINDOWS[1].height} px) draws the keycap no smaller than ${SHORT_WINDOWS[0].height} px does`,
-      )
-      .toBe(heights[0]);
   });
 
   await test.step('on a tall window the deck is drawn at full size: a keycap is as tall as it always was', async () => {
@@ -355,8 +334,12 @@ test('the text prompt keeps the current character in view through a long text at
   page,
 }) => {
   await page.setViewportSize(SMALL_LAPTOP_WINDOW);
-  // The clock is stopped: no Drone moves, and the keys cost no drawing.
-  await launchOnStoppedClock(page, LONG_TEXT);
+  // The clock is stopped: no Drone moves, and the keys cost no drawing. This
+  // journey measures the prompt's text as a player sees it, so it keeps the
+  // web fonts and waits for them (the one stopped-clock journey that needs the
+  // font server); it never waits for the deck, whose start they would hold.
+  await launchOnStoppedClock(page, LONG_TEXT, { webFonts: true });
+  await page.evaluate(() => document.fonts.ready);
   const size = `${SMALL_LAPTOP_WINDOW.width}x${SMALL_LAPTOP_WINDOW.height}`;
 
   await test.step('the current character starts in view, and the page does not scroll', async () => {
