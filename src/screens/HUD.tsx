@@ -63,7 +63,7 @@ export const HUD: React.FC = () => {
       {/* Left: Score & Multiplier */}
       <div className="flex items-center gap-3 sm:gap-5 shrink-0">
         <div>
-          <span className="block text-[9px] uppercase font-mono tracking-wider text-slate-500 leading-none mb-0.5">
+          <span className="block type-label text-slate-500 leading-none mb-0.5">
             Score
           </span>
           <span className="text-lg sm:text-xl font-bold font-mono tabular-nums text-white leading-none">
@@ -89,7 +89,7 @@ export const HUD: React.FC = () => {
 
           {/* Overdrive Energy Meter */}
           <div className="hidden sm:flex flex-col gap-0.5">
-            <span className="text-[8px] uppercase font-mono text-slate-500 leading-none">
+            <span className="type-label tracking-normal text-slate-500 leading-none">
               Overdrive Meter
             </span>
             <div className="w-16 sm:w-20 h-1.5 rounded bg-slate-800 overflow-hidden border border-slate-700/60">
@@ -109,19 +109,19 @@ export const HUD: React.FC = () => {
       {/* Center: Live Typing Metrics (WPM & Accuracy) */}
       <div className="flex items-center gap-3 sm:gap-6 shrink-0">
         <div className="text-center min-w-[56px]">
-          <span className="block text-[9px] uppercase font-mono tracking-wider text-slate-500 leading-none mb-0.5">
+          <span className="block type-label text-slate-500 leading-none mb-0.5">
             Speed
           </span>
           <div className="flex items-baseline justify-center gap-0.5">
             <span className="text-lg sm:text-xl font-bold font-mono tabular-nums text-cyan-300 leading-none">
               {wpm === null ? NO_SPEED : roundDown(wpm)}
             </span>
-            <span className="text-[10px] font-mono text-slate-500">WPM</span>
+            <span className="type-caption font-mono text-slate-500">WPM</span>
           </div>
         </div>
 
         <div className="text-center min-w-[60px]">
-          <span className="block text-[9px] uppercase font-mono tracking-wider text-slate-500 leading-none mb-0.5">
+          <span className="block type-label text-slate-500 leading-none mb-0.5">
             Accuracy
           </span>
           <span
@@ -138,7 +138,7 @@ export const HUD: React.FC = () => {
         </div>
 
         <div className="text-center min-w-[52px]">
-          <span className="block text-[9px] uppercase font-mono tracking-wider text-slate-500 leading-none mb-0.5">
+          <span className="block type-label text-slate-500 leading-none mb-0.5">
             Streak
           </span>
           <div className="flex items-center justify-center gap-1 text-slate-200">
@@ -153,7 +153,7 @@ export const HUD: React.FC = () => {
 
         {/* Rhythm Gauge */}
         <div className="hidden md:flex flex-col items-center min-w-[68px]">
-          <span className="block text-[9px] uppercase font-mono tracking-wider text-slate-500 leading-none mb-0.5">
+          <span className="block type-label text-slate-500 leading-none mb-0.5">
             Rhythm
           </span>
           <div className="flex items-center gap-1.5 mt-0.5">
