@@ -19,8 +19,15 @@ concurrency:
 jobs:
   checks:
     runs-on: ubuntu-latest
-    # A hang fails the run in minutes instead of blocking main for hours.
-    timeout-minutes: 20
+    # A hang fails the run instead of blocking main for hours, but only once
+    # every test has reported and the report is uploaded. Worst case, every CI
+    # journey hangs to its 4-minute test timeout (playwright.config.ts): 7
+    # tests on 2 workers is at most 4 in a row on one, 16 min (17 measured
+    # with every journey hanging). Before them: setup, under 1 min (allow 3),
+    # `pnpm check`, under 1.5 min (allow 3), and the build, which Playwright's
+    # webServer gives 3 min. After them: the report's upload (allow 2).
+    # 3 + 3 + 3 + 17 + 2 = 28, under 30.
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -57,7 +64,12 @@ jobs:
   # alongside the checks above instead of after them.
   screenshots:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # Worst case, all 3 pictures hang to their 4-minute test timeout, one after
+    # another on one worker: 12 min. Before them: setup, under 1 min (allow 2),
+    # the image, Node and `pnpm install` in it, under 1 min (allow 5), and the
+    # build (webServer: 3 min). After them: the upload (allow 2).
+    # 2 + 5 + 3 + 12 + 2 = 24, under 30.
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -81,7 +93,9 @@ jobs:
     needs: [checks, screenshots]
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # Setup and the Playwright install, under 1 min (allow 5), the deploy
+    # (allow 3) and the smoke step's 12: 20, under 25.
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -114,7 +128,10 @@ jobs:
           test -n "$url" && test "$url" != "null"
           echo "url=$url" >> "$GITHUB_OUTPUT"
       - name: Smoke check the live URL
-        timeout-minutes: 10
+        # smoke.mjs waits under 5 min for the live site, then the @smoke test
+        # has its 4-minute test timeout, and Playwright takes a few seconds to
+        # start: 5 + 4 + 1 = 10, under 12.
+        timeout-minutes: 12
         env:
           URL: ${{ steps.deploy.outputs.url }}
         run: pnpm smoke "$URL"

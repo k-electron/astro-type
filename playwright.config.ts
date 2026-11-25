@@ -40,14 +40,14 @@ const softwareVulkan = [
 export default defineConfig({
   testDir: 'tests/browser',
   // A test gives the same result on any machine, idle or busy: a busy one only
-  // takes longer. So nothing else waits with a limit of its own: an assertion,
-  // a poll or a `toPass` waits until the page is right (0 is no limit), and
-  // an action already waits until it can act. The test timeout is the one
-  // hang guard, far above any test's time on a busy machine; a test that
-  // reaches it has a page that never got there. (The Action Deck is drawn
-  // with WebGL, in software with no GPU, and a stopped clock's frames are all
-  // drawn when it moves, so a test can take minutes under load.)
-  timeout: 10 * 60_000,
+  // takes longer. So nothing waits with a limit of its own: an assertion, a
+  // poll or a `toPass` waits until the page is right (0 is no limit), and an
+  // action already waits until it can act. Each project's test timeout is the
+  // one hang guard, the same here and on CI, and far above any of its tests'
+  // time on a busy machine: a test that reaches it has a page that never got
+  // there. (The Action Deck is drawn with WebGL, in software with no GPU, and
+  // a stopped clock's frames are all drawn when it moves.) CI's job limits in
+  // .github/workflows/ci.yml are sized from these timeouts.
   expect: { timeout: 0 },
   // The same number of browsers here and on CI's runner (4 vCPUs, where
   // Playwright's default of half the cores was 2 already), so a test meets
@@ -69,6 +69,9 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
+      // The CI journeys and the screenshots: at most 1.3 min under heavy load
+      // here, under a minute on CI's runner.
+      timeout: 4 * 60_000,
       // The local-only suite (tests/browser/local) has a project of its own.
       testIgnore: /\.local\.spec\.ts$/,
       use: {
@@ -84,6 +87,8 @@ export default defineConfig({
       : [
           {
             name: 'local',
+            // Up to 4 min under heavy load here.
+            timeout: 10 * 60_000,
             testMatch: /\.local\.spec\.ts$/,
             use: {
               ...devices['Desktop Chrome'],

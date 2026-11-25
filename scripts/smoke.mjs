@@ -9,6 +9,9 @@ if (!base) {
 }
 
 // A Worker's first workers.dev hostname can take a minute or two to resolve.
+// Each fetch has a 15 s hang guard. At most 12 attempts, 10 s apart:
+// 12 x 15 s + 11 x 10 s, under 5 minutes, which the deploy job's smoke step
+// allows for before the @smoke test's own timeout (.github/workflows/ci.yml).
 const attempts = 12;
 const delayMs = 10000;
 
