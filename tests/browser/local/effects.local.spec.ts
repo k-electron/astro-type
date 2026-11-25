@@ -1,10 +1,4 @@
-import {
-  type Browser,
-  expect,
-  type Locator,
-  type Page,
-  test as base,
-} from '@playwright/test';
+import { type Browser, type Page, test as base } from '@playwright/test';
 import {
   FINGER_LANES,
   keyForCharacter,
@@ -14,9 +8,10 @@ import { trailEquipped } from '../../shared/saves';
 import { PAUSE_FLIGHT } from '../../shared/screens';
 import { drone, keycap, pauseMenu, seedSave } from '../helpers';
 import {
+  box,
+  expectOnStillClock,
   launchWithLeadDroneSettled,
   resumeButton,
-  STILL_CLOCK_WAIT,
 } from '../journey-helpers';
 
 // LOCAL ONLY (run by `pnpm verify`, not in CI; docs/agents/testing.md): hundreds of drawn
@@ -220,12 +215,9 @@ test.skip(
 test.use({ viewport: { width: 1280, height: 1200 } });
 // The tests are independent, so they can run on separate workers.
 test.describe.configure({ mode: 'parallel' });
-
-async function box(element: Locator): Promise<Rect> {
-  const b = await element.boundingBox({ timeout: STILL_CLOCK_WAIT });
-  if (!b) throw new Error('Nothing is drawn there');
-  return b;
-}
+// The clock stands still whenever a test waits for the page, so every wait
+// takes as long as a busy machine needs (STILL_CLOCK_WAIT).
+const expect = expectOnStillClock;
 
 /** The Action Deck's canvas: the one place PixiJS draws. */
 async function deckArea(page: Page): Promise<Rect> {

@@ -1,11 +1,13 @@
-import { expect, test } from '@playwright/test';
+import { test } from '@playwright/test';
 import { drone, hud, pauseMenu } from './helpers';
 import {
   bottomEdge,
+  expectOnStillClock,
   hudSpeed,
   launchOnStoppedClock,
   pauseButton,
   resumeButton,
+  STILL_CLOCK_WAIT,
   typeKeys,
 } from './journey-helpers';
 
@@ -22,6 +24,10 @@ import {
 test.use({ viewport: { width: 1280, height: 1100 } });
 // Every frame stepped over is drawn for real, in software GL on a CI runner.
 test.setTimeout(120_000);
+// The clock stands still whenever this journey waits for the page, so a wait
+// changes nothing on screen, and a busy machine can take many seconds to draw
+// the frames a `runFor` stepped over: every wait takes STILL_CLOCK_WAIT (#163).
+const expect = expectOnStillClock;
 
 test('the paused deck is frozen: Drones and the Speed stand still, and carry on after Resume', async ({
   page,
@@ -40,19 +46,19 @@ test('the paused deck is frozen: Drones and the Speed stand still, and carry on 
     // Four hits with no time passing, then a second of Run Time: the HUD
     // refreshes its Speed on a tick, and four characters typed in that time
     // are a Speed.
-    await typeKeys(page, 'abcd');
+    await typeKeys(page, 'abcd', STILL_CLOCK_WAIT);
     await page.clock.runFor(1000);
 
     await expect.poll(() => hudSpeed(page)).toBeGreaterThan(0);
   });
 
-  const settled = await bottomEdge(drone(page, 'f'));
+  const settled = await bottomEdge(drone(page, 'f'), STILL_CLOCK_WAIT);
   let midFall = settled;
   await test.step('typing the lead sends the Drone behind it down: two frames in, it is on its way', async () => {
     await page.keyboard.press('e');
     await page.clock.runFor(32);
 
-    midFall = await bottomEdge(drone(page, 'f'));
+    midFall = await bottomEdge(drone(page, 'f'), STILL_CLOCK_WAIT);
     expect.soft(midFall).toBeGreaterThan(settled);
   });
 
@@ -68,7 +74,9 @@ test('the paused deck is frozen: Drones and the Speed stand still, and carry on 
     await page.clock.fastForward(5 * 60_000);
     await page.clock.runFor(500);
 
-    expect.soft(await bottomEdge(drone(page, 'f'))).toBe(midFall);
+    expect
+      .soft(await bottomEdge(drone(page, 'f'), STILL_CLOCK_WAIT))
+      .toBe(midFall);
     expect.soft(await hudSpeed(page)).toBe(speedAtPause);
   });
 
@@ -77,7 +85,9 @@ test('the paused deck is frozen: Drones and the Speed stand still, and carry on 
     await expect(pauseMenu(page)).toBeHidden();
     await page.clock.runFor(300);
 
-    expect.soft(await bottomEdge(drone(page, 'f'))).toBeGreaterThan(midFall);
+    expect
+      .soft(await bottomEdge(drone(page, 'f'), STILL_CLOCK_WAIT))
+      .toBeGreaterThan(midFall);
     await expect.soft(hud(page)).toContainText(/Streak\s*5(?!\d)/i);
   });
 });

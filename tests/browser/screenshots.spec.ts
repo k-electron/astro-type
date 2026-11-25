@@ -129,6 +129,7 @@ async function launchOnFixedClock(page: Page, text: string) {
       webkitAudioContext: undefined,
     });
   });
+  // `install` before `pauseAt` on purpose: a different clock start could move the baselines.
   await page.clock.install({ time: 0 });
   await page.clock.pauseAt(1000);
   await page.goto('/');

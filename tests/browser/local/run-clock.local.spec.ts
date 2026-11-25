@@ -1,12 +1,14 @@
-import { expect, type Page, test } from '@playwright/test';
+import { type Page, test } from '@playwright/test';
 import { debrief, drone, pauseMenu, promptProgress } from '../helpers';
 import { DEBRIEF_TITLE } from '../../shared/screens';
 import {
   bottomEdge,
+  expectOnStillClock,
   hudSpeed,
   launchOnStoppedClock,
   pauseButton,
   resumeButton,
+  STILL_CLOCK_WAIT,
   waitForDeck,
 } from '../journey-helpers';
 
@@ -34,6 +36,10 @@ test.skip(
 );
 // The tests are independent, so they can run on separate workers.
 test.describe.configure({ mode: 'parallel' });
+// The clock stands still whenever a test waits for the page, so a wait
+// changes nothing on screen, and a busy machine can take many seconds to draw
+// the frames a `runFor` stepped over: every wait takes STILL_CLOCK_WAIT (#164).
+const expect = expectOnStillClock;
 
 const MINUTE = 60_000;
 
@@ -108,7 +114,7 @@ test('catch-up after a long stall is capped: the Drones do not jump across the d
     // the lead Drone is drawn where the Run seeded it.
     await waitForDeck(page, 'a');
     const lead = drone(page, 'a');
-    const start = await bottomEdge(lead);
+    const start = await bottomEdge(lead, STILL_CLOCK_WAIT);
 
     // One frame of flight, so the Run is under way. The page then stalls for
     // five minutes in one go (a frozen tab, a laptop asleep). A Drone that fell
@@ -118,10 +124,10 @@ test('catch-up after a long stall is capped: the Drones do not jump across the d
     await page.clock.runFor(20);
     await page.clock.fastForward(5 * MINUTE);
     await page.clock.runFor(17);
-    const afterStall = await bottomEdge(lead);
+    const afterStall = await bottomEdge(lead, STILL_CLOCK_WAIT);
 
     await page.clock.runFor(1000);
-    const waiting = await bottomEdge(lead);
+    const waiting = await bottomEdge(lead, STILL_CLOCK_WAIT);
 
     expect(afterStall, 'it has come down from where it began').toBeGreaterThan(
       start,

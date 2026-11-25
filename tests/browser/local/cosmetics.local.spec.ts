@@ -1,7 +1,6 @@
 import {
   type Browser,
   expect,
-  type Locator,
   type Page,
   test as base,
 } from '@playwright/test';
@@ -18,10 +17,7 @@ import {
   seedSave,
   textPrompt,
 } from '../helpers';
-import {
-  launchWithLeadDroneSettled,
-  STILL_CLOCK_WAIT,
-} from '../journey-helpers';
+import { box, launchWithLeadDroneSettled } from '../journey-helpers';
 import {
   hueOfHex,
   openPixels,
@@ -55,12 +51,6 @@ function fingerColour(character: string): string {
 }
 const LEAD_FINGER = fingerColour(LEAD);
 const OTHER_FINGER = fingerColour('j');
-
-async function box(element: Locator): Promise<Rect> {
-  const b = await element.boundingBox({ timeout: STILL_CLOCK_WAIT });
-  if (!b) throw new Error('Nothing is drawn there');
-  return b;
-}
 
 type Geometry = {
   lead: Rect;
@@ -105,9 +95,6 @@ async function inRun<T>(
         webkitAudioContext: undefined,
       });
     });
-    await page.route(/fonts\.(googleapis|gstatic)\.com/, (route) =>
-      route.abort(),
-    );
     if (save) await seedSave(page, save);
     await launchWithLeadDroneSettled(page, TEXT);
     return await journey({ page, geometry: await geometryOf(page) });

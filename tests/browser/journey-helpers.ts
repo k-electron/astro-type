@@ -37,10 +37,17 @@ export async function inFreshContext(
   }
 }
 
-/** The bottom edge of an element on the page, or -1 while it isn't drawn. */
-export async function bottomEdge(element: Locator): Promise<number> {
-  const box = await element.boundingBox({ timeout: 2000 });
-  return box ? box.y + box.height : -1;
+/**
+ * The bottom edge of an element on the page, or -1 while it isn't drawn,
+ * waiting up to `timeout` ms for it to be there (on a stopped clock, pass
+ * `STILL_CLOCK_WAIT`).
+ */
+export async function bottomEdge(
+  element: Locator,
+  timeout = 2000,
+): Promise<number> {
+  const drawn = await element.boundingBox({ timeout });
+  return drawn ? drawn.y + drawn.height : -1;
 }
 
 /** The Score the HUD shows right now. */
@@ -62,21 +69,27 @@ export async function hudSpeed(page: Page): Promise<number | null> {
 
 /**
  * Types keys one at a time and waits for the HUD to show the Streak each one
- * makes. The text has to be right all the way: it counts on every key being a
- * hit, starting from a Streak of 0.
+ * makes, up to `timeout` ms a key (Playwright's default when left out). The
+ * text has to be right all the way: it counts on every key being a hit,
+ * starting from a Streak of 0.
  */
-export async function typeKeys(page: Page, keys: string): Promise<void> {
+export async function typeKeys(
+  page: Page,
+  keys: string,
+  timeout?: number,
+): Promise<void> {
   let streak = 0;
   for (const key of keys) {
     await page.keyboard.press(key === ' ' ? 'Space' : key);
     streak += 1;
-    await expectStreak(page, streak);
+    await expectStreak(page, streak, timeout);
   }
 }
 
-export const expectStreak = (page: Page, streak: number) =>
+export const expectStreak = (page: Page, streak: number, timeout?: number) =>
   expect(hud(page)).toContainText(
     new RegExp(`Streak\\s*${streak}(?!\\d)`, 'i'),
+    { timeout },
   );
 
 export const pauseButton = (page: Page): Locator =>
@@ -125,11 +138,46 @@ export async function launchOnStoppedClock(page: Page, text: string) {
 /**
  * How long a journey on a stopped clock waits for the page. The clock stands
  * still meanwhile, so a long wait changes nothing on screen; it only lets a
- * busy machine catch up: headless Chromium draws WebGL in software, so on a
- * loaded machine the page can take tens of seconds to draw the frames one
- * `runFor` stepped over. Half the local suite's test timeout.
+ * busy machine catch up: headless Chromium draws WebGL in software, so a
+ * loaded machine can take many seconds to get through the frames one `runFor`
+ * stepped over (measured: up to 12.5 s for the first wait after a
+ * `runFor(1000)`, with 3 workers and 6 busy processes on 10 cores). A wait
+ * that runs this out has a page that has hung.
  */
 export const STILL_CLOCK_WAIT = 120_000;
+
+/**
+ * `expect` for a journey whose page clock stands still whenever it waits:
+ * every auto-waiting assertion and poll waits up to `STILL_CLOCK_WAIT`.
+ */
+export const expectOnStillClock = expect.configure({
+  timeout: STILL_CLOCK_WAIT,
+});
+
+type Rect = { x: number; y: number; width: number; height: number };
+
+/**
+ * Where an element is drawn on the page, for a journey on a stopped clock: it
+ * waits up to `STILL_CLOCK_WAIT` for it to be there, and throws when it is
+ * there but not drawn.
+ */
+export async function box(element: Locator): Promise<Rect> {
+  const drawn = await element.boundingBox({ timeout: STILL_CLOCK_WAIT });
+  if (!drawn) throw new Error('Nothing is drawn there');
+  return drawn;
+}
+
+/**
+ * Blocks web fonts, so the page draws its text in the browser's own fonts.
+ * Call it before the page loads. The Action Deck waits for its fonts before it
+ * starts, with a fallback on the page's clock, so on a stopped clock a slow
+ * font server would hold the deck back however long a journey waited.
+ */
+export async function blockWebFonts(page: Page): Promise<void> {
+  await page.route(/fonts\.(googleapis|gstatic)\.com/, (route) =>
+    route.abort(),
+  );
+}
 
 /**
  * Free Flight on a stopped clock, with the Action Deck up and the lead Drone
@@ -137,28 +185,25 @@ export const STILL_CLOCK_WAIT = 120_000;
  * Runs. The clock moves only by fixed amounts, and every wait is for the page
  * on a still clock, so each Run reaches the same moment however busy the
  * machine is. (A retry that moved the clock would leave a busy Run later than
- * a quiet one, and the two would draw different pictures.)
+ * a quiet one, and the two would draw different pictures.) Web fonts are
+ * blocked, so nothing the deck waits for runs on the stopped clock.
  */
 export async function launchWithLeadDroneSettled(page: Page, text: string) {
+  await blockWebFonts(page);
   await launchOnStoppedClock(page, text);
   // The deck starts in the background. Waiting for its accessibility layer
   // with the clock still has it draw its first frame at the same moment of
   // every Run.
-  await expect(page.locator('[data-deck-a11y]')).toBeAttached({
-    timeout: STILL_CLOCK_WAIT,
-  });
+  await expectOnStillClock(page.locator('[data-deck-a11y]')).toBeAttached();
   // PixiJS draws on animation frames, which only come when the clock moves.
   await page.clock.runFor(50);
-  await expect(drone(page, text[1])).toBeVisible({
-    timeout: STILL_CLOCK_WAIT,
-  });
+  await expectOnStillClock(drone(page, text[1])).toBeVisible();
   // Settle the lead Drone at the Strike Line (it needs about half a second of
   // frames), then see that it has stopped.
   const lead = drone(page, text[0]);
   const bottom = async () => {
-    const box = await lead.boundingBox({ timeout: STILL_CLOCK_WAIT });
-    if (!box) throw new Error('The lead Drone is not drawn');
-    return box.y + box.height;
+    const drawn = await box(lead);
+    return drawn.y + drawn.height;
   };
   await page.clock.runFor(700);
   const settled = await bottom();
