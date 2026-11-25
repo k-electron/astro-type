@@ -92,7 +92,7 @@ export const HeaderNav: React.FC<{ ref?: React.Ref<HTMLElement> }> = ({
           type="button"
           onClick={onGoHome}
           title="Return to Academy Home"
-          className="text-lg sm:text-xl font-bold font-display tracking-tight text-white hover:text-cyan-400 transition-colors whitespace-nowrap cursor-pointer flex items-center gap-2 group"
+          className="text-lg sm:text-xl font-bold font-display text-white hover:text-cyan-400 transition-colors whitespace-nowrap cursor-pointer flex items-center gap-2 group"
         >
           <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 shadow-[0_0_8px_#38bdf8] group-hover:scale-110 transition-transform" />
           <span>AstroType</span>

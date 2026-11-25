@@ -336,8 +336,8 @@ test('the text prompt keeps the current character in view through a long text at
   await page.setViewportSize(SMALL_LAPTOP_WINDOW);
   // The clock is stopped: no Drone moves, and the keys cost no drawing. This
   // journey measures the prompt's text as a player sees it, so it keeps the
-  // web fonts and waits for them (the one stopped-clock journey that needs the
-  // font server); it never waits for the deck, whose start they would hold.
+  // web fonts and waits for them (the one stopped-clock journey that loads the
+  // game's font files); it never waits for the deck.
   await launchOnStoppedClock(page, LONG_TEXT, { webFonts: true });
   await page.evaluate(() => document.fonts.ready);
   const size = `${SMALL_LAPTOP_WINDOW.width}x${SMALL_LAPTOP_WINDOW.height}`;
