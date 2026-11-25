@@ -165,17 +165,17 @@ export const TextPromptStream: React.FC = () => {
                   color: laneInfo.color,
                 }}
               />
-              <span className="text-slate-300 font-mono text-[11px] whitespace-nowrap">
+              <span className="text-slate-300 font-mono type-caption whitespace-nowrap">
                 {FINGER_DISPLAY_NAMES[charInfo.finger] || charInfo.finger}
               </span>
               {charInfo.shiftRequired && charInfo.recommendedShiftHand && (
-                <span className="text-amber-400 font-mono text-[10px] bg-amber-950/60 px-1 rounded border border-amber-800/60 whitespace-nowrap">
+                <span className="text-amber-400 type-label tracking-normal bg-amber-950/60 px-1 rounded border border-amber-800/60 whitespace-nowrap">
                   + {charInfo.recommendedShiftHand.toUpperCase()} SHIFT
                 </span>
               )}
             </div>
           ) : (
-            <div className="text-slate-500 font-mono text-[11px]">Ready</div>
+            <div className="text-slate-500 font-mono type-caption">Ready</div>
           )}
         </div>
 
@@ -201,19 +201,21 @@ export const TextPromptStream: React.FC = () => {
         </div>
       </div>
 
-      {/* Structured Pedagogical Technique Bar */}
+      {/* Structured Pedagogical Technique Bar (Fixed Height: the 32⅓px its
+          10px chips once gave it, so the Action Deck below keeps its size;
+          the tip wraps to at most two 15px lines inside it) */}
       {techniqueTip && (
-        <div className="px-4 py-1.5 bg-slate-950/60 border-b border-slate-800/80 flex items-center justify-between gap-3 text-xs shrink-0">
-          <div className="flex items-center gap-2 truncate">
-            <span className="px-1.5 py-0.5 rounded bg-cyan-950/80 border border-cyan-800/60 text-cyan-300 font-mono text-[10px] uppercase font-bold tracking-wider shrink-0">
+        <div className="px-4 h-[calc(2rem+1px/3)] bg-slate-950/60 border-b border-slate-800/80 flex items-center justify-between gap-3 text-xs shrink-0">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="px-1.5 py-0.5 rounded bg-cyan-950/80 border border-cyan-800/60 text-cyan-300 type-label font-bold shrink-0">
               Form Focus
             </span>
-            <span className="truncate text-slate-300 text-[11px]">
+            <span className="min-w-0 line-clamp-2 text-slate-300 type-caption leading-[15px]">
               {techniqueTip}
             </span>
           </div>
           {focusFingers && (
-            <span className="shrink-0 font-mono text-[10px] text-amber-300 bg-amber-950/50 border border-amber-800/50 px-2 py-0.5 rounded whitespace-nowrap">
+            <span className="shrink-0 font-mono type-caption text-amber-300 bg-amber-950/50 border border-amber-800/50 px-2 py-0.5 rounded whitespace-nowrap">
               {focusFingers}
             </span>
           )}

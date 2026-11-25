@@ -77,6 +77,34 @@
   --font-mono: "JetBrains Mono", monospace;
 }
 
+/* The game's shared text styles, at the smallest sizes small text may take
+   (spec #165). Use these instead of a raw pixel size; colour and weight stay
+   with each use. A `leading-*` or `tracking-*` class on the same element
+   still wins, because each style reads Tailwind's own variable first. */
+
+/* A short uppercase label or eyebrow, in monospace: SCORE, FORM FOCUS. */
+@utility type-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: var(--tw-leading, calc(4 / 3));
+  letter-spacing: var(--tw-tracking, var(--tracking-wider));
+  text-transform: uppercase;
+}
+
+/* Other small text: units, counts, chips, secondary details. It keeps the
+   family it sits in (monospace for numbers and key names, Inter otherwise). */
+@utility type-caption {
+  font-size: 12px;
+  line-height: var(--tw-leading, calc(4 / 3));
+}
+
+/* A sentence meant to be read, in Inter: a tip, a description. */
+@utility type-sentence {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: var(--tw-leading, calc(10 / 7));
+}
+
 @layer base {
   body {
     font-family: var(--font-sans);

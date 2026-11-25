@@ -75,11 +75,11 @@ export const PixiActionDeck = memo(function PixiActionDeck() {
         </div>
 
         {/* Home Row Anchor Guidance & Hand Guide Mode Toggle */}
-        <div className="text-[11px] font-mono text-slate-400 flex items-center gap-2 sm:gap-3">
+        <div className="type-caption font-mono text-slate-400 flex items-center gap-2 sm:gap-3">
           <button
             type="button"
             onClick={onToggleHands}
-            className={`flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-mono transition-all border ${
+            className={`flex items-center gap-1.5 px-2 py-0.5 rounded transition-all border ${
               handsVisible
                 ? 'bg-cyan-950/60 border-cyan-500/40 text-cyan-300 shadow-[0_0_8px_rgba(6,182,212,0.2)]'
                 : 'bg-slate-800/60 border-slate-700 text-slate-400 hover:text-slate-200'
