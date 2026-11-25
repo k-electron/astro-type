@@ -127,13 +127,14 @@ export async function deckUp(page: Page) {
  * where the Run seeded them, far above the Strike Line (a hit scores the same
  * wherever its Drone is, so that changes nothing a journey reads).
  *
- * Web fonts are blocked: the Action Deck waits for its fonts before it starts,
- * with a fallback on the page's clock that never fires while the clock stands
- * still, so a journey that waits for the deck (`deckUp`, `waitForDeck`) would
- * otherwise wait on the font server. The deck sizes what it draws from its
- * layout, not its text, so no check of the deck depends on the font. A journey
- * that measures the page's text, and never waits for the deck, passes
- * `{ webFonts: true }` to keep the fonts a player sees.
+ * Web fonts are blocked: the Action Deck waits for its fonts to load or fail
+ * before it starts, with a fallback on the page's clock that never fires while
+ * the clock stands still. A blocked font file fails at once, so a journey that
+ * waits for the deck (`deckUp`, `waitForDeck`) never waits on a font download,
+ * and every run draws in the same fallback fonts. The deck sizes what it draws
+ * from its layout, not its text, so no check of the deck depends on the font.
+ * A journey that measures the page's text, and never waits for the deck,
+ * passes `{ webFonts: true }` to keep the fonts a player sees.
  */
 export async function launchOnStoppedClock(
   page: Page,
@@ -162,12 +163,12 @@ export async function box(element: Locator): Promise<Rect> {
 
 /**
  * Blocks web fonts, so the page draws its text in the browser's own fonts.
+ * The game serves its own font files (the only `.woff2` it loads); their
+ * faces are still declared, so each load fails and the text falls back.
  * Call it before the page loads.
  */
 export async function blockWebFonts(page: Page): Promise<void> {
-  await page.route(/fonts\.(googleapis|gstatic)\.com/, (route) =>
-    route.abort(),
-  );
+  await page.route(/\.woff2(\?|$)/, (route) => route.abort());
 }
 
 /**

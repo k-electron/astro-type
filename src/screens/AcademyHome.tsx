@@ -27,7 +27,7 @@ export const AcademyHome: React.FC = () => {
       <span className="text-xs uppercase font-mono tracking-widest text-cyan-400 mb-2">
         Deep Space Flight Academy
       </span>
-      <h1 className="text-3xl sm:text-5xl font-extrabold font-display text-white tracking-tight mb-4">
+      <h1 className="text-3xl sm:text-5xl font-extrabold font-display text-white mb-4">
         AstroType: Cosmic Touch Typing
       </h1>
       <p className="text-sm sm:text-base text-slate-400 leading-relaxed mb-8 max-w-xl">
