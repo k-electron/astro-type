@@ -37,12 +37,12 @@ export const Keyboard: React.FC<KeyboardProps> = ({ keyView, label }) => (
               type="button"
               key={spec.key}
               style={{ flex: `${spec.units} 1 0` }}
-              className={`relative min-w-0 h-8 rounded-md border flex items-center justify-center font-mono text-[10px] sm:text-xs ${className ?? ''}`}
+              className={`relative min-w-0 h-8 rounded-md border flex items-center justify-center font-mono type-caption ${className ?? ''}`}
               {...button}
             >
               {spec.display}
               {badge !== undefined && (
-                <span className="absolute -top-1.5 -right-1 text-[9px] leading-none px-1 py-0.5 rounded bg-rose-600 text-white">
+                <span className="absolute -top-1.5 -right-1 type-caption leading-none px-1 py-0.5 rounded bg-rose-600 text-white">
                   {badge}
                 </span>
               )}

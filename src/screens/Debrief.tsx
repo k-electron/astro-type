@@ -126,9 +126,7 @@ export const Debrief: React.FC = () => {
         <h2 className="text-2xl sm:text-3xl font-bold font-display text-white mb-1">
           {stage.title}
         </h2>
-        <p className="text-xs font-mono text-slate-400 mb-5">
-          {stage.subtitle}
-        </p>
+        <p className="type-sentence text-slate-400 mb-5">{stage.subtitle}</p>
 
         {/* The one thing to work on, and the Run's Rhythm: first, so it is read before anything scrolls */}
         <div className="w-full bg-slate-950/70 border border-slate-800 rounded-xl p-3.5 mb-5 text-left flex flex-wrap items-start justify-between gap-2">
@@ -136,7 +134,7 @@ export const Debrief: React.FC = () => {
             {workOnSentence(result.report.workOn)}
           </p>
           <span
-            className={`shrink-0 text-[10px] font-mono px-2 py-0.5 rounded border ${RHYTHM_PILL[band]}`}
+            className={`shrink-0 type-caption font-mono px-2 py-0.5 rounded border ${RHYTHM_PILL[band]}`}
           >
             Rhythm: {result.rhythm}% ({band})
           </span>
@@ -171,7 +169,7 @@ export const Debrief: React.FC = () => {
 
             {/* Sector Unlock Notification Banner */}
             {hasUnlockedNextSector && (
-              <div className="w-full mb-5 p-3 rounded-xl border border-cyan-500/50 bg-cyan-950/40 text-cyan-200 text-xs font-mono flex items-center justify-center gap-2">
+              <div className="w-full mb-5 p-3 rounded-xl border border-cyan-500/50 bg-cyan-950/40 text-cyan-200 type-sentence flex items-center justify-center gap-2">
                 <Sparkles className="w-4 h-4 text-cyan-400 shrink-0" />
                 <span>{NEW_SECTOR_UNLOCKED}</span>
               </div>
@@ -188,11 +186,11 @@ export const Debrief: React.FC = () => {
                     <span className="text-xs font-bold font-mono uppercase tracking-wide text-emerald-300">
                       Stars Collected & Auto-Saved
                     </span>
-                    <span className="px-1.5 rounded text-[10px] font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                    <span className="px-1.5 rounded type-caption bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
                       Saved
                     </span>
                   </div>
-                  <p className="text-[11px] text-slate-300 mt-0.5">
+                  <p className="type-caption text-slate-300 mt-0.5">
                     All stars, credits, and unlocked sectors are securely
                     recorded in your starship log.
                   </p>
@@ -201,14 +199,14 @@ export const Debrief: React.FC = () => {
 
               <div className="flex items-center gap-3 sm:border-l sm:border-emerald-500/30 sm:pl-4 shrink-0">
                 <div className="text-left font-mono">
-                  <span className="text-[10px] text-slate-400 uppercase block">
+                  <span className="type-label text-slate-400 block">
                     Total Fleet Stars
                   </span>
                   <div className="flex items-center gap-1.5 text-amber-300 font-bold text-sm">
                     <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
                     <span>{totalStars} ★</span>
                     {newStarsAwarded > 0 && (
-                      <span className="text-[10px] text-emerald-400 font-semibold">
+                      <span className="type-caption text-emerald-400 font-semibold">
                         (+{newStarsAwarded} new)
                       </span>
                     )}
@@ -250,23 +248,19 @@ export const Debrief: React.FC = () => {
         {/* Performance Metrics Grid */}
         <div className="w-full grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
           <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800">
-            <span className="text-[10px] uppercase font-mono text-slate-500 block">
-              Score
-            </span>
+            <span className="type-label text-slate-500 block">Score</span>
             <div className="flex items-center justify-center gap-1 font-mono font-bold text-white text-lg">
               {score.toLocaleString()}
             </div>
             {isNewHighScore && (
-              <span className="text-[9px] font-mono text-amber-400 uppercase font-semibold">
+              <span className="type-label text-amber-400 font-semibold">
                 New Best!
               </span>
             )}
           </div>
 
           <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800">
-            <span className="text-[10px] uppercase font-mono text-slate-500 block">
-              Speed
-            </span>
+            <span className="type-label text-slate-500 block">Speed</span>
             <span className="font-mono font-bold text-cyan-400 text-lg">
               {roundDown(wpm)}{' '}
               <span className="text-xs text-slate-500">WPM</span>
@@ -274,18 +268,14 @@ export const Debrief: React.FC = () => {
           </div>
 
           <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800">
-            <span className="text-[10px] uppercase font-mono text-slate-500 block">
-              Accuracy
-            </span>
+            <span className="type-label text-slate-500 block">Accuracy</span>
             <span className="font-mono font-bold text-emerald-400 text-lg">
               {roundDown(accuracy)}%
             </span>
           </div>
 
           <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800">
-            <span className="text-[10px] uppercase font-mono text-slate-500 block">
-              Credits
-            </span>
+            <span className="type-label text-slate-500 block">Credits</span>
             <div className="flex items-center justify-center gap-1 font-mono font-bold text-amber-400 text-lg">
               <Sparkles className="w-3.5 h-3.5" />
               <span>+{creditsEarned}</span>

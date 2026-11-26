@@ -66,9 +66,7 @@ export const RunText: React.FC<RunTextProps> = ({
       aria-label={RUN_TEXT_HEADING}
       className="w-full bg-slate-950/60 border border-slate-800 rounded-xl p-3 text-left"
     >
-      <h3 className="text-[10px] uppercase font-mono tracking-wider text-slate-400 mb-2">
-        {RUN_TEXT_HEADING}
-      </h3>
+      <h3 className="type-label text-slate-400 mb-2">{RUN_TEXT_HEADING}</h3>
       <p className="flex flex-wrap font-mono text-[15px] leading-7">
         {wordsOf(letters).map((word) => (
           <span key={word[0].index} className="whitespace-nowrap">
@@ -100,7 +98,7 @@ export const RunText: React.FC<RunTextProps> = ({
           </span>
         ))}
       </p>
-      <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] font-mono text-slate-500">
+      <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 type-caption font-mono text-slate-500">
         {lit !== null ? (
           <span className="text-cyan-300">
             {litLettersCaption(lit, litCount)}
