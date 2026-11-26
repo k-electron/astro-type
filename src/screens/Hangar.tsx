@@ -62,14 +62,14 @@ const CosmeticCard: React.FC<{
         type="button"
         disabled={equipped || (!owned && !affordable)}
         onClick={onBuy}
-        className={`w-full py-1.5 px-2 rounded-lg text-[11px] font-mono transition-colors ${
+        className={`w-full py-1.5 px-2 rounded-lg type-caption transition-colors ${
           equipped
             ? 'bg-cyan-950/60 text-cyan-300 border border-cyan-800 cursor-default'
             : owned
               ? 'bg-slate-800 hover:bg-slate-700 text-slate-200'
               : affordable
-                ? 'bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold'
-                : 'bg-slate-800/40 text-slate-600 cursor-not-allowed'
+                ? 'bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-mono font-bold'
+                : 'bg-slate-800/40 text-slate-600 font-mono cursor-not-allowed'
         }`}
       >
         {equipped ? EQUIPPED : owned ? EQUIP : `${entry.price} Cr`}
@@ -142,7 +142,7 @@ export const Hangar: React.FC = () => {
                       onBuy={() => buy(entry.id)}
                     >
                       <div className="flex items-center justify-between mb-1">
-                        <span className="flex items-center gap-2 font-semibold text-xs text-white">
+                        <span className="flex items-center gap-2 font-semibold text-sm text-white">
                           {entry.kind === 'trail' && (
                             <span
                               aria-hidden="true"
@@ -153,12 +153,12 @@ export const Hangar: React.FC = () => {
                           {entry.name}
                         </span>
                         {status.equipped && (
-                          <span className="text-[10px] font-mono font-bold uppercase text-cyan-400 flex items-center gap-0.5">
+                          <span className="type-caption font-bold uppercase text-cyan-400 flex items-center gap-0.5">
                             <Check className="w-3 h-3" /> {EQUIPPED}
                           </span>
                         )}
                       </div>
-                      <p className="text-[11px] text-slate-400 mb-3">
+                      <p className="type-sentence text-slate-400 mb-3">
                         {entry.description}
                       </p>
                     </CosmeticCard>
