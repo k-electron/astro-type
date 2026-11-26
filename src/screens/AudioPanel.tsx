@@ -45,7 +45,7 @@ export const AudioPanel: React.FC = () => {
       {/* Popover Header */}
       <div className="flex items-center justify-between border-b border-slate-800 pb-3">
         <div>
-          <span className="text-[10px] uppercase font-mono tracking-wider text-cyan-400 block font-semibold">
+          <span className="type-label text-cyan-400 block font-semibold">
             Flight Audio Station
           </span>
           <h4 className="text-sm font-bold font-display text-white">
@@ -57,7 +57,7 @@ export const AudioPanel: React.FC = () => {
         <button
           type="button"
           onClick={() => changeSettings({ globalMuted: !isMuted })}
-          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-mono font-medium border transition-all cursor-pointer ${
+          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md type-caption font-medium border transition-all cursor-pointer ${
             isMuted
               ? 'border-rose-500/60 bg-rose-950/70 text-rose-300 shadow-sm'
               : 'border-cyan-500/50 bg-cyan-950/50 text-cyan-300 hover:border-cyan-400'
@@ -75,7 +75,9 @@ export const AudioPanel: React.FC = () => {
       {/* Master Mute Active Notice */}
       {isMuted && (
         <div className="p-2.5 rounded-lg bg-rose-950/40 border border-rose-500/30 text-rose-300 text-xs flex items-center justify-between">
-          <span>Global Mute is active. All audio output is silenced.</span>
+          <span className="type-sentence">
+            Global Mute is active. All audio output is silenced.
+          </span>
           <button
             type="button"
             onClick={() => changeSettings({ globalMuted: !isMuted })}
@@ -109,7 +111,7 @@ export const AudioPanel: React.FC = () => {
               <span className="text-xs font-bold text-white block">
                 Keystroke Laser SFX
               </span>
-              <span className="text-[10px] text-slate-400">
+              <span className="type-sentence text-slate-400">
                 Tactile hits and Streak alarms
               </span>
             </div>
@@ -138,7 +140,7 @@ export const AudioPanel: React.FC = () => {
 
         {/* Quick Sound Kit Selector */}
         <div className="pt-2 border-t border-slate-800/80 mt-1">
-          <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block mb-1.5">
+          <span className="type-label text-slate-400 block mb-1.5">
             Sound Kit
           </span>
           <div className="grid grid-cols-2 gap-1.5">
@@ -158,7 +160,7 @@ export const AudioPanel: React.FC = () => {
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-bold block truncate">
+                    <span className="type-caption font-bold block truncate">
                       {kit.shortName}
                     </span>
                     {isEquipped && (
@@ -168,7 +170,7 @@ export const AudioPanel: React.FC = () => {
                       <Lock className="w-3 h-3 text-slate-500 shrink-0" />
                     )}
                   </div>
-                  <span className="text-[9px] font-mono text-slate-500 block truncate">
+                  <span className="type-caption font-mono text-slate-500 block truncate">
                     {isOwned ? kit.character : `Locked · ${kit.price} Cr`}
                   </span>
                 </button>
@@ -201,7 +203,7 @@ export const AudioPanel: React.FC = () => {
               <span className="text-xs font-bold text-white block">
                 Cosmic Rhythm Beats
               </span>
-              <span className="text-[10px] text-slate-400">
+              <span className="type-sentence text-slate-400">
                 Tempo drum machine, synth arpeggios & bass
               </span>
             </div>
@@ -230,7 +232,7 @@ export const AudioPanel: React.FC = () => {
 
         {/* Beat Theme Style Selector */}
         <div className="pt-2 border-t border-slate-800/80">
-          <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block mb-1.5">
+          <span className="type-label text-slate-400 block mb-1.5">
             Beat Rhythm & BPM
           </span>
           <div className="grid grid-cols-3 gap-1.5">
@@ -249,14 +251,14 @@ export const AudioPanel: React.FC = () => {
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-bold block truncate">
+                    <span className="type-caption font-bold block truncate">
                       {opt.name}
                     </span>
                     {isSelected && (
                       <Check className="w-3 h-3 text-fuchsia-400 shrink-0" />
                     )}
                   </div>
-                  <span className="text-[9px] font-mono text-slate-500 block">
+                  <span className="type-caption font-mono text-slate-500 block">
                     {opt.bpm} BPM
                   </span>
                 </button>
