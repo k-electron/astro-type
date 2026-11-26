@@ -5,6 +5,7 @@ import type { BurstId, HullId } from '../game/schemas';
 import { Pool } from './pool';
 import { BURSTS, type BurstPainter } from './bursts';
 import { hullShape } from './hulls';
+import { FONT } from './draw';
 import {
   CRYSTAL_SIZE,
   DOT_RADIUS,
@@ -191,9 +192,6 @@ interface Popup {
   /** A banner: only one shows at a time. */
   banner: boolean;
 }
-
-const POPUP_FONT =
-  'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace';
 
 /** An area that Pixi sizes things by but never counts as hit. */
 class Untouchable extends Rectangle {
@@ -456,7 +454,7 @@ export class DeckEffects {
     const text = new Text({
       text: label,
       style: {
-        fontFamily: POPUP_FONT,
+        fontFamily: FONT,
         fontSize: size,
         fontWeight: '900',
         fill: color,
@@ -546,7 +544,7 @@ export class DeckEffects {
       const glyph = new Text({
         text: shot.display,
         style: {
-          fontFamily: 'monospace',
+          fontFamily: FONT,
           fontSize: 20,
           fontWeight: '700',
           fill: '#ffffff',
