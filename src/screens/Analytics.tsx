@@ -194,7 +194,7 @@ export const Analytics: React.FC = () => {
           {/* The totals row */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="p-3.5 rounded-xl border border-slate-800 bg-slate-950/60">
-              <span className="text-[10px] uppercase font-mono text-slate-500 block mb-1">
+              <span className="type-label text-slate-500 block mb-1">
                 {DAYS_PLAYED_LABEL}
               </span>
               <div className="flex items-baseline gap-1 font-mono">
@@ -205,7 +205,7 @@ export const Analytics: React.FC = () => {
             </div>
 
             <div className="p-3.5 rounded-xl border border-slate-800 bg-slate-950/60">
-              <span className="text-[10px] uppercase font-mono text-slate-500 block mb-1">
+              <span className="type-label text-slate-500 block mb-1">
                 {PRACTICE_TIME_LABEL}
               </span>
               <div className="flex items-baseline gap-1 font-mono">
@@ -216,7 +216,7 @@ export const Analytics: React.FC = () => {
             </div>
 
             <div className="p-3.5 rounded-xl border border-slate-800 bg-slate-950/60">
-              <span className="text-[10px] uppercase font-mono text-slate-500 block mb-1">
+              <span className="type-label text-slate-500 block mb-1">
                 {WORDS_TYPED_LABEL}
               </span>
               <div className="flex items-baseline gap-1 font-mono">
@@ -227,7 +227,7 @@ export const Analytics: React.FC = () => {
             </div>
 
             <div className="p-3.5 rounded-xl border border-slate-800 bg-slate-950/60">
-              <span className="text-[10px] uppercase font-mono text-slate-500 block mb-1">
+              <span className="type-label text-slate-500 block mb-1">
                 {BEST_DAY_LABEL}
               </span>
               <div className="flex items-baseline gap-1 font-mono">
@@ -312,7 +312,7 @@ export const Analytics: React.FC = () => {
             <h3 className="text-xs uppercase font-mono tracking-wider text-cyan-400 mb-2">
               {TECHNIQUES_HEADING}
             </h3>
-            <ul className="text-xs text-slate-400 space-y-2 list-disc list-inside">
+            <ul className="type-sentence text-slate-400 space-y-2 list-disc list-inside">
               <li>
                 <strong className="text-slate-200">Anchor to F and J:</strong>{' '}
                 Feel the physical tactile nubs with index fingers to re-center
@@ -336,7 +336,7 @@ export const Analytics: React.FC = () => {
             ref={backupCardRef}
             className="p-4 rounded-xl border border-slate-800 bg-slate-950/60 flex flex-wrap items-center justify-between gap-3"
           >
-            <div className="text-xs text-slate-400">
+            <div className="type-sentence text-slate-400">
               <span className="font-semibold text-slate-200 block">
                 Save & Backup
               </span>
@@ -390,7 +390,10 @@ export const Analytics: React.FC = () => {
 
             {refusal && (
               <div className="basis-full flex items-center gap-3">
-                <p role="alert" className="text-xs font-medium text-rose-300">
+                <p
+                  role="alert"
+                  className="type-sentence font-medium text-rose-300"
+                >
                   {refusal}
                 </p>
                 <button

@@ -108,11 +108,9 @@ export const AnalyticsKeyboard: React.FC<AnalyticsKeyboardProps> = ({
     >
       {/* The header keeps the height of the "Back to latest" button, so holding a day does not push the keyboard down. */}
       <div className="flex min-h-[1.5rem] items-center justify-between gap-3 mb-2">
-        <h3 className="text-[10px] uppercase font-mono tracking-wider text-slate-400">
-          {KEYBOARD_HEADING}
-        </h3>
+        <h3 className="type-label text-slate-400">{KEYBOARD_HEADING}</h3>
         {!report.rebuilding && day !== null && (
-          <span className="flex items-center gap-2 text-[11px] font-mono text-slate-300">
+          <span className="flex items-center gap-2 type-caption font-mono text-slate-300">
             {keyboardAsOf(day)}
             {held !== null && (
               <>
@@ -120,7 +118,7 @@ export const AnalyticsKeyboard: React.FC<AnalyticsKeyboardProps> = ({
                 <button
                   type="button"
                   onClick={onLetGo}
-                  className="px-2 py-0.5 rounded-md border border-slate-700 bg-slate-800 text-[11px] text-slate-200 hover:text-white cursor-pointer"
+                  className="px-2 py-0.5 rounded-md border border-slate-700 bg-slate-800 type-caption font-sans text-slate-200 hover:text-white cursor-pointer"
                 >
                   {BACK_TO_LATEST}
                 </button>
@@ -130,13 +128,13 @@ export const AnalyticsKeyboard: React.FC<AnalyticsKeyboardProps> = ({
         )}
       </div>
       {report.rebuilding ? (
-        <p className="text-xs text-slate-400">
+        <p className="type-sentence text-slate-400">
           {keyboardRebuilding(isReturning(report.sentence))}
         </p>
       ) : (
         <>
           <Keyboard keyView={keyView} label={KEYBOARD_HEADING} />
-          <p className="text-[11px] text-slate-500 mt-2">{KEYBOARD_HINT}</p>
+          <p className="type-sentence text-slate-500 mt-2">{KEYBOARD_HINT}</p>
         </>
       )}
     </section>

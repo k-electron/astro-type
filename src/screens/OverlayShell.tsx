@@ -156,10 +156,7 @@ export const OverlayConfirm: React.FC<{
           {title}
         </h3>
 
-        <p
-          id={messageId}
-          className="text-xs text-slate-300 leading-relaxed mb-4"
-        >
+        <p id={messageId} className="type-sentence text-slate-300 mb-4">
           {message}
         </p>
 
@@ -175,7 +172,7 @@ export const OverlayConfirm: React.FC<{
           <button
             type="button"
             onClick={onConfirm}
-            className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold font-mono transition-colors shadow-lg shadow-rose-950/50 cursor-pointer flex items-center justify-center gap-1.5"
+            className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition-colors shadow-lg shadow-rose-950/50 cursor-pointer flex items-center justify-center gap-1.5"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             <span>{confirmLabel}</span>
