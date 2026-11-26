@@ -7,6 +7,9 @@ import {
 
 export const FONT = '"JetBrains Mono", ui-monospace, monospace';
 
+/** The deck's labels (the hand panels' headers, badges and legends, the rail): the 11 px label minimum, as `type-label` on the page. */
+export const LABEL_SIZE = 11;
+
 /**
  * The weight to ask PixiJS for when the deck's design says `weight`. Canvas
  * text comes out heavier than the same weight in the page, so the deck's bold

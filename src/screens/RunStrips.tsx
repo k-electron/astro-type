@@ -35,7 +35,13 @@ import {
   streakValue,
   stripTime,
 } from './debriefLabels';
-import { StripChart, type StripGuide, type StripSeries } from './StripChart';
+import {
+  STRIP_ROW,
+  StripChart,
+  StripsHeading,
+  type StripGuide,
+  type StripSeries,
+} from './StripChart';
 
 /** The moment under the pointer, or standing for a letter: a step of Run Time and the letter typed then. */
 export interface RunCursor {
@@ -213,14 +219,14 @@ export const RunStrips: React.FC<RunStripsProps> = ({
       aria-label={STRIPS_HEADING}
       className="w-full bg-slate-950/60 border border-slate-800 rounded-xl p-3 text-left"
     >
-      <h3 className="type-label text-slate-400 mb-2">
-        {STRIPS_HEADING}
-        {cursorX !== null && (
-          <span className="ml-2 text-slate-300 normal-case">
-            {stripTime(cursorX)}
-          </span>
-        )}
-      </h3>
+      <StripsHeading
+        heading={STRIPS_HEADING}
+        reading={
+          cursorX === null ? null : (
+            <span className="font-mono">{stripTime(cursorX)}</span>
+          )
+        }
+      />
       <div className="space-y-2.5">
         {rows.map((row) => (
           <section
@@ -228,7 +234,7 @@ export const RunStrips: React.FC<RunStripsProps> = ({
             aria-label={row.name}
             onMouseEnter={() => setHovered(row.name)}
             onMouseLeave={() => setHovered(null)}
-            className="grid grid-cols-[112px_1fr] items-center gap-2"
+            className={STRIP_ROW}
           >
             <div className="text-left">
               <h4 className="type-label text-slate-500">{row.name}</h4>

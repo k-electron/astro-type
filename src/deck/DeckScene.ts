@@ -19,7 +19,7 @@ import { DeckEffects } from './DeckEffects';
 import { type DeckInputs, deckInputs, sameDeckInputs } from './deckInputs';
 import { DroneView } from './DroneView';
 import type { DroneMotion } from './droneMotion';
-import { makeText } from './draw';
+import { LABEL_SIZE, makeText } from './draw';
 import { HandView, type HandState } from './HandView';
 import { hitFeedback } from './hitPopups';
 import { KeyView, keycapLabel } from './KeyView';
@@ -210,22 +210,28 @@ export class DeckScene {
     this.trenchDot.clear();
     this.trenchDot.circle(trench.x + 17, midY, 3).fill('#22d3ee');
     for (const child of this.trenchLabels.removeChildren()) child.destroy();
-    // The rail's labels are at the 11 px label minimum, 0.1 em between letters.
+    // The rail's labels are at the label minimum, 0.1 em between letters.
     const left = makeText(
       'INTERCEPTOR DEFENSE RAIL // ACTIVE KEY VECTOR',
-      11,
+      LABEL_SIZE,
       '700',
       '#64748b',
       resolution,
-      { letterSpacing: 1.1 },
+      { letterSpacing: LABEL_SIZE / 10 },
     );
     left.anchor.set(0, 0.5);
     left.position.set(trench.x + 26, midY);
     // "BATTERY ARMED" and its arrow: no letter spacing, the arrow a size larger, 4 px apart.
-    const arrow = makeText('▲', 13, '700', '#22d3ee', resolution);
+    const arrow = makeText('▲', LABEL_SIZE + 2, '700', '#22d3ee', resolution);
     arrow.anchor.set(1, 0.5);
     arrow.position.set(trench.x + trench.w - 14, midY);
-    const armed = makeText('BATTERY ARMED', 11, '700', '#22d3ee', resolution);
+    const armed = makeText(
+      'BATTERY ARMED',
+      LABEL_SIZE,
+      '700',
+      '#22d3ee',
+      resolution,
+    );
     armed.anchor.set(1, 0.5);
     armed.position.set(arrow.x - arrow.width - 4, midY);
     this.trenchLabels.addChild(left, armed, arrow);

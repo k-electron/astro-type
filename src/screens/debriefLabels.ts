@@ -100,9 +100,24 @@ export const MISSED = 'missed';
 /** What a letter's tooltip says when no time could be given for it. */
 export const NO_SPEED_TO_SHOW = 'no speed to show';
 
+/**
+ * A phrase with values in it (a key's name, a number), as its pieces in
+ * order: words at the even places and values at the odd ones, so a screen
+ * can set the values in monospace and the words in Inter. Joined, it is the
+ * phrase as read.
+ */
+export type Phrase = readonly string[];
+const phrase = (
+  words: TemplateStringsArray,
+  ...values: (string | number)[]
+): Phrase =>
+  words.flatMap((word, at) =>
+    at < values.length ? [word, String(values[at])] : [word],
+  );
+
 /** What the shading is measured against. */
-export const shadingNote = (averageMs: number): string =>
-  `against your average, ${Math.round(averageMs)} ms a key`;
+export const shadingNote = (averageMs: number): Phrase =>
+  phrase`against your average, ${Math.round(averageMs)} ms a key`;
 
 /** The tooltip of one letter of the text. */
 export function letterTitle(letter: LetterReport): string {
@@ -123,8 +138,8 @@ export function letterTitle(letter: LetterReport): string {
 }
 
 /** The caption under the text while a key is lit: how many letters it lights. */
-export const litLettersCaption = (character: string, count: number): string =>
-  `Showing every ${keyLabel(character)} in your text (${count})`;
+export const litLettersCaption = (character: string, count: number): Phrase =>
+  phrase`Showing every ${keyLabel(character)} in your text (${count})`;
 
 export const KEYS_HEADING = 'Your keys';
 export const KEYS_HINT =

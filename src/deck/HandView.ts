@@ -2,7 +2,13 @@ import { Container, Graphics, GraphicsPath, Sprite, type Text } from 'pixi.js';
 import { FINGER_COLOR_MAP } from '../curriculum/curriculum';
 import type { FingerZone } from '../curriculum/keyboardLayout';
 import { pulseOpacity } from './animation';
-import { dashedCubic, dashedRoundRect, deckWeight, makeText } from './draw';
+import {
+  dashedCubic,
+  dashedRoundRect,
+  deckWeight,
+  LABEL_SIZE,
+  makeText,
+} from './draw';
 import { boxGlow } from './textures';
 import { HAND_H, HAND_W } from './layout';
 
@@ -60,8 +66,6 @@ const ART_SCALE = 88 / 116;
 const ART_X = 12;
 const ART_Y = 31.5;
 const THUMB_TILT = (22 * Math.PI) / 180;
-/** The panel's labels (header, badge, legend): the 11 px label minimum. */
-const LABEL_SIZE = 11;
 /**
  * How far in from the panel's sides the header's label starts and the badge
  * ends: 2 border and 8 padding, so "L. HAND" and a five-letter badge ("SHIFT",
@@ -242,7 +246,9 @@ export class HandView {
 
     // The badge in the panel's top right corner: its right edge is
     // `HEADER_INSET` in, its padding is `padX`, its border 1 px, and it is
-    // 15 px tall.
+    // 15 px tall. The padding is 3 px (5 for the active key's), a pixel less
+    // than at the old 10 px text, so the badge's 11 px text still fits beside
+    // "L. HAND".
     const right = HAND_W - HEADER_INSET;
     const setBadge = (
       text: string,

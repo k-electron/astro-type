@@ -260,11 +260,14 @@ export const GalaxyMap: React.FC = () => {
 
         {/* Right: Active Sector Stage Grid */}
         <div className="flex-1 p-4 sm:p-6 overflow-y-auto bg-slate-900/40">
-          {/* Sector Hero Info Banner */}
-          <div className="p-4 rounded-xl border border-slate-800 bg-slate-950/60 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          {/* Sector Hero Info Banner: the Sector Locked notice sits under the
+              description, so it never squeezes the eyebrow beside it. */}
+          <div className="p-4 rounded-xl border border-slate-800 bg-slate-950/60 mb-6 flex flex-col gap-4">
             <div>
-              <div className="flex items-center gap-2 text-xs font-mono text-cyan-400">
-                <span>{activeSector.codenick}</span>
+              <div className="flex flex-wrap items-center gap-x-2 text-xs font-mono text-cyan-400">
+                <span className="shrink-0 whitespace-nowrap">
+                  {activeSector.codenick}
+                </span>
                 <span aria-hidden="true">·</span>
                 <span>{activeSector.curriculumCategory}</span>
               </div>
@@ -277,7 +280,7 @@ export const GalaxyMap: React.FC = () => {
             </div>
 
             {!isCurrentUnlocked && (
-              <div className="flex items-center gap-2 p-3 rounded-lg border border-amber-500/40 bg-amber-950/30 text-amber-300 type-sentence font-medium">
+              <div className="self-start flex items-center gap-2 p-3 rounded-lg border border-amber-500/40 bg-amber-950/30 text-amber-300 type-sentence font-medium">
                 <Lock className="w-4 h-4 shrink-0 text-amber-400" />
                 <span>
                   Sector Locked. Earn {starsRemaining} more stars to unlock this
@@ -355,12 +358,13 @@ export const GalaxyMap: React.FC = () => {
                     {stage.focusFingers && (
                       <div className="flex items-center gap-1.5 mb-2 type-caption">
                         <span className="px-2 py-0.5 rounded bg-cyan-950/70 border border-cyan-800/60 text-cyan-300 font-semibold">
-                          Finger Focus: {stage.focusFingers}
+                          <span className="font-mono">Finger Focus:</span>{' '}
+                          {stage.focusFingers}
                         </span>
                       </div>
                     )}
 
-                    <p className="type-sentence text-slate-400 mb-3 line-clamp-2">
+                    <p className="type-sentence text-slate-400 mb-3">
                       {stage.description}
                     </p>
 

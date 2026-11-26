@@ -108,10 +108,10 @@ export const AudioPanel: React.FC = () => {
               )}
             </button>
             <div>
-              <span className="text-xs font-bold text-white block">
+              <span className="text-sm font-bold text-white block">
                 Keystroke Laser SFX
               </span>
-              <span className="type-sentence text-slate-400">
+              <span className="block text-balance type-sentence text-slate-400">
                 Tactile hits and Streak alarms
               </span>
             </div>
@@ -200,10 +200,10 @@ export const AudioPanel: React.FC = () => {
               )}
             </button>
             <div>
-              <span className="text-xs font-bold text-white block">
+              <span className="text-sm font-bold text-white block">
                 Cosmic Rhythm Beats
               </span>
-              <span className="type-sentence text-slate-400">
+              <span className="block text-balance type-sentence text-slate-400">
                 Tempo drum machine, synth arpeggios & bass
               </span>
             </div>
