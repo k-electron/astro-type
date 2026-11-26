@@ -60,6 +60,14 @@ const ART_SCALE = 88 / 116;
 const ART_X = 12;
 const ART_Y = 31.5;
 const THUMB_TILT = (22 * Math.PI) / 180;
+/** The panel's labels (header, badge, legend): the 11 px label minimum. */
+const LABEL_SIZE = 11;
+/**
+ * How far in from the panel's sides the header's label starts and the badge
+ * ends: 2 border and 8 padding, so "L. HAND" and a five-letter badge ("SHIFT",
+ * "SPACE", "ALT ␣") fit side by side at `LABEL_SIZE`.
+ */
+const HEADER_INSET = 10;
 
 export interface HandState {
   activeFinger: FingerZone | null;
@@ -102,18 +110,27 @@ export class HandView {
     this.shadow.position.set(HAND_W / 2, HAND_H / 2 + 8);
     this.root.addChild(this.shadow, this.panel, this.art, this.legendDots);
 
-    // `tracking-wider`: 0.05 em between letters.
+    // The header's labels are at the 11 px label minimum. `tracking-wider`:
+    // 0.05 em between letters. It starts `HEADER_INSET` in, as the badge ends.
     this.label(
       isLeft ? 'L. HAND' : 'R. HAND',
-      14,
+      HEADER_INSET,
       19.75,
-      10,
+      LABEL_SIZE,
       '#94a3b8',
       0,
       resolution,
-      0.5,
+      0.05 * LABEL_SIZE,
     );
-    this.badge = this.label('REST', 0, 19.75, 9, '#475569', 1, resolution);
+    this.badge = this.label(
+      'REST',
+      0,
+      19.75,
+      LABEL_SIZE,
+      '#475569',
+      1,
+      resolution,
+    );
 
     this.art.position.set(ART_X, ART_Y);
     this.art.scale.set(ART_SCALE);
@@ -156,9 +173,10 @@ export class HandView {
       this.root.addChild(text);
       this.fingerLabels.push(text);
     }
-    // The legend: four items of a 6 px dot, 2 px, and a 5.4 px letter, 6 px apart, centred.
+    // The legend: four items of a 6 px dot, 2 px, and a letter (0.6 em wide), 6 px apart, centred.
     const legend = this.fingers.filter((f) => !f.isThumb);
-    const itemW = 6 + 2 + 5.4;
+    const letterW = 0.6 * LABEL_SIZE;
+    const itemW = 6 + 2 + letterW;
     const pitch = itemW + 6;
     const start =
       HAND_W / 2 - (legend.length * itemW + (legend.length - 1) * 6) / 2;
@@ -166,7 +184,15 @@ export class HandView {
       const left = start + i * pitch;
       this.legendDots.circle(left + 3, 165, 3).fill(FINGER_COLOR_MAP[f.id]);
       this.legendLabels.push(
-        this.label(f.home, left + 8 + 2.7, 165, 9, '#94a3b8', 0.5, resolution),
+        this.label(
+          f.home,
+          left + 8 + letterW / 2,
+          165,
+          LABEL_SIZE,
+          '#94a3b8',
+          0.5,
+          resolution,
+        ),
       );
     });
   }
@@ -214,26 +240,20 @@ export class HandView {
     const primary = isThumbActive && state.thumbRole === 'primary';
     const secondary = isThumbActive && state.thumbRole === 'secondary';
 
-    // The badge in the panel's top right corner: its right edge is 14 px in
-    // (2 border, 10 padding, 2 for the header), its padding is `padX`, its
-    // border 1 px, and it is 15 px tall.
-    const right = HAND_W - 14;
+    // The badge in the panel's top right corner: its right edge is
+    // `HEADER_INSET` in, its padding is `padX`, its border 1 px, and it is
+    // 15 px tall.
+    const right = HAND_W - HEADER_INSET;
     const setBadge = (
       text: string,
       fill: string,
       bg: string,
       border: string,
-      {
-        dashed = false,
-        padX = 4,
-        size = 9,
-        bgAlpha = 0.2,
-        borderAlpha = 1,
-      } = {},
+      { dashed = false, padX = 3, bgAlpha = 0.2, borderAlpha = 1 } = {},
     ) => {
       this.badge.text = text;
       this.badge.style.fill = fill;
-      this.badge.style.fontSize = size;
+      this.badge.style.fontSize = LABEL_SIZE;
       this.badge.style.fontWeight = deckWeight('700');
       const bw = this.badge.width + 2 * padX + 2;
       p.roundRect(right - bw, 12.5, bw, 15, 4).fill({
@@ -260,7 +280,6 @@ export class HandView {
       });
     } else if (secondary) {
       setBadge('ALT ␣', 'rgba(52,211,153,0.7)', '#022c22', '#10b981', {
-        size: 8,
         bgAlpha: 0.4,
         borderAlpha: 0.3,
       });
@@ -273,7 +292,7 @@ export class HandView {
         color,
         color,
         color,
-        { padX: 6, bgAlpha: 0.145, borderAlpha: 0.5 },
+        { padX: 5, bgAlpha: 0.145, borderAlpha: 0.5 },
       );
     } else if (state.modifierFinger) {
       setBadge(
@@ -286,7 +305,7 @@ export class HandView {
     } else {
       this.badge.text = 'REST';
       this.badge.style.fill = '#475569';
-      this.badge.style.fontSize = 9;
+      this.badge.style.fontSize = LABEL_SIZE;
       this.badge.style.fontWeight = '400';
       this.badge.x = right;
     }

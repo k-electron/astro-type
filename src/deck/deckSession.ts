@@ -46,9 +46,12 @@ function pressKeycap(game: Game, spec: KeySpec): void {
 async function fontsReady(): Promise<void> {
   // Text is drawn with whatever font is loaded when it is created.
   const loaded = Promise.all([
-    // The weights the deck's text asks for (see `deckWeight`).
+    // The weights the deck's text asks for: 400 and 500 through `deckWeight`,
+    // and 700 for the hit popups and a laser's locked glyph (the popups ask
+    // for 900, which the heaviest face, 700, draws).
     document.fonts.load('500 16px "JetBrains Mono"'),
     document.fonts.load('400 16px "JetBrains Mono"'),
+    document.fonts.load('700 16px "JetBrains Mono"'),
   ]).then(() => undefined);
   const timeout = new Promise<void>((resolve) =>
     setTimeout(resolve, FONT_WAIT_MS),
