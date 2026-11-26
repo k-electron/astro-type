@@ -92,7 +92,7 @@ export const GalaxyMap: React.FC = () => {
             <span className="text-xs uppercase font-mono text-cyan-400">
               Interstellar Academy
             </span>
-            <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-950/60 border border-emerald-500/30 text-emerald-300 text-[10px] font-mono">
+            <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-950/60 border border-emerald-500/30 text-emerald-300 type-caption">
               <CheckCircle2 className="w-3 h-3 text-emerald-400" />
               <span>Progress Saved</span>
             </div>
@@ -183,9 +183,7 @@ export const GalaxyMap: React.FC = () => {
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
         {/* Left: Sector Navigation List */}
         <div className="w-full md:w-80 border-b md:border-b-0 md:border-r border-slate-800 bg-slate-950/40 p-3 sm:p-4 overflow-y-auto flex flex-col gap-2">
-          <span className="text-[11px] uppercase font-mono tracking-wider text-slate-500 px-2">
-            Sectors
-          </span>
+          <span className="type-label text-slate-500 px-2">Sectors</span>
 
           {CURRICULUM_SECTORS.map((sector) => {
             const { unlocked } = isSectorUnlocked(sector.id, totalStars);
@@ -230,7 +228,7 @@ export const GalaxyMap: React.FC = () => {
                     <div className="flex items-center gap-1.5 text-xs font-mono text-slate-400">
                       <span>{sector.codenick}</span>
                       {!unlocked && (
-                        <span className="text-[10px] text-amber-400">
+                        <span className="text-amber-400">
                           · Needs {sector.requiredStarsToUnlock}★
                         </span>
                       )}
@@ -238,7 +236,7 @@ export const GalaxyMap: React.FC = () => {
                     <div className="font-semibold text-sm text-slate-200 truncate">
                       {sector.name}
                     </div>
-                    <div className="text-[11px] text-slate-400 truncate">
+                    <div className="type-caption text-slate-400 truncate">
                       {sector.curriculumCategory}
                     </div>
                   </div>
@@ -273,13 +271,13 @@ export const GalaxyMap: React.FC = () => {
               <h3 className="text-xl font-bold text-white mt-0.5">
                 {activeSector.name}
               </h3>
-              <p className="text-xs sm:text-sm text-slate-400 mt-1 max-w-xl">
+              <p className="type-sentence text-slate-400 mt-1 max-w-xl">
                 {activeSector.description}
               </p>
             </div>
 
             {!isCurrentUnlocked && (
-              <div className="flex items-center gap-2 p-3 rounded-lg border border-amber-500/40 bg-amber-950/30 text-amber-300 text-xs font-medium">
+              <div className="flex items-center gap-2 p-3 rounded-lg border border-amber-500/40 bg-amber-950/30 text-amber-300 type-sentence font-medium">
                 <Lock className="w-4 h-4 shrink-0 text-amber-400" />
                 <span>
                   Sector Locked. Earn {starsRemaining} more stars to unlock this
@@ -342,39 +340,39 @@ export const GalaxyMap: React.FC = () => {
                         {stage.title}
                       </h4>
                       {isCompleted && (
-                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-950/60 border border-emerald-500/30 text-emerald-300 text-[10px] font-mono shrink-0">
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-950/60 border border-emerald-500/30 text-emerald-300 type-caption shrink-0">
                           <CheckCircle2 className="w-3 h-3 text-emerald-400" />
                           <span>Saved</span>
                         </span>
                       )}
                     </div>
 
-                    <p className="text-xs font-mono text-cyan-400/90 mb-1">
+                    <p className="type-sentence text-cyan-400/90 mb-1">
                       {stage.subtitle}
                     </p>
 
                     {/* Pedagogical Finger Focus Badge */}
                     {stage.focusFingers && (
-                      <div className="flex items-center gap-1.5 mb-2 text-[11px] font-mono">
+                      <div className="flex items-center gap-1.5 mb-2 type-caption">
                         <span className="px-2 py-0.5 rounded bg-cyan-950/70 border border-cyan-800/60 text-cyan-300 font-semibold">
                           Finger Focus: {stage.focusFingers}
                         </span>
                       </div>
                     )}
 
-                    <p className="text-xs text-slate-400 mb-3 line-clamp-2">
+                    <p className="type-sentence text-slate-400 mb-3 line-clamp-2">
                       {stage.description}
                     </p>
 
                     {/* Technique Tip */}
                     {stage.techniqueTip && (
-                      <div className="p-2 rounded bg-slate-900/90 border border-slate-800/90 text-[11px] text-slate-300 italic mb-3">
+                      <div className="p-2.5 rounded bg-slate-900/90 border border-slate-800/90 type-sentence text-slate-300 italic mb-3">
                         "{stage.techniqueTip}"
                       </div>
                     )}
 
                     {/* Keys Trained */}
-                    <div className="flex flex-wrap items-center justify-between gap-2 mb-3 text-[11px] font-mono">
+                    <div className="flex flex-wrap items-center justify-between gap-2 mb-3 type-caption font-mono">
                       <div className="flex flex-wrap items-center gap-1">
                         <span className="text-slate-500 mr-0.5">Keys:</span>
                         {stage.targetKeys.slice(0, 8).map((k) => (
@@ -391,7 +389,7 @@ export const GalaxyMap: React.FC = () => {
                     {/* The Star bars: the ones the best Run has met are lit */}
                     <ul
                       aria-label={STAR_BARS_LIST}
-                      className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-3 text-[11px] font-mono"
+                      className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-3 type-caption font-mono"
                     >
                       {starBars(stage).map((bar) => {
                         const met = bar.star <= stars;
