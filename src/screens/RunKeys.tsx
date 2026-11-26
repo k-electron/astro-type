@@ -111,14 +111,12 @@ export const RunKeys: React.FC<RunKeysProps> = ({ report, linking }) => {
 
   const list = (heading: string, empty: string, entries: React.ReactNode[]) => (
     <div>
-      <h4 className="text-[10px] uppercase font-mono tracking-wider text-slate-400 mb-2 text-left">
-        {heading}
-      </h4>
+      <h4 className="type-label text-slate-400 mb-2 text-left">{heading}</h4>
       <div className="flex flex-wrap gap-1.5">
         {entries.length > 0 ? (
           entries
         ) : (
-          <span className="text-[11px] text-slate-500">{empty}</span>
+          <span className="type-sentence text-slate-500">{empty}</span>
         )}
       </div>
     </div>
@@ -130,8 +128,11 @@ export const RunKeys: React.FC<RunKeysProps> = ({ report, linking }) => {
         aria-label={KEYS_HEADING}
         className="bg-slate-950/60 border border-slate-800 rounded-xl p-3"
       >
-        <h3 className="text-[10px] uppercase font-mono tracking-wider text-slate-400 mb-2">
-          {KEYS_HEADING} · {KEYS_HINT}
+        <h3 className="type-label text-slate-400 mb-2">
+          {KEYS_HEADING} ·{' '}
+          <span className="type-caption font-sans normal-case tracking-normal">
+            {KEYS_HINT}
+          </span>
         </h3>
         <Keyboard keyView={keyView} label={KEYS_HEADING} />
       </section>

@@ -65,16 +65,33 @@ export interface StripChartProps {
   empty: string;
 }
 
-const MARGIN = { top: 8, right: 40, bottom: 8, left: 34 } as const;
+const MARGIN = { top: 8, right: 48, bottom: 8, left: 34 } as const;
 const AXIS_HEIGHT = 22;
 
+/** The chart's numbers and names: the 11px label minimum, in the game's monospace. */
+const FONT_SIZE = 11;
+/** About how wide one character of it is drawn. */
+const CHAR_WIDTH = FONT_SIZE * 0.6;
+/** Lowers a label onto the line it names: about half a digit's height. */
+const CENTRE = 4;
+
 /** Guides closer than this many pixels share one label, so their names never overlap. */
-const LABEL_GAP = 7.5;
+const LABEL_GAP = 10;
 
 const GRID = '#334155';
 const TICK = '#f43f5e';
 const CURSOR = '#f8fafc';
-const TEXT = { fill: '#64748b', fontSize: 9, fontFamily: 'monospace' } as const;
+const TEXT = {
+  fill: '#64748b',
+  fontSize: FONT_SIZE,
+  fontFamily: '"JetBrains Mono", monospace',
+} as const;
+/** What an empty strip says is a sentence, so it is set in Inter. */
+const EMPTY_TEXT = {
+  ...TEXT,
+  fontSize: 12,
+  fontFamily: 'Inter, sans-serif',
+} as const;
 
 /**
  * One strip of a linked chart: lines over a shared x, dashed guides, a tick
@@ -183,12 +200,12 @@ const Strip: React.FC<StripChartProps & { width: number }> = ({
           tickValues={[...yTicks]}
           hideAxisLine
           hideTicks
-          tickLabelProps={{ ...TEXT, textAnchor: 'end', dx: -4, dy: 3 }}
+          tickLabelProps={{ ...TEXT, textAnchor: 'end', dx: -4, dy: CENTRE }}
         />
         {bands.map((band) => {
           const width = xScale(band.to) - xScale(band.from);
           const name = band.labels?.find(
-            (candidate) => candidate.length * 5.5 + 6 <= width,
+            (candidate) => candidate.length * CHAR_WIDTH + 6 <= width,
           );
           return (
             <g key={`${band.from}-${band.to}-${band.fill}`}>
@@ -203,7 +220,7 @@ const Strip: React.FC<StripChartProps & { width: number }> = ({
               {name && (
                 <text
                   x={xScale(band.from) + 3}
-                  y={9 + 10 * (band.labelLine ?? 0)}
+                  y={10 + 12 * (band.labelLine ?? 0)}
                   {...TEXT}
                   fill="#cbd5e1"
                   pointerEvents="none"
@@ -229,7 +246,7 @@ const Strip: React.FC<StripChartProps & { width: number }> = ({
                 <text
                   x={innerWidth + 4}
                   y={yScale(guide.y)}
-                  dy={3}
+                  dy={CENTRE}
                   {...TEXT}
                   fill="#94a3b8"
                 >
@@ -303,9 +320,9 @@ const Strip: React.FC<StripChartProps & { width: number }> = ({
           <text
             x={innerWidth / 2}
             y={innerHeight / 2}
-            dy={3}
+            dy={CENTRE}
             textAnchor="middle"
-            {...TEXT}
+            {...EMPTY_TEXT}
           >
             {empty}
           </text>
