@@ -122,10 +122,8 @@ export const SectorEntries: React.FC<SectorEntriesProps> = ({
       aria-label={LOGBOOK_HEADING}
       className="w-full bg-slate-950/60 border border-slate-800 rounded-xl p-3 text-left"
     >
-      <h3 className="text-[10px] uppercase font-mono tracking-wider text-slate-400 mb-1">
-        {LOGBOOK_HEADING}
-      </h3>
-      <p className="text-xs text-slate-400 mb-3">{LOGBOOK_HINT}</p>
+      <h3 className="type-label text-slate-400 mb-1">{LOGBOOK_HEADING}</h3>
+      <p className="type-sentence text-slate-400 mb-3">{LOGBOOK_HINT}</p>
       <div className="flex flex-col gap-2.5">
         {entries.map((entry) => {
           const stars = starsOf(entry.id);
@@ -151,7 +149,7 @@ export const SectorEntries: React.FC<SectorEntriesProps> = ({
                 >
                   {entry.name}
                 </h4>
-                <span className="text-[11px] font-mono text-slate-400">
+                <span className="type-caption font-mono text-slate-400">
                   {entryDates(entry.firstDay, entry.lastDay)}
                 </span>
               </div>
@@ -178,9 +176,7 @@ export const SectorEntries: React.FC<SectorEntriesProps> = ({
                 <Sparkline speeds={entry.sparkline} />
               </div>
               <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                <span className="text-[10px] uppercase font-mono text-slate-500">
-                  {ENTRY_KEYS}
-                </span>
+                <span className="type-label text-slate-500">{ENTRY_KEYS}</span>
                 {entry.keysBroughtIn.length === 0 ? (
                   <span className="text-xs text-slate-500">
                     {NO_KEYS_BROUGHT_IN}
@@ -194,7 +190,7 @@ export const SectorEntries: React.FC<SectorEntriesProps> = ({
                       aria-pressed={selected === keycap}
                       title={openKeyStoryTitle(keycap)}
                       onClick={() => onPickKey(keycap)}
-                      className={`px-1.5 py-0.5 rounded bg-slate-800 border text-[11px] font-mono text-slate-200 hover:text-white cursor-pointer ${
+                      className={`px-1.5 py-0.5 rounded bg-slate-800 border type-caption font-mono text-slate-200 hover:text-white cursor-pointer ${
                         selected === keycap
                           ? 'border-cyan-300'
                           : 'border-slate-700'

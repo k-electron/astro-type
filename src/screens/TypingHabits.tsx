@@ -42,10 +42,8 @@ const Section: React.FC<{
     aria-label={heading}
     className="w-full bg-slate-950/60 border border-slate-800 rounded-xl p-3 text-left"
   >
-    <h3 className="text-[10px] uppercase font-mono tracking-wider text-slate-400">
-      {heading}
-    </h3>
-    <p className="text-[11px] text-slate-500 mt-1 mb-2">{hint}</p>
+    <h3 className="type-label text-slate-400">{heading}</h3>
+    <p className="type-sentence text-slate-500 mt-1 mb-2">{hint}</p>
     {children}
   </section>
 );
@@ -78,11 +76,11 @@ export const MixUps: React.FC<MixUpsProps> = ({ report, onPickKey }) => {
   return (
     <Section heading={MIX_UPS_SECTION} hint={MIX_UPS_SECTION_HINT}>
       {report.rebuilding ? (
-        <p className="text-xs text-slate-400">
+        <p className="type-sentence text-slate-400">
           {habitsRebuilding('Mix-ups', isReturning(report.sentence))}
         </p>
       ) : report.mixUps.length === 0 ? (
-        <p className="text-xs text-slate-400">{KEY_MIX_UPS_NONE}</p>
+        <p className="type-sentence text-slate-400">{KEY_MIX_UPS_NONE}</p>
       ) : (
         <ul className="space-y-1">
           {report.mixUps.map((mixUp) => (
@@ -94,7 +92,7 @@ export const MixUps: React.FC<MixUpsProps> = ({ report, onPickKey }) => {
               <span className="text-slate-500">{MIX_UPS_AS}</span>
               {key(mixUp.pressed, mixUp.pressedKeycap)}
               {mixUp.cause !== null && (
-                <span className="text-slate-400">
+                <span className="font-sans text-slate-400">
                   {MIX_UP_CAUSES[mixUp.cause]}
                 </span>
               )}
@@ -113,11 +111,11 @@ export const ShiftHand: React.FC<HabitProps> = ({ report }) => {
   return (
     <Section heading={SHIFT_HAND_SECTION} hint={SHIFT_HAND_SECTION_HINT}>
       {report.rebuilding ? (
-        <p className="text-xs text-slate-400">
+        <p className="type-sentence text-slate-400">
           {habitsRebuilding('Shift habits', isReturning(report.sentence))}
         </p>
       ) : shiftHand.total === 0 ? (
-        <p className="text-xs text-slate-400">{SHIFT_HAND_NONE}</p>
+        <p className="type-sentence text-slate-400">{SHIFT_HAND_NONE}</p>
       ) : (
         <>
           <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs font-mono">
@@ -132,7 +130,7 @@ export const ShiftHand: React.FC<HabitProps> = ({ report }) => {
               </div>
             ))}
           </dl>
-          <p className="text-[11px] text-slate-500 mt-2">
+          <p className="type-caption text-slate-500 mt-2">
             {shiftHandTotal(shiftHand.total)}
           </p>
         </>
@@ -147,21 +145,19 @@ export const LetterPairs: React.FC<HabitProps> = ({ report }) => {
   return (
     <Section heading={LETTER_PAIRS_SECTION} hint={LETTER_PAIRS_SECTION_HINT}>
       {report.rebuilding ? (
-        <p className="text-xs text-slate-400">
+        <p className="type-sentence text-slate-400">
           {habitsRebuilding('Letter pairs', isReturning(report.sentence))}
         </p>
       ) : (
         <>
           {pairs.averageMs !== null && (
-            <p className="text-[11px] text-slate-400 mb-2">
+            <p className="type-caption text-slate-400 mb-2">
               {pairAverage(pairs.averageMs)}
             </p>
           )}
-          <h4 className="text-[10px] uppercase font-mono text-slate-500">
-            {SLOWEST_PAIRS}
-          </h4>
+          <h4 className="type-label text-slate-500">{SLOWEST_PAIRS}</h4>
           {pairs.slowest.length === 0 ? (
-            <p className="text-xs text-slate-400">
+            <p className="type-sentence text-slate-400">
               {pairs.oftenTyped === 0 ? NO_SLOW_PAIRS : NO_PAIR_SLOWER}
             </p>
           ) : (
@@ -178,10 +174,8 @@ export const LetterPairs: React.FC<HabitProps> = ({ report }) => {
               ))}
             </ul>
           )}
-          <h4 className="text-[10px] uppercase font-mono text-slate-500">
-            {COMMON_PAIRS_HEADING}
-          </h4>
-          <p className="text-[11px] text-slate-500">{COMMON_PAIRS_NO_TIME}</p>
+          <h4 className="type-label text-slate-500">{COMMON_PAIRS_HEADING}</h4>
+          <p className="type-caption text-slate-500">{COMMON_PAIRS_NO_TIME}</p>
           <ul className="flex flex-wrap gap-1.5 mt-1">
             {pairs.common.map(({ pair, ms, count }) => (
               <li

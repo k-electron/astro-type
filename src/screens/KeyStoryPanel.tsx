@@ -85,9 +85,7 @@ const Trend: React.FC<{
   const placed = drawn.map(place);
   return (
     <div>
-      <span className="text-[10px] uppercase font-mono text-slate-500">
-        {name}
-      </span>
+      <span className="type-label text-slate-500">{name}</span>
       <svg
         role="img"
         aria-label={name}
@@ -135,10 +133,8 @@ export const KeyStoryPanel: React.FC<KeyStoryPanelProps> = ({
         aria-label={KEY_STORY_HEADING}
         className="w-full bg-slate-950/60 border border-slate-800 rounded-xl p-3 text-left"
       >
-        <h3 className="text-[10px] uppercase font-mono tracking-wider text-slate-400 mb-2">
-          {KEY_STORY_HEADING}
-        </h3>
-        <p className="text-xs text-slate-400">{KEY_STORY_PROMPT}</p>
+        <h3 className="type-label text-slate-400 mb-2">{KEY_STORY_HEADING}</h3>
+        <p className="type-sentence text-slate-400">{KEY_STORY_PROMPT}</p>
       </section>
     );
   }
@@ -149,9 +145,7 @@ export const KeyStoryPanel: React.FC<KeyStoryPanelProps> = ({
       aria-label={KEY_STORY_HEADING}
       className="w-full bg-slate-950/60 border border-slate-800 rounded-xl p-3 text-left"
     >
-      <h3 className="text-[10px] uppercase font-mono tracking-wider text-slate-400 mb-2">
-        {KEY_STORY_HEADING}
-      </h3>
+      <h3 className="type-label text-slate-400 mb-2">{KEY_STORY_HEADING}</h3>
       <div className="flex flex-wrap items-baseline gap-x-3">
         <h4 className="text-lg font-bold font-display text-white">
           {keyStoryTitle(story.keycap)}
@@ -184,7 +178,7 @@ export const KeyStoryPanel: React.FC<KeyStoryPanelProps> = ({
       </dl>
       <div className="mt-3 flex flex-wrap gap-x-8 gap-y-3">
         {rebuilding ? (
-          <p className="text-xs text-slate-400">
+          <p className="type-sentence text-slate-400">
             {KEY_SPEED_TREND} and {KEY_ACCURACY_TREND.toLowerCase()}:{' '}
             {keyRebuilding(returning)}
           </p>
@@ -213,20 +207,20 @@ export const KeyStoryPanel: React.FC<KeyStoryPanelProps> = ({
                     : `${roundDown(point.accuracy)}% right`,
               }))}
             />
-            <p className="basis-full text-[11px] text-slate-500">
+            <p className="basis-full type-sentence text-slate-500">
               {KEY_TREND_HINT}
             </p>
           </>
         )}
       </div>
       <div className="mt-3">
-        <h4 className="text-[10px] uppercase font-mono text-slate-500">
-          {MIX_UPS_HEADING}
-        </h4>
+        <h4 className="type-label text-slate-500">{MIX_UPS_HEADING}</h4>
         {rebuilding ? (
-          <p className="text-xs text-slate-400">{keyRebuilding(returning)}</p>
+          <p className="type-sentence text-slate-400">
+            {keyRebuilding(returning)}
+          </p>
         ) : story.mixUps.length === 0 ? (
-          <p className="text-xs text-slate-400">{KEY_MIX_UPS_NONE}</p>
+          <p className="type-sentence text-slate-400">{KEY_MIX_UPS_NONE}</p>
         ) : (
           <>
             <p className="text-xs text-slate-500">{KEY_MIX_UPS_HINT}</p>
@@ -234,7 +228,7 @@ export const KeyStoryPanel: React.FC<KeyStoryPanelProps> = ({
               {story.mixUps.map((mixUp) => (
                 <li
                   key={mixUp.pressed}
-                  className="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 text-[11px] font-mono text-slate-200"
+                  className="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 type-caption font-mono text-slate-200"
                 >
                   {keyInsteadText(mixUp.pressed, mixUp.count)}
                 </li>

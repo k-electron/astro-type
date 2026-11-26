@@ -147,10 +147,8 @@ export const JourneyTimeline: React.FC<JourneyTimelineProps> = ({
         aria-label={TIMELINE_HEADING}
         className="w-full bg-slate-950/60 border border-slate-800 rounded-xl p-3 text-left"
       >
-        <h3 className="text-[10px] uppercase font-mono tracking-wider text-slate-400 mb-2">
-          {TIMELINE_HEADING}
-        </h3>
-        <p className="text-xs text-slate-400">
+        <h3 className="type-label text-slate-400 mb-2">{TIMELINE_HEADING}</h3>
+        <p className="type-sentence text-slate-400">
           {timelineRebuilding(isReturning(report.sentence))}
         </p>
       </section>
@@ -283,10 +281,13 @@ export const JourneyTimeline: React.FC<JourneyTimelineProps> = ({
       aria-label={TIMELINE_HEADING}
       className="w-full bg-slate-950/60 border border-slate-800 rounded-xl p-3 text-left"
     >
-      <h3 className="text-[10px] uppercase font-mono tracking-wider text-slate-400 mb-2">
+      {/* As tall as the cursor's 12px reading, so the strips don't move when it shows. */}
+      <h3 className="min-h-4 type-label text-slate-400 mb-2">
         {TIMELINE_HEADING}
         {heading && (
-          <span className="ml-2 text-slate-300 normal-case">{heading}</span>
+          <span className="ml-2 type-caption font-sans normal-case tracking-normal text-slate-300">
+            {heading}
+          </span>
         )}
       </h3>
       <div className="space-y-2.5">
@@ -306,16 +307,14 @@ export const JourneyTimeline: React.FC<JourneyTimelineProps> = ({
               aria-label={row.name}
               onMouseEnter={() => setHovered(row.name)}
               onMouseLeave={() => setHovered(null)}
-              className="grid grid-cols-[92px_1fr] items-center gap-2"
+              className="grid grid-cols-[120px_1fr] items-center gap-2"
             >
               <div className="text-left">
-                <h4 className="text-[10px] uppercase font-mono text-slate-500">
-                  {row.name}
-                </h4>
+                <h4 className="type-label text-slate-500">{row.name}</h4>
                 <div className={`font-mono font-bold text-sm ${row.tone}`}>
                   {reading(row)}
                 </div>
-                <div className="text-[9px] font-mono text-slate-500">
+                <div className="type-caption font-mono text-slate-500">
                   {row.over}
                 </div>
               </div>
@@ -348,7 +347,7 @@ export const JourneyTimeline: React.FC<JourneyTimelineProps> = ({
           );
         })}
       </div>
-      <p className="mt-2 min-h-[3rem] text-[11px] leading-snug font-mono text-slate-400">
+      <p className="mt-2 min-h-[3rem] type-sentence text-slate-400">
         {rows.find((row) => row.name === hovered)?.explanation ?? TIMELINE_HINT}
       </p>
     </section>
