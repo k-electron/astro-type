@@ -52,7 +52,7 @@ export const FreeFlight: React.FC = () => {
           >
             {FREE_FLIGHT_TITLE}
           </h2>
-          <p className="text-xs font-mono text-cyan-400 mt-0.5">
+          <p className="type-sentence text-cyan-400 mt-0.5">
             {FREE_FLIGHT_SUBTITLE}
           </p>
         </div>
@@ -79,7 +79,7 @@ export const FreeFlight: React.FC = () => {
               className="text-left p-2.5 rounded-lg border border-slate-800 bg-slate-950/60 hover:border-cyan-500/50 hover:bg-slate-800/60 transition-all text-xs"
             >
               <div className="font-semibold text-slate-200">{preset.name}</div>
-              <div className="text-[11px] text-slate-500 truncate mt-0.5">
+              <div className="type-caption text-slate-500 truncate mt-0.5">
                 {preset.text}
               </div>
             </button>
@@ -104,13 +104,10 @@ export const FreeFlight: React.FC = () => {
           className="w-full p-3 rounded-xl border border-slate-800 bg-slate-950 text-slate-200 font-mono text-xs sm:text-sm focus:outline-none focus:border-cyan-400 resize-none"
         />
         {/* Why Launch is off. The line keeps its space when empty, so nothing moves. */}
-        <p
-          role="alert"
-          className="min-h-4 mt-1 text-xs font-mono text-rose-400"
-        >
+        <p role="alert" className="min-h-5 mt-1 type-sentence text-rose-400">
           {untypeableMessage}
         </p>
-        <div className="flex justify-between text-[11px] text-slate-500 font-mono mt-1">
+        <div className="flex justify-between type-caption text-slate-500 font-mono mt-1">
           <span>{characterCount} characters</span>
           <span>Approx. {wordCount} words</span>
         </div>

@@ -71,7 +71,9 @@ export const AcademyHome: React.FC = () => {
 
       {loadNotice && (
         <div className="mb-8 flex items-center gap-3 text-xs text-slate-500">
-          <p role="status">{loadNotice}</p>
+          <p role="status" className="type-sentence">
+            {loadNotice}
+          </p>
           <button
             type="button"
             onClick={dismissLoadNotice}
@@ -85,29 +87,29 @@ export const AcademyHome: React.FC = () => {
       {/* Feature Highlights Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full text-left">
         <div className="p-4 rounded-xl border border-slate-800 bg-slate-900/60">
-          <span className="text-xs font-mono font-bold text-cyan-400 block mb-1">
+          <span className="text-sm font-bold text-cyan-400 block mb-1">
             Structured Curriculum
           </span>
-          <p className="text-xs text-slate-400">
+          <p className="type-sentence text-slate-400">
             Home row anchor tactile alignment, top & bottom reaches, 100 common
             words, numbers, and code syntax.
           </p>
         </div>
 
         <div className="p-4 rounded-xl border border-slate-800 bg-slate-900/60">
-          <span className="text-xs font-mono font-bold text-amber-400 block mb-1">
+          <span className="text-sm font-bold text-amber-400 block mb-1">
             Action Deck
           </span>
-          <p className="text-xs text-slate-400">
+          <p className="type-sentence text-slate-400">
             {`${FINGER_LANES.length} lanes of falling Drones, clean words, Multipliers and Overdrive.`}
           </p>
         </div>
 
         <div className="p-4 rounded-xl border border-slate-800 bg-slate-900/60">
-          <span className="text-xs font-mono font-bold text-emerald-400 block mb-1">
+          <span className="text-sm font-bold text-emerald-400 block mb-1">
             Sector Fleet Progression
           </span>
-          <p className="text-xs text-slate-400">
+          <p className="type-sentence text-slate-400">
             {`Earn ${MAX_STARS_PER_STAGE} Stars per Stage, unlock gated Sectors, and equip Cosmetics.`}
           </p>
         </div>
