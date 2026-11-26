@@ -123,7 +123,9 @@ export const HeaderNav: React.FC<{ ref?: React.Ref<HTMLElement> }> = ({
             <span className="font-bold tabular-nums text-sm text-cyan-200">
               {totalCredits.toLocaleString()}
             </span>
-            <span className="text-[10px] text-cyan-400/80 font-medium">Cr</span>
+            <span className="type-caption text-cyan-400/80 font-medium">
+              Cr
+            </span>
           </button>
         </div>
       </div>
@@ -160,7 +162,7 @@ export const HeaderNav: React.FC<{ ref?: React.Ref<HTMLElement> }> = ({
                   ? 'All Audio is MUTED (Click to unmute)'
                   : 'Click to mute all audio instantly'
               }
-              className={`flex items-center gap-1.5 px-2 xl:px-2.5 py-1.5 text-xs font-mono font-medium transition-colors cursor-pointer ${
+              className={`flex items-center gap-1.5 px-2 xl:px-2.5 py-1.5 text-xs font-medium transition-colors cursor-pointer ${
                 isMuted
                   ? 'bg-rose-950/70 text-rose-300 hover:bg-rose-900/70'
                   : 'text-slate-300 hover:text-white hover:bg-slate-800'
@@ -170,16 +172,14 @@ export const HeaderNav: React.FC<{ ref?: React.Ref<HTMLElement> }> = ({
               {isMuted ? (
                 <>
                   <VolumeX className="w-4 h-4 text-rose-400 shrink-0" />
-                  <span className="hidden lg:inline font-bold text-[11px] text-rose-300 tracking-wide">
+                  <span className="hidden lg:inline font-bold text-rose-300 tracking-wide">
                     MUTED
                   </span>
                 </>
               ) : (
                 <>
                   <Volume2 className="w-4 h-4 text-cyan-400 shrink-0" />
-                  <span className="text-[11px] text-slate-300 hidden lg:inline">
-                    Audio
-                  </span>
+                  <span className="text-slate-300 hidden lg:inline">Audio</span>
                 </>
               )}
             </button>
@@ -202,7 +202,7 @@ export const HeaderNav: React.FC<{ ref?: React.Ref<HTMLElement> }> = ({
 
           {/* Audio Settings Popover Panel */}
           {isAudioMenuOpen && (
-            <div className="absolute right-0 mt-2 w-84 sm:w-92 rounded-2xl border border-slate-700 bg-slate-900/95 backdrop-blur-xl shadow-2xl p-4 text-slate-200 z-50 flex flex-col gap-4 duration-100">
+            <div className="absolute right-0 mt-2 w-84 sm:w-96 rounded-2xl border border-slate-700 bg-slate-900/95 backdrop-blur-xl shadow-2xl p-4 text-slate-200 z-50 flex flex-col gap-4 duration-100">
               <AudioPanel />
             </div>
           )}
