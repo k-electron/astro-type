@@ -183,14 +183,14 @@ export const Debrief: React.FC = () => {
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold font-mono uppercase tracking-wide text-emerald-300">
+                    <span className="text-sm font-bold font-mono uppercase tracking-wide text-emerald-300">
                       Stars Collected & Auto-Saved
                     </span>
                     <span className="px-1.5 rounded type-caption bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
                       Saved
                     </span>
                   </div>
-                  <p className="type-caption text-slate-300 mt-0.5">
+                  <p className="type-sentence text-slate-300 mt-0.5">
                     All stars, credits, and unlocked sectors are securely
                     recorded in your starship log.
                   </p>

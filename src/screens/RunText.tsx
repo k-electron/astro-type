@@ -5,6 +5,7 @@ import {
   litLettersCaption,
   letterTitle,
   MISSED,
+  type Phrase,
   QUICK,
   RUN_TEXT_HEADING,
   shadingNote,
@@ -44,6 +45,25 @@ function wordsOf(letters: LetterReport[]): LetterReport[][] {
   }
   return words.filter((word) => word.length > 0);
 }
+
+/** A phrase in Inter, with its key names and numbers in monospace. */
+const PhraseText: React.FC<{ phrase: Phrase; className?: string }> = ({
+  phrase,
+  className = '',
+}) => (
+  <span className={`font-sans ${className}`}>
+    {phrase.map((piece, at) =>
+      at % 2 === 1 ? (
+        // biome-ignore lint/suspicious/noArrayIndexKey: a phrase's pieces are fixed in order and never move
+        <span key={at} className="font-mono">
+          {piece}
+        </span>
+      ) : (
+        piece
+      ),
+    )}
+  </span>
+);
 
 /**
  * The text the player typed, letter by letter: each letter shaded by how long
@@ -100,9 +120,10 @@ export const RunText: React.FC<RunTextProps> = ({
       </p>
       <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 type-caption font-mono text-slate-500">
         {lit !== null ? (
-          <span className="text-cyan-300">
-            {litLettersCaption(lit, litCount)}
-          </span>
+          <PhraseText
+            phrase={litLettersCaption(lit, litCount)}
+            className="text-cyan-300"
+          />
         ) : (
           <>
             <span>
@@ -118,7 +139,9 @@ export const RunText: React.FC<RunTextProps> = ({
               {VERY_SLOW}
             </span>
             <span className={MISSED_LETTER}>{MISSED}</span>
-            {averageMs !== null && <span>{shadingNote(averageMs)}</span>}
+            {averageMs !== null && (
+              <PhraseText phrase={shadingNote(averageMs)} />
+            )}
           </>
         )}
       </p>

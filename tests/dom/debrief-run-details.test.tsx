@@ -228,7 +228,10 @@ describe('linking the keys to the text', () => {
     fireEvent.mouseEnter(entry());
 
     expect(within(textOfRun()).getAllByRole('mark')).toHaveLength(8);
-    expect(card().getByText(litLettersCaption('f', 8))).toBeTruthy();
+    // The caption sets the key and the count in their own spans, so read it as one line.
+    expect(textOfRun().textContent).toContain(
+      litLettersCaption('f', 8).join(''),
+    );
 
     fireEvent.mouseLeave(entry());
 

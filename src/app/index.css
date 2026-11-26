@@ -2,8 +2,8 @@
 
 /* The game serves its own fonts, Latin only, so a visit asks no other site for
    anything. Inter is one variable file for every weight; JetBrains Mono ships
-   the weights the game draws with. The deck waits for "JetBrains Mono" at 400
-   and 500 before it starts, so the family names must stay exactly these. */
+   the weights the game draws with. The deck waits for "JetBrains Mono" at 400,
+   500 and 700 before it starts, so the family names must stay exactly these. */
 @font-face {
   font-family: "Inter";
   font-style: normal;

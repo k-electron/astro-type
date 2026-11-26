@@ -64,9 +64,9 @@ const Trend: React.FC<{
   const drawn = values.filter((point) => point.value !== null);
   if (drawn.length < 2) {
     return (
-      <div className="text-xs text-slate-400">
-        <span className="font-mono text-slate-500 mr-2">{name}</span>
-        {KEY_NO_TREND}
+      <div>
+        <span className="type-label text-slate-500 mr-2">{name}</span>
+        <span className="type-sentence text-slate-400">{KEY_NO_TREND}</span>
       </div>
     );
   }
@@ -158,11 +158,19 @@ export const KeyStoryPanel: React.FC<KeyStoryPanelProps> = ({
         <span>{keyFirstTyped(story.firstDay)}</span>
         <span>{keyTimesTyped(story.typed)}</span>
       </div>
-      <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs font-mono">
-        <dt className="text-slate-500">{KEY_FIRST_DAYS}</dt>
-        <dd className="text-slate-200">{keyFirstDaysText(story.first)}</dd>
-        <dt className="text-slate-500">{KEY_NOW}</dt>
-        <dd className="text-cyan-300">
+      {/* The names and the numbers are in monospace; a line that says why
+          there is no number yet is a sentence, in Inter. */}
+      <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 type-caption">
+        <dt className="font-mono text-slate-500">{KEY_FIRST_DAYS}</dt>
+        <dd
+          className={`${story.first.tries === 0 ? 'font-sans' : 'font-mono'} text-slate-200`}
+        >
+          {keyFirstDaysText(story.first)}
+        </dd>
+        <dt className="font-mono text-slate-500">{KEY_NOW}</dt>
+        <dd
+          className={`${rebuilding || story.now === null ? 'font-sans' : 'font-mono'} text-cyan-300`}
+        >
           {rebuilding
             ? keyRebuilding(returning)
             : story.now === null
@@ -171,8 +179,8 @@ export const KeyStoryPanel: React.FC<KeyStoryPanelProps> = ({
         </dd>
         {best !== null && (
           <>
-            <dt className="text-slate-500">{KEY_BEST}</dt>
-            <dd className="text-emerald-300">{best}</dd>
+            <dt className="font-mono text-slate-500">{KEY_BEST}</dt>
+            <dd className="font-mono text-emerald-300">{best}</dd>
           </>
         )}
       </dl>
@@ -223,7 +231,7 @@ export const KeyStoryPanel: React.FC<KeyStoryPanelProps> = ({
           <p className="type-sentence text-slate-400">{KEY_MIX_UPS_NONE}</p>
         ) : (
           <>
-            <p className="text-xs text-slate-500">{KEY_MIX_UPS_HINT}</p>
+            <p className="type-sentence text-slate-500">{KEY_MIX_UPS_HINT}</p>
             <ul className="flex flex-wrap gap-1.5 mt-1">
               {story.mixUps.map((mixUp) => (
                 <li

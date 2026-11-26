@@ -128,12 +128,10 @@ export const RunKeys: React.FC<RunKeysProps> = ({ report, linking }) => {
         aria-label={KEYS_HEADING}
         className="bg-slate-950/60 border border-slate-800 rounded-xl p-3"
       >
-        <h3 className="type-label text-slate-400 mb-2">
-          {KEYS_HEADING} ·{' '}
-          <span className="type-caption font-sans normal-case tracking-normal">
-            {KEYS_HINT}
-          </span>
-        </h3>
+        <div className="mb-2 flex flex-wrap items-baseline gap-x-2">
+          <h3 className="type-label text-slate-400">{KEYS_HEADING}</h3>
+          <p className="type-sentence text-slate-400">{KEYS_HINT}</p>
+        </div>
         <Keyboard keyView={keyView} label={KEYS_HEADING} />
       </section>
       <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-3 space-y-3">

@@ -30,7 +30,9 @@ import {
 } from './journeyLabels';
 import { roundDown } from './roundDown';
 import {
+  STRIP_ROW,
   StripChart,
+  StripsHeading,
   type StripBand,
   type StripGuide,
   type StripSeries,
@@ -270,26 +272,22 @@ export const JourneyTimeline: React.FC<JourneyTimelineProps> = ({
     onSelectDay(day.day, day.sector?.id ?? null);
   };
 
-  const heading = shown
-    ? [dayText(shown.day), shown.sector?.name, shown.away ? AWAY_MARK : null]
-        .filter(Boolean)
-        .join(' · ')
-    : null;
+  // The day and its Sector are names, in monospace; the note on a day away is a sentence.
+  const dayReading = shown && (
+    <>
+      <span className="font-mono">
+        {[dayText(shown.day), shown.sector?.name].filter(Boolean).join(' · ')}
+      </span>
+      {shown.away && ` · ${AWAY_MARK}`}
+    </>
+  );
 
   return (
     <section
       aria-label={TIMELINE_HEADING}
       className="w-full bg-slate-950/60 border border-slate-800 rounded-xl p-3 text-left"
     >
-      {/* As tall as the cursor's 12px reading, so the strips don't move when it shows. */}
-      <h3 className="min-h-4 type-label text-slate-400 mb-2">
-        {TIMELINE_HEADING}
-        {heading && (
-          <span className="ml-2 type-caption font-sans normal-case tracking-normal text-slate-300">
-            {heading}
-          </span>
-        )}
-      </h3>
+      <StripsHeading heading={TIMELINE_HEADING} reading={dayReading} />
       <div className="space-y-2.5">
         {rows.map((row) => {
           const series: StripSeries = {
@@ -307,7 +305,7 @@ export const JourneyTimeline: React.FC<JourneyTimelineProps> = ({
               aria-label={row.name}
               onMouseEnter={() => setHovered(row.name)}
               onMouseLeave={() => setHovered(null)}
-              className="grid grid-cols-[120px_1fr] items-center gap-2"
+              className={STRIP_ROW}
             >
               <div className="text-left">
                 <h4 className="type-label text-slate-500">{row.name}</h4>

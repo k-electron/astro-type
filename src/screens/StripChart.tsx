@@ -65,8 +65,30 @@ export interface StripChartProps {
   empty: string;
 }
 
-const MARGIN = { top: 8, right: 48, bottom: 8, left: 34 } as const;
-const AXIS_HEIGHT = 22;
+/**
+ * A row of strips: the strip's name, value and window in a column of this
+ * width, then the strip. The Debrief and Analytics share it, so their strips
+ * line up the same; 120px keeps "other-hand Shift" on one line.
+ */
+export const STRIP_ROW = 'grid grid-cols-[120px_1fr] items-center gap-2';
+
+/**
+ * The heading over a set of strips, with what the cursor reads beside it
+ * (the moment or the day it is on) as a 12px caption. The row is held at the
+ * caption's height and the reading stays on one line, so the strips don't
+ * move when the cursor comes and goes.
+ */
+export const StripsHeading: React.FC<{
+  heading: string;
+  reading: React.ReactNode;
+}> = ({ heading, reading }) => (
+  <div className="mb-2 flex h-4 items-baseline gap-2">
+    <h3 className="shrink-0 type-label text-slate-400">{heading}</h3>
+    {reading !== null && (
+      <p className="min-w-0 truncate type-caption text-slate-300">{reading}</p>
+    )}
+  </div>
+);
 
 /** The chart's numbers and names: the 11px label minimum, in the game's monospace. */
 const FONT_SIZE = 11;
@@ -74,24 +96,81 @@ const FONT_SIZE = 11;
 const CHAR_WIDTH = FONT_SIZE * 0.6;
 /** Lowers a label onto the line it names: about half a digit's height. */
 const CENTRE = 4;
+/** The space between a guide's line (or the label before it) and its label. */
+const GUIDE_LABEL_PAD = 4;
 
-/** Guides closer than this many pixels share one label, so their names never overlap. */
+/**
+ * The right margin holds the guide labels: one column wide enough for
+ * "Steady", or two columns of a three-character label ("98%  95%") side by
+ * side, the most a strip staggers.
+ */
+const MARGIN = { top: 8, right: 48, bottom: 8, left: 34 } as const;
+const AXIS_HEIGHT = 22;
+
+/**
+ * Guides closer than this many pixels share one name (the upper one's): any
+ * closer and a name can't say which line it is on. It is what the 9px labels
+ * used, so no guide loses a name it had before.
+ */
+const NAME_GAP = 7.5;
+/**
+ * Two labels in one column need this many pixels between their lines, about
+ * the height of the 11px text, or they overlap. Rhythm's Steady and Paced are
+ * 10.1px apart on a 70px strip, so they clear it, just.
+ */
 const LABEL_GAP = 10;
+
+/** A band's name: its first line's baseline below the strip's top edge, and the step to the next line. */
+const BAND_LABEL_TOP = 10;
+const BAND_LINE_HEIGHT = 12;
 
 const GRID = '#334155';
 const TICK = '#f43f5e';
 const CURSOR = '#f8fafc';
+/** The numbers and names, in the game's monospace (the theme's `font-mono`). */
 const TEXT = {
   fill: '#64748b',
   fontSize: FONT_SIZE,
-  fontFamily: '"JetBrains Mono", monospace',
+  className: 'font-mono',
 } as const;
-/** What an empty strip says is a sentence, so it is set in Inter. */
+/** What an empty strip says is a sentence: the shared 12px caption, in Inter. */
 const EMPTY_TEXT = {
-  ...TEXT,
-  fontSize: 12,
-  fontFamily: 'Inter, sans-serif',
+  fill: TEXT.fill,
+  className: 'type-caption font-sans',
 } as const;
+
+/** Which column of the right margin a guide's label goes in, or null for none. */
+type LabelColumn = 0 | 1 | null;
+
+/**
+ * Where each guide is named. Walking from the top, a guide is named when it
+ * is at least `NAME_GAP` below the last one named. A label goes in the first
+ * column, or in the second when it would overlap the one above it there.
+ * Named guides two apart are at least twice `NAME_GAP` apart, which clears
+ * `LABEL_GAP`, so the second column always has room.
+ */
+function labelColumns(
+  guides: readonly StripGuide[],
+  yOf: (guide: StripGuide) => number,
+): LabelColumn[] {
+  const columns: LabelColumn[] = guides.map(() => null);
+  let lastNamed = Number.NEGATIVE_INFINITY;
+  let lastInFirst = Number.NEGATIVE_INFINITY;
+  [...guides.keys()]
+    .sort((a, b) => yOf(guides[a]) - yOf(guides[b]))
+    .forEach((position) => {
+      const y = yOf(guides[position]);
+      if (y - lastNamed < NAME_GAP) return;
+      lastNamed = y;
+      if (y - lastInFirst >= LABEL_GAP) {
+        columns[position] = 0;
+        lastInFirst = y;
+      } else {
+        columns[position] = 1;
+      }
+    });
+  return columns;
+}
 
 /**
  * One strip of a linked chart: lines over a shared x, dashed guides, a tick
@@ -172,18 +251,18 @@ const Strip: React.FC<StripChartProps & { width: number }> = ({
     range: [innerHeight, 0],
     clamp: true,
   });
-  // Walk the guides from the top, naming one only when it clears the last named.
-  const labelled = new Set<number>();
-  let lastLabelY = Number.NEGATIVE_INFINITY;
-  [...guides.keys()]
-    .sort((a, b) => yScale(guides[a].y) - yScale(guides[b].y))
-    .forEach((position) => {
-      const y = yScale(guides[position].y);
-      if (y - lastLabelY >= LABEL_GAP) {
-        labelled.add(position);
-        lastLabelY = y;
-      }
-    });
+  const columns = labelColumns(guides, (guide) => yScale(guide.y));
+  // The second column starts past the widest label in the first.
+  const firstColumnWidth = Math.max(
+    0,
+    ...guides.map((guide, position) =>
+      columns[position] === 0 ? guide.label.length * CHAR_WIDTH : 0,
+    ),
+  );
+  const labelX = (column: 0 | 1) =>
+    innerWidth +
+    GUIDE_LABEL_PAD +
+    column * (firstColumnWidth + GUIDE_LABEL_PAD);
   const hasPoints = series.some((line) => line.points.length > 0);
 
   return (
@@ -220,7 +299,7 @@ const Strip: React.FC<StripChartProps & { width: number }> = ({
               {name && (
                 <text
                   x={xScale(band.from) + 3}
-                  y={10 + 12 * (band.labelLine ?? 0)}
+                  y={BAND_LABEL_TOP + BAND_LINE_HEIGHT * (band.labelLine ?? 0)}
                   {...TEXT}
                   fill="#cbd5e1"
                   pointerEvents="none"
@@ -232,29 +311,32 @@ const Strip: React.FC<StripChartProps & { width: number }> = ({
           );
         })}
         {hasPoints &&
-          guides.map((guide, position) => (
-            <g key={`${guide.y}${guide.label}`}>
-              <line
-                x1={0}
-                x2={innerWidth}
-                y1={yScale(guide.y)}
-                y2={yScale(guide.y)}
-                stroke={GRID}
-                strokeDasharray="3 4"
-              />
-              {labelled.has(position) && (
-                <text
-                  x={innerWidth + 4}
-                  y={yScale(guide.y)}
-                  dy={CENTRE}
-                  {...TEXT}
-                  fill="#94a3b8"
-                >
-                  {guide.label}
-                </text>
-              )}
-            </g>
-          ))}
+          guides.map((guide, position) => {
+            const column = columns[position];
+            return (
+              <g key={`${guide.y}${guide.label}`}>
+                <line
+                  x1={0}
+                  x2={innerWidth}
+                  y1={yScale(guide.y)}
+                  y2={yScale(guide.y)}
+                  stroke={GRID}
+                  strokeDasharray="3 4"
+                />
+                {column !== null && (
+                  <text
+                    x={labelX(column)}
+                    y={yScale(guide.y)}
+                    dy={CENTRE}
+                    {...TEXT}
+                    fill="#94a3b8"
+                  >
+                    {guide.label}
+                  </text>
+                )}
+              </g>
+            );
+          })}
         {hasPoints &&
           ticks.map((x) => (
             <g key={x}>

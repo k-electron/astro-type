@@ -201,9 +201,10 @@ export const TextPromptStream: React.FC = () => {
         </div>
       </div>
 
-      {/* Structured Pedagogical Technique Bar (Fixed Height: the 32⅓px its
-          10px chips once gave it, so the Action Deck below keeps its size;
-          the tip wraps to at most two 15px lines inside it) */}
+      {/* Structured Pedagogical Technique Bar. Its height is fixed at 32⅓px,
+          so the text prompt's panel stays 174.33px tall and the Action Deck
+          below keeps its size; the tip wraps to at most two 15px lines, which
+          fit inside that height. */}
       {techniqueTip && (
         <div className="px-4 h-[calc(2rem+1px/3)] bg-slate-950/60 border-b border-slate-800/80 flex items-center justify-between gap-3 text-xs shrink-0">
           <div className="flex items-center gap-2 min-w-0">
