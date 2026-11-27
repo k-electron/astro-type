@@ -16,3 +16,7 @@ node assemble.mjs   # writes index.html and data.json
 ```
 
 Then open `index.html` beside `data.js`.
+
+## Walkthrough videos
+
+`video/`: 14 narrated videos of generated Detour Stages played in the real game (through Free Flight) by a model learner tuned to each point on the Path (`typist.mjs`, after `beginner.ts` on `prototype/debrief-flight-log`). `script.mjs` holds what each video plays and says; `record.mjs` records one with Playwright (dev server on :3000, voice from macOS `say`); `post.py` fast-forwards the long stretches and muxes the voice with Homebrew ffmpeg; `page.mjs` writes the page. `one.sh <id>` does one video end to end. The MP4s are not committed (private artifact).

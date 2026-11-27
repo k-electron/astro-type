@@ -240,6 +240,22 @@
     return s;
   }
 
+  // Dressed like the Waypoint's own text: commas and full stops where learned,
+  // and a capital to start the list and after each full stop where learned.
+  function dress(tokens, allowed, r) {
+    const cap = (t) => (allowed.includes(t.text[0].toUpperCase()) && /[a-z]/.test(t.text[0]) ? t.text[0].toUpperCase() + t.text.slice(1) : t.text);
+    let start = true;
+    tokens.forEach((t, i) => {
+      if (t.from !== 'word' && t.from !== 'made-up word') { start = false; return; }
+      if (start) t.text = cap(t);
+      start = false;
+      if (i === tokens.length - 1) { if (allowed.includes('.')) t.text += '.'; return; }
+      const roll = r.int(12);
+      if (roll < 2 && allowed.includes(',')) t.text += ',';
+      else if (roll === 2 && allowed.includes('.')) { t.text += '.'; start = true; }
+    });
+  }
+
   function buildWords(req, data, focus, length, r) {
     const wp = req.waypoint;
     const allowed = wp.known;
@@ -261,10 +277,14 @@
       // The commonest words first: SCOWL sizes 10-20, and 35 only when fewer than 40 fit.
       if (pool.filter((x) => x.size <= 20).length >= 40) pool = pool.filter((x) => x.size <= 20);
       const real = pool.length;
-      if (real < 15 && data.madeUp[wp.n]) {
+      const scarce = req.options?.scarce ?? 'made-up';
+      if (real < 15 && scarce === 'drill') return null;
+      if (real < 15 && scarce === 'repeat') {
+        notes.push(`Only ${real} real words hold the Target here; they repeat.`);
+      } else if (real < 15 && data.madeUp[wp.n]) {
         const made = data.madeUp[wp.n].filter((w) => focusLetters.some((c) => w.includes(c)));
         pool = pool.concat(made.map((w) => ({ w, size: 35, made: true })));
-        notes.push(`Only ${real} real words hold the Target here, so ${made.length} vetted made-up words join them.`);
+        notes.push(`${real ? `Only ${real}` : 'No'} real words hold the Target here, so ${made.length} vetted made-up words join them.`);
       } else {
         notes.push(`${real.toLocaleString('en')} real words hold the Target here.`);
       }
@@ -312,7 +332,12 @@
       } else if (focusDigits.length && r.int(2) === 0) {
         text = numberToken(digits, focusDigits, r, allowed);
         from = 'number';
-      } else if (focusSymbols.length && (focusLetters.length ? r.int(10) < 3 : r.int(10) < 6)) {
+      } else if (focusSymbols.length && req.options?.symbols === 'drill' && r.int(10) < 5) {
+        const s = focusSymbols[r.int(focusSymbols.length)];
+        const ki = keyInfo(s);
+        tokens.push({ text: ki.home + s + ki.home, from: 'drill' });
+        len += 4;
+      } else if (focusSymbols.length && req.options?.symbols !== 'drill' && (focusLetters.length ? r.int(10) < 3 : r.int(10) < 6)) {
         const s = focusSymbols[r.int(focusSymbols.length)];
         const other = r.pick(pool, weight).w;
         const num = digits.length ? numberToken(digits, [], r, allowed) : '1';
@@ -323,6 +348,7 @@
       tokens.push({ text, from });
       len += text.length + 1;
     }
+    if (req.options?.look === 'dressed') dress(tokens, allowed, r);
     return { tokens, notes };
   }
 
@@ -347,15 +373,19 @@
       return { error: `Nothing to practise: ${describeTarget(req.target)} has no keys learned by ${wp.name}.`, request };
     }
 
-    let kind = req.run === 1 ? 'drill' : 'words';
+    const steps = req.options?.steps ?? 'drill-then-words';
+    let kind = steps === 'words-first' ? 'words' : steps === 'mini-ladder' ? 'drill + words' : req.run === 1 ? 'drill' : 'words';
     let tokens = null;
     // A drill Run is short (seconds of typing); a words Run fills the Recipe's middle length.
     const drillLength = wp.sector === 's1' ? 60 : 80;
     let length = kind === 'drill' ? drillLength : Math.round((lo + hi) / 2);
-    if (kind === 'words') {
-      const built = buildWords(req, data, focus, length, r);
+    if (kind !== 'drill') {
+      // A mini-ladder Run opens on a few seconds of drill, then words.
+      const head = kind === 'drill + words' ? buildDrill(req, focus, 24, r) ?? [] : [];
+      const headLen = head.reduce((a, x) => a + x.text.length + 1, 0);
+      const built = buildWords(req, data, focus, length - headLen, r);
       if (built) {
-        tokens = built.tokens;
+        tokens = head.concat(built.tokens);
         notes.push(...built.notes);
       } else {
         kind = 'drill';
@@ -371,6 +401,7 @@
       stage: {
         text,
         origin: 'Detour',
+        options: req.options ?? {},
         kind,
         target: describeTarget(req.target),
         source: { madeBy: 'generator', version: VERSION, wordList: data.wordListVersion, ...request },
