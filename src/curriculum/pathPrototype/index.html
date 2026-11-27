@@ -1,0 +1,1937 @@
+<title>The Phase 3 Path</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one reading column; a pace strip, the calls to make, then each Sector as a numbered run of Waypoint rows. */
+:root {
+  --bg: #f4f6fa;
+  --panel: #ffffff;
+  --ink: #131a2b;
+  --muted: #5a6479;
+  --rule: #dde2ec;
+  --accent: #0e7490;
+  --accent-soft: #e0f2f6;
+  --flag: #a24a00;
+  --flag-soft: #fdf0e4;
+  --sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --p-known: #8a93a6; --p-drill: #c2410c; --p-pairs: #7c3aed; --p-words: #0e7490; --p-mixed: #15803d;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0c111d; --panel: #141b2b; --ink: #e6eaf3; --muted: #97a1b6; --rule: #263049;
+  --accent: #38bdd8; --accent-soft: #10303a; --flag: #f0a35e; --flag-soft: #33230f;
+  --p-known: #7d869a; --p-drill: #fb923c; --p-pairs: #a78bfa; --p-words: #38bdd8; --p-mixed: #4ade80;
+  color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0c111d; --panel: #141b2b; --ink: #e6eaf3; --muted: #97a1b6; --rule: #263049;
+  --accent: #38bdd8; --accent-soft: #10303a; --flag: #f0a35e; --flag-soft: #33230f;
+  --p-known: #7d869a; --p-drill: #fb923c; --p-pairs: #a78bfa; --p-words: #38bdd8; --p-mixed: #4ade80;
+  color-scheme: dark; }
+body { background: var(--bg); color: var(--ink); font: 15px/1.55 var(--sans); }
+.wrap { max-width: 1060px; margin: 0 auto; padding-block: 40px 80px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 40px; }
+h1, h2, h3 { text-wrap: balance; margin: 0; }
+h1 { font-size: 34px; letter-spacing: -0.02em; line-height: 1.15; }
+h2 { font-size: 22px; letter-spacing: -0.01em; }
+p { margin: 0; }
+.eyebrow { font: 600 12px/1 var(--sans); letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
+.lede { max-width: 68ch; color: var(--muted); }
+header { display: grid; gap: 14px; }
+.stats { display: flex; flex-wrap: wrap; gap: 8px 28px; font-variant-numeric: tabular-nums; }
+.stats b { font-size: 20px; display: block; color: var(--ink); }
+.stats span { color: var(--muted); font-size: 13px; }
+
+/* pace strip */
+.pace { background: var(--panel); border: 1px solid var(--rule); border-radius: 10px; padding: 18px 18px 12px; display: grid; gap: 10px; }
+.pace svg { width: 100%; height: auto; display: block; }
+.pace-scroll { overflow-x: auto; }
+.pace-note { color: var(--muted); font-size: 13px; max-width: 80ch; }
+
+/* calls */
+.calls { display: grid; gap: 10px; counter-reset: call; }
+.call { display: grid; grid-template-columns: 30px 1fr; gap: 12px; background: var(--panel); border: 1px solid var(--rule); border-radius: 10px; padding: 14px 16px; }
+.call::before { counter-increment: call; content: counter(call); font: 600 13px/26px var(--mono); text-align: center; width: 26px; height: 26px; border-radius: 50%; background: var(--flag-soft); color: var(--flag); }
+.call b { display: block; }
+.call p { color: var(--muted); font-size: 14px; }
+
+/* sectors */
+.sector { display: grid; gap: 14px; }
+.sector-head { display: grid; gap: 6px; border-top: 2px solid var(--ink); padding-top: 14px; }
+.sector-head .meta { color: var(--muted); font-size: 14px; }
+.recipe { font-size: 13px; color: var(--muted); background: var(--accent-soft); border-radius: 8px; padding: 8px 12px; max-width: 90ch; }
+.recipe b { color: var(--ink); font-weight: 600; }
+.wps { display: grid; gap: 10px; }
+.wp { background: var(--panel); border: 1px solid var(--rule); border-radius: 10px; padding: 14px 16px; display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 4px 14px; }
+.wp.review { background: transparent; border-style: dashed; }
+.num { font: 600 13px/1 var(--mono); color: var(--muted); padding-top: 6px; font-variant-numeric: tabular-nums; }
+.wp-main { display: grid; gap: 8px; min-width: 0; }
+.wp-top { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.wp-top h3 { font-size: 17px; }
+.tag { font: 600 11px/1 var(--sans); letter-spacing: 0.06em; text-transform: uppercase; padding: 4px 7px; border-radius: 4px; border: 1px solid var(--rule); color: var(--muted); }
+.caps { display: flex; flex-wrap: wrap; gap: 4px; }
+.cap { font: 600 13px/1 var(--mono); min-width: 24px; height: 26px; padding: 0 6px; display: inline-grid; place-items: center; border-radius: 5px; background: var(--panel); border: 1px solid var(--rule); border-bottom: 3px solid var(--f, var(--rule)); }
+.right { margin-left: auto; color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.tip { max-width: 75ch; }
+.habit { color: var(--muted); font-size: 13px; }
+.habit b { color: var(--ink); font-weight: 600; }
+.row { display: grid; grid-template-columns: 70px minmax(0, 1fr); gap: 10px; font-size: 13px; align-items: baseline; }
+.row > span:first-child { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; }
+.mono { font-family: var(--mono); font-size: 13px; overflow-wrap: anywhere; }
+.sample { font-family: var(--mono); font-size: 13px; line-height: 1.9; overflow-wrap: anywhere; }
+.sample .seg { border-bottom: 2px solid var(--c); padding-bottom: 1px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font-size: 12px; padding: 3px 8px; border-radius: 999px; background: var(--accent-soft); color: var(--ink); }
+.ok { color: var(--p-mixed); font-size: 12px; }
+.bad { color: var(--flag); font-size: 12px; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12px; color: var(--muted); }
+.legend i { display: inline-block; width: 18px; height: 0; border-bottom: 3px solid var(--c); vertical-align: middle; margin-right: 6px; }
+footer { color: var(--muted); font-size: 13px; display: grid; gap: 6px; max-width: 85ch; }
+code { font-family: var(--mono); font-size: 0.92em; }
+@media (max-width: 560px) {
+  h1 { font-size: 27px; }
+  .wp { grid-template-columns: 1fr; }
+  .row { grid-template-columns: 1fr; gap: 2px; }
+  .right { margin-left: 0; width: 100%; }
+}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Prototype · ticket #187 · throwaway</div>
+    <h1>The whole Path, step by step</h1>
+    <p class="lede">A first draft of every Waypoint from the home row to the open-ended speed Sector: its new keys, the drill it opens with, its technique tip, the Recipe its Stages follow, and the Detours that can leave it. The sample texts show the Ladder's shape and are checked against each Waypoint's keys; the real texts are the library's job.</p>
+    <div class="stats" id="stats"></div>
+  </header>
+
+  <section class="pace" aria-labelledby="pace-h">
+    <h2 id="pace-h">Pace against the month</h2>
+    <div class="pace-scroll"><svg id="pace" viewBox="0 0 1000 150" role="img" aria-label="When each Sector's first pass ends, against the pace targets"></svg></div>
+    <p class="pace-note">Bars: where each Sector's first pass ends, at about 5 Runs a Waypoint (4 for a review) and 10 Runs a day. Ticks: the pace targets from <a href="https://github.com/k-electron/astro-type/issues/184">The path's shape</a>. The gap is the room for replays toward each Sector's Star total, and for Detours. The real numbers come from <a href="https://github.com/k-electron/astro-type/issues/192">A beginner's month, simulated</a>.</p>
+  </section>
+
+  <section class="calls" aria-labelledby="calls-h">
+    <h2 id="calls-h">Calls this draft makes</h2>
+    <div id="calls" class="calls"></div>
+  </section>
+
+  <div class="legend" aria-label="Ladder parts in the sample texts">
+    <span><i style="--c: var(--p-known)"></i>known keys</span>
+    <span><i style="--c: var(--p-drill)"></i>drill</span>
+    <span><i style="--c: var(--p-pairs)"></i>Letter pairs</span>
+    <span><i style="--c: var(--p-words)"></i>words</span>
+    <span><i style="--c: var(--p-mixed)"></i>mixed line</span>
+  </div>
+
+  <div id="path" style="display:grid;gap:44px"></div>
+
+  <footer>
+    <p>Sample words for the letter Sectors are drawn by a seeded script from SCOWL sizes 10–35 (the commonest band where it holds 30 or more words), filtered to the Waypoint's keys. Later samples are written by hand. "Words" counts SCOWL size 10–20 words spellable with the letters learned so far.</p>
+    <p>Source: <code>src/curriculum/pathPrototype/</code> on branch <code>prototype/path-outline</code>. Never merged.</p>
+  </footer>
+</div>
+
+<script id="data" type="application/json">{
+ "sectors": [
+  {
+   "id": "s1",
+   "name": "Home row with E and I",
+   "stretch": "The eight home keys, Space, and the first reach (E I)",
+   "recipe": "60–100 characters. Ladder: known keys ≤15%, drill ≤25%, Letter pairs ~15%, words, mixed line ~25%. At least 30% of letters are the new keys.",
+   "waypoints": [
+    {
+     "name": "F and J",
+     "kind": "keys",
+     "new": "fj ",
+     "drill": "fff jjj fjf jfj ff jj",
+     "tip": "Find the bumps on F and J without looking down. Rest four fingers of each hand on the home row, and tap Space with your thumb.",
+     "habit": "Home keys, the bumps, the thumb on Space",
+     "detours": [
+      "F or J accuracy (drill only: no other keys yet)"
+     ],
+     "n": 1,
+     "known": "fj",
+     "ladder": [
+      {
+       "part": "drill",
+       "text": "fff jjj fjf jfj ff jj"
+      },
+      {
+       "part": "pairs",
+       "text": "fj jf"
+      },
+      {
+       "part": "words",
+       "text": "jfjj fjjf jfj jjfjj jff jfjf fjfjf"
+      },
+      {
+       "part": "mixed",
+       "text": "jfjf ffj jffj ffjf fjj"
+      }
+     ],
+     "sample": "fff jjj fjf jfj ff jj fj jf jfjj fjjf jfj jjfjj jff jfjf fjfjf jfjf ffj jffj ffjf fjj",
+     "generated": true,
+     "check": {
+      "ok": true,
+      "badKeys": [],
+      "missingNew": [],
+      "length": 85
+     },
+     "words": 0,
+     "runsBy": 5,
+     "dayBy": 0.5
+    },
+    {
+     "name": "D and K",
+     "kind": "keys",
+     "new": "dk",
+     "drill": "ddd kkk dkd kdk fdf jkj",
+     "tip": "One finger, one key. Your middle fingers rest on D and K, and only the finger that types moves.",
+     "habit": "One finger per key",
+     "detours": [
+      "D or K accuracy",
+      "Mix-up d↔k (mirror)",
+      "Mix-up d↔f (neighbour)"
+     ],
+     "n": 2,
+     "known": "dfjk",
+     "ladder": [
+      {
+       "part": "known",
+       "text": "fjf fjj"
+      },
+      {
+       "part": "drill",
+       "text": "ddd kkk dkd kdk fdf jkj"
+      },
+      {
+       "part": "pairs",
+       "text": "dj df kd kf kd kj"
+      },
+      {
+       "part": "words",
+       "text": "dfdkj djfk jfd kdfk ddkk jkkj kdd"
+      },
+      {
+       "part": "mixed",
+       "text": "jkfj fdjd fkdjk jfkd dfjj"
+      }
+     ],
+     "sample": "fjf fjj ddd kkk dkd kdk fdf jkj dj df kd kf kd kj dfdkj djfk jfd kdfk ddkk jkkj kdd jkfj fdjd fkdjk jfkd dfjj",
+     "generated": true,
+     "check": {
+      "ok": true,
+      "badKeys": [],
+      "missingNew": [],
+      "length": 109
+     },
+     "words": 0,
+     "runsBy": 10,
+     "dayBy": 1.0
+    },
+    {
+     "name": "S and L",
+     "kind": "keys",
+     "new": "sl",
+     "drill": "sss lll sls lsl dsd klk",
+     "tip": "Ring fingers are weaker, so go steady. S and L belong to the ring fingers, never to the middle ones.",
+     "habit": "Weak fingers get their own key",
+     "detours": [
+      "Ring fingers",
+      "Mix-up s↔d, l↔k (neighbours)"
+     ],
+     "n": 3,
+     "known": "dfjkls",
+     "ladder": [
+      {
+       "part": "known",
+       "text": "dkffd jffk"
+      },
+      {
+       "part": "drill",
+       "text": "sss lll sls lsl dsd klk"
+      },
+      {
+       "part": "pairs",
+       "text": "ls dl fl ls ds ks"
+      },
+      {
+       "part": "words",
+       "text": "lkll fklf klfl ljj skf sfsk fkddl"
+      },
+      {
+       "part": "mixed",
+       "text": "ljslf ddj fflkd djsd ddf"
+      }
+     ],
+     "sample": "dkffd jffk sss lll sls lsl dsd klk ls dl fl ls ds ks lkll fklf klfl ljj skf sfsk fkddl ljslf ddj fflkd djsd ddf",
+     "generated": true,
+     "check": {
+      "ok": true,
+      "badKeys": [],
+      "missingNew": [],
+      "length": 111
+     },
+     "words": 0,
+     "runsBy": 15,
+     "dayBy": 1.5
+    },
+    {
+     "name": "A and ;",
+     "kind": "keys",
+     "new": "a;",
+     "drill": "aaa ;;; a;a ;a; sas l;l",
+     "tip": "Every finger now has a home. Little fingers rest lightly on A and ;, with your wrists floating above the desk.",
+     "habit": "Posture: wrists up, fingers curved",
+     "detours": [
+      "Little fingers",
+      "Home row (the first words Detour, topped up with made-up words)"
+     ],
+     "n": 4,
+     "known": ";adfjkls",
+     "ladder": [
+      {
+       "part": "known",
+       "text": "kksj dkdk"
+      },
+      {
+       "part": "drill",
+       "text": "aaa ;;; a;a ;a; sas l;l"
+      },
+      {
+       "part": "pairs",
+       "text": ";s ;l ;k al as ad"
+      },
+      {
+       "part": "words",
+       "text": "lad lass adds ask salads salad asks"
+      },
+      {
+       "part": "mixed",
+       "text": "add fads flak dads lads"
+      }
+     ],
+     "sample": "kksj dkdk aaa ;;; a;a ;a; sas l;l ;s ;l ;k al as ad lad lass adds ask salads salad asks add fads flak dads lads",
+     "generated": true,
+     "check": {
+      "ok": true,
+      "badKeys": [],
+      "missingNew": [],
+      "length": 111
+     },
+     "words": 11,
+     "runsBy": 20,
+     "dayBy": 2.0
+    },
+    {
+     "name": "Home row",
+     "kind": "review",
+     "tip": "Settle back onto the bumps after every word. Your fingers find home by touch.",
+     "habit": "Return to home by touch",
+     "detours": [
+      "Weakest home key",
+      "Any Mix-up that stands out"
+     ],
+     "n": 5,
+     "known": ";adfjkls",
+     "drill": null,
+     "ladder": [
+      {
+       "part": "known",
+       "text": "flak lass"
+      },
+      {
+       "part": "words",
+       "text": "lass falls sad ad salads lad fall salad flak dad"
+      },
+      {
+       "part": "mixed",
+       "text": "salads lad fad ad flak"
+      }
+     ],
+     "sample": "flak lass lass falls sad ad salads lad fall salad flak dad salads lad fad ad flak",
+     "generated": true,
+     "check": {
+      "ok": true,
+      "badKeys": [],
+      "missingNew": [],
+      "length": 81
+     },
+     "words": 11,
+     "runsBy": 24,
+     "dayBy": 2.4
+    },
+    {
+     "name": "E and I",
+     "kind": "keys",
+     "new": "ei",
+     "drill": "ded kik ded kik de ki",
+     "tip": "Your first reach. Middle finger up to E or I, then straight back to D or K. The other fingers stay home.",
+     "habit": "Anchor, reach, return (first reach)",
+     "detours": [
+      "E or I accuracy",
+      "Mix-up e↔d, i↔k (same finger)",
+      "Mix-up e↔i (mirror)",
+      "Words Detours from here on"
+     ],
+     "n": 6,
+     "known": ";adefijkls",
+     "ladder": [
+      {
+       "part": "known",
+       "text": "ad dads"
+      },
+      {
+       "part": "drill",
+       "text": "ded kik ded kik de ki"
+      },
+      {
+       "part": "pairs",
+       "text": "es ed le is li di"
+      },
+      {
+       "part": "words",
+       "text": "safe seeks feed filed skills lied likes"
+      },
+      {
+       "part": "mixed",
+       "text": "aid ask dislike sales sides"
+      }
+     ],
+     "sample": "ad dads ded kik ded kik de ki es ed le is li di safe seeks feed filed skills lied likes aid ask dislike sales sides",
+     "generated": true,
+     "check": {
+      "ok": true,
+      "badKeys": [],
+      "missingNew": [],
+      "length": 115
+     },
+     "words": 130,
+     "runsBy": 29,
+     "dayBy": 2.9
+    },
+    {
+     "name": "G and H",
+     "kind": "keys",
+     "new": "gh",
+     "drill": "fgf jhj fgf jhj gh hg",
+     "tip": "Reach sideways with your index finger to G or H, then come back to the F or J bump.",
+     "habit": "Index fingers own two columns",
+     "detours": [
+      "G or H accuracy",
+      "Mix-up g↔f, h↔j",
+      "Index fingers' second column"
+     ],
+     "n": 7,
+     "known": ";adefghijkls",
+     "ladder": [
+      {
+       "part": "known",
+       "text": "lead deal"
+      },
+      {
+       "part": "drill",
+       "text": "fgf jhj fgf jhj gh hg"
+      },
+      {
+       "part": "pairs",
+       "text": "ge ig ag he sh ha"
+      },
+      {
+       "part": "words",
+       "text": "had ahead high his flashes hill flash"
+      },
+      {
+       "part": "mixed",
+       "text": "aside sides hide idea filled"
+      }
+     ],
+     "sample": "lead deal fgf jhj fgf jhj gh hg ge ig ag he sh ha had ahead high his flashes hill flash aside sides hide idea filled",
+     "generated": true,
+     "check": {
+      "ok": true,
+      "badKeys": [],
+      "missingNew": [],
+      "length": 116
+     },
+     "words": 212,
+     "runsBy": 34,
+     "dayBy": 3.4
+    },
+    {
+     "name": "Home row, E and I",
+     "kind": "review",
+     "tip": "Keep your eyes on the screen, not your hands. The Action Deck shows where every key is.",
+     "habit": "Eyes on the screen",
+     "detours": [
+      "Weakest key of the Sector",
+      "Any Mix-up that stands out"
+     ],
+     "n": 8,
+     "known": ";adefghijkls",
+     "drill": null,
+     "ladder": [
+      {
+       "part": "known",
+       "text": "hall gas"
+      },
+      {
+       "part": "words",
+       "text": "has asks head sake sales sad is hill skills led"
+      },
+      {
+       "part": "mixed",
+       "text": "hide leads lead all ahead"
+      }
+     ],
+     "sample": "hall gas has asks head sake sales sad is hill skills led hide leads lead all ahead",
+     "generated": true,
+     "check": {
+      "ok": true,
+      "badKeys": [],
+      "missingNew": [],
+      "length": 82
+     },
+     "words": 212,
+     "runsBy": 38,
+     "dayBy": 3.8
+    }
+   ]
+  },
+  {
+   "id": "s2",
+   "name": "Top row",
+   "stretch": "R U T Y W O Q P",
+   "recipe": "100–160 characters. Ladder: known keys ≤10%, drill ≤15%, Letter pairs ~15%, words, mixed line ~25%. At least 20% of letters are the new keys.",
+   "waypoints": [
+    {
+     "name": "R and U",
+     "kind": "keys",
+     "new": "ru",
+     "drill": "frf juj frf juj ru ur",
+     "tip": "Index fingers reach up and a little left for R and U. Back to F and J after every reach.",
+     "habit": "Anchor, reach, return",
+     "detours": [
+      "R or U accuracy",
+      "Mix-up r↔e, u↔i (neighbours)",
+      "Mix-up r↔f, u↔j (same finger)"
+     ],
+     "n": 9,
+     "known": ";adefghijklrsu",
+     "ladder": [
+      {
+       "part": "known",
+       "text": "glass as"
+      },
+      {
+       "part": "drill",
+       "text": "frf juj frf juj ru ur"
+      },
+      {
+       "part": "pairs",
+       "text": "er ar ri us ur ul"
+      },
+      {
+       "part": "words",
+       "text": "uses releases suffers guide earlier disagree sure"
+      },
+      {
+       "part": "mixed",
+       "text": "shall said regards filled seek"
+      }
+     ],
+     "sample": "glass as frf juj frf juj ru ur er ar ri us ur ul uses releases suffers guide earlier disagree sure shall said regards filled seek",
+     "generated": true,
+     "check": {
+      "ok": true,
+      "badKeys": [],
+      "missingNew": [],
+      "length": 129
+     },
+     "words": 509,
+     "runsBy": 43,
+     "dayBy": 4.3
+    },
+    {
+     "name": "T and Y",
+     "kind": "keys",
+     "new": "ty",
+     "drill": "ftf jyj ftf jyj ty yt",
+     "tip": "T and Y are the longest index reaches yet. Stretch the finger, not the whole hand, then return home.",
+     "habit": "Move the finger, not the hand",
+     "detours": [
+      "T or Y accuracy",
+      "Mix-up t↔r, y↔u",
+      "Mix-up t↔y (mirror)",
+      "Index fingers' second column"
+     ],
+     "n": 10,
+     "known": ";adefghijklrstuy",
+     "ladder": [
+      {
+       "part": "known",
+       "text": "agreed read"
+      },
+      {
+       "part": "drill",
+       "text": "ftf jyj ftf jyj ty yt"
+      },
+      {
+       "part": "pairs",
+       "text": "ti te at ly ty ry"
+      },
+      {
+       "part": "words",
+       "text": "test straight grateful alter tells eight they"
+      },
+      {
+       "part": "mixed",
+       "text": "take regret fills gray due"
+      }
+     ],
+     "sample": "agreed read ftf jyj ftf jyj ty yt ti te at ly ty ry test straight grateful alter tells eight they take regret fills gray due",
+     "generated": true,
+     "check": {
+      "ok": true,
+      "badKeys": [],
+      "missingNew": [],
+      "length": 124
+     },
+     "words": 1171,
+     "runsBy": 48,
+     "dayBy": 4.8
+    },
+    {
+     "name": "W and O",
+     "kind": "keys",
+     "new": "wo",
+     "drill": "sws lol sws lol wo ow",
+     "tip": "Ring fingers reach up for W and O. Keep both hands still; only the reaching finger moves.",
+     "habit": "Still hands",
+     "detours": [
+      "W or O accuracy",
+      "Mix-up w↔e, o↔i",
+      "Ring fingers"
+     ],
+     "n": 11,
+     "known": ";adefghijklorstuwy",
+     "ladder": [
+      {
+       "part": "known",
+       "text": "eat digit"
+      },
+      {
+       "part": "drill",
+       "text": "sws lol sws lol wo ow"
+      },
+      {
+       "part": "pairs",
+       "text": "or io lo ow wa we"
+      },
+      {
+       "part": "words",
+       "text": "whereas odd does restored walk got showed"
+      },
+      {
+       "part": "mixed",
+       "text": "dog lights tea dear argue"
+      }
+     ],
+     "sample": "eat digit sws lol sws lol wo ow or io lo ow wa we whereas odd does restored walk got showed dog lights tea dear argue",
+     "generated": true,
+     "check": {
+      "ok": true,
+      "badKeys": [],
+      "missingNew": [],
+      "length": 117
+     },
+     "words": 1864,
+     "runsBy": 53,
+     "dayBy": 5.3
+    },
+    {
+     "name": "Q and P",
+     "kind": "keys",
+     "new": "qp",
+     "drill": "aqa ;p; aqa ;p; qp pq",
+     "tip": "Little fingers reach up for Q and P. They are the weakest fingers, so land each one cleanly before you speed up.",
+     "habit": "Clean before fast",
+     "detours": [
+      "Q or P accuracy",
+      "Mix-up p↔o, q↔a",
+      "Little fingers"
+     ],
+     "n": 12,
+     "known": ";adefghijklopqrstuwy",
+     "ladder": [
+      {
+       "part": "known",
+       "text": "resort usually"
+      },
+      {
+       "part": "drill",
+       "text": "aqa ;p; aqa ;p; qp pq"
+      },
+      {
+       "part": "pairs",
+       "text": "pe pa po qu eq sq"
+      },
+      {
+       "part": "words",
+       "text": "splits quits stopped trap pairs depth parallel"
+      },
+      {
+       "part": "mixed",
+       "text": "week please has issue hour"
+      }
+     ],
+     "sample": "resort usually aqa ;p; aqa ;p; qp pq pe pa po qu eq sq splits quits stopped trap pairs depth parallel week please has issue hour",
+     "generated": true,
+     "check": {
+      "ok": true,
+      "badKeys": [],
+      "missingNew": [],
+      "length": 128
+     },
+     "words": 2543,
+     "runsBy": 58,
+     "dayBy": 5.8
+    },
+    {
+     "name": "Top row",
+     "kind": "review",
+     "tip": "Words come easily now. Read the whole word before you type it, then let your fingers run through it.",
+     "habit": "Think in words",
+     "detours": [
+      "Top row",
+      "Weakest key of the Sector",
+      "Any Mix-up that stands out"
+     ],
+     "n": 13,
+     "known": ";adefghijklopqrstuwy",
+     "drill": null,
+     "ladder": [
+      {
+       "part": "known",
+       "text": "root wills"
+      },
+      {
+       "part": "words",
+       "text": "orders owe totally upsets joke slight hour adequate fatal repair"
+      },
+      {
+       "part": "mixed",
+       "text": "work suggest was so rapidly"
+      }
+     ],
+     "sample": "root wills orders owe totally upsets joke slight hour adequate fatal repair work suggest was so rapidly",
+     "generated": true,
+     "check": {
+      "ok": true,
+      "badKeys": [],
+      "missingNew": [],
+      "length": 103
+     },
+     "words": 2543,
+     "runsBy": 62,
+     "dayBy": 6.2
+    }
+   ]
+  },
+  {
+   "id": "s3",
+   "name": "Bottom row",
+   "stretch": "V M B N C , X . Z /",
+   "recipe": "100–160 characters. As the top row. Comma and full stop sit inside text, never only in drill.",
+   "waypoints": [
+    {
+     "name": "V and M",
+     "kind": "keys",
+     "new": "vm",
+     "drill": "fvf jmj fvf jmj vm mv",
+     "tip": "Curl your index finger down to V or M, keep your wrist up, then come back to the bump.",
+     "habit": "Curl down, wrist up",
+     "detours": [
+      "V or M accuracy",
+      "Mix-up v↔c, m↔n",
+      "Bottom row"
+     ],
+     "n": 14,
+     "known": ";adefghijklmopqrstuvwy",
+     "ladder": [
+      {
+       "part": "known",
+       "text": "pleases sells"
+      },
+      {
+       "part": "drill",
+       "text": "fvf jmj fvf jmj vm mv"
+      },
+      {
+       "part": "pairs",
+       "text": "me mi om ve iv va"
+      },
+      {
+       "part": "words",
+       "text": "vague film amused overall served from firmly"
+      },
+      {
+       "part": "mixed",
+       "text": "latest wash idea while attitude"
+      }
+     ],
+     "sample": "pleases sells fvf jmj fvf jmj vm mv me mi om ve iv va vague film amused overall served from firmly latest wash idea while attitude",
+     "generated": true,
+     "check": {
+      "ok": true,
+      "badKeys": [],
+      "missingNew": [],
+      "length": 130
+     },
+     "words": 3521,
+     "runsBy": 67,
+     "dayBy": 6.7
+    },
+    {
+     "name": "B and N",
+     "kind": "keys",
+     "new": "bn",
+     "drill": "fbf jnj fbf jnj bn nb",
+     "tip": "B and N are a long reach down and in. B belongs to the left index finger and N to the right, however a word runs.",
+     "habit": "B on the left, always",
+     "detours": [
+      "B or N accuracy",
+      "Mix-up b↔v, n↔m",
+      "Mix-up b↔n (mirror)",
+      "Index fingers' second column"
+     ],
+     "n": 15,
+     "known": ";abdefghijklmnopqrstuvwy",
+     "ladder": [
+      {
+       "part": "known",
+       "text": "reserved register"
+      },
+      {
+       "part": "drill",
+       "text": "fbf jnj fbf jnj bn nb"
+      },
+      {
+       "part": "pairs",
+       "text": "ab bl bi in ng en"
+      },
+      {
+       "part": "words",
+       "text": "ordinary bind body requiring painful invariably interests"
+      },
+      {
+       "part": "mixed",
+       "text": "destroy killing away gap funny"
+      }
+     ],
+     "sample": "reserved register fbf jnj fbf jnj bn nb ab bl bi in ng en ordinary bind body requiring painful invariably interests destroy killing away gap funny",
+     "generated": true,
+     "check": {
+      "ok": true,
+      "badKeys": [],
+      "missingNew": [],
+      "length": 146
+     },
+     "words": 7384,
+     "runsBy": 72,
+     "dayBy": 7.2
+    },
+    {
+     "name": "C and comma",
+     "kind": "keys",
+     "new": "c,",
+     "drill": "dcd k,k dcd k,k c, ,c",
+     "tip": "Middle fingers curl down to C and the comma. A comma is followed by a space, typed with your thumb as always.",
+     "habit": "Punctuation is a key like any other",
+     "detours": [
+      "C or comma accuracy",
+      "Mix-up c↔x, c↔d",
+      "Middle fingers"
+     ],
+     "n": 16,
+     "known": ",;abcdefghijklmnopqrstuvwy",
+     "ladder": [
+      {
+       "part": "known",
+       "text": "several finger"
+      },
+      {
+       "part": "drill",
+       "text": "dcd k,k dcd k,k c, ,c"
+      },
+      {
+       "part": "pairs",
+       "text": "e, s, d, co ce ca"
+      },
+      {
+       "part": "words",
+       "text": "differences discourage documents reduced necessary objects chip"
+      },
+      {
+       "part": "mixed",
+       "text": "comments pushed tickets force units"
+      }
+     ],
+     "sample": "several finger dcd k,k dcd k,k c, ,c e, s, d, co ce ca differences discourage documents reduced necessary objects chip comments pushed tickets force units",
+     "generated": true,
+     "check": {
+      "ok": true,
+      "badKeys": [],
+      "missingNew": [],
+      "length": 154
+     },
+     "words": 10445,
+     "runsBy": 77,
+     "dayBy": 7.7
+    },
+    {
+     "name": "Letters so far",
+     "kind": "review",
+     "tip": "Go for clean before fast. Speed follows once your fingers stop hunting.",
+     "habit": "Accuracy leads",
+     "detours": [
+      "Weakest key so far",
+      "Any Mix-up that stands out"
+     ],
+     "n": 17,
+     "known": ",;abcdefghijklmnopqrstuvwy",
+     "drill": null,
+     "ladder": [
+      {
+       "part": "known",
+       "text": "quite owed"
+      },
+      {
+       "part": "words",
+       "text": "tonight handed maintained patch knew stating types present apparent brackets"
+      },
+      {
+       "part": "mixed",
+       "text": "ended threat approve mass wonders"
+      }
+     ],
+     "sample": "quite owed tonight handed maintained patch knew stating types present apparent brackets ended threat approve mass wonders",
+     "generated": true,
+     "check": {
+      "ok": true,
+      "badKeys": [],
+      "missingNew": [],
+      "length": 121
+     },
+     "words": 10445,
+     "runsBy": 81,
+     "dayBy": 8.1
+    },
+    {
+     "name": "X and full stop",
+     "kind": "keys",
+     "new": "x.",
+     "drill": "sxs l.l sxs l.l x. .x",
+     "tip": "Ring fingers curl down for X and the full stop. A full stop ends the sentence, and Space follows it.",
+     "habit": "Ring fingers own their column",
+     "detours": [
+      "X or full stop accuracy",
+      "Mix-up x↔z, x↔c, .↔,"
+     ],
+     "n": 18,
+     "known": ",.;abcdefghijklmnopqrstuvwxy",
+     "ladder": [
+      {
+       "part": "known",
+       "text": "item bears"
+      },
+      {
+       "part": "drill",
+       "text": "sxs l.l sxs l.l x. .x"
+      },
+      {
+       "part": "pairs",
+       "text": "e. s. d. ex xp xi"
+      },
+      {
+       "part": "words",
+       "text": "expanded extent excellent experience expansion exclusive explicit"
+      },
+      {
+       "part": "mixed",
+       "text": "across resolution suiting here reach"
+      }
+     ],
+     "sample": "item bears sxs l.l sxs l.l x. .x e. s. d. ex xp xi expanded extent excellent experience expansion exclusive explicit across resolution suiting here reach",
+     "generated": true,
+     "check": {
+      "ok": true,
+      "badKeys": [],
+      "missingNew": [],
+      "length": 153
+     },
+     "words": 10716,
+     "runsBy": 86,
+     "dayBy": 8.6
+    },
+    {
+     "name": "Z and slash",
+     "kind": "keys",
+     "new": "z/",
+     "drill": "aza ;/; aza ;/; z/ /z",
+     "tip": "Little fingers curl down for Z and the slash. Keep the wrist still and let the finger curl.",
+     "habit": "Little fingers curl, wrists stay",
+     "detours": [
+      "Z or slash accuracy",
+      "Mix-up z↔a, z↔x",
+      "Little fingers"
+     ],
+     "n": 19,
+     "known": ",./;abcdefghijklmnopqrstuvwxyz",
+     "ladder": [
+      {
+       "part": "known",
+       "text": "modifying governor"
+      },
+      {
+       "part": "drill",
+       "text": "aza ;/; aza ;/; z/ /z"
+      },
+      {
+       "part": "pairs",
+       "text": "s/f a/b iz ze az"
+      },
+      {
+       "part": "words",
+       "text": "breezed subsidizing sneezing embezzled fuzzed digitized recognized"
+      },
+      {
+       "part": "mixed",
+       "text": "gaining what invitation understanding delivering"
+      }
+     ],
+     "sample": "modifying governor aza ;/; aza ;/; z/ /z s/f a/b iz ze az breezed subsidizing sneezing embezzled fuzzed digitized recognized gaining what invitation understanding delivering",
+     "generated": true,
+     "check": {
+      "ok": true,
+      "badKeys": [],
+      "missingNew": [],
+      "length": 173
+     },
+     "words": 10872,
+     "runsBy": 91,
+     "dayBy": 9.1
+    },
+    {
+     "name": "Every letter",
+     "kind": "review",
+     "tip": "Every letter is yours. Keep each key on its own finger, even when a word feels quicker another way.",
+     "habit": "Same finger every time",
+     "detours": [
+      "Weakest letter",
+      "A row or a hand that stands out",
+      "Rare letters (q z x j) for coverage"
+     ],
+     "n": 20,
+     "known": ",./;abcdefghijklmnopqrstuvwxyz",
+     "drill": null,
+     "ladder": [
+      {
+       "part": "known",
+       "text": "needing basic"
+      },
+      {
+       "part": "words",
+       "text": "luck avoided learning concerning quantities supply ones saying purposes innocent"
+      },
+      {
+       "part": "mixed",
+       "text": "state held news clear assures"
+      }
+     ],
+     "sample": "needing basic luck avoided learning concerning quantities supply ones saying purposes innocent state held news clear assures",
+     "generated": true,
+     "check": {
+      "ok": true,
+      "badKeys": [],
+      "missingNew": [],
+      "length": 124
+     },
+     "words": 10872,
+     "runsBy": 95,
+     "dayBy": 9.5
+    }
+   ]
+  },
+  {
+   "id": "s4",
+   "name": "Capitals",
+   "stretch": "Left Shift, Right Shift, ? and :",
+   "recipe": "120–180 characters. 15–30% of words start with a capital. Drill ≤10%. A Shift Waypoint's capitals are all on its side's letters.",
+   "waypoints": [
+    {
+     "name": "Left Shift",
+     "kind": "shift",
+     "new": "HJKLYUIOPNM",
+     "drill": "Jj Kk Ll Hh Jo Ki Lu",
+     "tip": "For a capital typed by your right hand, hold Left Shift with your left little finger, type the letter, then let go.",
+     "habit": "Opposite-hand Shift",
+     "sample": "jj Jj kk Kk ll Ll Jo Ki Lu Hi; Kim, Lily, Hugo, Mona, Pia, Omar; I like Jupiter. Yuki and Nick fly to Pluto. Mona is on the moon.",
+     "detours": [
+      "Opposite-hand Shift",
+      "Capitals on the right hand"
+     ],
+     "n": 21,
+     "known": ",./;HIJKLMNOPUYabcdefghijklmnopqrstuvwxyz",
+     "check": {
+      "ok": true,
+      "badKeys": [],
+      "missingNew": [],
+      "length": 129
+     },
+     "words": 10872,
+     "runsBy": 100,
+     "dayBy": 10.0
+    },
+    {
+     "name": "Right Shift",
+     "kind": "shift",
+     "new": "QWERTASDFGZXCVB",
+     "drill": "Ff Dd Ss Aa Fa De Sa",
+     "tip": "Now the mirror. For a left-hand capital, hold Right Shift with your right little finger. Always the Shift on the other side.",
+     "habit": "Opposite-hand Shift, both sides",
+     "sample": "ff Ff dd Dd ss Ss Fa De Sa Ti; Ada, Ben, Cara, Eva, Theo, Zoe; Venus is bright. Ben and Sam fly past Saturn, then Mars.",
+     "detours": [
+      "Opposite-hand Shift",
+      "Capitals on the left hand",
+      "Shift hand: one side for everything"
+     ],
+     "n": 22,
+     "known": ",./;ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
+     "check": {
+      "ok": true,
+      "badKeys": [],
+      "missingNew": [],
+      "length": 119
+     },
+     "words": 10872,
+     "runsBy": 105,
+     "dayBy": 10.5
+    },
+    {
+     "name": "? and :",
+     "kind": "shift",
+     "new": "?:",
+     "drill": ";:; /?/ ;:; /?/",
+     "tip": "Shift works for symbols too. ? and : are Shift with the slash and semicolon keys, so hold Left Shift.",
+     "habit": "Opposite-hand Shift on symbols",
+     "sample": ";:; /?/ ;:; /?/ Ready? Yes. Who flies first? Note: dock at nine. Is Mars near? Not yet: wait for the signal.",
+     "detours": [
+      "Opposite-hand Shift",
+      "? or : accuracy"
+     ],
+     "n": 23,
+     "known": ",./:;?ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
+     "check": {
+      "ok": true,
+      "badKeys": [],
+      "missingNew": [],
+      "length": 108
+     },
+     "words": 10872,
+     "runsBy": 110,
+     "dayBy": 11.0
+    },
+    {
+     "name": "Sentences",
+     "kind": "review",
+     "tip": "Capitals start every sentence and every name. Use the Shift on the other side each time; Analytics shows which one you use.",
+     "habit": "Opposite-hand Shift in running text",
+     "sample": "Mars is red. Is Venus hot? Yes: very hot. Lena and Theo fly the probe past Saturn, then home. Did Kim see it? She did.",
+     "detours": [
+      "Opposite-hand Shift",
+      "Weakest capital",
+      "Any Mix-up that stands out"
+     ],
+     "n": 24,
+     "known": ",./:;?ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
+     "check": {
+      "ok": true,
+      "badKeys": [],
+      "missingNew": [],
+      "length": 118
+     },
+     "words": 10872,
+     "runsBy": 114,
+     "dayBy": 11.4
+    }
+   ]
+  },
+  {
+   "id": "s5",
+   "name": "Fluency",
+   "stretch": "Real English: common patterns, common words, apostrophes and quotes",
+   "recipe": "150–250 characters. No drill except on ' and \". Text Waypoints have no new keys, so their Recipe sets the kind of text: share of common Letter pairs, of the top 200 words, of sentence punctuation.",
+   "waypoints": [
+    {
+     "name": "Common patterns",
+     "kind": "text",
+     "new": "",
+     "tip": "Letter pairs like th, in and er come up all the time. Type each one as a single quick movement.",
+     "habit": "Pairs become one movement",
+     "sample": "th he in er an re on at nd; the then there other; ring sing thing bring; ion action station motion; and hand stand; the station is near the other end.",
+     "detours": [
+      "Slowest common Letter pairs (if #191 adds them to Targets)",
+      "Weakest key"
+     ],
+     "n": 25,
+     "known": ",./:;?ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
+     "check": {
+      "ok": true,
+      "badKeys": [],
+      "missingNew": [],
+      "length": 150
+     },
+     "words": 10872,
+     "runsBy": 119,
+     "dayBy": 11.9
+    },
+    {
+     "name": "Common words",
+     "kind": "text",
+     "new": "",
+     "tip": "The hundred most common words make up about half of everything you read. Type each one as a whole, not letter by letter.",
+     "habit": "Whole words",
+     "sample": "the of and to in is you that it was for on are as with they at be this from have or one had by but not what all were we when your can said there use each which she do how",
+     "detours": [
+      "Weakest key",
+      "Slowest common words' keys"
+     ],
+     "n": 26,
+     "known": ",./:;?ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
+     "check": {
+      "ok": true,
+      "badKeys": [],
+      "missingNew": [],
+      "length": 170
+     },
+     "words": 10872,
+     "runsBy": 124,
+     "dayBy": 12.4
+    },
+    {
+     "name": "' and \"",
+     "kind": "keys",
+     "new": "'\"",
+     "drill": ";'; ;\"; ;'; ;\";",
+     "tip": "Your right little finger reaches right for the apostrophe. For quote marks, hold Left Shift as well.",
+     "habit": "The right little finger's far reach",
+     "sample": ";'; ;\"; ;'; ;\"; it's don't I'm we're can't; \"Ready?\" she asked. \"Let's go,\" said Theo. It's Max's turn, so don't wait.",
+     "detours": [
+      "Apostrophe or quote accuracy",
+      "Opposite-hand Shift"
+     ],
+     "n": 27,
+     "known": "\"',./:;?ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
+     "check": {
+      "ok": true,
+      "badKeys": [],
+      "missingNew": [],
+      "length": 118
+     },
+     "words": 10872,
+     "runsBy": 129,
+     "dayBy": 12.9
+    },
+    {
+     "name": "Paragraphs",
+     "kind": "review",
+     "tip": "Longer texts now. Keep your eyes a word ahead of your fingers, at a pace you can hold to the end.",
+     "habit": "Read ahead",
+     "sample": "The probe left orbit at dawn. Nobody on the crew said a word; they just watched the dark side of the moon slide past. \"We're on course,\" Mona said, and smiled. It was the quietest night of the whole trip.",
+     "detours": [
+      "Weakest key",
+      "A hand or row that stands out",
+      "Opposite-hand Shift"
+     ],
+     "n": 28,
+     "known": "\"',./:;?ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
+     "check": {
+      "ok": true,
+      "badKeys": [],
+      "missingNew": [],
+      "length": 204
+     },
+     "words": 10872,
+     "runsBy": 133,
+     "dayBy": 13.3
+    }
+   ]
+  },
+  {
+   "id": "s6",
+   "name": "Numbers",
+   "stretch": "The number row, from the index fingers out",
+   "recipe": "120–180 characters. 20–35% digits, in groups that read as real numbers (counts, years, distances) as well as drill.",
+   "waypoints": [
+    {
+     "name": "4 and 7",
+     "kind": "keys",
+     "new": "47",
+     "drill": "f4f j7j f4f j7j 47 74",
+     "tip": "The number row is two rows up. Reach with your index finger from F or J, and come straight back.",
+     "habit": "The long reach, then home",
+     "sample": "f4f j7j f4f j7j 47 74 447 774; 4 moons, 7 stars, 47 ships, 74 probes; fly 47 days to Mars, then 74 more to the belt.",
+     "detours": [
+      "4 or 7 accuracy",
+      "Number row"
+     ],
+     "n": 29,
+     "known": "\"',./47:;?ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
+     "check": {
+      "ok": true,
+      "badKeys": [],
+      "missingNew": [],
+      "length": 116
+     },
+     "words": 10872,
+     "runsBy": 138,
+     "dayBy": 13.8
+    },
+    {
+     "name": "5 and 6",
+     "kind": "keys",
+     "new": "56",
+     "drill": "f5f j6j f5f j6j 56 65",
+     "tip": "5 and 6 are the index fingers' far reaches: 5 belongs to the left hand, 6 to the right.",
+     "habit": "6 on the right, always",
+     "sample": "f5f j6j f5f j6j 56 65 456 567; 5 suns, 6 rings, 65 drones; dock 56 is next to dock 45, and 67 is far away.",
+     "detours": [
+      "5 or 6 accuracy",
+      "Mix-up 5↔6, 4↔5, 6↔7"
+     ],
+     "n": 30,
+     "known": "\"',./4567:;?ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
+     "check": {
+      "ok": true,
+      "badKeys": [],
+      "missingNew": [],
+      "length": 106
+     },
+     "words": 10872,
+     "runsBy": 143,
+     "dayBy": 14.3
+    },
+    {
+     "name": "3 and 8",
+     "kind": "keys",
+     "new": "38",
+     "drill": "d3d k8k d3d k8k 38 83",
+     "tip": "Middle fingers reach two rows up for 3 and 8. Use the same finger every time: the one the Action Deck lights.",
+     "habit": "The right finger on far keys",
+     "sample": "d3d k8k d3d k8k 38 83 348 837; 38 crew, 83 days, 3 ships at 8 docks; level 8 of 38 is clear.",
+     "detours": [
+      "3 or 8 accuracy",
+      "Number row"
+     ],
+     "n": 31,
+     "known": "\"',./345678:;?ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
+     "check": {
+      "ok": true,
+      "badKeys": [],
+      "missingNew": [],
+      "length": 92
+     },
+     "words": 10872,
+     "runsBy": 148,
+     "dayBy": 14.8
+    },
+    {
+     "name": "2 and 9",
+     "kind": "keys",
+     "new": "29",
+     "drill": "s2s l9l s2s l9l 29 92",
+     "tip": "Ring fingers reach for 2 and 9. Numbers are easy to fumble, so slow down rather than switch fingers.",
+     "habit": "Slow down, don't switch fingers",
+     "sample": "s2s l9l s2s l9l 29 92 239 982; 29 probes at 92 per cent; orbit 2 of 9; 2,349 stars by day 29.",
+     "detours": [
+      "2 or 9 accuracy",
+      "Ring fingers"
+     ],
+     "n": 32,
+     "known": "\"',./23456789:;?ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
+     "check": {
+      "ok": true,
+      "badKeys": [],
+      "missingNew": [],
+      "length": 93
+     },
+     "words": 10872,
+     "runsBy": 153,
+     "dayBy": 15.3
+    },
+    {
+     "name": "1 and 0",
+     "kind": "keys",
+     "new": "10",
+     "drill": "a1a ;0; a1a ;0; 10 01",
+     "tip": "Little fingers reach for 1 and 0, the longest reaches on the keyboard. Come home after each one.",
+     "habit": "Little fingers, long reach",
+     "sample": "a1a ;0; a1a ;0; 10 01 100 1010; 10 ships, 100 stars, 1,000 miles; on day 1 of year 2010 we flew 10 laps.",
+     "detours": [
+      "1 or 0 accuracy",
+      "Little fingers",
+      "Number row"
+     ],
+     "n": 33,
+     "known": "\"',./0123456789:;?ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
+     "check": {
+      "ok": true,
+      "badKeys": [],
+      "missingNew": [],
+      "length": 104
+     },
+     "words": 10872,
+     "runsBy": 158,
+     "dayBy": 15.8
+    },
+    {
+     "name": "Numbers",
+     "kind": "review",
+     "tip": "Numbers and words mix now. Keep each digit on its own finger, even inside a long number.",
+     "habit": "Same finger every time",
+     "sample": "On day 14 the 3 probes passed 2,560 stars. By day 30 they had logged 97,846 miles, and 7 of the 12 cameras still worked.",
+     "detours": [
+      "Weakest digit",
+      "Number row",
+      "Mix-ups between neighbouring digits"
+     ],
+     "n": 34,
+     "known": "\"',./0123456789:;?ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
+     "check": {
+      "ok": true,
+      "badKeys": [],
+      "missingNew": [],
+      "length": 120
+     },
+     "words": 10872,
+     "runsBy": 162,
+     "dayBy": 16.2
+    }
+   ]
+  },
+  {
+   "id": "s7",
+   "name": "Common symbols",
+   "stretch": "- ! ( ) $ % @ # & *",
+   "recipe": "140–200 characters. 8–15% symbols, at least half of them the Waypoint's new ones, inside text where people really use them.",
+   "waypoints": [
+    {
+     "name": "- and !",
+     "kind": "keys",
+     "new": "-!",
+     "drill": ";-; a!a ;-; a!a",
+     "tip": "The hyphen is your right little finger, up and to the right. ! is Shift and 1, so hold Right Shift.",
+     "habit": "Opposite-hand Shift on the number row",
+     "sample": ";-; a!a ;-; a!a well-known, two-stage, half-full; Go! Ten-four! Stand by - here it comes! A five-day flight!",
+     "detours": [
+      "- or ! accuracy",
+      "Opposite-hand Shift"
+     ],
+     "n": 35,
+     "known": "!\"',-./0123456789:;?ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
+     "check": {
+      "ok": true,
+      "badKeys": [],
+      "missingNew": [],
+      "length": 108
+     },
+     "words": 10872,
+     "runsBy": 167,
+     "dayBy": 16.7
+    },
+    {
+     "name": "( and )",
+     "kind": "keys",
+     "new": "()",
+     "drill": "l(l ;); l(l ;);",
+     "tip": "Brackets are Shift with 9 and 0, typed by your right ring and little fingers, so hold Left Shift.",
+     "habit": "Opposite-hand Shift",
+     "sample": "l(l ;); l(l ;); (a) (b) (c); The probe (the small one) left at 10 (not 9). Dock 4 (left side) is open again.",
+     "detours": [
+      "( or ) accuracy",
+      "Mix-up (↔9, )↔0"
+     ],
+     "n": 36,
+     "known": "!\"'(),-./0123456789:;?ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
+     "check": {
+      "ok": true,
+      "badKeys": [],
+      "missingNew": [],
+      "length": 108
+     },
+     "words": 10872,
+     "runsBy": 172,
+     "dayBy": 17.2
+    },
+    {
+     "name": "$ and %",
+     "kind": "keys",
+     "new": "$%",
+     "drill": "f$f f%f f$f f%f",
+     "tip": "$ and % are Shift with 4 and 5, both on your left index finger. Hold Right Shift.",
+     "habit": "Opposite-hand Shift",
+     "sample": "f$f f%f f$f f%f $5 50% $12 99%; Fuel is 85% full. A refill costs $40, or $32 with 20% off.",
+     "detours": [
+      "$ or % accuracy",
+      "Opposite-hand Shift"
+     ],
+     "n": 37,
+     "known": "!\"$%'(),-./0123456789:;?ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
+     "check": {
+      "ok": true,
+      "badKeys": [],
+      "missingNew": [],
+      "length": 90
+     },
+     "words": 10872,
+     "runsBy": 177,
+     "dayBy": 17.7
+    },
+    {
+     "name": "@ and #",
+     "kind": "keys",
+     "new": "@#",
+     "drill": "s@s d#d s@s d#d",
+     "tip": "@ and # are Shift with 2 and 3, typed by your left ring and middle fingers, with Right Shift.",
+     "habit": "Opposite-hand Shift",
+     "sample": "s@s d#d s@s d#d #1 #42 crew@base; Mail mona@port.com about bay #7, and copy theo@port.com on ticket #318.",
+     "detours": [
+      "@ or # accuracy",
+      "Opposite-hand Shift"
+     ],
+     "n": 38,
+     "known": "!\"#$%'(),-./0123456789:;?@ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
+     "check": {
+      "ok": true,
+      "badKeys": [],
+      "missingNew": [],
+      "length": 105
+     },
+     "words": 10872,
+     "runsBy": 182,
+     "dayBy": 18.2
+    },
+    {
+     "name": "& and *",
+     "kind": "keys",
+     "new": "&*",
+     "drill": "j&j k*k j&j k*k",
+     "tip": "& and * are Shift with 7 and 8, on your right index and middle fingers, so hold Left Shift.",
+     "habit": "Opposite-hand Shift",
+     "sample": "j&j k*k j&j k*k Mars & Venus; salt & pepper; 2 * 6 is 12; note* (*see the map); Smith & Sons, est. 1987.",
+     "detours": [
+      "& or * accuracy",
+      "Mix-up &↔7, *↔8"
+     ],
+     "n": 39,
+     "known": "!\"#$%&'()*,-./0123456789:;?@ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
+     "check": {
+      "ok": true,
+      "badKeys": [],
+      "missingNew": [],
+      "length": 104
+     },
+     "words": 10872,
+     "runsBy": 187,
+     "dayBy": 18.7
+    },
+    {
+     "name": "Everyday symbols",
+     "kind": "review",
+     "tip": "Symbols are rare in text, so they stay slower for a while. Find each one by its finger and its number key.",
+     "habit": "The right finger on rare keys",
+     "sample": "Bay #4 (north side) is 80% full & ready! Fees are $25 - pay at mona@dock.net. Two-day passes cost $40 (or $36 with code #9).",
+     "detours": [
+      "Weakest symbol",
+      "Opposite-hand Shift",
+      "Number row"
+     ],
+     "n": 40,
+     "known": "!\"#$%&'()*,-./0123456789:;?@ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
+     "check": {
+      "ok": true,
+      "badKeys": [],
+      "missingNew": [],
+      "length": 124
+     },
+     "words": 10872,
+     "runsBy": 191,
+     "dayBy": 19.1
+    }
+   ]
+  },
+  {
+   "id": "s8",
+   "name": "Rare symbols",
+   "stretch": "= + _ [ ] { } < > ^ \\ | ` ~",
+   "recipe": "120–180 characters. 10–20% symbols. Text drawn from where these symbols live: sums, file paths, short code.",
+   "waypoints": [
+    {
+     "name": "= + and _",
+     "kind": "keys",
+     "new": "=+_",
+     "drill": ";=; ;+; ;_; ;=;",
+     "tip": "= and + share the key right of the hyphen, and _ is Shift and hyphen. All three are your right little finger's.",
+     "habit": "The right little finger's top corner",
+     "sample": ";=; ;+; ;_; ;=; 2 + 2 = 4; x = y + 1; total_fuel = 50 + 12; snake_case and top_speed = 300.",
+     "detours": [
+      "= + _ accuracy",
+      "Right little finger"
+     ],
+     "n": 41,
+     "known": "!\"#$%&'()*+,-./0123456789:;=?@ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz",
+     "check": {
+      "ok": true,
+      "badKeys": [],
+      "missingNew": [],
+      "length": 91
+     },
+     "words": 10872,
+     "runsBy": 196,
+     "dayBy": 19.6
+    },
+    {
+     "name": "Brackets [ ] { }",
+     "kind": "keys",
+     "new": "[]{}",
+     "drill": ";[; ;]; ;{; ;};",
+     "tip": "The bracket keys sit above the apostrophe. Square brackets need no Shift; curly ones need Left Shift. All are your right little finger's.",
+     "habit": "The right little finger's far keys",
+     "sample": ";[; ;]; ;{; ;}; [1] [2] {a} {b}; list[0] = 7; map[4] = {x: 1}; mode = [on]; {name} is ready.",
+     "detours": [
+      "Bracket accuracy",
+      "Mix-up [↔{, ]↔}"
+     ],
+     "n": 42,
+     "known": "!\"#$%&'()*+,-./0123456789:;=?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]_abcdefghijklmnopqrstuvwxyz{}",
+     "check": {
+      "ok": true,
+      "badKeys": [],
+      "missingNew": [],
+      "length": 92
+     },
+     "words": 10872,
+     "runsBy": 201,
+     "dayBy": 20.1
+    },
+    {
+     "name": "< > and ^",
+     "kind": "keys",
+     "new": "<>^",
+     "drill": "k<k l>l j^j k<k",
+     "tip": "< and > are Shift with the comma and full stop. ^ is Shift and 6, on your right index finger.",
+     "habit": "Opposite-hand Shift",
+     "sample": "k<k l>l j^j k<k 3 < 4; 9 > 2; 2^3 = 8; x^2 + 1 > 0; <ok> and <done>; a < b > c.",
+     "detours": [
+      "< > ^ accuracy",
+      "Mix-up <↔, and >↔."
+     ],
+     "n": 43,
+     "known": "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_abcdefghijklmnopqrstuvwxyz{}",
+     "check": {
+      "ok": true,
+      "badKeys": [],
+      "missingNew": [],
+      "length": 79
+     },
+     "words": 10872,
+     "runsBy": 206,
+     "dayBy": 20.6
+    },
+    {
+     "name": "\\ | ` and ~",
+     "kind": "keys",
+     "new": "\\|`~",
+     "drill": ";\\; ;|; a`a a~a",
+     "tip": "The far corners: backslash and | for your right little finger, ` and ~ for your left, at the top left.",
+     "habit": "The little fingers' corners",
+     "sample": ";\\; ;|; a`a a~a c:\\games\\astro; a | b; ~/home/mona; `run` and `stop`; about ~20 km away.",
+     "detours": [
+      "Corner key accuracy",
+      "Little fingers"
+     ],
+     "n": 44,
+     "known": "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~",
+     "check": {
+      "ok": true,
+      "badKeys": [],
+      "missingNew": [],
+      "length": 88
+     },
+     "words": 10872,
+     "runsBy": 211,
+     "dayBy": 21.1
+    },
+    {
+     "name": "Every key",
+     "kind": "review",
+     "tip": "That is the whole keyboard. Every key has its finger; keep it that way as you speed up.",
+     "habit": "Same finger every time",
+     "sample": "If fuel < 20% {warn = true;} else [ok]. Score ^2 + 5 = 30 | 40 ~ fine. Save to c:\\logs\\run_7 & mail #ops@base.",
+     "detours": [
+      "Weakest key on the keyboard",
+      "Rare keys for coverage"
+     ],
+     "n": 45,
+     "known": "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~",
+     "check": {
+      "ok": true,
+      "badKeys": [],
+      "missingNew": [],
+      "length": 110
+     },
+     "words": 10872,
+     "runsBy": 215,
+     "dayBy": 21.5
+    }
+   ]
+  },
+  {
+   "id": "s9",
+   "name": "Open space (speed)",
+   "stretch": "Every key. Each Waypoint opens the next on 2 Stars; the last never ends.",
+   "recipe": "250–400 characters of real text with every key. Digits ≤5% and symbols ≤3% unless the Waypoint's kind of text says otherwise. 2-Star WPM rises about 5 a Waypoint.",
+   "waypoints": [
+    {
+     "name": "Cruise 25",
+     "kind": "speed",
+     "wpm": 25,
+     "tip": "Speed comes from reading ahead. Look at the next word while you type this one.",
+     "habit": "Read ahead",
+     "text": "Everyday prose",
+     "detours": [
+      "Slowest keys",
+      "Weakest key",
+      "Anything the orchestrator finds"
+     ],
+     "n": 46,
+     "known": "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~",
+     "words": 10872,
+     "runsBy": 220,
+     "dayBy": 22.0
+    },
+    {
+     "name": "Cruise 30",
+     "kind": "speed",
+     "wpm": 30,
+     "tip": "Relax your hands between words. Tight fingers are slow fingers.",
+     "habit": "Relaxed hands",
+     "text": "Prose with numbers (dates, counts, prices)",
+     "detours": [
+      "Slowest keys",
+      "Number row"
+     ],
+     "n": 47,
+     "known": "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~",
+     "words": 10872,
+     "runsBy": 225,
+     "dayBy": 22.5
+    },
+    {
+     "name": "Cruise 35",
+     "kind": "speed",
+     "wpm": 35,
+     "tip": "If misses start to climb, ease off a little. Stars still need 95% here.",
+     "habit": "Accuracy holds the Stars",
+     "text": "Dialogue and quotes",
+     "detours": [
+      "Opposite-hand Shift",
+      "Slowest keys"
+     ],
+     "n": 48,
+     "known": "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~",
+     "words": 10872,
+     "runsBy": 230,
+     "dayBy": 23.0
+    },
+    {
+     "name": "Cruise 40",
+     "kind": "speed",
+     "wpm": 40,
+     "tip": "Keep every key on its finger as you speed up. Old habits come back under pressure.",
+     "habit": "Same finger under pressure",
+     "text": "Everyday writing: messages, lists, addresses",
+     "detours": [
+      "Weakest symbols",
+      "Slowest keys"
+     ],
+     "n": 49,
+     "known": "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~",
+     "words": 10872,
+     "runsBy": 235,
+     "dayBy": 23.5
+    },
+    {
+     "name": "Cruise 45",
+     "kind": "speed",
+     "wpm": 45,
+     "tip": "Long texts now. Keep a pace you can hold to the last line.",
+     "habit": "Pace for the whole text",
+     "text": "Long passages",
+     "detours": [
+      "Slowest keys",
+      "Slowest Letter pairs (if #191 adds them)"
+     ],
+     "n": 50,
+     "known": "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~",
+     "words": 10872,
+     "runsBy": 240,
+     "dayBy": 24.0
+    },
+    {
+     "name": "Cruise 50",
+     "kind": "speed",
+     "wpm": 50,
+     "tip": "Fifty words a minute is fluent typing. From here, keep flying: the texts keep coming.",
+     "habit": "Keep practising",
+     "text": "Everything, and the generator fills in forever",
+     "detours": [
+      "Anything the orchestrator finds"
+     ],
+     "n": 51,
+     "known": "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~",
+     "words": 10872,
+     "runsBy": 245,
+     "dayBy": 24.5
+    }
+   ]
+  }
+ ],
+ "waypointCount": 51
+}</script>
+<script>
+const DATA = JSON.parse(document.getElementById('data').textContent);
+const FINGER = {
+  LP: '#ec4899', LR: '#8b5cf6', LM: '#3b82f6', LI: '#06b6d4', TH: '#10b981',
+  RI: '#84cc16', RM: '#eab308', RR: '#f97316', RP: '#ef4444',
+};
+const ZONES = {
+  LP: '`~1!qQaAzZ', LR: '2@wWsSxX', LM: '3#eEdDcC', LI: '4$5%rRtTfFgGvVbB',
+  RI: '6^7&yYuUhHjJnNmM', RM: '8*iIkK,<', RR: '9(oOlL.>', RP: '0)-_=+pP[{]}\\|;:\'"/?', TH: ' ',
+};
+const fingerOf = (ch) => Object.keys(ZONES).find((z) => ZONES[z].includes(ch));
+const el = (tag, attrs = {}, ...kids) => {
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === 'class') n.className = v; else if (k === 'style') n.style.cssText = v; else n.setAttribute(k, v);
+  }
+  for (const kid of kids.flat()) if (kid != null) n.append(kid);
+  return n;
+};
+const KIND = { keys: 'new keys', shift: 'Shift', text: 'new kind of text', review: 'review', speed: 'speed' };
+const PART = { known: '--p-known', drill: '--p-drill', pairs: '--p-pairs', words: '--p-words', mixed: '--p-mixed' };
+
+const all = DATA.sectors.flatMap((s) => s.waypoints);
+const main = all.filter((w) => w.kind !== 'speed');
+document.getElementById('stats').append(
+  ...[
+    [main.length, 'Waypoints, home row to rare symbols'],
+    [DATA.sectors.length - 1, 'keyboard Sectors, plus the speed Sector'],
+    [all.filter((w) => w.kind === 'speed').length, 'speed Waypoints, the last one endless'],
+    [main.filter((w) => w.kind === 'review').length, 'review Waypoints'],
+  ].map(([n, t]) => el('div', {}, el('b', {}, String(n)), el('span', {}, t))),
+);
+
+const CALLS = [
+  ['E and I come fifth, after the eight home keys and before G and H.', 'The home keys alone spell about 11 common words; E and I take that to 132, and G H to 215. All eight fingers find home before the first reach, which is straight up. The other options: E I third (11 words at Waypoint 3, 74 at Waypoint 4) or after G H as in The path\'s shape (32 words before E I).'],
+  ['The Capitals Sector gains "? and :", making it 4 Waypoints, not 3.', 'They are Shift on two keys already learned (slash, semicolon), so they fit the Shift lesson, and the sentences that follow can ask questions.'],
+  ['Fluency\'s "punctuation in sentences" Waypoint brings the apostrophe and quote marks.', 'Real sentences need it\'s, don\'t and dialogue before numbers start. That moves two keys from the symbol Sectors into Fluency.'],
+  ['Symbols take 11 Waypoints, not about 8.', 'Common: - !, ( ), $ %, @ #, & *, then a review. Rare, grouped by physical key: = + _, [ ] { }, < > ^, \\ | ` ~, then a review. Pairs are mirror reaches where the keyboard allows (- and ! are the two little fingers on the number row).'],
+  ['45 Waypoints on the keyboard plus 6 speed Waypoints, against about 41.', 'The extra four are ? :, the apostrophe pair, and two more symbol Waypoints. Numbers and Common symbols each have five new things and no middle review; the rule says "longer than about four", so either could get one.'],
+  ['Waypoint names say what is new: "E and I", "Left Shift", "Common words".', 'They are working names. Story names, if any, belong to The Sectors\' names and story.'],
+  ['No tip coaches a beat or rhythm.', 'Each tip teaches one habit at the moment it first matters, and none tells the player to look down. P14 still lists "steady rhythm" as a habit to teach; whether that line stays is your call.'],
+  ['The speed Sector is six kinds of text with 2-Star bars from 25 to 50 WPM.', 'Prose, prose with numbers, dialogue, everyday writing, long passages, then everything. Each opens the next on 2 Stars, and the last one never runs out of text.'],
+];
+document.getElementById('calls').append(...CALLS.map(([t, d]) => el('div', { class: 'call' }, el('div', {}, el('b', {}, t), el('p', {}, d)))));
+
+// pace strip
+(function pace() {
+  const svg = document.getElementById('pace');
+  const NS = 'http://www.w3.org/2000/svg';
+  const x = (d) => 40 + (d / 30) * 920;
+  const add = (tag, attrs, text) => { const n = document.createElementNS(NS, tag); for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v); if (text != null) n.textContent = text; svg.append(n); return n; };
+  const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+  for (let d = 0; d <= 30; d += 5) {
+    add('line', { x1: x(d), x2: x(d), y1: 20, y2: 112, stroke: css('--rule'), 'stroke-width': 1 });
+    add('text', { x: x(d), y: 130, 'text-anchor': 'middle', 'font-size': 12, fill: css('--muted'), 'font-family': 'Inter, sans-serif' }, `day ${d}`);
+  }
+  const groups = [
+    ['Letters', ['s1', 's2', 's3'], 10], ['Capitals', ['s4'], 14], ['Fluency', ['s5'], 18],
+    ['Numbers', ['s6'], 23], ['Symbols', ['s7', 's8'], 30],
+  ];
+  let start = 0;
+  groups.forEach(([name, ids, target], i) => {
+    const wps = DATA.sectors.filter((s) => ids.includes(s.id)).flatMap((s) => s.waypoints);
+    const end = wps[wps.length - 1].dayBy;
+    const y = 24 + i * 17;
+    add('rect', { x: x(start), y, width: Math.max(2, x(end) - x(start)), height: 11, rx: 2, fill: css('--accent') });
+    add('line', { x1: x(target), x2: x(target), y1: y - 2, y2: y + 13, stroke: css('--flag'), 'stroke-width': 2.5 });
+    add('text', { x: x(target) + 6, y: y + 9.5, 'font-size': 11, fill: css('--muted'), 'font-family': 'Inter, sans-serif' }, `${name}: day ${end.toFixed(1)} (target ${target})`);
+    start = end;
+  });
+})();
+
+// the path
+const path = document.getElementById('path');
+for (const s of DATA.sectors) {
+  const first = s.waypoints[0].n, last = s.waypoints[s.waypoints.length - 1].n;
+  const sec = el('section', { class: 'sector', 'aria-label': s.name },
+    el('div', { class: 'sector-head' },
+      el('div', { class: 'eyebrow' }, `Sector ${DATA.sectors.indexOf(s) + 1} · Waypoints ${first}–${last}`),
+      el('h2', {}, s.name),
+      el('p', { class: 'meta' }, s.stretch),
+      el('p', { class: 'recipe' }, el('b', {}, 'Recipe draft: '), s.recipe),
+    ),
+  );
+  const list = el('div', { class: 'wps' });
+  for (const w of s.waypoints) {
+    const caps = el('div', { class: 'caps' }, [...(w.new || '')].map((ch) => {
+      const f = fingerOf(ch);
+      return el('span', { class: 'cap', style: f ? `--f:${FINGER[f]}` : '', title: ch === ' ' ? 'Space' : ch }, ch === ' ' ? 'Space' : ch);
+    }));
+    const top = el('div', { class: 'wp-top' },
+      el('h3', {}, w.name),
+      el('span', { class: 'tag' }, KIND[w.kind] + (w.wpm ? ` · 2★ ${w.wpm} WPM` : '')),
+      (w.new && w.new.length) ? caps : null,
+      el('span', { class: 'right' }, [s.id <= 's3' ? `${w.words} words · ` : '', `first pass by day ~${w.dayBy}`].join('')),
+    );
+    const rows = [];
+    if (w.drill) rows.push(el('div', { class: 'row' }, el('span', {}, 'Drill'), el('span', { class: 'mono' }, w.drill)));
+    if (w.text) rows.push(el('div', { class: 'row' }, el('span', {}, 'Text'), el('span', {}, w.text)));
+    if (w.sample) {
+      const body = w.ladder
+        ? el('span', { class: 'sample' }, w.ladder.flatMap((p, i) => [el('span', { class: 'seg', style: `--c: var(${PART[p.part]})`, title: p.part }, p.text), i < w.ladder.length - 1 ? ' ' : null]))
+        : el('span', { class: 'sample' }, w.sample);
+      const c = w.check;
+      const verdict = c && (c.ok
+        ? el('span', { class: 'ok' }, ` ✓ ${c.length} chars, learned keys only`)
+        : el('span', { class: 'bad' }, ` ✗ ${c.badKeys.length ? 'keys not learned: ' + c.badKeys.join(' ') : ''} ${c.missingNew.length ? 'missing new: ' + c.missingNew.join(' ') : ''}`));
+      rows.push(el('div', { class: 'row' }, el('span', {}, 'Sample'), el('span', {}, body, verdict)));
+    }
+    rows.push(el('div', { class: 'row' }, el('span', {}, 'Detours'), el('div', { class: 'chips' }, w.detours.map((d) => el('span', { class: 'chip' }, d)))));
+    list.append(el('article', { class: `wp ${w.kind}` },
+      el('div', { class: 'num' }, String(w.n).padStart(2, '0')),
+      el('div', { class: 'wp-main' },
+        top,
+        el('p', { class: 'tip' }, w.tip),
+        el('p', { class: 'habit' }, el('b', {}, 'Habit: '), w.habit),
+        ...rows,
+      ),
+    ));
+  }
+  sec.append(list);
+  path.append(sec);
+}
+</script>

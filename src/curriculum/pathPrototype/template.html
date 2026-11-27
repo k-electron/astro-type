@@ -1,0 +1,259 @@
+<title>The Phase 3 Path</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one reading column; a pace strip, the calls to make, then each Sector as a numbered run of Waypoint rows. */
+:root {
+  --bg: #f4f6fa;
+  --panel: #ffffff;
+  --ink: #131a2b;
+  --muted: #5a6479;
+  --rule: #dde2ec;
+  --accent: #0e7490;
+  --accent-soft: #e0f2f6;
+  --flag: #a24a00;
+  --flag-soft: #fdf0e4;
+  --sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --p-known: #8a93a6; --p-drill: #c2410c; --p-pairs: #7c3aed; --p-words: #0e7490; --p-mixed: #15803d;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0c111d; --panel: #141b2b; --ink: #e6eaf3; --muted: #97a1b6; --rule: #263049;
+  --accent: #38bdd8; --accent-soft: #10303a; --flag: #f0a35e; --flag-soft: #33230f;
+  --p-known: #7d869a; --p-drill: #fb923c; --p-pairs: #a78bfa; --p-words: #38bdd8; --p-mixed: #4ade80;
+  color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0c111d; --panel: #141b2b; --ink: #e6eaf3; --muted: #97a1b6; --rule: #263049;
+  --accent: #38bdd8; --accent-soft: #10303a; --flag: #f0a35e; --flag-soft: #33230f;
+  --p-known: #7d869a; --p-drill: #fb923c; --p-pairs: #a78bfa; --p-words: #38bdd8; --p-mixed: #4ade80;
+  color-scheme: dark; }
+body { background: var(--bg); color: var(--ink); font: 15px/1.55 var(--sans); }
+.wrap { max-width: 1060px; margin: 0 auto; padding-block: 40px 80px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 40px; }
+h1, h2, h3 { text-wrap: balance; margin: 0; }
+h1 { font-size: 34px; letter-spacing: -0.02em; line-height: 1.15; }
+h2 { font-size: 22px; letter-spacing: -0.01em; }
+p { margin: 0; }
+.eyebrow { font: 600 12px/1 var(--sans); letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
+.lede { max-width: 68ch; color: var(--muted); }
+header { display: grid; gap: 14px; }
+.stats { display: flex; flex-wrap: wrap; gap: 8px 28px; font-variant-numeric: tabular-nums; }
+.stats b { font-size: 20px; display: block; color: var(--ink); }
+.stats span { color: var(--muted); font-size: 13px; }
+
+/* pace strip */
+.pace { background: var(--panel); border: 1px solid var(--rule); border-radius: 10px; padding: 18px 18px 12px; display: grid; gap: 10px; }
+.pace svg { width: 100%; height: auto; display: block; }
+.pace-scroll { overflow-x: auto; }
+.pace-note { color: var(--muted); font-size: 13px; max-width: 80ch; }
+
+/* calls */
+.calls { display: grid; gap: 10px; counter-reset: call; }
+.call { display: grid; grid-template-columns: 30px 1fr; gap: 12px; background: var(--panel); border: 1px solid var(--rule); border-radius: 10px; padding: 14px 16px; }
+.call::before { counter-increment: call; content: counter(call); font: 600 13px/26px var(--mono); text-align: center; width: 26px; height: 26px; border-radius: 50%; background: var(--flag-soft); color: var(--flag); }
+.call b { display: block; }
+.call p { color: var(--muted); font-size: 14px; }
+
+/* sectors */
+.sector { display: grid; gap: 14px; }
+.sector-head { display: grid; gap: 6px; border-top: 2px solid var(--ink); padding-top: 14px; }
+.sector-head .meta { color: var(--muted); font-size: 14px; }
+.recipe { font-size: 13px; color: var(--muted); background: var(--accent-soft); border-radius: 8px; padding: 8px 12px; max-width: 90ch; }
+.recipe b { color: var(--ink); font-weight: 600; }
+.wps { display: grid; gap: 10px; }
+.wp { background: var(--panel); border: 1px solid var(--rule); border-radius: 10px; padding: 14px 16px; display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 4px 14px; }
+.wp.review { background: transparent; border-style: dashed; }
+.num { font: 600 13px/1 var(--mono); color: var(--muted); padding-top: 6px; font-variant-numeric: tabular-nums; }
+.wp-main { display: grid; gap: 8px; min-width: 0; }
+.wp-top { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.wp-top h3 { font-size: 17px; }
+.tag { font: 600 11px/1 var(--sans); letter-spacing: 0.06em; text-transform: uppercase; padding: 4px 7px; border-radius: 4px; border: 1px solid var(--rule); color: var(--muted); }
+.caps { display: flex; flex-wrap: wrap; gap: 4px; }
+.cap { font: 600 13px/1 var(--mono); min-width: 24px; height: 26px; padding: 0 6px; display: inline-grid; place-items: center; border-radius: 5px; background: var(--panel); border: 1px solid var(--rule); border-bottom: 3px solid var(--f, var(--rule)); }
+.right { margin-left: auto; color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.tip { max-width: 75ch; }
+.habit { color: var(--muted); font-size: 13px; }
+.habit b { color: var(--ink); font-weight: 600; }
+.row { display: grid; grid-template-columns: 70px minmax(0, 1fr); gap: 10px; font-size: 13px; align-items: baseline; }
+.row > span:first-child { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; }
+.mono { font-family: var(--mono); font-size: 13px; overflow-wrap: anywhere; }
+.sample { font-family: var(--mono); font-size: 13px; line-height: 1.9; overflow-wrap: anywhere; }
+.sample .seg { border-bottom: 2px solid var(--c); padding-bottom: 1px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font-size: 12px; padding: 3px 8px; border-radius: 999px; background: var(--accent-soft); color: var(--ink); }
+.ok { color: var(--p-mixed); font-size: 12px; }
+.bad { color: var(--flag); font-size: 12px; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12px; color: var(--muted); }
+.legend i { display: inline-block; width: 18px; height: 0; border-bottom: 3px solid var(--c); vertical-align: middle; margin-right: 6px; }
+footer { color: var(--muted); font-size: 13px; display: grid; gap: 6px; max-width: 85ch; }
+code { font-family: var(--mono); font-size: 0.92em; }
+@media (max-width: 560px) {
+  h1 { font-size: 27px; }
+  .wp { grid-template-columns: 1fr; }
+  .row { grid-template-columns: 1fr; gap: 2px; }
+  .right { margin-left: 0; width: 100%; }
+}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Prototype · ticket #187 · throwaway</div>
+    <h1>The whole Path, step by step</h1>
+    <p class="lede">A first draft of every Waypoint from the home row to the open-ended speed Sector: its new keys, the drill it opens with, its technique tip, the Recipe its Stages follow, and the Detours that can leave it. The sample texts show the Ladder's shape and are checked against each Waypoint's keys; the real texts are the library's job.</p>
+    <div class="stats" id="stats"></div>
+  </header>
+
+  <section class="pace" aria-labelledby="pace-h">
+    <h2 id="pace-h">Pace against the month</h2>
+    <div class="pace-scroll"><svg id="pace" viewBox="0 0 1000 150" role="img" aria-label="When each Sector's first pass ends, against the pace targets"></svg></div>
+    <p class="pace-note">Bars: where each Sector's first pass ends, at about 5 Runs a Waypoint (4 for a review) and 10 Runs a day. Ticks: the pace targets from <a href="https://github.com/k-electron/astro-type/issues/184">The path's shape</a>. The gap is the room for replays toward each Sector's Star total, and for Detours. The real numbers come from <a href="https://github.com/k-electron/astro-type/issues/192">A beginner's month, simulated</a>.</p>
+  </section>
+
+  <section class="calls" aria-labelledby="calls-h">
+    <h2 id="calls-h">Calls this draft makes</h2>
+    <div id="calls" class="calls"></div>
+  </section>
+
+  <div class="legend" aria-label="Ladder parts in the sample texts">
+    <span><i style="--c: var(--p-known)"></i>known keys</span>
+    <span><i style="--c: var(--p-drill)"></i>drill</span>
+    <span><i style="--c: var(--p-pairs)"></i>Letter pairs</span>
+    <span><i style="--c: var(--p-words)"></i>words</span>
+    <span><i style="--c: var(--p-mixed)"></i>mixed line</span>
+  </div>
+
+  <div id="path" style="display:grid;gap:44px"></div>
+
+  <footer>
+    <p>Sample words for the letter Sectors are drawn by a seeded script from SCOWL sizes 10–35 (the commonest band where it holds 30 or more words), filtered to the Waypoint's keys. Later samples are written by hand. "Words" counts SCOWL size 10–20 words spellable with the letters learned so far.</p>
+    <p>Source: <code>src/curriculum/pathPrototype/</code> on branch <code>prototype/path-outline</code>. Never merged.</p>
+  </footer>
+</div>
+
+<script id="data" type="application/json">/*DATA*/</script>
+<script>
+const DATA = JSON.parse(document.getElementById('data').textContent);
+const FINGER = {
+  LP: '#ec4899', LR: '#8b5cf6', LM: '#3b82f6', LI: '#06b6d4', TH: '#10b981',
+  RI: '#84cc16', RM: '#eab308', RR: '#f97316', RP: '#ef4444',
+};
+const ZONES = {
+  LP: '`~1!qQaAzZ', LR: '2@wWsSxX', LM: '3#eEdDcC', LI: '4$5%rRtTfFgGvVbB',
+  RI: '6^7&yYuUhHjJnNmM', RM: '8*iIkK,<', RR: '9(oOlL.>', RP: '0)-_=+pP[{]}\\|;:\'"/?', TH: ' ',
+};
+const fingerOf = (ch) => Object.keys(ZONES).find((z) => ZONES[z].includes(ch));
+const el = (tag, attrs = {}, ...kids) => {
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === 'class') n.className = v; else if (k === 'style') n.style.cssText = v; else n.setAttribute(k, v);
+  }
+  for (const kid of kids.flat()) if (kid != null) n.append(kid);
+  return n;
+};
+const KIND = { keys: 'new keys', shift: 'Shift', text: 'new kind of text', review: 'review', speed: 'speed' };
+const PART = { known: '--p-known', drill: '--p-drill', pairs: '--p-pairs', words: '--p-words', mixed: '--p-mixed' };
+
+const all = DATA.sectors.flatMap((s) => s.waypoints);
+const main = all.filter((w) => w.kind !== 'speed');
+document.getElementById('stats').append(
+  ...[
+    [main.length, 'Waypoints, home row to rare symbols'],
+    [DATA.sectors.length - 1, 'keyboard Sectors, plus the speed Sector'],
+    [all.filter((w) => w.kind === 'speed').length, 'speed Waypoints, the last one endless'],
+    [main.filter((w) => w.kind === 'review').length, 'review Waypoints'],
+  ].map(([n, t]) => el('div', {}, el('b', {}, String(n)), el('span', {}, t))),
+);
+
+const CALLS = [
+  ['E and I come fifth, after the eight home keys and before G and H.', 'The home keys alone spell about 11 common words; E and I take that to 132, and G H to 215. All eight fingers find home before the first reach, which is straight up. The other options: E I third (11 words at Waypoint 3, 74 at Waypoint 4) or after G H as in The path\'s shape (32 words before E I).'],
+  ['The Capitals Sector gains "? and :", making it 4 Waypoints, not 3.', 'They are Shift on two keys already learned (slash, semicolon), so they fit the Shift lesson, and the sentences that follow can ask questions.'],
+  ['Fluency\'s "punctuation in sentences" Waypoint brings the apostrophe and quote marks.', 'Real sentences need it\'s, don\'t and dialogue before numbers start. That moves two keys from the symbol Sectors into Fluency.'],
+  ['Symbols take 11 Waypoints, not about 8.', 'Common: - !, ( ), $ %, @ #, & *, then a review. Rare, grouped by physical key: = + _, [ ] { }, < > ^, \\ | ` ~, then a review. Pairs are mirror reaches where the keyboard allows (- and ! are the two little fingers on the number row).'],
+  ['45 Waypoints on the keyboard plus 6 speed Waypoints, against about 41.', 'The extra four are ? :, the apostrophe pair, and two more symbol Waypoints. Numbers and Common symbols each have five new things and no middle review; the rule says "longer than about four", so either could get one.'],
+  ['Waypoint names say what is new: "E and I", "Left Shift", "Common words".', 'They are working names. Story names, if any, belong to The Sectors\' names and story.'],
+  ['No tip coaches a beat or rhythm.', 'Each tip teaches one habit at the moment it first matters, and none tells the player to look down. P14 still lists "steady rhythm" as a habit to teach; whether that line stays is your call.'],
+  ['The speed Sector is six kinds of text with 2-Star bars from 25 to 50 WPM.', 'Prose, prose with numbers, dialogue, everyday writing, long passages, then everything. Each opens the next on 2 Stars, and the last one never runs out of text.'],
+];
+document.getElementById('calls').append(...CALLS.map(([t, d]) => el('div', { class: 'call' }, el('div', {}, el('b', {}, t), el('p', {}, d)))));
+
+// pace strip
+(function pace() {
+  const svg = document.getElementById('pace');
+  const NS = 'http://www.w3.org/2000/svg';
+  const x = (d) => 40 + (d / 30) * 920;
+  const add = (tag, attrs, text) => { const n = document.createElementNS(NS, tag); for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v); if (text != null) n.textContent = text; svg.append(n); return n; };
+  const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+  for (let d = 0; d <= 30; d += 5) {
+    add('line', { x1: x(d), x2: x(d), y1: 20, y2: 112, stroke: css('--rule'), 'stroke-width': 1 });
+    add('text', { x: x(d), y: 130, 'text-anchor': 'middle', 'font-size': 12, fill: css('--muted'), 'font-family': 'Inter, sans-serif' }, `day ${d}`);
+  }
+  const groups = [
+    ['Letters', ['s1', 's2', 's3'], 10], ['Capitals', ['s4'], 14], ['Fluency', ['s5'], 18],
+    ['Numbers', ['s6'], 23], ['Symbols', ['s7', 's8'], 30],
+  ];
+  let start = 0;
+  groups.forEach(([name, ids, target], i) => {
+    const wps = DATA.sectors.filter((s) => ids.includes(s.id)).flatMap((s) => s.waypoints);
+    const end = wps[wps.length - 1].dayBy;
+    const y = 24 + i * 17;
+    add('rect', { x: x(start), y, width: Math.max(2, x(end) - x(start)), height: 11, rx: 2, fill: css('--accent') });
+    add('line', { x1: x(target), x2: x(target), y1: y - 2, y2: y + 13, stroke: css('--flag'), 'stroke-width': 2.5 });
+    add('text', { x: x(target) + 6, y: y + 9.5, 'font-size': 11, fill: css('--muted'), 'font-family': 'Inter, sans-serif' }, `${name}: day ${end.toFixed(1)} (target ${target})`);
+    start = end;
+  });
+})();
+
+// the path
+const path = document.getElementById('path');
+for (const s of DATA.sectors) {
+  const first = s.waypoints[0].n, last = s.waypoints[s.waypoints.length - 1].n;
+  const sec = el('section', { class: 'sector', 'aria-label': s.name },
+    el('div', { class: 'sector-head' },
+      el('div', { class: 'eyebrow' }, `Sector ${DATA.sectors.indexOf(s) + 1} · Waypoints ${first}–${last}`),
+      el('h2', {}, s.name),
+      el('p', { class: 'meta' }, s.stretch),
+      el('p', { class: 'recipe' }, el('b', {}, 'Recipe draft: '), s.recipe),
+    ),
+  );
+  const list = el('div', { class: 'wps' });
+  for (const w of s.waypoints) {
+    const caps = el('div', { class: 'caps' }, [...(w.new || '')].map((ch) => {
+      const f = fingerOf(ch);
+      return el('span', { class: 'cap', style: f ? `--f:${FINGER[f]}` : '', title: ch === ' ' ? 'Space' : ch }, ch === ' ' ? 'Space' : ch);
+    }));
+    const top = el('div', { class: 'wp-top' },
+      el('h3', {}, w.name),
+      el('span', { class: 'tag' }, KIND[w.kind] + (w.wpm ? ` · 2★ ${w.wpm} WPM` : '')),
+      (w.new && w.new.length) ? caps : null,
+      el('span', { class: 'right' }, [s.id <= 's3' ? `${w.words} words · ` : '', `first pass by day ~${w.dayBy}`].join('')),
+    );
+    const rows = [];
+    if (w.drill) rows.push(el('div', { class: 'row' }, el('span', {}, 'Drill'), el('span', { class: 'mono' }, w.drill)));
+    if (w.text) rows.push(el('div', { class: 'row' }, el('span', {}, 'Text'), el('span', {}, w.text)));
+    if (w.sample) {
+      const body = w.ladder
+        ? el('span', { class: 'sample' }, w.ladder.flatMap((p, i) => [el('span', { class: 'seg', style: `--c: var(${PART[p.part]})`, title: p.part }, p.text), i < w.ladder.length - 1 ? ' ' : null]))
+        : el('span', { class: 'sample' }, w.sample);
+      const c = w.check;
+      const verdict = c && (c.ok
+        ? el('span', { class: 'ok' }, ` ✓ ${c.length} chars, learned keys only`)
+        : el('span', { class: 'bad' }, ` ✗ ${c.badKeys.length ? 'keys not learned: ' + c.badKeys.join(' ') : ''} ${c.missingNew.length ? 'missing new: ' + c.missingNew.join(' ') : ''}`));
+      rows.push(el('div', { class: 'row' }, el('span', {}, 'Sample'), el('span', {}, body, verdict)));
+    }
+    rows.push(el('div', { class: 'row' }, el('span', {}, 'Detours'), el('div', { class: 'chips' }, w.detours.map((d) => el('span', { class: 'chip' }, d)))));
+    list.append(el('article', { class: `wp ${w.kind}` },
+      el('div', { class: 'num' }, String(w.n).padStart(2, '0')),
+      el('div', { class: 'wp-main' },
+        top,
+        el('p', { class: 'tip' }, w.tip),
+        el('p', { class: 'habit' }, el('b', {}, 'Habit: '), w.habit),
+        ...rows,
+      ),
+    ));
+  }
+  sec.append(list);
+  path.append(sec);
+}
+</script>
