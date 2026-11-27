@@ -74,7 +74,7 @@ Every push to `main` ships, so every change leaves a working game. Deepen one sy
 
 ### P14. Teach the technique, not just the score
 
-Good habits are taught explicitly, at the moment they matter: posture, finding F and J by touch, one finger per key, returning home after every reach, eyes on the screen, opposite-hand Shift and steady rhythm. What the game can measure (Shift side, rhythm, which keys are slow) it measures and coaches. What it can't (which finger pressed a key) it teaches in words and pictures, and never pretends to have seen.
+Good habits are taught explicitly, at the moment they matter: posture, finding F and J by touch, one finger per key, returning home after every reach, eyes on the screen and opposite-hand Shift. What the game can measure (Shift side, which keys are slow) it measures and coaches. Rhythm it measures and shows, but never coaches as a beat: an even rhythm comes with skill rather than building it. What it can't (which finger pressed a key) it teaches in words and pictures, and never pretends to have seen.
 
 ## Inspirations
 
