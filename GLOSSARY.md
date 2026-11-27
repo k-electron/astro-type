@@ -26,6 +26,18 @@ _Avoid_: Loop, reinforcement loop, remedial lesson
 One text to type, which a Run plays: one of a Waypoint's Stages, a Detour's, or one the player sets up in Free Flight. A Free Flight Stage has no Star bars.
 _Avoid_: Level, mission, lesson
 
+**Ladder**:
+The shape every **Stage** of a **Waypoint** runs through: known keys, a few seconds of drill on the new keys, **Letter pairs**, words, then a line mixing everything learned so far. A review Waypoint's Stages skip the drill.
+_Avoid_: Lesson plan, progression
+
+**Target**:
+What a **Stage** is built to work on: one or more keys, a **Mix-up**, a finger, a row, a hand or **Opposite-hand Shift**. A **Waypoint**'s Stages work on its new keys; a **Detour**'s work on what is holding the player back.
+_Avoid_: Focus, weakness, target keys
+
+**Recipe**:
+What every **Stage** of one **Waypoint** must look like: its length, the parts it runs through and how much of each kind of character it holds. Each of the Waypoint's Stages is checked against it, and Stages built for the Waypoint follow it.
+_Avoid_: Template, blueprint, spec
+
 ### Play
 
 **Run**:
