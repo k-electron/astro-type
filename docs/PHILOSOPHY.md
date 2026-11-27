@@ -34,7 +34,7 @@ Guidance that points at the answer, such as the lit keycap or the hand showing w
 
 ### P4. A ramp, never a wall
 
-Each Stage adds one small new thing. Progress has real gates (Stars on a Stage, a Star total for a Sector), but every gate has several ways through, and the way past a sticking point is the practice the player needs.
+Each Waypoint adds one small new thing. Progress has real gates (a Star on a Waypoint, a Star total for a Sector), but every gate has several ways through, and the way past a sticking point is the practice the player needs.
 
 ### P5. Earned, not bought
 
@@ -50,7 +50,7 @@ The game is designed around 15–20 minutes of play a day. Short, frequent pract
 
 ### P8. Letters build the reach, words build the fluency
 
-A new key is drilled on its own and in short patterns (`fff jjj fjf jfj`) until the reach is automatic, the way any motor skill is built: by repetition. Once the reach holds, the key moves into real words as soon as possible, because skilled typists plan whole words, not single keystrokes. Drills never go away; they are where a weak key goes back to be rebuilt. A Stage's text uses only learned keys where practical, and bends that rule when real words matter more.
+A new key is drilled on its own and in short patterns (`fff jjj fjf jfj`) for a few seconds, then moves straight into Letter pairs and real words, because skilled typists plan whole words, not single keystrokes. The reach becomes automatic the way any motor skill does, by repetition: the Waypoints that follow keep mixing it in. Drills never go away; they are where a weak key goes back to be rebuilt. A Stage's text uses only learned keys where practical, and bends that rule when real words matter more.
 
 ### P9. Spectacle is a requirement
 

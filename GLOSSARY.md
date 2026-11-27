@@ -6,12 +6,24 @@ A space-themed typing game that teaches touch typing to beginner typists who com
 
 ### Curriculum
 
+**Path**:
+The Waypoints in order, grouped into Sectors: from the home row through capitals, fluency, numbers and symbols, to an open-ended last Sector for speed. Detours are its only branches.
+_Avoid_: Course, track, curriculum
+
 **Sector**:
-A themed group of Stages that forms one step of the curriculum.
+A themed group of Waypoints that covers one stretch of the keyboard, such as the bottom row or the numbers, and ends on a review Waypoint. The last Sector instead builds speed with every key, and has no end.
 _Avoid_: Zone, world, chapter
 
+**Waypoint**:
+One place on the Path, adding one small new thing: a pair of keys, a Shift or a new kind of text. Each time the player flies it, it brings one of its Stages. A review Waypoint adds nothing new and mixes everything learned so far.
+_Avoid_: Step, level, lesson
+
+**Detour**:
+A short run of Stages built for what is holding the player back, which leaves the Waypoint they are working on and returns to it, using only keys learned by then. It ends once its own last Run shows that target improved, or after a few Runs. It earns no Stars.
+_Avoid_: Loop, reinforcement loop, remedial lesson
+
 **Stage**:
-A fixed text to type, either from a Sector or set up by the player in Free Flight. Only a Sector Stage has Star bars.
+One text to type, which a Run plays: one of a Waypoint's Stages, a Detour's, or one the player sets up in Free Flight. A Free Flight Stage has no Star bars.
 _Avoid_: Level, mission, lesson
 
 ### Play
@@ -107,7 +119,7 @@ _Avoid_: Cadence
 ### Progress
 
 **Profile**:
-Everything the game remembers about the player between visits: Stage progress, Stars, Credits, Cosmetics, settings and the Logbook.
+Everything the game remembers about the player between visits: the Stars on each Waypoint, Credits, Cosmetics, settings and the Logbook.
 _Avoid_: Account, player data, user
 
 **Logbook**:
@@ -147,7 +159,7 @@ A Profile exported to a file, which can be imported again.
 _Avoid_: Export, save file
 
 **Stars**:
-The 0–3 result a Sector Stage earns from a cleared Run; a Stage keeps its best. Stars open new Sectors. A Free Flight earns none.
+The 0–3 result a cleared Run earns for its Waypoint; a Waypoint keeps its best, whichever of its Stages earned it. A Waypoint's first Star opens the next Waypoint (in the speed Sector, its second Star does), and a Sector opens on a total of Stars over the Sector before it. A Detour or a Free Flight earns none.
 _Avoid_: Rating, score
 
 **Star bar**:
