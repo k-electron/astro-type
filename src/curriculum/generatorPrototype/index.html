@@ -1,0 +1,718 @@
+<meta charset="utf-8">
+<title>Detour Generator Prototype</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one working column; controls on top, the Detour's three Runs below, scenarios beside on wide screens. */
+:root {
+  --bg: #f4f6f9; --panel: #ffffff; --ink: #141a24; --muted: #5b6678; --line: #dde3ec;
+  --accent: #2357c6; --accent-soft: #e6edfb; --mark: #fde68a; --mark-ink: #3b2a00;
+  --ok: #1d7a46; --warn: #a14b00; --drill: #7a3fc4; --drill-soft: #f1e9fb; --words-soft: #e4f4ea;
+  --sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0e1219; --panel: #161c26; --ink: #e6ebf3; --muted: #97a3b6; --line: #273142;
+  --accent: #7aa2ff; --accent-soft: #1d2a45; --mark: #6b5310; --mark-ink: #fff4cf;
+  --ok: #5fd08d; --warn: #f0a15c; --drill: #c49bff; --drill-soft: #2a2140; --words-soft: #17301f; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0e1219; --panel: #161c26; --ink: #e6ebf3; --muted: #97a3b6; --line: #273142;
+  --accent: #7aa2ff; --accent-soft: #1d2a45; --mark: #6b5310; --mark-ink: #fff4cf;
+  --ok: #5fd08d; --warn: #f0a15c; --drill: #c49bff; --drill-soft: #2a2140; --words-soft: #17301f; color-scheme: dark }
+* { box-sizing: border-box }
+body { background: var(--bg); color: var(--ink); font: 15px/1.55 var(--sans); margin: 0 }
+.wrap { max-width: 1180px; margin: 0 auto; padding-block: 28px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)) }
+h1 { font-size: 26px; line-height: 1.2; margin: 0 0 6px; text-wrap: balance; letter-spacing: -0.01em }
+h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin: 0 0 10px; font-weight: 600 }
+.lede { color: var(--muted); max-width: 70ch; margin: 0 0 18px }
+.proposes { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px 20px; margin-bottom: 22px }
+.proposes ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; max-width: 95ch }
+.grid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 22px; align-items: start }
+@media (max-width: 960px) { .grid { grid-template-columns: minmax(0, 1fr) } }
+.controls { display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: end; background: var(--panel);
+  border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; margin-bottom: 16px }
+.field { display: grid; gap: 4px; min-width: 0 }
+.field label { font-size: 12px; color: var(--muted); font-weight: 500 }
+select, input[type=number] { font: 14px var(--sans); color: var(--ink); background: var(--bg); border: 1px solid var(--line);
+  border-radius: 7px; padding: 7px 9px; max-width: 100% }
+input[type=number] { width: 84px; font-family: var(--mono) }
+button { font: 500 14px var(--sans); color: var(--accent); background: var(--accent-soft); border: 1px solid transparent;
+  border-radius: 7px; padding: 7px 12px; cursor: pointer }
+button:hover { border-color: var(--accent) }
+button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
+.run { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; margin-bottom: 12px }
+.run-head { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; margin-bottom: 8px }
+.run-head strong { font-size: 15px }
+.chip { font: 600 12px var(--sans); letter-spacing: 0.04em; text-transform: uppercase; padding: 2px 8px; border-radius: 99px }
+.chip.drill { color: var(--drill); background: var(--drill-soft) }
+.chip.words { color: var(--ok); background: var(--words-soft) }
+.fp { font: 12px var(--mono); color: var(--muted); margin-left: auto }
+.text { font: 17px/1.75 var(--mono); word-break: break-word; overflow-wrap: anywhere; margin: 4px 0 10px; letter-spacing: 0.01em }
+.text mark { background: var(--mark); color: var(--mark-ink); border-radius: 2px; padding: 0 1px }
+.nums { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums }
+.nums b { color: var(--ink); font-weight: 600 }
+.nums .ok { color: var(--ok) } .nums .bad { color: var(--warn) }
+.note { font-size: 13px; color: var(--muted); margin-top: 6px }
+details { margin-top: 8px; font-size: 13px } summary { cursor: pointer; color: var(--muted) }
+pre { font: 12px/1.5 var(--mono); background: var(--bg); border: 1px solid var(--line); border-radius: 7px; padding: 10px; overflow-x: auto; margin: 6px 0 0 }
+.side { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; position: sticky; top: calc(12px + env(safe-area-inset-top, 0px)) }
+.tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px }
+.tabs button { font-size: 12.5px; padding: 5px 9px; background: transparent; color: var(--muted); border-color: var(--line) }
+.tabs button[aria-selected="true"] { background: var(--accent-soft); color: var(--accent); border-color: var(--accent) }
+.scenario p { margin: 0 0 10px; font-size: 14px }
+.scenario .watch { color: var(--muted); font-size: 13px }
+.steps { display: grid; gap: 6px }
+.steps button { text-align: left; width: 100% }
+.steps button.done { background: transparent; border-color: var(--line); color: var(--muted) }
+.same { font-size: 13px; margin-left: 4px } .same.yes { color: var(--ok) }
+.err { color: var(--warn); font-weight: 500 }
+.legend { font-size: 13px; color: var(--muted); margin: -4px 0 12px }
+</style>
+
+<div class="wrap">
+  <h1>What the Detour generator builds</h1>
+  <p class="lede">A throwaway prototype for the ticket <em>What the generator builds</em>. Pick a Waypoint the player is on, what is holding them back (the Target) and a seed. The page shows the Detour the generator would build: its first three Runs, each one Stage, with the Target's keys highlighted and the numbers the checks would read. Nothing here is random: the same inputs always give the same text.</p>
+
+  <section class="proposes" aria-labelledby="p-h">
+    <h2 id="p-h">What this proposes</h2>
+    <ol>
+      <li><b>Inputs:</b> the Waypoint (which fixes the keys allowed and the length), the Target, which Run of the Detour this is, and a seed from the Profile. Recent Stages aren't needed: a new seed already gives a new text.</li>
+      <li><b>Run 1 is a drill; every later Run is words.</b> A drill Stage uses the four drill shapes (repeats, alternation, anchored reach, Shift pairs). A words Stage is a list of real words, each holding a Target key. Before A and ; no word exists, so every Run is a drill.</li>
+      <li><b>Words come from the Word list,</b> the commonest first, and a word with more Target keys is more likely. A Mix-up prefers words holding both of its keys.</li>
+      <li><b>Made-up words only where real ones run out</b> (fewer than 15): in practice only at A and ; and the Home row review. They are made and vetted ahead of time, so nothing is checked in the browser.</li>
+      <li><b>Digits and symbols ride on words</b> in the shape they have in real text: <code>(word)</code>, <code>$47</code>, <code>word-word</code>, <code>Word?</code>. Never sentences or prose.</li>
+      <li><b>The same inputs and seed give the same Stage</b> in every browser: integer-only random numbers, and the generator's version and Word list version are part of the Stage's source.</li>
+    </ol>
+  </section>
+
+  <div class="grid">
+    <main>
+      <div class="controls" id="controls">
+        <div class="field"><label for="wp">Waypoint</label><select id="wp"></select></div>
+        <div class="field"><label for="ttype">Target</label><select id="ttype">
+          <option value="keys">A key</option><option value="mixup">A Mix-up</option><option value="finger">A finger</option>
+          <option value="row">A row</option><option value="hand">A hand</option><option value="shift">Opposite-hand Shift</option></select></div>
+        <div class="field" id="tval-field"><label for="tval">Which</label><select id="tval"></select></div>
+        <div class="field"><label for="seed">Seed</label><input type="number" id="seed" min="1" step="1" value="1"></div>
+        <button id="next">Next seed</button>
+        <button id="again">Same inputs again</button><span class="same" id="same" aria-live="polite"></span>
+      </div>
+      <p class="legend">Highlighted characters are the Target's keys. "Fingerprint" is a short code of the text: equal codes mean identical text.</p>
+      <div id="runs"></div>
+    </main>
+    <aside class="side" aria-labelledby="s-h">
+      <h2 id="s-h">Walkthroughs</h2>
+      <div class="tabs" role="tablist" id="tabs"></div>
+      <div class="scenario" id="scenario"></div>
+    </aside>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script>
+// PROTOTYPE: the Detour generator for "What the generator builds" (#189).
+// Throwaway. A pure module: no DOM, no clock, no Math.random. Same request and
+// data in, same Stage out, in every browser (integer-only random numbers).
+(function (root) {
+  const VERSION = 'proto-1';
+
+  // ── The keyboard: finger, row, hand and home key of every character ──
+  const FINGERS = {
+    LP: { name: 'Left little', hand: 'L', home: 'a', keys: '`1qaz' },
+    LR: { name: 'Left ring', hand: 'L', home: 's', keys: '2wsx' },
+    LM: { name: 'Left middle', hand: 'L', home: 'd', keys: '3edc' },
+    LI: { name: 'Left index', hand: 'L', home: 'f', keys: '45rtfgvb' },
+    RI: { name: 'Right index', hand: 'R', home: 'j', keys: '67yuhjnm' },
+    RM: { name: 'Right middle', hand: 'R', home: 'k', keys: '8ik,' },
+    RR: { name: 'Right ring', hand: 'R', home: 'l', keys: '9ol.' },
+    RP: { name: 'Right little', hand: 'R', home: ';', keys: "0-=p[]\\;'/" },
+  };
+  const ROWS = {
+    number: { name: 'Number row', keys: '`1234567890-=' },
+    top: { name: 'Top row', keys: 'qwertyuiop[]\\' },
+    home: { name: 'Home row', keys: "asdfghjkl;'" },
+    bottom: { name: 'Bottom row', keys: 'zxcvbnm,./' },
+  };
+  const SHIFTED = '~!@#$%^&*()_+{}|:"<>?';
+  const SHIFT_OF = {};
+  '~!@#$%^&*()_+'.split('').forEach((s, i) => (SHIFT_OF[s] = '`1234567890-='[i]));
+  Object.assign(SHIFT_OF, { '{': '[', '}': ']', '|': '\\', ':': ';', '"': "'", '<': ',', '>': '.', '?': '/' });
+
+  function keyInfo(ch) {
+    const shifted = /[A-Z]/.test(ch) || SHIFTED.includes(ch);
+    const base = /[A-Z]/.test(ch) ? ch.toLowerCase() : SHIFT_OF[ch] ?? ch;
+    for (const [id, f] of Object.entries(FINGERS)) {
+      if (f.keys.includes(base)) {
+        const row = Object.keys(ROWS).find((r) => ROWS[r].keys.includes(base));
+        return { ch, base, shifted, finger: id, hand: f.hand, home: f.home, row };
+      }
+    }
+    return null;
+  }
+
+  // ── Seeded random numbers: FNV-1a hash → SplitMix32 → xoshiro128++ ──
+  function fnv1a(str) {
+    let h = 0x811c9dc5;
+    for (let i = 0; i < str.length; i++) {
+      h ^= str.charCodeAt(i);
+      h = Math.imul(h, 0x01000193) >>> 0;
+    }
+    return h >>> 0;
+  }
+  function rng(seedText) {
+    let x = fnv1a(seedText);
+    const sm = () => {
+      x = (x + 0x9e3779b9) >>> 0;
+      let z = x;
+      z = Math.imul(z ^ (z >>> 16), 0x85ebca6b) >>> 0;
+      z = Math.imul(z ^ (z >>> 13), 0xc2b2ae35) >>> 0;
+      return (z ^ (z >>> 16)) >>> 0;
+    };
+    const s = [sm(), sm(), sm(), sm()];
+    const rotl = (v, k) => ((v << k) | (v >>> (32 - k))) >>> 0;
+    function next() {
+      const r = (rotl((s[0] + s[3]) >>> 0, 7) + s[0]) >>> 0;
+      const t = (s[1] << 9) >>> 0;
+      s[2] ^= s[0];
+      s[3] ^= s[1];
+      s[1] ^= s[2];
+      s[0] ^= s[3];
+      s[2] ^= t;
+      s[3] = rotl(s[3], 11);
+      return r;
+    }
+    // Uniform integer in [0, n) without modulo bias (rejection).
+    function int(n) {
+      const limit = Math.floor(0x100000000 / n) * n;
+      for (;;) {
+        const v = next();
+        if (v < limit) return v % n;
+      }
+    }
+    // Pick by integer weights.
+    function pick(items, weightOf) {
+      let total = 0;
+      for (const it of items) total += weightOf(it);
+      let r = int(total);
+      for (const it of items) {
+        r -= weightOf(it);
+        if (r < 0) return it;
+      }
+      return items[items.length - 1];
+    }
+    return { int, pick };
+  }
+
+  // ── Length from the Waypoint's Sector Recipe draft ──
+  const LENGTH = {
+    s1: [60, 100], s2: [100, 160], s3: [100, 160], s4: [120, 180], s5: [150, 250],
+    s6: [120, 180], s7: [140, 200], s8: [120, 180], s9: [250, 400],
+  };
+
+  // ── What a Target asks to practise, among the keys allowed ──
+  function describeTarget(t) {
+    switch (t.type) {
+      case 'keys': return t.keys.length > 1 ? `${t.keys.join(' and ').toUpperCase()}` : `${t.keys[0].toUpperCase()}`;
+      case 'mixup': return `Mix-up: ${t.expected} typed as ${t.typed}`;
+      case 'finger': return `${FINGERS[t.finger].name} finger`;
+      case 'row': return ROWS[t.row].name;
+      case 'hand': return t.hand === 'L' ? 'Left hand' : 'Right hand';
+      case 'shift': return 'Opposite-hand Shift';
+    }
+    return '?';
+  }
+  function focusKeys(t, allowed) {
+    const ok = (c) => allowed.includes(c);
+    switch (t.type) {
+      case 'keys': return t.keys.filter(ok);
+      case 'mixup': return [t.expected, t.typed].filter(ok);
+      case 'finger': return [...allowed].filter((c) => keyInfo(c)?.finger === t.finger && !keyInfo(c).shifted);
+      case 'row': return [...allowed].filter((c) => keyInfo(c)?.row === t.row && !keyInfo(c).shifted);
+      case 'hand': return [...allowed].filter((c) => /[a-z]/.test(c) && keyInfo(c)?.hand === t.hand);
+      case 'shift': return [...allowed].filter((c) => keyInfo(c)?.shifted);
+    }
+    return [];
+  }
+
+  // ── Drill: the four shapes (repeats, alternation, anchored reach, Shift pairs) ──
+  const MIRROR = {};
+  ['fj', 'dk', 'sl', 'a;', 'ei', 'ru', 'ty', 'wo', 'qp', 'gh', 'vm', 'bn', 'c,', 'x.', 'z/', '47', '56', '38', '29', '10']
+    .forEach(([a, b]) => { MIRROR[a] = b; MIRROR[b] = a; });
+  // A lone key alternates with its mirror key and its row neighbours, where learned.
+  function partners(k, allowed) {
+    const out = [];
+    if (MIRROR[k] && allowed.includes(MIRROR[k])) out.push(MIRROR[k]);
+    const row = Object.values(ROWS).find((r) => r.keys.includes(k));
+    if (row) {
+      const i = row.keys.indexOf(k);
+      for (const n of [row.keys[i - 1], row.keys[i + 1]]) if (n && allowed.includes(n) && !out.includes(n)) out.push(n);
+    }
+    return out;
+  }
+
+  function drillGroups(focus, t, allowed) {
+    const groups = [];
+    const keys = focus.slice(0, 6);
+    if (keys.length === 1 && t.type !== 'mixup') {
+      for (const p of partners(keys[0], allowed)) {
+        groups.push({ shape: 'alternation', text: keys[0] + p + keys[0], keys: [keys[0], p] });
+        groups.push({ shape: 'alternation', text: p + keys[0] + p, keys: [keys[0], p] });
+      }
+    }
+    for (const k of keys) {
+      const ki = keyInfo(k);
+      if (!ki) continue;
+      if (/[A-Z]/.test(k)) {
+        groups.push({ shape: 'Shift pair', text: k + k.toLowerCase(), keys: [k] });
+        continue;
+      }
+      if (ki.shifted || ki.base !== ki.home) {
+        groups.push({ shape: 'anchored reach', text: ki.home + k + ki.home, keys: [k] });
+      }
+      if (!ki.shifted) {
+        groups.push({ shape: 'repeats', text: k + k + k, keys: [k] });
+        groups.push({ shape: 'repeats', text: k + k, keys: [k] });
+      }
+    }
+    // Alternation between pairs of focus keys (a Mix-up's two keys side by side).
+    const pairKeys = t.type === 'mixup' ? [t.expected, t.typed] : keys;
+    for (let i = 0; i < pairKeys.length; i++) {
+      for (let j = i + 1; j < pairKeys.length && j < i + 3; j++) {
+        const a = pairKeys[i];
+        const b = pairKeys[j];
+        if (!a || !b || /[A-Z]/.test(a + b)) continue;
+        groups.push({ shape: 'alternation', text: a + b + a, keys: [a, b] });
+        groups.push({ shape: 'alternation', text: b + a + b, keys: [a, b] });
+      }
+    }
+    return groups;
+  }
+
+  function buildDrill(req, focus, length, r) {
+    const groups = drillGroups(focus, req.target, req.waypoint.known);
+    if (!groups.length) return null;
+    const tokens = [];
+    let len = 0;
+    let last = null;
+    // Each group comes twice in a row ("frf frf"), then the next one.
+    while (len < length) {
+      let g = r.pick(groups, (x) => (x.shape === 'anchored reach' || x.shape === 'alternation' ? 3 : 2));
+      if (last && g.text === last.text && groups.length > 1) continue;
+      for (let n = 0; n < 2 && len < length; n++) {
+        tokens.push({ text: g.text, from: 'drill', shape: g.shape });
+        len += g.text.length + 1;
+      }
+      last = g;
+    }
+    return tokens;
+  }
+
+  // ── Words: from the Word list, every word holding a Target key ──
+  const SIZE_WEIGHT = { 10: 6, 20: 3, 35: 1 };
+  function wordPool(data, letters, allowed) {
+    const out = [];
+    for (const s of ['10', '20', '35']) {
+      for (const w of data.words[s].split(' ')) {
+        if (w.includes("'") && !allowed.includes("'")) continue;
+        let ok = true;
+        for (const c of w) if (c !== "'" && !letters.includes(c)) { ok = false; break; }
+        if (ok) out.push({ w, size: +s, made: false });
+      }
+    }
+    return out;
+  }
+
+  // Where each symbol lives in real text: one shape per symbol, wrapped
+  // around a word or a number. Digits use only digits learned by then.
+  const SYMBOL_SHAPE = {
+    ',': (w) => `${w},`, '.': (w) => `${w}.`, '/': (w, v) => `${w}/${v}`,
+    '?': (w) => `${w}?`, ':': (w) => `${w}:`, ';': (w) => `${w};`,
+    "'": (w) => `'${w}'`, '"': (w) => `"${w}"`, '-': (w, v) => `${w}-${v}`,
+    '!': (w) => `${w}!`, '(': (w) => `(${w})`, ')': (w) => `(${w})`,
+    '$': (w, v, n) => `$${n}`, '%': (w, v, n) => `${n}%`, '@': (w, v) => `${w}@${v}`,
+    '#': (w, v, n) => `#${n}`, '&': (w, v) => `${w} & ${v}`, '*': (w) => `*${w}*`,
+    '=': (w, v, n) => `${w} = ${n}`, '+': (w, v, n) => `${n}+${n}`, '_': (w, v) => `${w}_${v}`,
+    '[': (w) => `[${w}]`, ']': (w) => `[${w}]`, '{': (w) => `{${w}}`, '}': (w) => `{${w}}`,
+    '<': (w) => `<${w}>`, '>': (w) => `<${w}>`, '^': (w, v, n) => `${n}^2`,
+    '\\': (w, v) => `${w}\\${v}`, '|': (w, v) => `${w}|${v}`, '`': (w) => `\`${w}\``,
+    '~': (w) => `~/${w}`,
+  };
+
+  function numberToken(digits, focusDigits, r, allowed) {
+    const len = [2, 2, 3, 3, 4][r.int(5)];
+    let s = '';
+    for (let i = 0; i < len; i++) {
+      const pool = i === 0 && focusDigits.length ? focusDigits : digits;
+      let d = pool[r.int(pool.length)];
+      if (i > 0 && d === s[i - 1] && digits.length > 1) d = digits[r.int(digits.length)];
+      if (i === 0 && d === '0' && len > 1) d = digits.find((x) => x !== '0') ?? d;
+      s += d;
+    }
+    if (len === 4 && allowed.includes(',') && r.int(3) === 0) s = `${s[0]},${s.slice(1)}`;
+    return s;
+  }
+
+  function buildWords(req, data, focus, length, r) {
+    const wp = req.waypoint;
+    const allowed = wp.known;
+    const letters = [...allowed].filter((c) => /[a-z]/.test(c)).join('');
+    const all = wordPool(data, letters, allowed);
+    const t = req.target;
+    const focusLetters = [...new Set(focus.filter((c) => /[a-z]/.test(c)))];
+    const focusCaps = focus.filter((c) => /[A-Z]/.test(c));
+    const focusDigits = focus.filter((c) => /[0-9]/.test(c));
+    const focusSymbols = focus.filter((c) => SYMBOL_SHAPE[c] && !/[a-z0-9A-Z]/.test(c));
+    const digits = [...allowed].filter((c) => /[0-9]/.test(c));
+    const notes = [];
+
+    // Which words, weighted toward the Target.
+    let pool;
+    const maxLen = { s1: 6, s2: 7, s3: 8 }[wp.sector] ?? 9;
+    if (focusLetters.length) {
+      pool = all.filter((x) => x.w.length <= maxLen && focusLetters.some((c) => x.w.includes(c)));
+      // The commonest words first: SCOWL sizes 10-20, and 35 only when fewer than 40 fit.
+      if (pool.filter((x) => x.size <= 20).length >= 40) pool = pool.filter((x) => x.size <= 20);
+      const real = pool.length;
+      if (real < 15 && data.madeUp[wp.n]) {
+        const made = data.madeUp[wp.n].filter((w) => focusLetters.some((c) => w.includes(c)));
+        pool = pool.concat(made.map((w) => ({ w, size: 35, made: true })));
+        notes.push(`Only ${real} real words hold the Target here, so ${made.length} vetted made-up words join them.`);
+      } else {
+        notes.push(`${real.toLocaleString('en')} real words hold the Target here.`);
+      }
+    } else if (focusCaps.length) {
+      pool = all.filter((x) => x.size <= 20 && x.w.length <= maxLen && focusCaps.includes(x.w[0].toUpperCase()));
+      notes.push(`${pool.length.toLocaleString('en')} real words start with a capital learned by now.`);
+    } else {
+      // Digits and symbols: short common words carry them.
+      pool = all.filter((x) => x.size <= 20 && x.w.length <= 6);
+    }
+    if (!pool.length) return null;
+
+    const weight = (x) => {
+      let n = 0;
+      for (const c of x.w) if (focusLetters.includes(c)) n++;
+      let wgt = (x.made ? 2 : SIZE_WEIGHT[x.size]) * (1 + Math.min(n, 3));
+      if (t.type === 'mixup' && x.w.includes(t.expected) && x.w.includes(t.typed)) wgt *= 4;
+      if (x.w.length > 8) wgt = 1;
+      return wgt;
+    };
+
+    const used = new Set();
+    const tokens = [];
+    let len = 0;
+    let guard = 0;
+    const capOk = (w) => allowed.includes(w[0].toUpperCase());
+    while (len < length && guard++ < 2000) {
+      let x = r.pick(pool, weight);
+      if (used.has(x.w) && used.size < Math.min(pool.length, 40)) continue;
+      used.add(x.w);
+      let text = x.w;
+      let from = x.made ? 'made-up word' : 'word';
+      // Dress the word with what the Target needs.
+      if (focusCaps.length) {
+        if (capOk(text) && (t.type === 'shift' ? r.int(10) < 7 : true)) {
+          text = text[0].toUpperCase() + text.slice(1);
+          from = 'capital word';
+        }
+        const shiftSyms = focus.filter((c) => SYMBOL_SHAPE[c] && !/[A-Za-z0-9]/.test(c));
+        if (shiftSyms.length && r.int(4) === 0) {
+          const s = shiftSyms[r.int(shiftSyms.length)];
+          text = SYMBOL_SHAPE[s](text, text, '1');
+          from = 'symbol shape';
+        }
+      } else if (focusDigits.length && r.int(2) === 0) {
+        text = numberToken(digits, focusDigits, r, allowed);
+        from = 'number';
+      } else if (focusSymbols.length && (focusLetters.length ? r.int(10) < 3 : r.int(10) < 6)) {
+        const s = focusSymbols[r.int(focusSymbols.length)];
+        const other = r.pick(pool, weight).w;
+        const num = digits.length ? numberToken(digits, [], r, allowed) : '1';
+        text = SYMBOL_SHAPE[s](text, other, num);
+        if ([...text].some((c) => c !== ' ' && !allowed.includes(c))) text = x.w;
+        else from = 'symbol shape';
+      }
+      tokens.push({ text, from });
+      len += text.length + 1;
+    }
+    return { tokens, notes };
+  }
+
+  // ── The generator: one Detour request in, one Stage out ──
+  // A Detour's Runs step from drill to words: Run 1 is a drill; every later
+  // Run is words. Where no words can hold the Target, every Run is a drill.
+  function generate(req, data) {
+    const wp = req.waypoint;
+    const allowed = wp.known;
+    const focus = focusKeys(req.target, allowed);
+    const request = {
+      waypoint: wp.n,
+      target: req.target,
+      detourRun: req.run,
+      seed: req.seed,
+    };
+    const seedText = JSON.stringify({ v: VERSION, ...request });
+    const r = rng(seedText);
+    const [lo, hi] = LENGTH[wp.sector];
+    const notes = [];
+    if (!focus.length) {
+      return { error: `Nothing to practise: ${describeTarget(req.target)} has no keys learned by ${wp.name}.`, request };
+    }
+
+    let kind = req.run === 1 ? 'drill' : 'words';
+    let tokens = null;
+    // A drill Run is short (seconds of typing); a words Run fills the Recipe's middle length.
+    const drillLength = wp.sector === 's1' ? 60 : 80;
+    let length = kind === 'drill' ? drillLength : Math.round((lo + hi) / 2);
+    if (kind === 'words') {
+      const built = buildWords(req, data, focus, length, r);
+      if (built) {
+        tokens = built.tokens;
+        notes.push(...built.notes);
+      } else {
+        kind = 'drill';
+        length = drillLength;
+        notes.push('No word can hold this Target with the keys learned so far, so this Run is a drill too.');
+      }
+    }
+    if (kind === 'drill') tokens = buildDrill(req, focus, length, r);
+    if (!tokens) return { error: 'No drill shape fits this Target.', request };
+
+    const text = tokens.map((x) => x.text).join(' ');
+    return {
+      stage: {
+        text,
+        origin: 'Detour',
+        kind,
+        target: describeTarget(req.target),
+        source: { madeBy: 'generator', version: VERSION, wordList: data.wordListVersion, ...request },
+      },
+      tokens,
+      focus,
+      notes,
+      numbers: measure(text, focus, allowed, tokens, req.target),
+      fingerprint: fnv1a(text).toString(16).padStart(8, '0'),
+    };
+  }
+
+  // ── Worked-out numbers (the measuring function the checks share) ──
+  function measure(text, focus, allowed, tokens, t) {
+    const chars = [...text].filter((c) => c !== ' ');
+    const bad = [...new Set(chars.filter((c) => !allowed.includes(c)))];
+    const onFocus = chars.filter((c) => focus.includes(c)).length;
+    const byFrom = {};
+    for (const x of tokens) byFrom[x.from] = (byFrom[x.from] ?? 0) + 1;
+    const wordsLike = tokens.filter((x) => x.from !== 'drill');
+    const holds = wordsLike.filter((x) => [...x.text].some((c) => focus.includes(c))).length;
+    const fingers = {};
+    for (const c of chars) {
+      const f = keyInfo(c)?.finger;
+      if (f) fingers[f] = (fingers[f] ?? 0) + 1;
+    }
+    let mixBoth = null;
+    if (t.type === 'mixup') mixBoth = wordsLike.filter((x) => x.text.includes(t.expected) && x.text.includes(t.typed)).length;
+    return {
+      length: text.length,
+      targetKeystrokes: onFocus,
+      targetShare: chars.length ? Math.round((onFocus * 100) / chars.length) : 0,
+      onlyAllowedKeys: bad.length === 0,
+      badKeys: bad,
+      tokens: byFrom,
+      wordsHoldingTarget: wordsLike.length ? `${holds} of ${wordsLike.length}` : null,
+      mixupBoth: mixBoth,
+      capitals: chars.filter((c) => /[A-Z]/.test(c)).length,
+      fingers,
+    };
+  }
+
+  root.Generator = { generate, focusKeys, describeTarget, keyInfo, FINGERS, ROWS, VERSION };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+(async function () {
+  let D = window.GEN_DATA;
+  if (!D) D = await (await fetch('data.json')).json();
+  D.wordListVersion = 'SCOWL 2020.12.07, sizes 10–35 (prototype stand-in)';
+  const G = window.Generator;
+  const $ = (id) => document.getElementById(id);
+  const WP = (n) => D.waypoints.find((w) => w.n === n);
+  const esc = (s) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+
+  const state = { wp: 6, target: { type: 'keys', keys: ['e'] }, seed: 1 };
+
+  // Waypoint list, grouped by Sector.
+  let lastSector = null, group = null;
+  for (const w of D.waypoints) {
+    if (w.sector !== lastSector) { group = document.createElement('optgroup'); group.label = `Sector ${w.sector.slice(1)}: ${w.sectorName}`; $('wp').appendChild(group); lastSector = w.sector; }
+    const o = document.createElement('option'); o.value = w.n; o.textContent = `${w.n}. ${w.name}`; group.appendChild(o);
+  }
+
+  const keyLabel = (c) => (c === ' ' ? 'Space' : c);
+  function targetOptions(type, w) {
+    const allowed = [...w.known];
+    const typeable = allowed.filter((c) => G.keyInfo(c));
+    switch (type) {
+      case 'keys': {
+        const opts = [];
+        if (w.newKeys) opts.push({ v: JSON.stringify({ type: 'keys', keys: [...w.newKeys] }), t: `New keys: ${[...w.newKeys].join(' ')}` });
+        for (const c of typeable.filter((c) => !/[A-Z]/.test(c))) opts.push({ v: JSON.stringify({ type: 'keys', keys: [c] }), t: keyLabel(c) });
+        return opts;
+      }
+      case 'mixup': {
+        const opts = [];
+        const lower = typeable.filter((c) => !/[A-Z]/.test(c) && !G.keyInfo(c).shifted);
+        for (const e of lower) for (const x of lower) {
+          if (e === x) continue;
+          const a = G.keyInfo(e), b = G.keyInfo(x);
+          const near = a.finger === b.finger || (a.row === b.row && Math.abs(G.ROWS[a.row].keys.indexOf(a.base) - G.ROWS[b.row].keys.indexOf(b.base)) === 1)
+            || (a.row === b.row && G.ROWS[a.row].keys.indexOf(a.base) + G.ROWS[b.row].keys.indexOf(b.base) === 9 + (a.row === 'number' ? 1 : 0));
+          if (near) opts.push({ v: JSON.stringify({ type: 'mixup', expected: e, typed: x }), t: `${e} typed as ${x}` });
+        }
+        return opts;
+      }
+      case 'finger': return Object.entries(G.FINGERS).map(([id, f]) => ({ v: JSON.stringify({ type: 'finger', finger: id }), t: f.name }));
+      case 'row': return Object.entries(G.ROWS).map(([id, r]) => ({ v: JSON.stringify({ type: 'row', row: id }), t: r.name }));
+      case 'hand': return [{ v: JSON.stringify({ type: 'hand', hand: 'L' }), t: 'Left hand' }, { v: JSON.stringify({ type: 'hand', hand: 'R' }), t: 'Right hand' }];
+      case 'shift': return [{ v: JSON.stringify({ type: 'shift' }), t: 'Capitals and shifted keys learned so far' }];
+    }
+    return [];
+  }
+
+  function syncControls() {
+    $('wp').value = state.wp;
+    $('ttype').value = state.target.type;
+    const opts = targetOptions(state.target.type, WP(state.wp));
+    $('tval').innerHTML = opts.map((o) => `<option value='${esc(o.v)}'>${esc(o.t)}</option>`).join('') || '<option>Nothing learned yet</option>';
+    const cur = JSON.stringify(state.target);
+    if (opts.some((o) => o.v === cur)) $('tval').value = cur;
+    else if (opts.length) { state.target = JSON.parse(opts[0].v); $('tval').value = opts[0].v; }
+    $('seed').value = state.seed;
+  }
+
+  function highlight(text, focus) {
+    let out = '';
+    for (const c of text) out += focus.includes(c) ? `<mark>${esc(c)}</mark>` : esc(c);
+    return out;
+  }
+  const FROM = { drill: 'drill groups', word: 'real words', 'made-up word': 'made-up words', number: 'numbers', 'symbol shape': 'symbol shapes', 'capital word': 'capitalised words' };
+
+  let lastPrints = null;
+  function render() {
+    const w = WP(state.wp);
+    const prints = [];
+    let html = '';
+    for (const run of [1, 2, 3]) {
+      const g = G.generate({ waypoint: w, target: state.target, run, seed: state.seed }, D);
+      if (g.error) { html += `<div class="run"><div class="run-head"><strong>Run ${run}</strong></div><p class="err">${esc(g.error)}</p></div>`; prints.push('-'); continue; }
+      prints.push(g.fingerprint);
+      const n = g.numbers;
+      const tallies = Object.entries(n.tokens).map(([k, v]) => `${v} ${FROM[k] ?? k}`).join(', ');
+      html += `<article class="run">
+        <div class="run-head"><strong>Run ${run}</strong><span class="chip ${g.stage.kind}">${g.stage.kind}</span>
+          <span>${esc(g.stage.target)}</span><span class="fp">fingerprint ${g.fingerprint}</span></div>
+        <div class="text">${highlight(g.stage.text, g.focus)}</div>
+        <div class="nums">
+          <span><b>${n.length}</b> characters</span>
+          <span><b>${n.targetKeystrokes}</b> Target keystrokes (<b>${n.targetShare}%</b>)</span>
+          ${n.wordsHoldingTarget ? `<span>words holding the Target: <b>${n.wordsHoldingTarget}</b></span>` : ''}
+          ${n.mixupBoth !== null && g.stage.kind === 'words' ? `<span>words with both keys: <b>${n.mixupBoth}</b></span>` : ''}
+          <span>made of ${esc(tallies)}</span>
+          <span class="${n.onlyAllowedKeys ? 'ok' : 'bad'}">${n.onlyAllowedKeys ? '✓ only keys learned by this Waypoint' : '✗ untaught keys: ' + esc(n.badKeys.join(' '))}</span>
+        </div>
+        ${g.notes.length ? `<p class="note">${esc(g.notes.join(' '))}</p>` : ''}
+        <details><summary>The Stage's source (enough to rebuild it exactly)</summary><pre>${esc(JSON.stringify(g.stage.source, null, 2))}</pre></details>
+      </article>`;
+    }
+    $('runs').innerHTML = html;
+    return prints.join(',');
+  }
+
+  function update(patch, opts = {}) {
+    Object.assign(state, patch);
+    syncControls();
+    const prints = render();
+    $('same').textContent = opts.compare ? (prints === lastPrints ? '✓ identical text, all three Runs' : '✗ the text changed') : '';
+    $('same').className = 'same' + (opts.compare && prints === lastPrints ? ' yes' : '');
+    lastPrints = prints;
+  }
+
+  $('wp').addEventListener('change', () => update({ wp: +$('wp').value }));
+  $('ttype').addEventListener('change', () => { state.target = { type: $('ttype').value }; update({}); });
+  $('tval').addEventListener('change', () => update({ target: JSON.parse($('tval').value) }));
+  $('seed').addEventListener('change', () => update({ seed: Math.max(1, Math.floor(+$('seed').value || 1)) }));
+  $('next').addEventListener('click', () => update({ seed: state.seed + 1 }));
+  $('again').addEventListener('click', () => update({}, { compare: true }));
+
+  // ── Walkthroughs ──
+  const K = (...keys) => ({ type: 'keys', keys });
+  const SCENARIOS = [
+    { tab: 'F and J', title: 'Weak F on the very first Waypoint',
+      say: 'Only F, J and Space exist. No word can be spelled, so every Run of this Detour is a drill: repeats and alternation with J.',
+      watch: 'Watch: Run 2 and 3 stay drills and say why.',
+      steps: [['Set up: F and J, Target F', { wp: 1, target: K('f'), seed: 1 }], ['A different day (next seed)', { seed: 2 }]] },
+    { tab: 'E', title: 'Weak E, just after E and I arrive',
+      say: 'Run 1 drills E with its anchor D and its mirror I. From Run 2 the Stage is common words, every one holding an E.',
+      watch: 'Watch: the drill → words step, and the share of E keystrokes.',
+      steps: [['Set up: E and I, Target E', { wp: 6, target: K('e'), seed: 1 }], ['Next seed', { seed: 2 }], ['Back to seed 1', { seed: 1 }]] },
+    { tab: 'Mix-up', title: 'E typed as D',
+      say: 'A Mix-up of one finger\'s two keys. The drill puts E and D side by side; the words lean to ones holding both.',
+      watch: 'Watch: "words with both keys" in Runs 2–3.',
+      steps: [['Set up: Home row, E and I review, Mix-up e→d', { wp: 8, target: { type: 'mixup', expected: 'e', typed: 'd' }, seed: 1 }],
+              ['Later on the Path: Top row review', { wp: 13 }]] },
+    { tab: 'A and ;', title: 'Where real words run out',
+      say: 'At A and ; only 25 common words exist. With a vowel at last, words Runs are possible, topped up with made-up words only where fewer than 15 real ones hold the Target.',
+      watch: 'Watch: the note under each words Run; then try the Target ; (no word holds it).',
+      steps: [['Set up: A and ;, Target A', { wp: 4, target: K('a'), seed: 1 }], ['Target S (fewer words)', { target: K('s') }], ['Target ; (no word holds it)', { target: K(';') }]] },
+    { tab: 'Q', title: 'A rare key',
+      say: 'Q appears in few words. The generator still finds about a hundred common ones at Q and P.',
+      watch: 'Watch: how many words hold Q, and repeats across seeds.',
+      steps: [['Set up: Q and P, Target Q', { wp: 12, target: K('q'), seed: 1 }], ['Next seed', { seed: 2 }]] },
+    { tab: 'Finger', title: 'Left little finger',
+      say: 'A finger Target covers every key that finger types by now. Words are weighted toward holding more of them.',
+      watch: 'Watch: Q and A share the work; later Z joins.',
+      steps: [['Set up: Top row review, left little finger', { wp: 13, target: { type: 'finger', finger: 'LP' }, seed: 1 }], ['Every letter review', { wp: 20 }]] },
+    { tab: 'Shift', title: 'Opposite-hand Shift',
+      say: 'At Left Shift only right-hand capitals exist, so only words starting with them are capitalised. By Sentences every capital and ? : count.',
+      watch: 'Watch: Run 1\'s Shift pairs (Jj), then capitalised words.',
+      steps: [['Set up: Left Shift', { wp: 21, target: { type: 'shift' }, seed: 1 }], ['Sentences review', { wp: 24 }]] },
+    { tab: 'Numbers', title: 'Digits while only 4 and 7 are learned',
+      say: 'Numbers are built from the digits learned so far, so at 4 and 7 they are only 4s and 7s. Half the tokens are numbers, half words.',
+      watch: 'Watch: numbers grow richer at the Numbers review.',
+      steps: [['Set up: 4 and 7', { wp: 29, target: K('4', '7'), seed: 1 }], ['Numbers review, Target 9', { wp: 34, target: K('9') }]] },
+    { tab: 'Symbols', title: 'Symbols in the shape they live in',
+      say: 'Brackets wrap a word, $ and % sit on a number, \\ and | join two words. Each symbol has one shape taken from real use.',
+      watch: 'Watch: no untaught key ever appears.',
+      steps: [['Set up: Everyday symbols, ( and )', { wp: 40, target: K('(', ')'), seed: 1 }], ['$ and %', { wp: 37, target: K('$', '%') }], ['\\ and |', { wp: 44, target: K('\\', '|') }]] },
+    { tab: 'Speed', title: 'A Detour from the speed Sector',
+      say: 'At Cruise 40 a Detour for a slow K is still a word list, never prose: the generator doesn\'t write sentences.',
+      watch: 'Watch: longer Stages (the Recipe\'s length), but the same kind of text.',
+      steps: [['Set up: Cruise 40, Target K', { wp: 49, target: K('k'), seed: 1 }]] },
+    { tab: 'Same seed', title: 'The same inputs always give the same Stage',
+      say: 'Build it, build it again, then change only the seed.',
+      watch: 'Watch: the fingerprints, and the "identical" line next to the buttons.',
+      steps: [['Build: E and I, Target E, seed 7', { wp: 6, target: K('e'), seed: 7 }], ['Build again with the same inputs', { __compare: true }], ['Change only the seed (8)', { seed: 8 }]] },
+  ];
+  let active = 0;
+  function showScenario(i) {
+    active = i;
+    $('tabs').innerHTML = SCENARIOS.map((s, j) => `<button role="tab" aria-selected="${j === i}" data-i="${j}">${esc(s.tab)}</button>`).join('');
+    const s = SCENARIOS[i];
+    $('scenario').innerHTML = `<p><b>${esc(s.title)}</b></p><p>${esc(s.say)}</p><p class="watch">${esc(s.watch)}</p>
+      <div class="steps">${s.steps.map(([label], j) => `<button data-step="${j}">${j + 1}. ${esc(label)}</button>`).join('')}</div>`;
+  }
+  $('tabs').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) showScenario(+b.dataset.i); });
+  $('scenario').addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-step]'); if (!b) return;
+    const [, patch] = SCENARIOS[active].steps[+b.dataset.step];
+    if (patch.__compare) update({}, { compare: true }); else update(patch);
+    b.classList.add('done');
+  });
+
+  showScenario(1);
+  update({});
+})();
+</script>

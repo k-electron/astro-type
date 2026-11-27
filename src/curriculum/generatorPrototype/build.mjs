@@ -1,0 +1,153 @@
+// PROTOTYPE build step for "What the generator builds" (#189). Throwaway.
+// Usage: node build.mjs <SCOWL final dir> > data.js
+// Builds, ahead of time, what the generator reads: the Word list (SCOWL sizes
+// 10/20/35, vetted) and a pool of vetted made-up words for each Sector 1
+// Waypoint that has a vowel. Nothing is checked in the browser.
+import { readFileSync } from 'node:fs';
+import {
+  RegExpMatcher,
+  englishDataset,
+  englishRecommendedTransformers,
+} from 'obscenity';
+
+const dir = process.argv[2];
+const path = JSON.parse(readFileSync(new URL('./path.json', import.meta.url)));
+const matcher = new RegExpMatcher({
+  ...englishDataset.build(),
+  ...englishRecommendedTransformers,
+});
+// Stand-in for the project's topic blocklist (#188 check 5).
+const TOPIC = [
+  'kill', 'murder', 'rape', 'racis', 'drug', 'cocaine', 'heroin', 'suicid',
+  'nazi', 'gun', 'shoot', 'stab', 'bomb', 'terror', 'slave', 'corpse',
+  'blood', 'dead', 'death', 'die', 'abort', 'sex', 'nude', 'naked', 'booze',
+  'drunk', 'beer', 'whisk', 'weed', 'hell', 'damn', 'jihad', 'lynch', 'kkk',
+  'jackass', 'buttock', 'queer', 'gay', 'massacr', 'weapon', 'abus', 'goon',
+  'idiot', 'stupid', 'moron', 'ugly', 'fat', 'bitch', 'bastard', 'pervert',
+  'infest', 'gory', 'gore', 'torture', 'wound', 'vomit', 'poison', 'crime',
+  'prison', 'victim', 'assault', 'riot', 'war', 'hostage', 'arson', 'dumb',
+];
+// Topic stems match the start of a word ("killer"), never its middle ("skill").
+const blocked = (w) =>
+  matcher.hasMatch(w) || TOPIC.some((t) => w === t || (t.length >= 4 && w.startsWith(t)));
+
+const read = (f) => {
+  try {
+    return new TextDecoder('latin1').decode(readFileSync(`${dir}/${f}`)).split('\n');
+  } catch {
+    return [];
+  }
+};
+const size = new Map();
+const dropped = [];
+for (const s of [10, 20, 35]) {
+  for (const w of [...read(`english-words.${s}`), ...read(`american-words.${s}`)]) {
+    const ok = /^[a-z]+$/.test(w) || /^[a-z]+'(t|re|ve|ll|d|m)$/.test(w);
+    if (!ok || size.has(w)) continue;
+    if (blocked(w)) {
+      dropped.push(w);
+      continue;
+    }
+    size.set(w, s);
+  }
+}
+
+// Made-up words, built here (never at play time) from a Letter-pair model of
+// the commonest words, then vetted the same way as real words.
+let st = 0x9e3779b9;
+const rnd = (n) => {
+  st = (st + 0x6d2b79f5) | 0;
+  let t = Math.imul(st ^ (st >>> 15), 1 | st);
+  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+  return ((t ^ (t >>> 14)) >>> 0) % n;
+};
+const pairs = new Map();
+for (const [w, s] of size) {
+  if (s > 20 || w.includes("'")) continue;
+  const x = `^${w}$`;
+  for (let i = 0; i < x.length - 1; i++) {
+    const k = x[i];
+    if (!pairs.has(k)) pairs.set(k, new Map());
+    const m = pairs.get(k);
+    m.set(x[i + 1], (m.get(x[i + 1]) ?? 0) + 1);
+  }
+}
+function madeUp(letters, want) {
+  const out = new Set();
+  for (let tries = 0; tries < 200000 && out.size < want; tries++) {
+    let w = '';
+    let c = '^';
+    for (;;) {
+      const opts = [...(pairs.get(c) ?? [])].filter(
+        ([n]) => letters.includes(n) || (n === '$' && w.length >= 2),
+      );
+      if (!opts.length) break;
+      let r = rnd(opts.reduce((a, [, v]) => a + v, 0));
+      let next = '$';
+      for (const [n, v] of opts) {
+        if ((r -= v) < 0) {
+          next = n;
+          break;
+        }
+      }
+      if (next === '$' || w.length >= 6) break;
+      w += next;
+      c = next;
+    }
+    // Pronounceable shapes only: no three consonants or two like vowels in a
+    // row, no doubled letter except ll ss ff dd, a vowel in every word.
+    if (w.length < 3 || w.length > 5 || size.has(w) || out.has(w)) continue;
+    if (/[aeiou]{2}/.test(w) && !/(ea|ai|ie|ee)/.test(w)) continue;
+    if (/[aeiou]{3}/.test(w) || /^[aeiou]{2}/.test(w) || /[^aeiou]{3}/.test(w) || /([aei])\1/.test(w) || !/[aeiou]/.test(w)) continue;
+    if (/([^aeiou])\1/.test(w.replace(/ll|ss|ff|dd/g, ''))) continue;
+    if (/[^aeiou][^aeiou]$/.test(w) && !/(ll|ss|ff|dd|ld|sk|ft|lf|sh|gh|lk)$/.test(w)) continue;
+    if (/^[^aeiou][^aeiou]/.test(w) && !/^(fl|sl|gl|sk|sh|ch)/.test(w)) continue;
+    if (blocked(w)) {
+      dropped.push(`(made-up) ${w}`);
+      continue;
+    }
+    out.add(w);
+  }
+  return [...out].sort();
+}
+
+const waypoints = [];
+for (const s of path.sectors) {
+  for (const w of s.waypoints) {
+    waypoints.push({
+      n: w.n,
+      sector: s.id,
+      sectorName: s.name,
+      name: w.name,
+      kind: w.kind,
+      newKeys: (w.new ?? '').replace(' ', ''),
+      known: w.known,
+      drill: w.drill ?? '',
+    });
+  }
+}
+const pools = {};
+for (const w of waypoints.filter((w) => w.sector === 's1')) {
+  const letters = [...w.known].filter((c) => /[a-z]/.test(c)).join('');
+  if (/[aei]/.test(letters)) pools[w.n] = madeUp(letters, 120);
+}
+
+const bySize = { 10: [], 20: [], 35: [] };
+for (const [w, s] of size) bySize[s].push(w);
+for (const k in bySize) bySize[k].sort();
+
+process.stdout.write(
+  `// PROTOTYPE data, generated by build.mjs from SCOWL 2020.12.07 (sizes 10/20/35).\n` +
+    `window.GEN_DATA = ${JSON.stringify({
+      waypoints,
+      words: { 10: bySize[10].join(' '), 20: bySize[20].join(' '), 35: bySize[35].join(' ') },
+      madeUp: pools,
+      droppedCount: dropped.length,
+      droppedSample: dropped.filter((d) => !d.startsWith('(')).slice(0, 0),
+      droppedMadeUp: dropped.filter((d) => d.startsWith('(')).length,
+    })};\n`,
+);
+process.stderr.write(
+  `words ${size.size} (10:${bySize[10].length} 20:${bySize[20].length} 35:${bySize[35].length}), dropped ${dropped.length}\n` +
+    Object.entries(pools).map(([n, p]) => `pool ${n}: ${p.length} e.g. ${p.slice(0, 12).join(' ')}`).join('\n') + '\n',
+);
