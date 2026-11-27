@@ -38,6 +38,14 @@ _Avoid_: Focus, weakness, target keys
 What every **Stage** of one **Waypoint** must look like: its length, the parts it runs through and how much of each kind of character it holds. Each of the Waypoint's Stages is checked against it, and Stages built for the Waypoint follow it.
 _Avoid_: Template, blueprint, spec
 
+**Library**:
+The **Stages** written ahead of time for every **Waypoint**, each one checked against its **Recipe** and read before it ships. A Waypoint's Stages come from the Library; a **Detour**'s are built for it.
+_Avoid_: Bank, pool, corpus
+
+**Word list**:
+The real words any **Stage** may use, each checked once before it joins.
+_Avoid_: Dictionary, vocabulary, lexicon
+
 ### Play
 
 **Run**:
